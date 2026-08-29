@@ -31,9 +31,11 @@
 ]
 
 %% Farben von fluch-it-consulting.de
-\definecolor{akzent}{HTML}{8B1A2B}
-%% Der Balken der bisherigen Rechnung war ein gedämpftes #8E4848. Hier steht
-%% bewusst das Rot der Webseite – kräftiger, dafür markenrichtig.
+%% Mittelweg zwischen dem Rot der Webseite (#8B1A2B) und dem gedämpften Ton
+%% der bisherigen Rechnung (#8E4848): kanalweise das arithmetische Mittel.
+%% Beide Ausgangsfarben stehen daneben, das Umschalten ist eine Zeile.
+\definecolor{akzent}{HTML}{8D313A}
+\definecolor{akzentweb}{HTML}{8B1A2B}
 \definecolor{akzentalt}{HTML}{8E4848}
 \definecolor{haupttext}{HTML}{1C1C1E}
 \definecolor{gedaempft}{HTML}{5C5C62}
@@ -75,8 +77,7 @@
 %% Ohne Trennlinie und ohne Farbe: Der Briefkopf soll nicht mit dem
 %% Titelbalken um die Aufmerksamkeit konkurrieren.
 \begin{minipage}[t]{0.48\linewidth}\raggedright
-  {\large\bfseries <<FIRMA>>}\\[1mm]
-  {\small\color{gedaempft}<<INHABER>>}
+  {\large\bfseries <<FIRMA>>}<<KOPF_PERSON>>
 \end{minipage}%
 \hfill
 \begin{minipage}[t]{0.48\linewidth}
@@ -103,13 +104,16 @@
 %% ---------------------------------------------------------- Titel (Blickfang)
 %% Das einzige Flächenelement der Seite. Nummer links, Datum rechts – wie auf
 %% der bisherigen Rechnung, damit beide Angaben zusammen gelesen werden.
+%% \fboxsep steuert den Innenabstand des \colorbox – waagerecht wie senkrecht.
+%% Nachgemessen: Der Balken der bisherigen Rechnung ist 6,0 mm hoch; mit
+%% \vspace darin kam der hier auf 9,7 mm. Der Wert ist lokal gesetzt, damit er
+%% keine anderen Boxen im Dokument verändert.
+{\setlength{\fboxsep}{1.1mm}%
 \noindent\colorbox{akzent}{%
   \begin{minipage}{\dimexpr\linewidth-2\fboxsep\relax}
-    \vspace{1.8mm}
     {\large\bfseries\color{white}Rechnung <<RECHNUNGSNUMMER>>}\hfill
     {\large\bfseries\color{white}<<RECHNUNGSDATUM>>}
-    \vspace{1.8mm}
-  \end{minipage}}
+  \end{minipage}}}
 
 \vspace{4mm}
 

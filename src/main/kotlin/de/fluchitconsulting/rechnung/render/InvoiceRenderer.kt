@@ -26,6 +26,7 @@ object InvoiceRenderer {
             mapOf(
                 "FIRMA" to config.companyName.escapeLatex(),
                 "INHABER" to config.ownerName.escapeLatex(),
+                "KOPF_PERSON" to letterheadPerson(config),
                 "ABSENDER_KONTAKT" to senderContact(config),
                 "RUECKSENDEZEILE" to returnAddressLine(config),
                 "EMPFAENGER" to recipient(invoice),
@@ -163,6 +164,23 @@ object InvoiceRenderer {
             config.taxNumber?.let { add("Steuernummer ${it.escapeLatex()}") }
             add("USt-IdNr. ${config.vatId.escapeLatex()}")
         }.joinToString(BR)
+
+    /**
+     * Die Person unter dem Firmennamen im Briefkopf – aber nur dann, wenn sie
+     * nicht ohnehin schon als Geschäftsführung neben dem Empfänger steht.
+     * Bei einer UG sind Inhaber und Geschäftsführung meist dieselbe Person;
+     * beides zu setzen nennt sie zweimal im selben Seitenviertel.
+     *
+     * Für Einzelunternehmen ohne Geschäftsführung bleibt der Name hier stehen:
+     * §14 Abs. 4 Nr. 1 UStG verlangt den vollständigen Namen des leistenden
+     * Unternehmers, und der ist dort die Person, nicht die Firmierung.
+     */
+    private fun letterheadPerson(config: SellerConfig): String =
+        if (config.managingDirector != null) {
+            ""
+        } else {
+            "$BR[1mm]\n  {\\small\\color{gedaempft}${config.ownerName.escapeLatex()}}"
+        }
 
     /**
      * Die Vertretungsangabe neben dem Empfängerfeld. "Geschäftsführung" statt
