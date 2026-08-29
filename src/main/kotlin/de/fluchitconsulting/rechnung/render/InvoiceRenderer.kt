@@ -65,13 +65,21 @@ object InvoiceRenderer {
         \Language{de-DE}
         """.trimIndent()
 
+    /**
+     * Der Kontaktblock im Briefkopf. Straße und Ort stehen zusammen in einer
+     * Zeile, damit der Block nicht fünf unterschiedlich lange Zeilen bekommt.
+     *
+     * Die E-Mail bleibt unbeschriftet – das @ sagt bereits, was sie ist, und
+     * ein Präfix macht die ohnehin längste Zeile des Blocks noch länger.
+     * Die Webseite bekommt dagegen ein "Web": Ohne das stehen zwei Zeilen mit
+     * derselben Domain untereinander und lesen sich wie eine Wiederholung.
+     */
     private fun senderContact(config: SellerConfig): String =
         buildList {
-            add(config.address.street.escapeLatex())
-            add("${config.address.postalCode} ${config.address.city}".escapeLatex())
+            add("${config.address.street} · ${config.address.postalCode} ${config.address.city}".escapeLatex())
             config.phone?.let { add("Tel. ${it.escapeLatex()}") }
             add(config.email.escapeLatex())
-            config.website?.let { add(it.removePrefix("https://").escapeLatex()) }
+            config.website?.let { add("Web ${it.removePrefix("https://").removePrefix("http://").escapeLatex()}") }
         }.joinToString(BR)
 
     /** Die kleine Zeile über dem Empfänger, wie sie im Sichtfenster erscheint. */

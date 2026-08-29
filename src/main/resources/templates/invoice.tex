@@ -32,10 +32,9 @@
 
 %% Farben von fluch-it-consulting.de
 \definecolor{akzent}{HTML}{8B1A2B}
-%% Der Titelbalken nimmt den Akzent nur als helle Tönung auf. Ein vollflächiges
-%% #8B1A2B wäre auf einer sonst weißen Seite deutlich lauter als der bräunliche
-%% Balken der alten Rechnung (#8E4848).
-\definecolor{akzenthell}{HTML}{F5ECEE}
+%% Der Balken der bisherigen Rechnung war ein gedämpftes #8E4848. Hier steht
+%% bewusst das Rot der Webseite – kräftiger, dafür markenrichtig.
+\definecolor{akzentalt}{HTML}{8E4848}
 \definecolor{haupttext}{HTML}{1C1C1E}
 \definecolor{gedaempft}{HTML}{5C5C62}
 \definecolor{linie}{HTML}{C9C9CF}
@@ -75,12 +74,12 @@
 %% ------------------------------------------------------------------ Kopf
 %% Ohne Trennlinie und ohne Farbe: Der Briefkopf soll nicht mit dem
 %% Titelbalken um die Aufmerksamkeit konkurrieren.
-\begin{minipage}[t]{0.52\linewidth}\raggedright
+\begin{minipage}[t]{0.48\linewidth}\raggedright
   {\large\bfseries <<FIRMA>>}\\[1mm]
   {\small\color{gedaempft}<<INHABER>>}
 \end{minipage}%
 \hfill
-\begin{minipage}[t]{0.44\linewidth}
+\begin{minipage}[t]{0.48\linewidth}
   \raggedleft\small\color{gedaempft}
   <<ABSENDER_KONTAKT>>
 \end{minipage}
@@ -104,12 +103,12 @@
 %% ---------------------------------------------------------- Titel (Blickfang)
 %% Das einzige Flächenelement der Seite. Nummer links, Datum rechts – wie auf
 %% der bisherigen Rechnung, damit beide Angaben zusammen gelesen werden.
-\noindent\colorbox{akzenthell}{%
+\noindent\colorbox{akzent}{%
   \begin{minipage}{\dimexpr\linewidth-2\fboxsep\relax}
-    \vspace{1.5mm}
-    {\large\bfseries\color{akzent}Rechnung <<RECHNUNGSNUMMER>>}\hfill
-    {\large\color{akzent}<<RECHNUNGSDATUM>>}
-    \vspace{1.5mm}
+    \vspace{1.8mm}
+    {\large\bfseries\color{white}Rechnung <<RECHNUNGSNUMMER>>}\hfill
+    {\large\bfseries\color{white}<<RECHNUNGSDATUM>>}
+    \vspace{1.8mm}
   \end{minipage}}
 
 \vspace{4mm}
