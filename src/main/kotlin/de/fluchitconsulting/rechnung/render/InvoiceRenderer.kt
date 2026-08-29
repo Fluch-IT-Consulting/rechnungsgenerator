@@ -28,7 +28,6 @@ object InvoiceRenderer {
                 "INHABER" to config.ownerName.escapeLatex(),
                 "KOPF_PERSON" to letterheadPerson(config),
                 "ABSENDER_KONTAKT" to senderContact(config),
-                "RUECKSENDEZEILE" to returnAddressLine(config),
                 "EMPFAENGER" to recipient(invoice),
                 "VERTRETUNG" to representation(config),
                 "METADATEN" to metadata(invoice, totals),
@@ -67,27 +66,16 @@ object InvoiceRenderer {
         """.trimIndent()
 
     /**
-     * Der Kontaktblock im Briefkopf. Straße und Ort stehen zusammen in einer
-     * Zeile, damit der Block nicht fünf unterschiedlich lange Zeilen bekommt.
-     *
-     * Die E-Mail bleibt unbeschriftet – das @ sagt bereits, was sie ist, und
-     * ein Präfix macht die ohnehin längste Zeile des Blocks noch länger.
-     * Die Webseite bekommt dagegen ein "Web": Ohne das stehen zwei Zeilen mit
-     * derselben Domain untereinander und lesen sich wie eine Wiederholung.
+     * Der Kontaktblock im Briefkopf: Anschrift und Telefon. E-Mail und Webseite
+     * stehen bewusst nicht mehr darin – sie machten den Block zu einer Kolonne
+     * ungleich langer Zeilen, und wer die Rechnung per Mail bekommt, hat die
+     * Adresse ohnehin.
      */
     private fun senderContact(config: SellerConfig): String =
         buildList {
             add("${config.address.street} · ${config.address.postalCode} ${config.address.city}".escapeLatex())
             config.phone?.let { add("Tel. ${it.escapeLatex()}") }
-            add(config.email.escapeLatex())
-            config.website?.let { add("Web ${it.removePrefix("https://").removePrefix("http://").escapeLatex()}") }
         }.joinToString(BR)
-
-    /** Die kleine Zeile über dem Empfänger, wie sie im Sichtfenster erscheint. */
-    private fun returnAddressLine(config: SellerConfig): String =
-        listOf(config.companyName, config.address.street, "${config.address.postalCode} ${config.address.city}")
-            .joinToString(" · ")
-            .escapeLatex()
 
     private fun recipient(invoice: Invoice): String =
         buildList {

@@ -69,6 +69,8 @@
 
 %% Kleine, gesperrte Versalien – dasselbe Stilmittel wie im Lebenslauf.
 %% \rubrik statt \label, das ist in LaTeX vergeben.
+\newlength{\balkenhoehe}
+
 \newcommand{\rubrik}[1]{{\footnotesize\color{gedaempft}\addfontfeature{LetterSpace=14}\MakeUppercase{#1}}}
 
 \begin{document}
@@ -88,9 +90,10 @@
 \vspace{16mm}
 
 %% ----------------------------------------------------------- Empfängerfeld
+%% Ohne Rücksendezeile: Die Rechnung wird als PDF versandt, nie im
+%% Fensterumschlag. Die Zeile hätte dort keine Funktion mehr.
 %% Rechts daneben die Vertretungsangabe – dort stand sie auch bisher.
 \begin{minipage}[t]{0.62\linewidth}\raggedright
-  {\scriptsize\color{gedaempft}<<RUECKSENDEZEILE>>}\\[3mm]
   <<EMPFAENGER>>
 \end{minipage}%
 \hfill
@@ -105,15 +108,18 @@
 %% Das einzige Flächenelement der Seite. Nummer links, Datum rechts – wie auf
 %% der bisherigen Rechnung, damit beide Angaben zusammen gelesen werden.
 %% \fboxsep steuert den Innenabstand des \colorbox – waagerecht wie senkrecht.
-%% Nachgemessen: Der Balken der bisherigen Rechnung ist 6,0 mm hoch; mit
-%% \vspace darin kam der hier auf 9,7 mm. Der Wert ist lokal gesetzt, damit er
-%% keine anderen Boxen im Dokument verändert.
-{\setlength{\fboxsep}{1.1mm}%
+%% Nachgemessen: Der Balken der bisherigen Rechnung ist 6,0 mm hoch.
+%%
+%% \raisebox erzwingt Höhe = Ziffernhöhe und Tiefe = 0. Ohne das richtet sich
+%% die Boxhöhe nach dem tatsächlichen Text: Die Unterlänge des "g" in "August"
+%% macht den Balken unten dicker als oben. Jetzt liegt die Unterlänge im
+%% Innenabstand, und die Ziffern haben oben wie unten denselben Abstand.
+{\setlength{\fboxsep}{1.4mm}%
+\settoheight{\balkenhoehe}{\large\bfseries 0}%
 \noindent\colorbox{akzent}{%
-  \begin{minipage}{\dimexpr\linewidth-2\fboxsep\relax}
-    {\large\bfseries\color{white}Rechnung <<RECHNUNGSNUMMER>>}\hfill
-    {\large\bfseries\color{white}<<RECHNUNGSDATUM>>}
-  \end{minipage}}}
+  \raisebox{0pt}[\balkenhoehe][0pt]{%
+    \makebox[\dimexpr\linewidth-2\fboxsep\relax][s]{%
+      \large\bfseries\color{white}Rechnung <<RECHNUNGSNUMMER>>\hfill <<RECHNUNGSDATUM>>}}}}
 
 \vspace{4mm}
 
