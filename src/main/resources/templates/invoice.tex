@@ -1,6 +1,10 @@
 %% Rechnungsvorlage – wird vom InvoiceRenderer gefüllt.
 %% Platzhalter haben die Form <<NAME>> und werden vollständig ersetzt.
-%% Gestaltung: TeX Gyre Heros wie im Lebenslauf, Akzentfarbe wie auf der Webseite.
+%%
+%% Gestaltungsprinzip: EIN Blickfang (der Titelbalken), sonst ruhiger Textfluss.
+%% Linien gibt es nur dort, wo sie Zahlen gliedern – nicht als Seitenraster.
+%% Gesperrte Versalien (das Stilmittel des Lebenslaufs) kommen genau einmal vor,
+%% als Spaltenkopf der Positionstabelle.
 \documentclass[11pt,a4paper]{article}
 
 %% pdfx erzeugt das PDF/A-1b: XMP-Metadaten, OutputIntent mit sRGB-Profil und
@@ -28,16 +32,20 @@
 
 %% Farben von fluch-it-consulting.de
 \definecolor{akzent}{HTML}{8B1A2B}
+%% Der Titelbalken nimmt den Akzent nur als helle Tönung auf. Ein vollflächiges
+%% #8B1A2B wäre auf einer sonst weißen Seite deutlich lauter als der bräunliche
+%% Balken der alten Rechnung (#8E4848).
+\definecolor{akzenthell}{HTML}{F5ECEE}
 \definecolor{haupttext}{HTML}{1C1C1E}
 \definecolor{gedaempft}{HTML}{5C5C62}
-\definecolor{linie}{HTML}{E2E2E6}
+\definecolor{linie}{HTML}{C9C9CF}
 
-%% Tabellenlinien global in der hellen Grautönung. Muss AUSSERHALB der Tabelle
-%% stehen: Mitten im Tabellenkörper eröffnet \arrayrulecolor eine neue Zelle,
-%% und das \noalign von \midrule landet dann an der falschen Stelle.
+%% Tabellenlinien global. Muss AUSSERHALB der Tabelle stehen: Mitten im
+%% Tabellenkörper eröffnet \arrayrulecolor eine neue Zelle, und das \noalign
+%% von \midrule landet dann an der falschen Stelle.
 \arrayrulecolor{linie}
 
-\geometry{a4paper, left=25mm, right=20mm, top=18mm, bottom=20mm}
+\geometry{a4paper, left=25mm, right=20mm, top=18mm, bottom=16mm}
 
 \color{haupttext}
 \setlength{\parindent}{0pt}
@@ -58,47 +66,58 @@
 %% Ein \AtBeginEnvironment-Hook hilft nicht, weil \@parboxrestore erst danach
 %% läuft. Deshalb steht \raggedright unten in jeder Minipage mit Fließtext.
 
-%% Kleine, gesperrte Versalien als Rubrik – dasselbe Stilmittel wie im Lebenslauf
-%% ("STANDORT", "VERFÜGBARKEIT"). \rubrik statt \label, das ist in LaTeX vergeben.
+%% Kleine, gesperrte Versalien – dasselbe Stilmittel wie im Lebenslauf.
+%% \rubrik statt \label, das ist in LaTeX vergeben.
 \newcommand{\rubrik}[1]{{\footnotesize\color{gedaempft}\addfontfeature{LetterSpace=14}\MakeUppercase{#1}}}
-
-%% Dünne Trennlinie in der hellen Grautönung der Webseite.
-\newcommand{\trennlinie}{\textcolor{linie}{\rule{\linewidth}{0.4pt}}}
 
 \begin{document}
 
 %% ------------------------------------------------------------------ Kopf
-\begin{minipage}[t]{0.55\linewidth}\raggedright
-  {\Large\bfseries\color{akzent}<<FIRMA>>}\\[1.5mm]
+%% Ohne Trennlinie und ohne Farbe: Der Briefkopf soll nicht mit dem
+%% Titelbalken um die Aufmerksamkeit konkurrieren.
+\begin{minipage}[t]{0.52\linewidth}\raggedright
+  {\large\bfseries <<FIRMA>>}\\[1mm]
   {\small\color{gedaempft}<<INHABER>>}
 \end{minipage}%
 \hfill
-\begin{minipage}[t]{0.40\linewidth}
+\begin{minipage}[t]{0.44\linewidth}
   \raggedleft\small\color{gedaempft}
   <<ABSENDER_KONTAKT>>
 \end{minipage}
 
-\vspace{6mm}
-\trennlinie
-\vspace{10mm}
+\vspace{16mm}
 
-%% -------------------------------------------------- Empfänger + Metadaten
-\begin{minipage}[t]{0.55\linewidth}\raggedright
-  {\scriptsize\color{gedaempft}<<RUECKSENDEZEILE>>}\\[4mm]
+%% ----------------------------------------------------------- Empfängerfeld
+%% Rechts daneben die Vertretungsangabe – dort stand sie auch bisher.
+\begin{minipage}[t]{0.62\linewidth}\raggedright
+  {\scriptsize\color{gedaempft}<<RUECKSENDEZEILE>>}\\[3mm]
   <<EMPFAENGER>>
 \end{minipage}%
 \hfill
-\begin{minipage}[t]{0.40\linewidth}
-  \raggedleft
-  <<METADATEN>>
+\begin{minipage}[t]{0.34\linewidth}
+  \raggedleft\small\color{gedaempft}
+  <<VERTRETUNG>>
 \end{minipage}
 
-\vspace{14mm}
+\vspace{18mm}
 
-%% ------------------------------------------------------------------ Titel
-{\Large\bfseries\color{akzent}Rechnung <<RECHNUNGSNUMMER>>}
+%% ---------------------------------------------------------- Titel (Blickfang)
+%% Das einzige Flächenelement der Seite. Nummer links, Datum rechts – wie auf
+%% der bisherigen Rechnung, damit beide Angaben zusammen gelesen werden.
+\noindent\colorbox{akzenthell}{%
+  \begin{minipage}{\dimexpr\linewidth-2\fboxsep\relax}
+    \vspace{1.5mm}
+    {\large\bfseries\color{akzent}Rechnung <<RECHNUNGSNUMMER>>}\hfill
+    {\large\color{akzent}<<RECHNUNGSDATUM>>}
+    \vspace{1.5mm}
+  \end{minipage}}
 
-\vspace{8mm}
+\vspace{4mm}
+
+%% Pflicht- und Zusatzangaben, bewusst klein und ohne eigene Beschriftungsspalte.
+{\small\color{gedaempft}<<METADATEN>>}
+
+\vspace{9mm}
 
 %% --------------------------------------------------------------- Positionen
 \begin{tabularx}{\linewidth}{@{}>{\raggedright\arraybackslash}X r@{\hspace{1.5mm}}l r r@{}}
@@ -109,48 +128,51 @@
 <<POSITIONEN>>
 \end{tabularx}
 
-\vspace{4mm}
+\vspace{5mm}
 
 %% ------------------------------------------------------------------ Summen
 \hfill
-\begin{minipage}{0.5\linewidth}
+\begin{minipage}{0.55\linewidth}
   \begin{tabularx}{\linewidth}{@{}>{\raggedright\arraybackslash}X r@{}}
 <<SUMMEN>>
   \end{tabularx}
 \end{minipage}
 
-\vspace{10mm}
+\vspace{11mm}
 
-%% ------------------------------------------------------- Zahlungsbedingungen
+%% ------------------------------------------------------- Zahlung und Schluss
 <<ZAHLUNGSHINWEIS>>
-
-\vspace{6mm}
-
-<<SCHLUSSSATZ>>
-
-\vspace{4mm}
-
-Mit freundlichen Grüßen\\[6mm]
-<<INHABER>>
-
-\vfill
-
-%% ---------------------------------------------------------- Bankverbindung
-\trennlinie
-\vspace{3mm}
-
-\begin{minipage}[t]{0.48\linewidth}\raggedright
-  \rubrik{Bankverbindung}\\[2mm]
-  {\small <<BANKVERBINDUNG>>}
-\end{minipage}%
-\hfill
-\begin{minipage}[t]{0.48\linewidth}\raggedright
-  \rubrik{Steuerliche Angaben}\\[2mm]
-  {\small <<STEUERANGABEN>>}
-\end{minipage}
 
 \vspace{5mm}
 
-{\centering\scriptsize\color{gedaempft}<<FUSSZEILE>>\par}
+<<SCHLUSSSATZ>>
+
+\vspace{5mm}
+
+Mit freundlichen Grüßen\\[7mm]
+<<INHABER>>
+
+\vspace{9mm}
+
+%% ---------------------------------------------------------- Bankverbindung
+%% Im Textfluss, linksbündig, mit schlichter Beschriftung – wie auf der
+%% bisherigen Rechnung. Kein Kasten, keine Linie, keine Versalien.
+{\bfseries Bankverbindung}\\[1.5mm]
+<<BANKVERBINDUNG>>
+
+\vfill
+
+%% ------------------------------------------------------------------ Fußzeile
+%% Zwei zentrierte Zeilen ohne Trennlinie darüber, wie auf der bisherigen
+%% Rechnung: erst die gesellschaftsrechtlichen Angaben (§35a GmbHG),
+%% dann die steuerlichen und die Bankverbindung.
+%% Etwas breiter als der Satzspiegel, damit beide Zeilen einzeilig bleiben –
+%% umbrechende Fußzeilen sehen nach Versehen aus.
+\noindent\hspace*{-9mm}%
+\begin{minipage}{\dimexpr\linewidth+18mm\relax}
+  {\centering\scriptsize\color{gedaempft}
+  <<FUSSZEILE_OBEN>>\\
+  <<FUSSZEILE_UNTEN>>\par}
+\end{minipage}
 
 \end{document}

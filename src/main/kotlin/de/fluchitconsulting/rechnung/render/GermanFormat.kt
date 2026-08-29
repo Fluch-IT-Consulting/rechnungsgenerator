@@ -51,6 +51,19 @@ object GermanFormat {
     /** Ausgeschriebenes Datum: `14. August 2026` */
     fun date(date: LocalDate): String = DateTimeFormatter.ofPattern("d. MMMM yyyy", Locale.GERMANY).format(date)
 
+    /**
+     * Leistungszeitraum in der kürzesten korrekten Form. Deckt er genau einen
+     * Kalendermonat ab, genügt dessen Nennung – §31 Abs. 4 UStDV lässt den
+     * Kalendermonat als Angabe des Leistungszeitpunkts ausdrücklich zu, und
+     * "Juli 2026" liest sich besser als "01.07.2026–31.07.2026".
+     */
+    fun servicePeriod(start: LocalDate, end: LocalDate): String =
+        if (start.dayOfMonth == 1 && end == end.withDayOfMonth(end.lengthOfMonth()) && start.withDayOfMonth(1) == end.withDayOfMonth(1)) {
+            DateTimeFormatter.ofPattern("MMMM yyyy", Locale.GERMANY).format(start)
+        } else {
+            "${shortDate(start)}\u2009–\u2009${shortDate(end)}"
+        }
+
     /** Kurzes Datum für Zeiträume: `01.07.2026` */
     fun shortDate(date: LocalDate): String = DateTimeFormatter.ofPattern("dd.MM.yyyy", Locale.GERMANY).format(date)
 }

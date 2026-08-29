@@ -29,15 +29,17 @@ object InvoiceRenderer {
                 "ABSENDER_KONTAKT" to senderContact(config),
                 "RUECKSENDEZEILE" to returnAddressLine(config),
                 "EMPFAENGER" to recipient(invoice),
+                "VERTRETUNG" to representation(config),
                 "METADATEN" to metadata(invoice, totals),
                 "RECHNUNGSNUMMER" to invoice.number.escapeLatex(),
+                "RECHNUNGSDATUM" to GermanFormat.date(invoice.issueDate),
                 "POSITIONEN" to lineItems(totals),
                 "SUMMEN" to totalsBlock(totals),
                 "ZAHLUNGSHINWEIS" to paymentNote(totals),
                 "SCHLUSSSATZ" to (invoice.note ?: config.closingLine).escapeLatex(),
                 "BANKVERBINDUNG" to bankDetails(config),
-                "STEUERANGABEN" to taxDetails(config),
-                "FUSSZEILE" to footer(config),
+                "FUSSZEILE_OBEN" to footerCompanyLine(config),
+                "FUSSZEILE_UNTEN" to footerTaxAndBankLine(config),
             )
 
         // fold statt einer Schleife mit var: Jeder Schritt ersetzt einen
@@ -93,17 +95,19 @@ object InvoiceRenderer {
             if (address.countryCode != "DE") add(address.countryCode.escapeLatex())
         }
 
-    private fun metadata(invoice: Invoice, totals: InvoiceTotals): String {
-        val period = invoice.servicePeriod
-        val rows =
-            buildList {
-                add("Rechnungsdatum" to GermanFormat.date(invoice.issueDate))
-                add("Leistungszeitraum" to "${GermanFormat.shortDate(period.start)}–${GermanFormat.shortDate(period.end)}")
-                add("Fällig am" to GermanFormat.date(totals.dueDate))
-                invoice.customer.buyerReference?.let { add("Ihre Referenz" to it.escapeLatex()) }
-            }
-        return rows.joinToString(BR) { (label, value) -> "\\rubrik{$label}\\\\ $value" }
-    }
+    /**
+     * Die Angaben, die weder in den Balken noch in die Tabelle passen. Bewusst
+     * als schlichte "Label: Wert"-Zeilen statt als beschriftete Spalte – der
+     * frühere Block mit gesperrten Versalien hat oben rechts zu viel Unruhe
+     * erzeugt. Das Rechnungsdatum steht jetzt im Titelbalken.
+     */
+    private fun metadata(invoice: Invoice, totals: InvoiceTotals): String =
+        buildList {
+            // Pflichtangabe nach §14 Abs. 4 Nr. 6 UStG.
+            add("Leistungszeitraum: ${GermanFormat.servicePeriod(invoice.servicePeriod.start, invoice.servicePeriod.end)}")
+            invoice.customer.buyerReference?.let { add("Ihre Referenz: ${it.escapeLatex()}") }
+            add("Zahlbar bis ${GermanFormat.date(totals.dueDate)}")
+        }.joinToString(BR)
 
     // Die Zeilen werden mit \\ VERBUNDEN, nicht damit abgeschlossen: Ein
     // Umbruch hinter der letzten Zeile erzeugt in LaTeX eine leere Extrazeile.
@@ -140,10 +144,10 @@ object InvoiceRenderer {
 
     private fun bankDetails(config: SellerConfig): String =
         listOf(
-            config.bank.accountHolder.escapeLatex(),
-            config.bank.bankName.escapeLatex(),
-            "IBAN ${config.bank.iban}".escapeLatex(),
-            "BIC ${config.bank.bic}".escapeLatex(),
+            "Kontoinhaber: ${config.bank.accountHolder.escapeLatex()}",
+            "Institut: ${config.bank.bankName.escapeLatex()}",
+            "IBAN: ${config.bank.iban.escapeLatex()}",
+            "BIC: ${config.bank.bic.escapeLatex()}",
         ).joinToString(BR)
 
     private fun taxDetails(config: SellerConfig): String =
@@ -152,14 +156,35 @@ object InvoiceRenderer {
             add("USt-IdNr. ${config.vatId.escapeLatex()}")
         }.joinToString(BR)
 
-    /** Die Pflichtangaben nach §35a GmbHG bzw. §14 UStG, als eine gesetzte Zeile. */
-    private fun footer(config: SellerConfig): String =
+    /**
+     * Die Vertretungsangabe neben dem Empfängerfeld. "Geschäftsführung" statt
+     * "Geschäftsführer": Die Bezeichnung steht neben einem Namen, dessen
+     * Geschlecht die Konfiguration nicht kennt.
+     */
+    private fun representation(config: SellerConfig): String =
+        config.managingDirector?.let { "Geschäftsführung$BR${it.escapeLatex()}" } ?: ""
+
+    /** Erste Fußzeile: Firmierung, Sitz und die Angaben nach §35a GmbHG. */
+    private fun footerCompanyLine(config: SellerConfig): String =
         buildList {
             add(config.companyName.escapeLatex())
-            config.managingDirector?.let { add("Geschäftsführer: ${it.escapeLatex()}") }
+            add("${config.address.street}, ${config.address.postalCode} ${config.address.city}".escapeLatex())
+            // Die Geschäftsführung steht oben neben dem Empfänger, nicht hier:
+            // Sonst bricht diese Zeile um, und §35a GmbHG verlangt nur, dass die
+            // Angabe auf dem Geschäftsbrief steht – nicht, dass sie im Fuß steht.
             config.registerCourt?.let { court ->
-                val number = config.registerNumber?.let { " ${it.escapeLatex()}" } ?: ""
+                val number = config.registerNumber?.let { ", ${it.escapeLatex()}" } ?: ""
                 add("Registergericht ${court.escapeLatex()}$number")
             }
+        }.joinToString(" · ")
+
+    /** Zweite Fußzeile: steuerliche Angaben und Bankverbindung, wie bisher gewohnt. */
+    private fun footerTaxAndBankLine(config: SellerConfig): String =
+        buildList {
+            config.taxNumber?.let { add("Steuernummer ${it.escapeLatex()}") }
+            add("USt-IdNr. ${config.vatId.escapeLatex()}")
+            add(config.bank.bankName.escapeLatex())
+            add("BIC ${config.bank.bic.escapeLatex()}")
+            add("IBAN ${config.bank.iban.escapeLatex()}")
         }.joinToString(" · ")
 }

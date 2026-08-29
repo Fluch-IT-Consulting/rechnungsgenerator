@@ -54,6 +54,19 @@ class GermanFormatTest : FunSpec({
         }
     }
 
+    test("Leistungszeitraum: ganzer Monat wird zum Monatsnamen") {
+        assertSoftly {
+            GermanFormat.servicePeriod(LocalDate.of(2026, 7, 1), LocalDate.of(2026, 7, 31)) shouldBe "Juli 2026"
+            // Februar hat 28 Tage – die Monatslänge muss berechnet, nicht geraten werden.
+            GermanFormat.servicePeriod(LocalDate.of(2026, 2, 1), LocalDate.of(2026, 2, 28)) shouldBe "Februar 2026"
+            // Teilmonat und monatsübergreifend bleiben ein Datumsbereich.
+            GermanFormat.servicePeriod(LocalDate.of(2026, 7, 1), LocalDate.of(2026, 7, 15)) shouldBe
+                "01.07.2026\u2009–\u200915.07.2026"
+            GermanFormat.servicePeriod(LocalDate.of(2026, 7, 1), LocalDate.of(2026, 8, 31)) shouldBe
+                "01.07.2026\u2009–\u200931.08.2026"
+        }
+    }
+
     test("Datumsangaben") {
         assertSoftly {
             GermanFormat.date(LocalDate.of(2026, 8, 14)) shouldBe "14. August 2026"
