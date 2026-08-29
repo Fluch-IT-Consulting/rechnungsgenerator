@@ -1,0 +1,21 @@
+# Gradle Version Catalog: alle Abhängigkeiten und Versionen an einer Stelle.
+# In build.gradle.kts wird daraus typsicher z. B. libs.kaml bzw. libs.plugins.kotlin.jvm.
+
+[versions]
+kotlin = "2.4.10"
+kaml = "0.83.0"          # YAML-Parser auf Basis von kotlinx.serialization
+clikt = "5.0.3"          # CLI-Framework (Kommandos, Optionen, Hilfe-Texte)
+junit = "6.1.3"
+ktlintPlugin = "14.2.0"  # Gradle-Plugin; die eigentliche ktlint-Version managt das Plugin
+
+[libraries]
+kaml = { module = "com.charleskorn.kaml:kaml", version.ref = "kaml" }
+clikt = { module = "com.github.ajalt.clikt:clikt", version.ref = "clikt" }
+kotlin-test = { module = "org.jetbrains.kotlin:kotlin-test", version.ref = "kotlin" }
+junit-jupiter = { module = "org.junit.jupiter:junit-jupiter", version.ref = "junit" }
+junit-platform-launcher = { module = "org.junit.platform:junit-platform-launcher", version.ref = "junit" }
+
+[plugins]
+kotlin-jvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }
+kotlin-serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }
+ktlint = { id = "org.jlleitschuh.gradle.ktlint", version.ref = "ktlintPlugin" }
