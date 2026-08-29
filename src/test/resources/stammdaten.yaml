@@ -1,0 +1,19 @@
+# Fiktive Stammdaten – strukturgleich zu echten Daten, aber ohne Echtdaten.
+# IBAN ist die offizielle Beispiel-IBAN, USt-ID und BIC sind erfunden.
+firma: Muster IT-Consulting
+inhaber: Dr. Erika Musterfrau
+anschrift:
+  strasse: Beispielweg 42
+  plz: "97070"
+  ort: Würzburg
+email: rechnung@muster-it-consulting.example
+telefon: "+49 931 1234567"
+webseite: https://muster-it-consulting.example
+steuernummer: 257/123/45678
+umsatzsteuer-id: DE123456789
+bank:
+  kontoinhaber: Dr. Erika Musterfrau
+  iban: DE89 3704 0044 0532 0130 00
+  bic: MUSTDEFFXXX
+  institut: Musterbank
+zahlungsziel-tage: 14
