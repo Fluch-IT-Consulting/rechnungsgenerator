@@ -34,7 +34,6 @@ object InvoiceRenderer {
                 "RECHNUNGSDATUM" to GermanFormat.date(invoice.issueDate),
                 "POSITIONEN" to lineItems(totals),
                 "SUMMEN" to totalsBlock(totals),
-                "ZAHLUNGSHINWEIS" to paymentNote(totals),
                 "SCHLUSSSATZ" to (invoice.note ?: config.closingLine).escapeLatex(),
                 "BANKVERBINDUNG" to bankDetails(config),
                 "FUSSZEILE_OBEN" to footerCompanyLine(config),
@@ -103,7 +102,10 @@ object InvoiceRenderer {
             // Pflichtangabe nach §14 Abs. 4 Nr. 6 UStG.
             add("Leistungszeitraum: ${GermanFormat.servicePeriod(invoice.servicePeriod.start, invoice.servicePeriod.end)}")
             invoice.customer.buyerReference?.let { add("Ihre Referenz: ${it.escapeLatex()}") }
-            add("Zahlbar bis ${GermanFormat.date(totals.dueDate)}")
+            // "ohne Abzug" stand bisher im Zahlungssatz unter den Summen. Der Satz
+            // ist entfallen, weil er das Fälligkeitsdatum ein zweites Mal nannte –
+            // der Hinweis, dass kein Skonto gewährt wird, gehört aber erhalten.
+            add("Zahlbar ohne Abzug bis ${GermanFormat.date(totals.dueDate)}")
         }.joinToString(BR)
 
     // Die Zeilen werden mit \\ VERBUNDEN, nicht damit abgeschlossen: Ein
@@ -134,10 +136,6 @@ object InvoiceRenderer {
         }.joinToString(" $BR[1mm]\n") { (label, value) -> "  $label & $value" } +
             " $BR\n  \\midrule\n" +
             "  \\textbf{Gesamtbetrag} & \\textbf{${GermanFormat.amountWithCurrency(totals.grossTotal)}}"
-
-    private fun paymentNote(totals: InvoiceTotals): String =
-        "Bitte überweisen Sie den Gesamtbetrag bis zum " +
-            "\\textbf{${GermanFormat.date(totals.dueDate)}} ohne Abzug auf das unten genannte Konto."
 
     private fun bankDetails(config: SellerConfig): String =
         listOf(
