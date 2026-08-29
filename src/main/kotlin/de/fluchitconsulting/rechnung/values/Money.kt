@@ -14,9 +14,14 @@ import java.math.RoundingMode
 /**
  * Geldbetrag als Value Object. Intern immer auf 2 Nachkommastellen normalisiert
  * (kaufmännisch, HALF_UP) – die Rundungsregel wohnt damit im Typ, nicht in den Aufrufern.
+ * Das entspricht den EN-16931-Regeln BR-DEC-*, die für alle Betragsfelder genau zwei
+ * Nachkommastellen vorschreiben.
  *
- * Übernommen aus dem CreditCalculator2-Projekt; hier ergänzt um die Multiplikation
- * mit einer Menge und die kotlinx-Serialisierung für die YAML-Eingabedateien.
+ * Für Werte, die *nicht* gerundet werden dürfen – allen voran der Einzelpreis
+ * (BT-146) – gibt es [Price]. Der Weg von dort hierher heißt [Price.roundToAmount].
+ *
+ * Übernommen aus dem CreditCalculator2-Projekt und dort inhaltlich unverändert:
+ * derselbe Name bedeutet in beiden Projekten dasselbe.
  */
 @Serializable(with = MoneySerializer::class)
 class Money(value: BigDecimal) : Comparable<Money> {
@@ -25,18 +30,19 @@ class Money(value: BigDecimal) : Comparable<Money> {
     constructor(value: String) : this(BigDecimal(value))
 
     // --- Arithmetik (Operatoren: +, -, *) -------------------------------------
-    // Bewusst KEIN times(Money): Betrag × Betrag ist fachlich sinnlos und soll
-    // nicht kompilieren. Erlaubt sind nur Betrag × Prozent und Betrag × Menge.
+    // Zwei Operationen fehlen hier bewusst und sollen nicht kompilieren:
+    //   Betrag × Betrag  – fachlich sinnlos.
+    //   Betrag × Menge   – wäre der Schleichweg an [Price] vorbei: Der Einzelpreis
+    //                      wäre schon auf Cent gerundet, bevor die Menge ihn
+    //                      vervielfacht. Bei 0,335 € × 1000 sind das 5 € Fehler.
 
     operator fun plus(other: Money): Money = Money(value.add(other.value))
 
     operator fun minus(other: Money): Money = Money(value.subtract(other.value))
 
+    // Betrag × Steuersatz: Das Ergebnis ist selbst wieder ein Betrag (BT-117, die
+    // USt. je Steuersatz) und darf deshalb gerundet werden.
     operator fun times(percent: Percent): Money = Money(value.multiply(percent.valueAsMultiplier))
-
-    // Menge × Einzelpreis (z. B. 86.5 Std × 95,00 €). Die nackte BigDecimal steht
-    // für die dimensionslose Menge; das Ergebnis normalisiert der Konstruktor.
-    operator fun times(quantity: BigDecimal): Money = Money(value.multiply(quantity))
 
     // --- Prädikate ------------------------------------------------------------
 

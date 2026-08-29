@@ -73,17 +73,8 @@ class MoneyTest : FunSpec({
         }
     }
 
-    context("Multiplikation mit Menge (BigDecimal)") {
-        test("Menge × Einzelpreis, kaufmännisch gerundet") {
-            assertSoftly {
-                // Der Kernfall der Rechnung: Stunden × Stundensatz.
-                Money("95.00") * BigDecimal("86.5") shouldBe Money("8217.50")
-                // 1.25 × 98.99 = 123.7375 -> 123.74
-                Money("98.99") * BigDecimal("1.25") shouldBe Money("123.74")
-            }
-        }
-        test("Menge 1 ist neutral") { checkAll(money) { a -> a * BigDecimal.ONE shouldBe a } }
-    }
+    // Money × Menge gibt es bewusst nicht – das ist Sache von Price, siehe PriceTest.
+    // Ein Test dafür kann hier nicht stehen: Er würde schlicht nicht kompilieren.
 
     context("Summen-Extensions") {
         test("sumOf über eine Liste") {

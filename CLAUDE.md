@@ -16,7 +16,18 @@ CV/Web-Auftritt des Autors), Validierung über veraPDF.
 
 - **Eingabe**: YAML (kaml/kotlinx.serialization). Zwei Dateien: Stammdaten-Config
   (auf jeder Rechnung gleich) + rechnungsspezifische Datei.
-- **Geldbeträge**: ausschließlich `BigDecimal`, niemals Float/Double.
+- **Geldwerte**: ausschließlich `BigDecimal`, niemals Float/Double. Zwei
+  gleichrangige Value Objects, die die Grenze der EN 16931 abbilden:
+  - `Price` – exakt, rundet nie. Für Einzelpreise (BT-146), wo die Norm beliebig
+    viele Nachkommastellen erlaubt.
+  - `Money` – auf zwei Nachkommastellen normalisiert. Für alle Betragsfelder,
+    die die Regeln BR-DEC-* auf zwei Stellen festlegen (BT-131 und Folgende).
+
+  Der einzige Übergang ist `Price.roundToAmount()`; der Compiler erzwingt ihn.
+  Bewusst **keine** Vererbung zwischen beiden – eine Unterklasse würde die
+  Symmetrie von `equals` brechen. Ebenso bewusst fehlen `Money × Menge`
+  (Schleichweg an `Price` vorbei) und `Money × Money` (fachlich sinnlos).
+
   Berechnungen (Summen, USt., Fälligkeit) im Kotlin-Code, nie im Template.
 - **Ausgabe**: PDF/A-1b via LuaLaTeX + `pdfx`-Paket. Externe Tools (lualatex,
   verapdf) werden im PATH erwartet; beim Start prüfen und klar melden.
