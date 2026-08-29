@@ -78,11 +78,15 @@
 %% ------------------------------------------------------------------ Kopf
 %% Ohne Trennlinie und ohne Farbe: Der Briefkopf soll nicht mit dem
 %% Titelbalken um die Aufmerksamkeit konkurrieren.
-\begin{minipage}[t]{0.48\linewidth}\raggedright
+%% 0.59/0.39: Nachgemessen braucht der Firmenname bei \large\bfseries 93,8 mm
+%% und die E-Mail bei \small 62,8 mm – bei 165 mm Textbreite sind das 0,57 und
+%% 0,38. Die Aufteilung ist also knapp bemessen; ein deutlich längerer
+%% Firmenname bricht wieder um.
+\begin{minipage}[t]{0.59\linewidth}\raggedright
   {\large\bfseries <<FIRMA>>}<<KOPF_PERSON>>
 \end{minipage}%
 \hfill
-\begin{minipage}[t]{0.48\linewidth}
+\begin{minipage}[t]{0.39\linewidth}
   \raggedleft\small\color{gedaempft}
   <<ABSENDER_KONTAKT>>
 \end{minipage}
@@ -175,13 +179,10 @@ Mit freundlichen Grüßen\\[7mm]
 %% Zwei zentrierte Zeilen ohne Trennlinie darüber, wie auf der bisherigen
 %% Rechnung: erst die gesellschaftsrechtlichen Angaben (§35a GmbHG),
 %% dann die steuerlichen und die Bankverbindung.
-%% Etwas breiter als der Satzspiegel, damit beide Zeilen einzeilig bleiben –
-%% umbrechende Fußzeilen sehen nach Versehen aus.
-\noindent\hspace*{-9mm}%
-\begin{minipage}{\dimexpr\linewidth+18mm\relax}
-  {\centering\scriptsize\color{gedaempft}
-  <<FUSSZEILE_OBEN>>\\
-  <<FUSSZEILE_UNTEN>>\par}
-\end{minipage}
+%% Beide Zeilen passen in den Satzspiegel (nachgemessen 152 mm bzw. 138 mm bei
+%% 165 mm Breite), deshalb ohne den früheren Trick mit negativem \hspace.
+{\centering\scriptsize\color{gedaempft}
+<<FUSSZEILE_OBEN>>\\
+<<FUSSZEILE_UNTEN>>\par}
 
 \end{document}

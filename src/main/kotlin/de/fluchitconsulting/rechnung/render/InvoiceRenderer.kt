@@ -66,15 +66,16 @@ object InvoiceRenderer {
         """.trimIndent()
 
     /**
-     * Der Kontaktblock im Briefkopf: Anschrift und Telefon. E-Mail und Webseite
-     * stehen bewusst nicht mehr darin – sie machten den Block zu einer Kolonne
-     * ungleich langer Zeilen, und wer die Rechnung per Mail bekommt, hat die
-     * Adresse ohnehin.
+     * Der Kontaktblock im Briefkopf: Anschrift, Telefon, E-Mail. Die Webseite
+     * steht bewusst nicht darin – sie wiederholte nur die Domain der E-Mail und
+     * ließ den Block wie eine Dopplung aussehen. Die E-Mail selbst gehört
+     * hierher: Rückfragen zu einer Rechnung kommen meist schriftlich.
      */
     private fun senderContact(config: SellerConfig): String =
         buildList {
             add("${config.address.street} · ${config.address.postalCode} ${config.address.city}".escapeLatex())
             config.phone?.let { add("Tel. ${it.escapeLatex()}") }
+            add(config.email.escapeLatex())
         }.joinToString(BR)
 
     private fun recipient(invoice: Invoice): String =
@@ -192,10 +193,16 @@ object InvoiceRenderer {
             }
         }.joinToString(" · ")
 
-    /** Zweite Fußzeile: steuerliche Angaben und Bankverbindung, wie bisher gewohnt. */
+    /**
+     * Zweite Fußzeile: steuerliche Angaben und Bankverbindung, wie bisher gewohnt.
+     *
+     * Bewusst OHNE Steuernummer: §14 Abs. 4 Nr. 2 UStG verlangt die Steuernummer
+     * ODER die USt-IdNr., nicht beides. Mit beiden wurde die Zeile 178 mm breit
+     * und passte nicht mehr in die 165 mm Textbreite. Die Steuernummer bleibt in
+     * der Konfiguration – für eine spätere Kleinunternehmer-Variante ohne USt-IdNr.
+     */
     private fun footerTaxAndBankLine(config: SellerConfig): String =
         buildList {
-            config.taxNumber?.let { add("Steuernummer ${it.escapeLatex()}") }
             add("USt-IdNr. ${config.vatId.escapeLatex()}")
             add(config.bank.bankName.escapeLatex())
             add("BIC ${config.bank.bic.escapeLatex()}")
