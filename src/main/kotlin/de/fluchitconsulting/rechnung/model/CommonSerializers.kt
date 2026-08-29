@@ -10,13 +10,15 @@ import kotlinx.serialization.encoding.Encoder
 import java.math.BigDecimal
 import java.time.LocalDate
 
-// kotlinx.serialization kennt von Haus aus nur Kotlin-Grundtypen. Für JDK-Typen
-// wie BigDecimal und LocalDate braucht es eigene Serializer. Die Typaliase binden
-// sie an, sodass die Datenklassen einfach `Money` bzw. `IsoDate` schreiben können.
+// Serializer für JDK-Typen, die kotlinx.serialization nicht von Haus aus kennt und
+// die wir – anders als Money und Percent – nicht selbst annotieren können.
+// Die Typaliase binden sie an und geben dem Wert zugleich einen fachlichen Namen.
 
-typealias Money =
+/** Eine Menge: dimensionslos (86,5 Std., 1 pauschal), deshalb kein eigener Werttyp. */
+typealias Quantity =
     @Serializable(with = BigDecimalSerializer::class)
     BigDecimal
+
 typealias IsoDate =
     @Serializable(with = LocalDateSerializer::class)
     LocalDate

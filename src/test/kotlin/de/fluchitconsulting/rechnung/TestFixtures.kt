@@ -7,6 +7,8 @@ import de.fluchitconsulting.rechnung.model.Invoice
 import de.fluchitconsulting.rechnung.model.LineItem
 import de.fluchitconsulting.rechnung.model.SellerConfig
 import de.fluchitconsulting.rechnung.model.ServicePeriod
+import de.fluchitconsulting.rechnung.values.Percent
+import de.fluchitconsulting.rechnung.values.Price
 import java.math.BigDecimal
 import java.time.LocalDate
 
@@ -33,12 +35,12 @@ fun testSellerConfig(paymentTermDays: Int = 14) =
 fun testItem(
     quantity: String = "1",
     unitPrice: String = "100.00",
-    vatRatePercent: String = "19",
+    vatRate: String = "19",
 ) = LineItem(
     description = "Testposition",
     quantity = BigDecimal(quantity),
-    unitPrice = BigDecimal(unitPrice),
-    vatRatePercent = BigDecimal(vatRatePercent),
+    unitPrice = Price(unitPrice),
+    vatRate = Percent(vatRate),
 )
 
 fun testInvoice(

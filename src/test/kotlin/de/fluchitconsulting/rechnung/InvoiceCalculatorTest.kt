@@ -1,8 +1,8 @@
 package de.fluchitconsulting.rechnung
 
+import de.fluchitconsulting.rechnung.values.Money
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
-import java.math.BigDecimal
 import java.time.LocalDate
 
 class InvoiceCalculatorTest : FunSpec({
@@ -15,7 +15,19 @@ class InvoiceCalculatorTest : FunSpec({
 
         val totals = InvoiceCalculator.calculate(invoice, config)
 
-        totals.lines.single().net shouldBe BigDecimal("123.74")
+        totals.lines.single().net shouldBe Money("123.74")
+    }
+
+    // Einzelpreise unterhalb der Cent-Grenze sind nach EN 16931 (BT-146) zulässig.
+    // Würde der Einzelpreis beim Einlesen auf Cent normalisiert (0,335 -> 0,34),
+    // stünden hier 340,00 € statt 335,00 € – 5 € Fehler auf einer einzigen Position.
+    test("Einzelpreis unter einem Cent wird erst nach der Multiplikation gerundet") {
+        val invoice = testInvoice(items = listOf(testItem(quantity = "1000", unitPrice = "0.335")))
+
+        val totals = InvoiceCalculator.calculate(invoice, config)
+
+        totals.lines.single().net shouldBe Money("335.00")
+        totals.grossTotal shouldBe Money("398.65")
     }
 
     context("USt.-Gruppen") {
@@ -24,9 +36,9 @@ class InvoiceCalculatorTest : FunSpec({
                 testInvoice(
                     items =
                         listOf(
-                            testItem(quantity = "10", unitPrice = "100.00", vatRatePercent = "19"),
-                            testItem(quantity = "2", unitPrice = "50.00", vatRatePercent = "19"),
-                            testItem(quantity = "1", unitPrice = "80.00", vatRatePercent = "7"),
+                            testItem(quantity = "10", unitPrice = "100.00", vatRate = "19"),
+                            testItem(quantity = "2", unitPrice = "50.00", vatRate = "19"),
+                            testItem(quantity = "1", unitPrice = "80.00", vatRate = "7"),
                         ),
                 )
 
@@ -34,12 +46,12 @@ class InvoiceCalculatorTest : FunSpec({
 
             totals.vatGroups.size shouldBe 2
             val (vat19, vat7) = totals.vatGroups
-            vat19.base shouldBe BigDecimal("1100.00")
-            vat19.amount shouldBe BigDecimal("209.00")
-            vat7.base shouldBe BigDecimal("80.00")
-            vat7.amount shouldBe BigDecimal("5.60")
-            totals.netTotal shouldBe BigDecimal("1180.00")
-            totals.grossTotal shouldBe BigDecimal("1394.60")
+            vat19.base shouldBe Money("1100.00")
+            vat19.amount shouldBe Money("209.00")
+            vat7.base shouldBe Money("80.00")
+            vat7.amount shouldBe Money("5.60")
+            totals.netTotal shouldBe Money("1180.00")
+            totals.grossTotal shouldBe Money("1394.60")
         }
     }
 

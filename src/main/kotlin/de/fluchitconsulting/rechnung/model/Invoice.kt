@@ -1,8 +1,9 @@
 package de.fluchitconsulting.rechnung.model
 
+import de.fluchitconsulting.rechnung.values.Percent
+import de.fluchitconsulting.rechnung.values.Price
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
-import java.math.BigDecimal
 
 // Die rechnungsspezifischen Daten – eine YAML-Datei pro Rechnung.
 // Enthält bewusst nur Eingaben; alles Berechenbare (Summen, USt., Fälligkeit)
@@ -37,9 +38,11 @@ data class Customer(
 @Serializable
 data class LineItem(
     @SerialName("beschreibung") val description: String,
-    @SerialName("menge") val quantity: Money,
+    @SerialName("menge") val quantity: Quantity,
     @SerialName("einheit") val unit: String = "Std.",
-    @SerialName("einzelpreis") val unitPrice: Money,
+    // Price statt Money: EN 16931 lässt beim Einzelpreis (BT-146) beliebig viele
+    // Nachkommastellen zu. Gerundet wird erst das Positionsnetto (BT-131).
+    @SerialName("einzelpreis") val unitPrice: Price,
     // Pro Position, damit gemischte Sätze (19 %/7 %/0 %) möglich sind – EN 16931 BT-152.
-    @SerialName("ust-satz") val vatRatePercent: Money = BigDecimal("19"),
+    @SerialName("ust-satz") val vatRate: Percent = Percent("19"),
 )
