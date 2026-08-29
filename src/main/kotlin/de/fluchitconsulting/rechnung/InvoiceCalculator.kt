@@ -36,10 +36,7 @@ object InvoiceCalculator {
     // um eine Rundungsmethode. HALF_UP = kaufmännisches Runden.
     private fun BigDecimal.roundToCents(): BigDecimal = setScale(2, RoundingMode.HALF_UP)
 
-    fun calculate(
-        invoice: Invoice,
-        config: SellerConfig,
-    ): InvoiceTotals {
+    fun calculate(invoice: Invoice, config: SellerConfig): InvoiceTotals {
         // Erst pro Position runden, dann summieren – so stimmt die Summe mit dem
         // überein, was der Leser auf der Rechnung nachrechnen kann.
         val lines = invoice.items.map { CalculatedLine(it, (it.quantity * it.unitPrice).roundToCents()) }

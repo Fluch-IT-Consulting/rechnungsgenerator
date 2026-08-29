@@ -1,0 +1,47 @@
+root = true
+
+# Allgemeine Datei-Hygiene für alles im Repo. Steht hier und nicht nur für Kotlin,
+# weil im Projekt auch YAML-Eingabedateien und LaTeX-Vorlagen liegen.
+[*]
+charset = utf-8
+end_of_line = lf
+insert_final_newline = true
+trim_trailing_whitespace = true
+indent_style = space
+indent_size = 4
+
+# In Markdown sind zwei Leerzeichen am Zeilenende ein harter Umbruch – die dürfen bleiben.
+[*.md]
+trim_trailing_whitespace = false
+
+# YAML/TOML rücken konventionell mit zwei Leerzeichen ein.
+[*.{yaml,yml,toml}]
+indent_size = 2
+
+[*.{kt,kts}]
+# ktlint_official als Grundlage: Das Projekt ist neu, es gibt also keine gewachsene
+# Formatierung zu verteidigen. Die beiden Regeln, die im Kreditrechner-Projekt den
+# Ausschlag gegen diesen Stil gaben, sind unten einzeln abgeschaltet.
+ktlint_code_style = ktlint_official
+max_line_length = 140
+
+# Verlangt den Supertyp auf einer eigenen Zeile. Bei Kotest heißt das: aus
+#   class MoneyTest : FunSpec({
+# wird
+#   class MoneyTest :
+#       FunSpec({
+# und der gesamte Spec-Rumpf rückt vier Leerzeichen ein – ohne dass eine einzige
+# Zusicherung sich ändert. Nachgemessen: betrifft alle vier Testklassen.
+ktlint_standard_class-signature = disabled
+
+# Erzwingt ab zwei Parametern eine mehrzeilige Signatur. Aus
+#   override fun serialize(encoder: Encoder, value: Money) = ...
+# werden vier Zeilen, bei einer Signatur, die bequem in eine passt. Die
+# Zeilenlängengrenze oben fängt die Fälle ab, in denen der Umbruch wirklich nötig ist.
+ktlint_standard_function-signature = disabled
+
+# Bewusst NICHT übernommen aus dem Kreditrechner-Projekt:
+#   argument-list-wrapping, discouraged-comment-location, no-multi-spaces
+# Sie wurden dort für konkrete Stellen abgeschaltet (zeilenweise gruppierte Argumente
+# im PeriodCalculator, ausgerichtete Kommentarspalten in den Fixtures). Solche Stellen
+# gibt es hier noch nicht – die Regeln kommen erst weg, wenn sie tatsächlich stören.

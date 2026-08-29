@@ -21,8 +21,9 @@ dependencies {
     implementation(libs.kaml)
     implementation(libs.clikt)
 
-    testImplementation(libs.kotlin.test) // Kotlin-Assertions (assertEquals etc.) über JUnit
-    testImplementation(libs.junit.jupiter)
+    testImplementation(libs.kotest.runner) // Kotest läuft als JUnit-Platform-Engine
+    testImplementation(libs.kotest.assertions) // shouldBe & Co.
+    testImplementation(libs.kotest.property) // Property-based Testing (checkAll, Arb)
     testRuntimeOnly(libs.junit.platform.launcher) // Gradle 9 verlangt den Launcher explizit
 }
 

@@ -26,10 +26,7 @@ object BigDecimalSerializer : KSerializer<BigDecimal> {
     override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("BigDecimal", PrimitiveKind.STRING)
 
     // Einzeilige Funktionen schreibt man in Kotlin als "expression body" mit `=` statt Block.
-    override fun serialize(
-        encoder: Encoder,
-        value: BigDecimal,
-    ) = encoder.encodeString(value.toPlainString())
+    override fun serialize(encoder: Encoder, value: BigDecimal) = encoder.encodeString(value.toPlainString())
 
     override fun deserialize(decoder: Decoder): BigDecimal = BigDecimal(decoder.decodeString())
 }
@@ -37,10 +34,7 @@ object BigDecimalSerializer : KSerializer<BigDecimal> {
 object LocalDateSerializer : KSerializer<LocalDate> {
     override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("LocalDate", PrimitiveKind.STRING)
 
-    override fun serialize(
-        encoder: Encoder,
-        value: LocalDate,
-    ) = encoder.encodeString(value.toString())
+    override fun serialize(encoder: Encoder, value: LocalDate) = encoder.encodeString(value.toString())
 
     // LocalDate.parse erwartet ISO-8601 (JJJJ-MM-TT) – genau das YAML-Datumsformat.
     override fun deserialize(decoder: Decoder): LocalDate = LocalDate.parse(decoder.decodeString())
