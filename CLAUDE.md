@@ -10,7 +10,8 @@ CV/Web-Auftritt des Autors), Validierung über veraPDF.
 - `./gradlew build` – kompiliert, testet, lintet
 - `./gradlew test` – nur Tests
 - `./gradlew ktlintCheck` / `ktlintFormat` – Linting prüfen / autokorrigieren
-- `./gradlew run` – Anwendung starten
+- `./gradlew installDist` – ausführbares Kommando nach
+  `build/install/rechnungsgenerator/bin/` bauen
 
 ## Architektur-Entscheidungen
 
@@ -30,7 +31,16 @@ CV/Web-Auftritt des Autors), Validierung über veraPDF.
 
   Berechnungen (Summen, USt., Fälligkeit) im Kotlin-Code, nie im Template.
 - **Ausgabe**: PDF/A-1b via LuaLaTeX + `pdfx`-Paket. Externe Tools (lualatex,
-  verapdf) werden im PATH erwartet; beim Start prüfen und klar melden.
+  verapdf) werden im PATH erwartet; `InvoiceGenerator.checkTools()` prüft das
+  beim Start und nennt die fehlenden mit Installationshinweis.
+- **Externe Prozesse**: Ausgabe wird in eine Datei umgeleitet, nicht in einen
+  Stream gelesen – sonst blockiert das Lesen bei einem hängenden Prozess, und
+  die Zeitgrenze käme nie zum Zug. LuaLaTeX läuft zweimal (hyperref schreibt
+  die `.out`-Datei erst im ersten Lauf).
+- **CLI**: Clikt, und zwar `clikt-core` ohne Mordant – die Vollvariante zieht
+  JNA nach und schreibt auf JDK 24+ bei jedem Start vier Warnzeilen auf stderr.
+  `main()` von Clikt beendet den Prozess mit Code 0 auch im Fehlerfall, deshalb
+  `parse()` mit eigenem `exitProcess(e.statusCode)`.
 - **ZUGFeRD-Vorbereitung**: Datenmodell enthält von Anfang an alle
   EN-16931-Pflichtfelder (Leistungsdatum, Steuerkategorie, Kennungen), damit
   ZUGFeRD (PDF/A-3 + XML) später ein zusätzlicher Ausgabemodus wird, kein Umbau.
