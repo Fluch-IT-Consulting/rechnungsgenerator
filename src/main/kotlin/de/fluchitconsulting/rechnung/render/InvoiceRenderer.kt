@@ -29,8 +29,7 @@ object InvoiceRenderer {
                 "KOPF_PERSON" to letterheadPerson(config),
                 "ABSENDER_KONTAKT" to senderContact(config),
                 "EMPFAENGER" to recipient(invoice),
-                "VERTRETUNG" to representation(config),
-                "METADATEN" to metadata(invoice, totals),
+                "EMPFAENGER_RECHTS" to recipientSideBlock(invoice, config, totals),
                 "RECHNUNGSNUMMER" to invoice.number.escapeLatex(),
                 "RECHNUNGSDATUM" to GermanFormat.date(invoice.issueDate),
                 "POSITIONEN" to lineItems(totals),
@@ -165,19 +164,22 @@ object InvoiceRenderer {
      * Unternehmers, und der ist dort die Person, nicht die Firmierung.
      */
     private fun letterheadPerson(config: SellerConfig): String =
-        if (config.managingDirector != null) {
-            ""
-        } else {
-            "$BR[1mm]\n  {\\small\\color{gedaempft}${config.ownerName.escapeLatex()}}"
-        }
+        if (config.managingDirector != null) "" else "$BR${config.ownerName.escapeLatex()}"
 
     /**
-     * Die Vertretungsangabe neben dem Empfängerfeld. "Geschäftsführung" statt
-     * "Geschäftsführer": Die Bezeichnung steht neben einem Namen, dessen
-     * Geschlecht die Konfiguration nicht kennt.
+     * Der Block rechts neben dem Empfängerfeld: Vertretung und die Angaben zur
+     * Rechnung. Beides stand vorher an zwei verschiedenen Stellen – die
+     * Rechnungsangaben unter dem Balken, die Vertretung hier. Zusammengefasst
+     * bleibt der Bereich unter dem Balken frei für die Positionen.
+     *
+     * "Geschäftsführung" statt "Geschäftsführer": Die Bezeichnung steht neben
+     * einem Namen, dessen Geschlecht die Konfiguration nicht kennt.
      */
-    private fun representation(config: SellerConfig): String =
-        config.managingDirector?.let { "Geschäftsführung$BR${it.escapeLatex()}" } ?: ""
+    private fun recipientSideBlock(invoice: Invoice, config: SellerConfig, totals: InvoiceTotals): String =
+        buildList {
+            config.managingDirector?.let { add("Geschäftsführung$BR${it.escapeLatex()}") }
+            add(metadata(invoice, totals))
+        }.joinToString("$BR[3mm]")
 
     /** Erste Fußzeile: Firmierung, Sitz und die Angaben nach §35a GmbHG. */
     private fun footerCompanyLine(config: SellerConfig): String =

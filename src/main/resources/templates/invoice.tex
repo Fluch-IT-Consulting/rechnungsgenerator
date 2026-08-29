@@ -76,37 +76,30 @@
 \begin{document}
 
 %% ------------------------------------------------------------------ Kopf
-%% Ohne Trennlinie und ohne Farbe: Der Briefkopf soll nicht mit dem
-%% Titelbalken um die Aufmerksamkeit konkurrieren.
-%% 0.59/0.39: Nachgemessen braucht der Firmenname bei \large\bfseries 93,8 mm
-%% und die E-Mail bei \small 62,8 mm – bei 165 mm Textbreite sind das 0,57 und
-%% 0,38. Die Aufteilung ist also knapp bemessen; ein deutlich längerer
-%% Firmenname bricht wieder um.
-\begin{minipage}[t]{0.59\linewidth}\raggedright
-  {\large\bfseries <<FIRMA>>}<<KOPF_PERSON>>
-\end{minipage}%
-\hfill
-\begin{minipage}[t]{0.39\linewidth}
-  \raggedleft\small\color{gedaempft}
-  <<ABSENDER_KONTAKT>>
-\end{minipage}
+%% Alles rechtsbündig in einem Block, wie auf der bisherigen Rechnung: die
+%% Firmierung fett, darunter Anschrift und Kontakt in derselben Schriftgröße.
+%% Links bleibt frei – der Balken weiter unten ist der einzige Blickfang.
+{\raggedleft\small\color{gedaempft}
+  {\bfseries\color{haupttext}<<FIRMA>>}<<KOPF_PERSON>>\\
+  <<ABSENDER_KONTAKT>>\par}
 
-\vspace{16mm}
+\vspace{18mm}
 
 %% ----------------------------------------------------------- Empfängerfeld
 %% Ohne Rücksendezeile: Die Rechnung wird als PDF versandt, nie im
-%% Fensterumschlag. Die Zeile hätte dort keine Funktion mehr.
-%% Rechts daneben die Vertretungsangabe – dort stand sie auch bisher.
-\begin{minipage}[t]{0.62\linewidth}\raggedright
+%% Fensterumschlag. Rechts daneben die Vertretung und die Angaben zur
+%% Rechnung. 0.44 der Breite = 72,6 mm; nachgemessen braucht die längste
+%% Zeile ("Leistungszeitraum: 01.07.2026 – 31.08.2026") 69,8 mm.
+\begin{minipage}[t]{0.52\linewidth}\raggedright
   <<EMPFAENGER>>
 \end{minipage}%
 \hfill
-\begin{minipage}[t]{0.34\linewidth}
+\begin{minipage}[t]{0.44\linewidth}
   \raggedleft\small\color{gedaempft}
-  <<VERTRETUNG>>
+  <<EMPFAENGER_RECHTS>>
 \end{minipage}
 
-\vspace{18mm}
+\vspace{14mm}
 
 %% ---------------------------------------------------------- Titel (Blickfang)
 %% Das einzige Flächenelement der Seite. Nummer links, Datum rechts – wie auf
@@ -124,11 +117,6 @@
   \raisebox{0pt}[\balkenhoehe][0pt]{%
     \makebox[\dimexpr\linewidth-2\fboxsep\relax][s]{%
       \large\bfseries\color{white}Rechnung <<RECHNUNGSNUMMER>>\hfill <<RECHNUNGSDATUM>>}}}}
-
-\vspace{4mm}
-
-%% Pflicht- und Zusatzangaben, bewusst klein und ohne eigene Beschriftungsspalte.
-{\small\color{gedaempft}<<METADATEN>>}
 
 \vspace{9mm}
 
