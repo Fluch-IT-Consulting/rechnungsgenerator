@@ -14,7 +14,7 @@ class YamlLoaderTest : FunSpec({
     test("liest die Stammdaten aus YAML") {
         val config = YamlLoader.parseSellerConfig(resource("stammdaten.yaml"))
 
-        config.companyName shouldBe "Muster IT-Consulting"
+        config.companyName shouldBe "Muster IT-Consulting UG (haftungsbeschränkt)"
         config.vatId shouldBe "DE123456789"
         config.address.postalCode shouldBe "97070"
         config.paymentTermDays shouldBe 14

@@ -20,6 +20,14 @@ data class SellerConfig(
     @SerialName("umsatzsteuer-id") val vatId: String,
     @SerialName("bank") val bank: BankDetails,
     @SerialName("zahlungsziel-tage") val paymentTermDays: Int = 14,
+    // Handelsregister-Angaben: für Kapitalgesellschaften (UG, GmbH) nach §35a GmbHG
+    // Pflicht auf Geschäftsbriefen, für Einzelunternehmer gegenstandslos – deshalb optional.
+    @SerialName("registergericht") val registerCourt: String? = null,
+    @SerialName("handelsregister-nummer") val registerNumber: String? = null,
+    @SerialName("geschaeftsfuehrer") val managingDirector: String? = null,
+    // Schlusssatz über der Grußformel; überschreibbar pro Rechnung.
+    @SerialName("schlusssatz") val closingLine: String =
+        "Ich bedanke mich für das Vertrauen und die angenehme Zusammenarbeit.",
 )
 
 @Serializable

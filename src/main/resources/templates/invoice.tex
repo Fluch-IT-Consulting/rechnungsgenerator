@@ -1,0 +1,156 @@
+%% Rechnungsvorlage – wird vom InvoiceRenderer gefüllt.
+%% Platzhalter haben die Form <<NAME>> und werden vollständig ersetzt.
+%% Gestaltung: TeX Gyre Heros wie im Lebenslauf, Akzentfarbe wie auf der Webseite.
+\documentclass[11pt,a4paper]{article}
+
+%% pdfx erzeugt das PDF/A-1b: XMP-Metadaten, OutputIntent mit sRGB-Profil und
+%% eingebettete Schriften. Muss früh geladen werden, es zieht hyperref mit.
+%% Die Metadaten kommen aus der gleichnamigen .xmpdata-Datei daneben.
+\usepackage[a-1b]{pdfx}
+
+\usepackage{fontspec}
+\usepackage{geometry}
+%% xcolor lädt pdfx bereits selbst – ein zweites \usepackage mit Optionen
+%% gäbe einen "Option clash". colortbl direkt nachladen liefert \arrayrulecolor.
+\usepackage{colortbl}
+\usepackage{booktabs}  %% \midrule bringt die vertikalen Abstände selbst mit
+\usepackage{tabularx}
+\usepackage{array}
+
+%% Dieselbe Schrift wie im Lebenslauf – dadurch passen die Dokumente zusammen.
+\setmainfont{texgyreheros}[
+  Extension      = .otf,
+  UprightFont    = *-regular,
+  BoldFont       = *-bold,
+  ItalicFont     = *-italic,
+  BoldItalicFont = *-bolditalic,
+]
+
+%% Farben von fluch-it-consulting.de
+\definecolor{akzent}{HTML}{8B1A2B}
+\definecolor{haupttext}{HTML}{1C1C1E}
+\definecolor{gedaempft}{HTML}{5C5C62}
+\definecolor{linie}{HTML}{E2E2E6}
+
+%% Tabellenlinien global in der hellen Grautönung. Muss AUSSERHALB der Tabelle
+%% stehen: Mitten im Tabellenkörper eröffnet \arrayrulecolor eine neue Zelle,
+%% und das \noalign von \midrule landet dann an der falschen Stelle.
+\arrayrulecolor{linie}
+
+\geometry{a4paper, left=25mm, right=20mm, top=18mm, bottom=20mm}
+
+\color{haupttext}
+\setlength{\parindent}{0pt}
+\pagestyle{empty}
+
+%% Flattersatz statt Blocksatz. In den schmalen Spalten einer Rechnung reißt
+%% Blocksatz sichtbare Löcher zwischen die Wörter; Heros verträgt Flattersatz gut.
+\raggedright
+
+%% Keine Silbentrennung: Auf einer Rechnung stehen fast nur Eigennamen,
+%% Beträge und Adressen – getrennte Firmennamen sehen schlicht falsch aus.
+\hyphenpenalty=10000
+\exhyphenpenalty=10000
+\tolerance=2000
+
+%% Achtung: minipage ruft \@parboxrestore auf und setzt damit die
+%% Absatzparameter zurück – der Flattersatz von oben gilt dort NICHT.
+%% Ein \AtBeginEnvironment-Hook hilft nicht, weil \@parboxrestore erst danach
+%% läuft. Deshalb steht \raggedright unten in jeder Minipage mit Fließtext.
+
+%% Kleine, gesperrte Versalien als Rubrik – dasselbe Stilmittel wie im Lebenslauf
+%% ("STANDORT", "VERFÜGBARKEIT"). \rubrik statt \label, das ist in LaTeX vergeben.
+\newcommand{\rubrik}[1]{{\footnotesize\color{gedaempft}\addfontfeature{LetterSpace=14}\MakeUppercase{#1}}}
+
+%% Dünne Trennlinie in der hellen Grautönung der Webseite.
+\newcommand{\trennlinie}{\textcolor{linie}{\rule{\linewidth}{0.4pt}}}
+
+\begin{document}
+
+%% ------------------------------------------------------------------ Kopf
+\begin{minipage}[t]{0.55\linewidth}\raggedright
+  {\Large\bfseries\color{akzent}<<FIRMA>>}\\[1.5mm]
+  {\small\color{gedaempft}<<INHABER>>}
+\end{minipage}%
+\hfill
+\begin{minipage}[t]{0.40\linewidth}
+  \raggedleft\small\color{gedaempft}
+  <<ABSENDER_KONTAKT>>
+\end{minipage}
+
+\vspace{6mm}
+\trennlinie
+\vspace{10mm}
+
+%% -------------------------------------------------- Empfänger + Metadaten
+\begin{minipage}[t]{0.55\linewidth}\raggedright
+  {\scriptsize\color{gedaempft}<<RUECKSENDEZEILE>>}\\[4mm]
+  <<EMPFAENGER>>
+\end{minipage}%
+\hfill
+\begin{minipage}[t]{0.40\linewidth}
+  \raggedleft
+  <<METADATEN>>
+\end{minipage}
+
+\vspace{14mm}
+
+%% ------------------------------------------------------------------ Titel
+{\Large\bfseries\color{akzent}Rechnung <<RECHNUNGSNUMMER>>}
+
+\vspace{8mm}
+
+%% --------------------------------------------------------------- Positionen
+\begin{tabularx}{\linewidth}{@{}>{\raggedright\arraybackslash}X r@{\hspace{1.5mm}}l r r@{}}
+  %% \mbox um jeden Spaltenkopf: In der X-Spalte ist der Inhalt sonst ein Absatz,
+  %% dessen erste Zeile tiefer sitzt als die Grundlinie der r-/l-Spalten.
+  \mbox{\rubrik{Beschreibung}} & \mbox{\rubrik{Menge}} & & \mbox{\rubrik{Einzelpreis}} & \mbox{\rubrik{Betrag}} \\[1.5mm]
+  \midrule
+<<POSITIONEN>>
+\end{tabularx}
+
+\vspace{4mm}
+
+%% ------------------------------------------------------------------ Summen
+\hfill
+\begin{minipage}{0.5\linewidth}
+  \begin{tabularx}{\linewidth}{@{}>{\raggedright\arraybackslash}X r@{}}
+<<SUMMEN>>
+  \end{tabularx}
+\end{minipage}
+
+\vspace{10mm}
+
+%% ------------------------------------------------------- Zahlungsbedingungen
+<<ZAHLUNGSHINWEIS>>
+
+\vspace{6mm}
+
+<<SCHLUSSSATZ>>
+
+\vspace{4mm}
+
+Mit freundlichen Grüßen\\[6mm]
+<<INHABER>>
+
+\vfill
+
+%% ---------------------------------------------------------- Bankverbindung
+\trennlinie
+\vspace{3mm}
+
+\begin{minipage}[t]{0.48\linewidth}\raggedright
+  \rubrik{Bankverbindung}\\[2mm]
+  {\small <<BANKVERBINDUNG>>}
+\end{minipage}%
+\hfill
+\begin{minipage}[t]{0.48\linewidth}\raggedright
+  \rubrik{Steuerliche Angaben}\\[2mm]
+  {\small <<STEUERANGABEN>>}
+\end{minipage}
+
+\vspace{5mm}
+
+{\centering\scriptsize\color{gedaempft}<<FUSSZEILE>>\par}
+
+\end{document}

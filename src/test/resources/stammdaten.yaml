@@ -1,6 +1,6 @@
 # Fiktive Stammdaten – strukturgleich zu echten Daten, aber ohne Echtdaten.
-# IBAN ist die offizielle Beispiel-IBAN, USt-ID und BIC sind erfunden.
-firma: Muster IT-Consulting
+# IBAN ist die offizielle Beispiel-IBAN, USt-ID, HRB-Nummer und BIC sind erfunden.
+firma: Muster IT-Consulting UG (haftungsbeschränkt)
 inhaber: Dr. Erika Musterfrau
 anschrift:
   strasse: Beispielweg 42
@@ -11,9 +11,12 @@ telefon: "+49 931 1234567"
 webseite: https://muster-it-consulting.example
 steuernummer: 257/123/45678
 umsatzsteuer-id: DE123456789
+registergericht: Würzburg
+handelsregister-nummer: HRB 12345
+geschaeftsfuehrer: Dr. Erika Musterfrau
 bank:
-  kontoinhaber: Dr. Erika Musterfrau
+  kontoinhaber: Muster IT-Consulting UG (haftungsbeschränkt)
   iban: DE89 3704 0044 0532 0130 00
   bic: MUSTDEFFXXX
-  institut: Musterbank
+  institut: Musterbank Würzburg
 zahlungsziel-tage: 14
