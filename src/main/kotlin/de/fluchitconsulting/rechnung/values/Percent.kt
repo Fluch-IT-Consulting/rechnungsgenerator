@@ -1,0 +1,72 @@
+package de.fluchitconsulting.rechnung.values
+
+import kotlinx.serialization.KSerializer
+import kotlinx.serialization.Serializable
+import kotlinx.serialization.SerializationException
+import kotlinx.serialization.descriptors.PrimitiveKind
+import kotlinx.serialization.descriptors.PrimitiveSerialDescriptor
+import kotlinx.serialization.descriptors.SerialDescriptor
+import kotlinx.serialization.encoding.Decoder
+import kotlinx.serialization.encoding.Encoder
+import java.math.BigDecimal
+import java.math.RoundingMode
+
+/**
+ * Steuersatz/Prozentwert. Intern als Multiplikator (Prozent / 100) mit Scale 9 abgelegt,
+ * d. h. 19 % -> 0.190000000. Damit ist der Rohwert direkt für Money.times() nutzbar.
+ *
+ * Übernommen aus dem CreditCalculator2-Projekt, um die dortige Kreditrechner-Fachlichkeit
+ * (subdivide, of) gekürzt und um Percent × Percent sowie Serialisierung ergänzt.
+ */
+@Serializable(with = PercentSerializer::class)
+class Percent(value: BigDecimal) {
+    private val value: BigDecimal = value.multiply(HUNDREDTH).setScale(9, RoundingMode.HALF_UP)
+
+    constructor(value: String) : this(BigDecimal(value))
+
+    // Zwei Lesarten desselben Werts, beide benannt: der Multiplikator ist das, was
+    // Money.times() konsumiert; die Prozent-Schreibweise ist die fachliche Form.
+    val valueAsMultiplier: BigDecimal get() = value
+
+    /** Der Wert in Prozent-Schreibweise: 19 % -> `19.0000000` (Scale 7 = Scale 9 im Multiplikator). */
+    val valueAsPercentage: BigDecimal get() = value.movePointRight(2)
+
+    // Anteil vom Anteil: 50 % × 19 % = 9,5 %. Gerechnet wird im Multiplikator
+    // (0.5 × 0.19), der Konstruktor erwartet aber Prozent-Schreibweise.
+    operator fun times(other: Percent): Percent = Percent(value.multiply(other.value).movePointRight(2))
+
+    // Kommutatives Gegenstück zu Money.times(Percent), damit beide Reihenfolgen kompilieren.
+    operator fun times(money: Money): Money = money * this
+
+    // Value-Object-Hygiene wie bei Money: numerische Gleichheit über compareTo,
+    // scale-unabhängiger hashCode.
+    override fun equals(other: Any?): Boolean = other is Percent && value.compareTo(other.value) == 0
+
+    override fun hashCode(): Int = value.stripTrailingZeros().hashCode()
+
+    // Debug-Darstellung: locale-unabhängig, Prozentzeichen direkt am Wert.
+    // Die deutsche Report-Form ("19 %") macht die Ausgabeschicht.
+    override fun toString(): String = "${valueAsPercentage.toPlainString()}%"
+
+    companion object {
+        private val HUNDREDTH = BigDecimal("0.01")
+    }
+}
+
+// YAML ↔ Percent in Prozent-Schreibweise: "19" ↔ Percent("19").
+// stripTrailingZeros beim Schreiben, damit nicht "19.0000000" in der YAML landet.
+object PercentSerializer : KSerializer<Percent> {
+    override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("Percent", PrimitiveKind.STRING)
+
+    override fun serialize(encoder: Encoder, value: Percent) =
+        encoder.encodeString(value.valueAsPercentage.stripTrailingZeros().toPlainString())
+
+    override fun deserialize(decoder: Decoder): Percent {
+        val raw = decoder.decodeString()
+        return try {
+            Percent(raw)
+        } catch (e: NumberFormatException) {
+            throw SerializationException("Kein gültiger Prozentwert: '$raw'", e)
+        }
+    }
+}
