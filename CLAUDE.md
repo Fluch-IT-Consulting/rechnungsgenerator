@@ -56,7 +56,10 @@ CV/Web-Auftritt des Autors), Validierung über veraPDF.
   zum ersten Mal auftauchen – nicht jede Zeile kommentieren.
 - Keine echten Firmen-/Kundendaten im Repo (Projekt wird ggf. öffentlich).
   Testdaten: fiktive Firma, Test-IBAN (DE89 3704 0044 …), erfundene USt-ID.
-- Linting (ktlint) muss vor jedem Commit grün sein.
+- Linting (ktlint) muss vor jedem Commit grün sein. Ein Hook in
+  `.claude/settings.json` ruft nach jeder Änderung an einer `.kt`/`.kts`-Datei
+  `./gradlew ktlintFormat` auf, damit das nicht von Hand nachgezogen werden muss.
+  Kosten: rund 1 s pro Bearbeitung bei warmem Gradle-Daemon.
 
 ## Umgebung
 

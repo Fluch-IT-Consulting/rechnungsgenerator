@@ -1,0 +1,17 @@
+{
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Write|Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 -c \"import json,sys; d=json.load(sys.stdin); print(d.get('tool_input',{}).get('file_path') or d.get('tool_response',{}).get('filePath') or '')\" | { read -r f; case \"$f\" in *.kt|*.kts) cd \"${CLAUDE_PROJECT_DIR:-.}\" && ./gradlew ktlintFormat -q --console=plain ;; esac; } 2>/dev/null || true",
+            "timeout": 120,
+            "statusMessage": "ktlintFormat"
+          }
+        ]
+      }
+    ]
+  }
+}
