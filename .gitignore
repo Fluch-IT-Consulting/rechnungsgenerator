@@ -11,3 +11,6 @@ build/
 
 # macOS
 .DS_Store
+
+# Persönliche Claude-Code-Einstellungen (enthält lokale Pfade)
+.claude/settings.local.json

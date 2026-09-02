@@ -56,6 +56,10 @@ CV/Web-Auftritt des Autors), Validierung über veraPDF.
   zum ersten Mal auftauchen – nicht jede Zeile kommentieren.
 - Keine echten Firmen-/Kundendaten im Repo (Projekt wird ggf. öffentlich).
   Testdaten: fiktive Firma, Test-IBAN (DE89 3704 0044 …), erfundene USt-ID.
+  Das gilt auch für **Beispiele in Dokumentation und Skills** – dort rutschen
+  echte Kunden- und Projektnamen am ehesten hinein, weil sie beim Schreiben
+  gerade zur Hand sind. Die echten Stammdaten liegen außerhalb des Repos, der
+  Pfad dorthin kommt aus `RECHNUNGEN_DIR` in `.claude/settings.local.json`.
 - Linting (ktlint) muss vor jedem Commit grün sein. Ein Hook in
   `.claude/settings.json` ruft nach jeder Änderung an einer `.kt`/`.kts`-Datei
   `./gradlew ktlintFormat` auf, damit das nicht von Hand nachgezogen werden muss.
