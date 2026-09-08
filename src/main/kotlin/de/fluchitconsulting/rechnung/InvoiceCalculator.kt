@@ -5,6 +5,7 @@ import de.fluchitconsulting.rechnung.model.Invoice
 import de.fluchitconsulting.rechnung.model.LineItem
 import de.fluchitconsulting.rechnung.model.SellerConfig
 import de.fluchitconsulting.rechnung.values.EuMemberStates
+import de.fluchitconsulting.rechnung.values.InvoiceType
 import de.fluchitconsulting.rechnung.values.Money
 import de.fluchitconsulting.rechnung.values.Percent
 import de.fluchitconsulting.rechnung.values.TaxCategory
@@ -145,7 +146,34 @@ object InvoiceCalculator {
             )
         }
 
+        validateReceipt(invoice)
         validateVatIdCheck(invoice, config, brauchtKundenUstId.toSet())
+    }
+
+    /**
+     * Der Zeitpunkt der Vereinnahmung (BT-7) gehört auf die Abschlagsrechnung –
+     * und nur dorthin. Auf einer Rechnung über eine erbrachte Leistung ist die
+     * Umsatzsteuer mit der Leistung entstanden, nicht mit dem Geldeingang; die
+     * Angabe wäre dort keine Zusatzinformation, sondern eine falsche.
+     */
+    private fun validateReceipt(invoice: Invoice) {
+        val vereinnahmt = invoice.receivedOn ?: return
+
+        if (invoice.type != InvoiceType.PREPAYMENT) {
+            throw InvoiceValidationException(
+                "'vereinnahmt-am' gehört nur auf eine Abschlagsrechnung (art: abschlagsrechnung); " +
+                    "dieses Dokument ist eine ${invoice.type.documentName}.",
+            )
+        }
+        // Gleiche Prüfung wie beim Datum der Bestätigungsabfrage: Was nach dem
+        // Rechnungsdatum liegt, belegt für diese Rechnung nichts. Steht der
+        // Zeitpunkt noch nicht fest, bleibt die Angabe weg.
+        if (vereinnahmt.isAfter(invoice.issueDate)) {
+            throw InvoiceValidationException(
+                "Die Vereinnahmung am $vereinnahmt liegt nach dem Rechnungsdatum ${invoice.issueDate}. " +
+                    "Steht der Zeitpunkt noch nicht fest, bitte 'vereinnahmt-am' weglassen.",
+            )
+        }
     }
 
     /**

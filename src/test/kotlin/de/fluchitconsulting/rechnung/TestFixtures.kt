@@ -9,6 +9,7 @@ import de.fluchitconsulting.rechnung.model.SellerConfig
 import de.fluchitconsulting.rechnung.model.ServicePeriod
 import de.fluchitconsulting.rechnung.values.Bic
 import de.fluchitconsulting.rechnung.values.Iban
+import de.fluchitconsulting.rechnung.values.InvoiceType
 import de.fluchitconsulting.rechnung.values.Percent
 import de.fluchitconsulting.rechnung.values.Price
 import de.fluchitconsulting.rechnung.values.TaxCategory
@@ -59,9 +60,13 @@ fun testInvoice(
     items: List<LineItem> = listOf(testItem()),
     paymentTermDaysOverride: Int? = null,
     customerVatId: VatId? = null,
+    type: InvoiceType = InvoiceType.INVOICE,
+    receivedOn: LocalDate? = null,
 ) = Invoice(
     number = "R26-001",
     issueDate = LocalDate.of(2026, 8, 14),
+    type = type,
+    receivedOn = receivedOn,
     servicePeriod = ServicePeriod(start = LocalDate.of(2026, 7, 1), end = LocalDate.of(2026, 7, 31)),
     customer =
         Customer(

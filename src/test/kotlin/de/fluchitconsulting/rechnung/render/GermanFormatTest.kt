@@ -74,4 +74,18 @@ class GermanFormatTest : FunSpec({
             GermanFormat.shortDate(LocalDate.of(2026, 7, 1)) shouldBe "01.07.2026"
         }
     }
+    test("ein voraussichtlicher Zeitraum wird in Monaten geschrieben") {
+        assertSoftly {
+            // Volle Monate: Der Kalendermonat genügt (UStAE 14.8 Abs. 1 und 4).
+            GermanFormat.monthPeriod(LocalDate.of(2026, 6, 1), LocalDate.of(2026, 10, 31)) shouldBe
+                "Juni bis Oktober 2026"
+            GermanFormat.monthPeriod(LocalDate.of(2026, 6, 1), LocalDate.of(2026, 6, 30)) shouldBe "Juni 2026"
+            GermanFormat.monthPeriod(LocalDate.of(2026, 12, 1), LocalDate.of(2027, 3, 31)) shouldBe
+                "Dezember 2026 bis März 2027"
+            // Angebrochene Randmonate bleiben datiert – sonst wäre die Angabe
+            // nicht gröber, sondern eine andere.
+            GermanFormat.monthPeriod(LocalDate.of(2026, 6, 15), LocalDate.of(2026, 10, 20)) shouldBe
+                "15.06.2026\u2009–\u200920.10.2026"
+        }
+    }
 })

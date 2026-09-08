@@ -6,7 +6,9 @@ import de.fluchitconsulting.rechnung.model.ServicePeriod
 import de.fluchitconsulting.rechnung.testInvoice
 import de.fluchitconsulting.rechnung.testItem
 import de.fluchitconsulting.rechnung.testSellerConfig
+import de.fluchitconsulting.rechnung.values.InvoiceType
 import io.kotest.core.spec.style.FunSpec
+import io.kotest.matchers.ints.shouldBeGreaterThan
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.string.shouldContain
 import io.kotest.matchers.string.shouldNotContain
@@ -85,5 +87,69 @@ class InvoiceRendererTest : FunSpec({
 
         InvoiceRenderer.render(invoice, seller, InvoiceCalculator.calculate(invoice, seller)) shouldBe
             resource("rechnung-erwartet.tex")
+    }
+
+    context("Abschlagsrechnung") {
+        fun abschlag(receivedOn: LocalDate? = null): String {
+            val invoice = testInvoice(type = InvoiceType.PREPAYMENT, receivedOn = receivedOn)
+            return InvoiceRenderer.render(invoice, config, InvoiceCalculator.calculate(invoice, config))
+        }
+
+        test("der Balken nennt die Rechnungsart") {
+            abschlag() shouldContain "Abschlagsrechnung R26-001"
+        }
+
+        test("der voraussichtliche Zeitraum steht in Monaten") {
+            val invoice = YamlLoader.parseInvoice(resource("abschlagsrechnung.yaml"))
+            val seller = YamlLoader.parseSellerConfig(resource("stammdaten.yaml"))
+
+            InvoiceRenderer.render(invoice, seller, InvoiceCalculator.calculate(invoice, seller)) shouldContain
+                "Voraussichtlicher Leistungszeitraum: \\mbox{Juni bis Oktober 2026}"
+        }
+
+        test("der Zeitraum ist der voraussichtliche") {
+            // UStAE 14.8 Abs. 1: Auf einer Abschlagsrechnung ist der Zeitraum
+            // eine Prognose. Als "Leistungszeitraum" beschriftet, behauptete er,
+            // die Leistung sei erbracht.
+            abschlag() shouldContain "Voraussichtlicher Leistungszeitraum:"
+            renderMit(testItem()) shouldContain "Leistungszeitraum: \\mbox{Juli 2026}"
+            renderMit(testItem()) shouldNotContain "Voraussichtlich"
+        }
+
+        test("der Pflichtsatz steht unter den Summen") {
+            val tex = abschlag()
+
+            tex shouldContain "Die Leistung ist noch nicht erbracht."
+            // Nicht nur, DASS er dasteht: Über der Positionstabelle wäre der
+            // Satz eine Ankündigung, unter dem Gesamtbetrag ist er der Vorbehalt
+            // zu genau dieser Summe.
+            tex.indexOf("Die Leistung ist noch nicht erbracht.") shouldBeGreaterThan tex.indexOf("Gesamtbetrag")
+            renderMit(testItem()) shouldNotContain "noch nicht erbracht"
+        }
+
+        test("auch der Zeitraum einer Position ist der voraussichtliche") {
+            val item =
+                testItem(description = "Arbeitspaket Nord").copy(
+                    servicePeriod = ServicePeriod(LocalDate.of(2026, 9, 1), LocalDate.of(2026, 9, 30)),
+                )
+            val invoice = testInvoice(type = InvoiceType.PREPAYMENT, items = listOf(item))
+
+            InvoiceRenderer.render(invoice, config, InvoiceCalculator.calculate(invoice, config)) shouldContain
+                "Voraussichtlicher Zeitraum: September 2026"
+        }
+
+        test("die Vereinnahmung wird genannt, sobald sie feststeht") {
+            abschlag(LocalDate.of(2026, 8, 10)) shouldContain "Abschlag vereinnahmt am 10. August 2026"
+            abschlag() shouldNotContain "vereinnahmt"
+        }
+
+        test("die Metadaten des PDF tragen dieselbe Bezeichnung") {
+            val invoice = testInvoice(type = InvoiceType.PREPAYMENT)
+
+            val xmp = InvoiceRenderer.renderMetadata(invoice, config)
+
+            xmp shouldContain "\\Title{Abschlagsrechnung R26-001}"
+            xmp shouldContain "\\Subject{Abschlagsrechnung R26-001 vom 14. August 2026}"
+        }
     }
 })

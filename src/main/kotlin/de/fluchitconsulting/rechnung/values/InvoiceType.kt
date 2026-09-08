@@ -22,13 +22,39 @@ import kotlinx.serialization.encoding.Encoder
  * ZUGFeRD-XML.
  */
 @Serializable(with = InvoiceTypeSerializer::class)
-enum class InvoiceType(val label: String, val code: String) {
+enum class InvoiceType(
+    val label: String,
+    val code: String,
+    /**
+     * Ist der Leistungszeitraum eine Prognose statt einer Tatsache?
+     *
+     * Auf einer Abschlagsrechnung ist die Leistung noch nicht erbracht. Als
+     * "Leistungszeitraum" beschriftet, behauptete der Zeitraum das Gegenteil –
+     * und auf den Tag genau genannt eine Genauigkeit, die er nicht hat. UStAE
+     * 14.8 Abs. 1 und 4 lassen dort den Kalendermonat genügen. Aus dieser einen
+     * Eigenschaft folgen beide Beschriftungen und die Schreibweise des Datums.
+     */
+    val servicePeriodIsForecast: Boolean = false,
+    /**
+     * Ein Satz, der auf diesem Dokument stehen muss, damit es als das erkennbar
+     * ist, was es ist. Hier steht der Wortlaut, nicht seine Gestalt: Wo er auf
+     * der Seite landet, entscheidet die Vorlage.
+     */
+    val mandatoryNote: String? = null,
+) {
     INVOICE("rechnung", "380"),
 
     // Der Code heißt in der Liste "Prepayment invoice"; das Wort dieses
     // Projekts ist trotzdem die Abschlagsrechnung – "Anzahlung" steht in
     // CONTEXT.md unter Vermeiden.
-    PREPAYMENT("abschlagsrechnung", "386"),
+    PREPAYMENT(
+        "abschlagsrechnung",
+        "386",
+        servicePeriodIsForecast = true,
+        mandatoryNote =
+            "Die Leistung ist noch nicht erbracht. Über die Gesamtleistung folgt eine " +
+                "Schlussrechnung, in der dieser Abschlag abgesetzt wird.",
+    ),
 
     // Für die Schlussrechnung nennt keine Quelle einen eigenen Code, deshalb
     // derselbe wie bei der gewöhnlichen Rechnung: Sie *ist* die Rechnung über
@@ -45,6 +71,26 @@ enum class InvoiceType(val label: String, val code: String) {
     // Leistung erbracht ist.
     PARTIAL("teilrechnung", "326"),
     ;
+
+    /** Die Beschriftung des Zeitraums der ganzen Rechnung. */
+    val servicePeriodLabel: String
+        get() = if (servicePeriodIsForecast) "Voraussichtlicher Leistungszeitraum" else "Leistungszeitraum"
+
+    /**
+     * Dieselbe Beschriftung, kürzer: für den abweichenden Zeitraum einer
+     * einzelnen Position (BG-26). Sie steht klein unter der Bezeichnung, wo die
+     * lange Fassung die Zeile sprengte.
+     */
+    val itemPeriodLabel: String
+        get() = if (servicePeriodIsForecast) "Voraussichtlicher Zeitraum" else "Zeitraum"
+
+    /**
+     * Der Name des Dokuments, wie CONTEXT.md ihn führt – für Titelbalken,
+     * Dateiname und die XMP-Metadaten. Abgeleitet statt als eigenes Feld
+     * geführt: Er ist das Label mit großem Anfangsbuchstaben, und zwei Felder
+     * mit derselben Aussage laufen irgendwann auseinander.
+     */
+    val documentName: String get() = label.replaceFirstChar { it.uppercase() }
 
     override fun toString(): String = label
 
