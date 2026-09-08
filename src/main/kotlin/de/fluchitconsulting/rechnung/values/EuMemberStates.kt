@@ -1,5 +1,7 @@
 package de.fluchitconsulting.rechnung.values
 
+import java.time.LocalDate
+
 /**
  * Die Mitgliedstaaten der EU, als ISO-3166-1-alpha-2-Codes.
  *
@@ -9,9 +11,13 @@ package de.fluchitconsulting.rechnung.values
  * dort schlicht nichts abzufragen, und ein Programm, das trotzdem einen
  * VIES-Nachweis verlangt, wäre nicht streng, sondern falsch.
  *
- * Stand: August 2026, 27 Mitgliedstaaten. Diese Liste ändert sich selten, aber
- * sie ändert sich – zuletzt 2020 durch den Austritt des Vereinigten Königreichs.
- * Wer sie anfasst, sollte das Datum hier mitpflegen.
+ * 27 Mitgliedstaaten. Diese Liste ändert sich selten, aber sie ändert sich –
+ * zuletzt 2020 durch den Austritt des Vereinigten Königreichs. Genau das macht
+ * sie tückisch: Sie ist heute richtig und wird irgendwann still falsch, ohne
+ * dass jemand etwas merkt. Deshalb trägt sie ihr Prüfdatum als Wert und nicht
+ * bloß als Kommentar – [AS_OF] wird zur Laufzeit ausgewertet.
+ *
+ * Wer die Liste prüft oder ändert, setzt [AS_OF] mit.
  *
  * Griechenland steht doppelt: ISO 3166 kennt es als GR, die Umsatzsteuer-
  * Systeme der EU verwenden EL. Beide gelten hier als EU.
@@ -20,6 +26,15 @@ package de.fluchitconsulting.rechnung.values
  * nicht die sonstigen Leistungen, um die es auf diesen Rechnungen geht.
  */
 object EuMemberStates {
+    /**
+     * Wann diese Liste zuletzt gegen die amtliche Aufstellung abgeglichen wurde.
+     *
+     * Nicht das Datum der letzten Codezeile, sondern das der letzten Prüfung:
+     * Eine unveränderte Liste kann trotzdem geprüft worden sein, und nur das
+     * zählt für die Frage, ob man ihr noch trauen darf.
+     */
+    val AS_OF: LocalDate = LocalDate.of(2026, 8, 30)
+
     private val CODES =
         setOf(
             "AT",

@@ -73,7 +73,12 @@ CV/Web-Auftritt des Autors), Validierung über veraPDF.
   Inland gar nicht – VIES deckt nur Mitgliedstaaten ab, und das BZSt bestätigt
   *ausländische* Nummern, die eines deutschen Kunden also gar nicht. Die Abfrage selbst macht das Programm bewusst nicht: Sie
   setzt eine BZSt-Registrierung voraus und muss ein aufbewahrbares Protokoll
-  erzeugen.
+  erzeugen. Die Liste der EU-Mitgliedstaaten trägt ihr Prüfdatum als Wert
+  (`EuMemberStates.AS_OF`), nicht als Kommentar: Sie ist heute richtig und wird
+  irgendwann still falsch. Bei Auslandsrechnungen fordert ein Hinweis nach zwölf
+  Monaten zum Abgleich auf – bei Inlandsrechnungen nicht, weil die Liste dort
+  gar nicht befragt wird und Dauerhinweise dazu führen, dass auch die wichtigen
+  überlesen werden.
 - **ZUGFeRD-Vorbereitung**: Datenmodell enthält von Anfang an alle
   EN-16931-Pflichtfelder (Leistungsdatum, Steuerkategorie, Kennungen), damit
   ZUGFeRD (PDF/A-3 + XML) später ein zusätzlicher Ausgabemodus wird, kein Umbau.

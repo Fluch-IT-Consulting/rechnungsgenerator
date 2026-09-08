@@ -11,6 +11,7 @@ import com.github.ajalt.clikt.parameters.options.option
 import com.github.ajalt.clikt.parameters.types.path
 import de.fluchitconsulting.rechnung.toolchain.ToolchainException
 import kotlinx.serialization.SerializationException
+import java.io.IOException
 import java.nio.file.Path
 import kotlin.io.path.copyTo
 import kotlin.io.path.createTempDirectory
@@ -64,6 +65,11 @@ class RechnungCommand : CoreCliktCommand(name = "rechnung") {
             throw CliktError(e.message)
         } catch (e: SerializationException) {
             throw CliktError("Die Eingabedateien konnten nicht gelesen werden:\n${e.message}")
+        } catch (e: IOException) {
+            // Etwa ein Zielpfad, der nicht beschreibbar ist. Ohne diesen Zweig
+            // beendet sich das Programm mit einem Stacktrace, was wie ein
+            // Programmfehler aussieht statt wie ein falsches Argument.
+            throw CliktError("Die Datei konnte nicht geschrieben werden: ${e.message}")
         }
     }
 

@@ -4,11 +4,13 @@ import de.fluchitconsulting.rechnung.model.Address
 import de.fluchitconsulting.rechnung.model.CheckMethod
 import de.fluchitconsulting.rechnung.model.Customer
 import de.fluchitconsulting.rechnung.model.VatIdCheck
+import de.fluchitconsulting.rechnung.values.EuMemberStates
 import de.fluchitconsulting.rechnung.values.TaxCategory
 import de.fluchitconsulting.rechnung.values.VatId
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.collections.shouldBeEmpty
+import io.kotest.matchers.shouldBe
 import io.kotest.matchers.string.shouldContain
 import java.time.LocalDate
 
@@ -134,5 +136,34 @@ class VatIdCheckRulesTest : FunSpec({
 
     test("Regelsatz braucht überhaupt keine Abfrage") {
         InvoiceCalculator.calculate(testInvoice(), config).hints.shouldBeEmpty()
+    }
+
+    context("Alter der EU-Liste") {
+        // Die Liste ist heute richtig und wird irgendwann still falsch. Ohne
+        // Prüfung merkt das niemand, weil nichts kaputtgeht – es wird nur leise
+        // die falsche Regel angewandt.
+        fun rechnungAm(datum: LocalDate) =
+            rechnung("CH", TaxCategory.REVERSE_CHARGE, vatId = VatId("CHE123456789")).copy(issueDate = datum)
+
+        test("frische Liste erzeugt keinen Hinweis auf ihr Alter") {
+            val totals = InvoiceCalculator.calculate(rechnungAm(EuMemberStates.AS_OF.plusMonths(6)), config)
+
+            totals.hints.none { it.contains("Mitgliedstaaten ist") } shouldBe true
+        }
+
+        test("ab zwölf Monaten wird zum Abgleich aufgefordert") {
+            val totals = InvoiceCalculator.calculate(rechnungAm(EuMemberStates.AS_OF.plusMonths(13)), config)
+
+            totals.hints.any { it.contains("13 Monate alt") } shouldBe true
+        }
+
+        test("bei einer Inlandsrechnung bleibt die Liste unerwähnt") {
+            // Sie wird dort gar nicht befragt – ein Hinweis wäre Lärm, und Lärm
+            // führt dazu, dass auch die wichtigen Hinweise überlesen werden.
+            val inland =
+                testInvoice().copy(issueDate = EuMemberStates.AS_OF.plusYears(5))
+
+            InvoiceCalculator.calculate(inland, config).hints.shouldBeEmpty()
+        }
     }
 })

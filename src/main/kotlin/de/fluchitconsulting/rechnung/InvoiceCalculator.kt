@@ -208,6 +208,23 @@ object InvoiceCalculator {
             val kategorien = invoice.items.map { it.taxCategory }.toSet()
             val ausland = !kunde.address.countryCode.equals(config.address.countryCode, ignoreCase = true)
 
+            // Die Altersprüfung der EU-Liste hängt bewusst an `ausland` und läuft
+            // nicht immer: Bei einer Inlandsrechnung wird die Liste gar nicht
+            // befragt, ein Hinweis darauf wäre also Lärm. Und Hinweise, die bei
+            // jeder Rechnung erscheinen, liest nach der dritten niemand mehr –
+            // dann geht der eine unter, auf den es ankommt.
+            if (ausland) {
+                val listenAlter = ChronoUnit.MONTHS.between(EuMemberStates.AS_OF, invoice.issueDate)
+                if (listenAlter >= 12) {
+                    add(
+                        "Die hinterlegte Liste der EU-Mitgliedstaaten ist $listenAlter Monate alt " +
+                            "(zuletzt geprüft am ${EuMemberStates.AS_OF}). Sie entscheidet mit, ob für " +
+                            "${kunde.address.countryCode} ein Nachweis verlangt wird – bitte gegen die " +
+                            "amtliche Aufstellung abgleichen und EuMemberStates.AS_OF nachziehen.",
+                    )
+                }
+            }
+
             if (TaxCategory.REVERSE_CHARGE in kategorien && ausland && !EuMemberStates.contains(kunde.address.countryCode)) {
                 add(
                     "${kunde.address.countryCode} ist kein EU-Mitgliedstaat – eine VIES-Abfrage gibt es dafür " +
