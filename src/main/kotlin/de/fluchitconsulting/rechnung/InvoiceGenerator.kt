@@ -27,7 +27,12 @@ object InvoiceGenerator {
     /** Prüft die Werkzeuge einmal beim Start, statt mitten im Satz zu scheitern. */
     fun checkTools() = ExternalTool.requireAll(*REQUIRED_TOOLS)
 
-    data class Result(val pdf: Path, val validation: ValidationResult)
+    data class Result(
+        val pdf: Path,
+        val validation: ValidationResult,
+        /** Hinweise für die eigene Akte – siehe InvoiceTotals.hints. */
+        val hints: List<String> = emptyList(),
+    )
 
     /**
      * Erzeugt das PDF in [workingDir] und prüft es. Der Dateiname leitet sich aus
@@ -44,7 +49,7 @@ object InvoiceGenerator {
                 texSource = InvoiceRenderer.render(invoice, config, totals),
                 xmpMetadata = InvoiceRenderer.renderMetadata(invoice, config),
             )
-        return Result(pdf, PdfAValidator.validate(pdf))
+        return Result(pdf, PdfAValidator.validate(pdf), totals.hints)
     }
 
     /**

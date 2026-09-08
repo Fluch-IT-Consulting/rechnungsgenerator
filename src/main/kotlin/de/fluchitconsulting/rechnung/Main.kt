@@ -82,6 +82,9 @@ class RechnungCommand : CoreCliktCommand(name = "rechnung") {
 
             echo("$target")
             echo(result.validation.describe())
+            // Hinweise nach dem Ergebnis, damit sie nicht wie ein Fehler wirken –
+            // die Rechnung ist ja entstanden. Sie betreffen die eigene Ablage.
+            result.hints.forEach { echo("Hinweis: $it") }
             if (keepWorkFiles) echo("Arbeitsdateien: $workDir")
             // Ein ungültiges PDF/A ist kein Erfolg: Exitcode 1, damit ein Skript
             // ringsherum es merkt.

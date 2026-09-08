@@ -1,13 +1,16 @@
 package de.fluchitconsulting.rechnung
 
+import de.fluchitconsulting.rechnung.model.CheckMethod
 import de.fluchitconsulting.rechnung.model.Invoice
 import de.fluchitconsulting.rechnung.model.LineItem
 import de.fluchitconsulting.rechnung.model.SellerConfig
+import de.fluchitconsulting.rechnung.values.EuMemberStates
 import de.fluchitconsulting.rechnung.values.Money
 import de.fluchitconsulting.rechnung.values.Percent
 import de.fluchitconsulting.rechnung.values.TaxCategory
 import de.fluchitconsulting.rechnung.values.sumOf
 import java.time.LocalDate
+import java.time.temporal.ChronoUnit
 
 // Alle abgeleiteten Werte einer Rechnung. Wird aus Invoice + SellerConfig
 // berechnet und ist danach unveränderlich – das Template bekommt nur noch dies.
@@ -45,11 +48,18 @@ data class InvoiceTotals(
     val vatGroups: List<VatGroup>,
     val grossTotal: Money,
     val dueDate: LocalDate,
+    /**
+     * Hinweise für den Rechnungssteller – nicht für den Kunden, sie stehen
+     * nicht auf dem PDF. Sie betreffen Nachweise, die in die eigene Akte
+     * gehören, und Dinge, die zwar zulässig, aber erklärungsbedürftig sind.
+     */
+    val hints: List<String> = emptyList(),
 )
 
 object InvoiceCalculator {
     fun calculate(invoice: Invoice, config: SellerConfig): InvoiceTotals {
-        validate(invoice)
+        validate(invoice, config)
+        val hints = collectHints(invoice, config)
 
         // Erst pro Position runden, dann summieren – so stimmt die Summe mit dem
         // überein, was der Leser auf der Rechnung nachrechnen kann.
@@ -83,7 +93,7 @@ object InvoiceCalculator {
         val termDays = invoice.paymentTermDaysOverride ?: config.paymentTermDays
         val dueDate = invoice.issueDate.plusDays(termDays.toLong())
 
-        return InvoiceTotals(lines, netTotal, vatGroups, grossTotal, dueDate)
+        return InvoiceTotals(lines, netTotal, vatGroups, grossTotal, dueDate, hints)
     }
 
     /**
@@ -92,7 +102,7 @@ object InvoiceCalculator {
      * Rechnung mit "AE" und 19 % ginge sonst als PDF hinaus und fiele erst dem
      * Empfänger auf – dann ist sie schon verschickt.
      */
-    private fun validate(invoice: Invoice) {
+    private fun validate(invoice: Invoice, config: SellerConfig) {
         invoice.items.forEachIndexed { index, item ->
             val position = "Position ${index + 1} (${item.name})"
             val kategorie = item.taxCategory
@@ -134,7 +144,100 @@ object InvoiceCalculator {
                     "bitte 'umsatzsteuer-id' unter 'kunde' angeben.",
             )
         }
+
+        validateVatIdCheck(invoice, config, brauchtKundenUstId.toSet())
     }
+
+    /**
+     * Verlangt den dokumentierten Nachweis der Bestätigungsabfrage, bevor ohne
+     * Umsatzsteuer abgerechnet wird.
+     *
+     * Rechtsstand August 2026. Die Regeln sind bewusst verschieden streng, weil
+     * die Rechtslage es auch ist:
+     *
+     *  - Innergemeinschaftliche Lieferung (K): §6a UStG verlangt die geprüfte
+     *    USt-IdNr., unabhängig davon, wo der Kunde sitzt. Kein Spielraum.
+     *  - Reverse Charge (AE) grenzüberschreitend in die EU: Seit Januar 2024
+     *    ist die gültige USt-IdNr. keine zwingende Voraussetzung des §13b mehr
+     *    – entscheidend ist die Unternehmereigenschaft. Ohne dokumentierte
+     *    Abfrage entfällt aber der Vertrauensschutz, deshalb hier trotzdem
+     *    Pflicht.
+     *  - Reverse Charge im Inland (§13b Abs. 2, etwa Bauleistungen): kein
+     *    Nachweis. Das BZSt bestätigt *ausländische* USt-IdNrn.; für die Nummer
+     *    eines deutschen Kunden gibt es diese Abfrage gar nicht.
+     *  - Reverse Charge an einen Drittlandskunden: VIES und die Abfrage beim
+     *    BZSt decken nur EU-Mitgliedstaaten ab. Für die Schweiz oder das
+     *    Vereinigte Königreich gibt es dort nichts abzufragen; einen Nachweis
+     *    zu verlangen, den es nicht geben kann, wäre keine Strenge, sondern ein
+     *    Fehler. Stattdessen ein Hinweis, siehe [collectHints].
+     *
+     * Das ist Steuerrecht und keine Rechtsberatung – wer die Regeln ändert,
+     * sollte sie mit dem Steuerberater abgleichen.
+     */
+    private fun validateVatIdCheck(invoice: Invoice, config: SellerConfig, kategorien: Set<TaxCategory>) {
+        if (kategorien.isEmpty()) return
+        val kunde = invoice.customer
+        val ausland = !kunde.address.countryCode.equals(config.address.countryCode, ignoreCase = true)
+        val inEu = EuMemberStates.contains(kunde.address.countryCode)
+        val pflicht =
+            TaxCategory.INTRA_COMMUNITY in kategorien ||
+                (TaxCategory.REVERSE_CHARGE in kategorien && inEu && ausland)
+        if (!pflicht) return
+
+        val pruefung =
+            kunde.vatIdCheck
+                ?: throw InvoiceValidationException(
+                    "Ohne dokumentierte Bestätigungsabfrage keine Rechnung ohne Umsatzsteuer. " +
+                        "Bitte die USt-IdNr. ${kunde.vatId} beim BZSt oder über VIES prüfen und das " +
+                        "Ergebnis unter 'kunde: ust-id-geprueft' eintragen (am, verfahren, nachweis).",
+                )
+
+        // Eine Abfrage nach dem Rechnungsdatum belegt für diese Rechnung nichts.
+        if (pruefung.date.isAfter(invoice.issueDate)) {
+            throw InvoiceValidationException(
+                "Die Bestätigungsabfrage vom ${pruefung.date} liegt nach dem Rechnungsdatum " +
+                    "${invoice.issueDate} – für diese Rechnung belegt sie nichts.",
+            )
+        }
+    }
+
+    /** Hinweise, die den Lauf nicht abbrechen, aber in die eigene Akte gehören. */
+    private fun collectHints(invoice: Invoice, config: SellerConfig): List<String> =
+        buildList {
+            val kunde = invoice.customer
+            val kategorien = invoice.items.map { it.taxCategory }.toSet()
+            val ausland = !kunde.address.countryCode.equals(config.address.countryCode, ignoreCase = true)
+
+            if (TaxCategory.REVERSE_CHARGE in kategorien && ausland && !EuMemberStates.contains(kunde.address.countryCode)) {
+                add(
+                    "${kunde.address.countryCode} ist kein EU-Mitgliedstaat – eine VIES-Abfrage gibt es dafür " +
+                        "nicht. Für die Akte braucht es einen anderen Nachweis der Unternehmereigenschaft, " +
+                        "etwa eine Unternehmerbescheinigung.",
+                )
+            }
+            kunde.vatIdCheck?.let { pruefung ->
+                if (pruefung.method == CheckMethod.SIMPLE) {
+                    add(
+                        "Die Abfrage vom ${pruefung.date} war einfach, nicht qualifiziert. Nur die " +
+                            "qualifizierte Abfrage beim BZSt gleicht Name und Anschrift ab und verschafft " +
+                            "Vertrauensschutz.",
+                    )
+                }
+                if (pruefung.reference == null) {
+                    add(
+                        "Zur Abfrage vom ${pruefung.date} ist kein Nachweis vermerkt – " +
+                            "ohne Protokoll nützt sie im Zweifel wenig.",
+                    )
+                }
+                val alter = ChronoUnit.MONTHS.between(pruefung.date, invoice.issueDate)
+                if (alter >= 12) {
+                    add(
+                        "Die Bestätigungsabfrage ist $alter Monate alt. Bei laufender Geschäftsbeziehung " +
+                            "wird üblicherweise regelmäßig erneut geprüft.",
+                    )
+                }
+            }
+        }
 
     /**
      * Der Befreiungsgrund einer Gruppe. Alle Positionen einer Gruppe müssen sich

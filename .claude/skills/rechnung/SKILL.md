@@ -176,14 +176,36 @@ ein; bei `E` und `O` hängt er vom Befreiungstatbestand ab und muss angegeben
 werden. Die Regeln werden beim Rechnen geprüft – eine widersprüchliche Rechnung
 entsteht gar nicht erst als PDF.
 
-Für ausländische Kunden gehört die USt-IdNr. unter `kunde`:
+## Bestätigungsabfrage vor einer Rechnung ohne Umsatzsteuer
+
+Bevor ohne Umsatzsteuer abgerechnet wird, muss die USt-IdNr. des Kunden geprüft
+und die Prüfung dokumentiert sein. Der Generator bricht sonst ab – bei
+Kategorie `K` immer, bei `AE` dann, wenn der Kunde in einem *anderen*
+EU-Mitgliedstaat sitzt:
 
 ```yaml
 kunde:
-  name: Beispiel Software AG
-  anschrift: {strasse: Musterstrasse 5, plz: "8005", ort: Zürich, land: CH}
-  umsatzsteuer-id: CHE123456789
+  name: Beispiel Software GmbH
+  anschrift: {strasse: Ringstraße 1, plz: "1010", ort: Wien, land: AT}
+  umsatzsteuer-id: ATU12345678
+  ust-id-geprueft:
+    am: 2026-08-28
+    verfahren: qualifiziert          # oder: einfach
+    nachweis: BZSt-Protokoll 2026-08-28-4711
 ```
+
+Wenn der Nachweis fehlt, **erfinde ihn nicht**. Sag dem Nutzer, dass die Abfrage
+beim BZSt oder über VIES ansteht, und warte auf Datum und Protokollnummer. Ein
+ausgedachter Nachweis wäre schlimmer als gar keine Rechnung.
+
+Bei einer inländischen Steuerschuldumkehr (§13b Abs. 2, etwa Bauleistungen)
+verlangt der Generator nichts: Das BZSt bestätigt ausländische Nummern, für die
+eines deutschen Kunden gibt es diese Abfrage nicht.
+
+Bei Kunden außerhalb der EU (Schweiz, UK, …) verlangt der Generator ebenfalls nichts –
+VIES deckt nur Mitgliedstaaten ab. Er gibt dann einen Hinweis aus, dass für die
+Akte ein anderer Nachweis der Unternehmereigenschaft nötig ist. Gib diesen
+Hinweis weiter.
 
 ## Was dieser Weg noch nicht kann
 

@@ -40,6 +40,10 @@ data class Customer(
     // innergemeinschaftlich geliefert wird (K) – dann muss der Empfänger
     // umsatzsteuerlich identifizierbar sein.
     @SerialName("umsatzsteuer-id") val vatId: VatId? = null,
+    // Der dokumentierte Nachweis der Bestätigungsabfrage. Pflicht, sobald ohne
+    // Umsatzsteuer abgerechnet wird und der Kunde in der EU sitzt – siehe die
+    // Prüfung im InvoiceCalculator.
+    @SerialName("ust-id-geprueft") val vatIdCheck: VatIdCheck? = null,
 )
 
 /**

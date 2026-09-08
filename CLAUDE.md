@@ -64,6 +64,16 @@ CV/Web-Auftritt des Autors), Validierung über veraPDF.
   widersprüchliche Rechnung soll nicht als PDF hinausgehen. Gruppiert wird nach
   Kategorie **und** Satz, weil zwei Positionen mit 0 % steuerlich Verschiedenes
   bedeuten können.
+- **Bestätigungsabfrage**: Vor einer Rechnung ohne Umsatzsteuer muss die
+  USt-IdNr. des Kunden geprüft und die Prüfung dokumentiert sein
+  (`kunde: ust-id-geprueft`). Der Calculator bricht sonst ab. Verschieden
+  streng, weil die Rechtslage es ist (Stand August 2026): bei K immer (§6a
+  UStG), bei AE nur grenzüberschreitend in die EU (seit 1/2024 keine
+  Voraussetzung des §13b mehr, aber Vertrauensschutz), bei Drittländern und im
+  Inland gar nicht – VIES deckt nur Mitgliedstaaten ab, und das BZSt bestätigt
+  *ausländische* Nummern, die eines deutschen Kunden also gar nicht. Die Abfrage selbst macht das Programm bewusst nicht: Sie
+  setzt eine BZSt-Registrierung voraus und muss ein aufbewahrbares Protokoll
+  erzeugen.
 - **ZUGFeRD-Vorbereitung**: Datenmodell enthält von Anfang an alle
   EN-16931-Pflichtfelder (Leistungsdatum, Steuerkategorie, Kennungen), damit
   ZUGFeRD (PDF/A-3 + XML) später ein zusätzlicher Ausgabemodus wird, kein Umbau.
