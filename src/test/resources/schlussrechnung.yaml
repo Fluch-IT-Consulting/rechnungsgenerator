@@ -1,0 +1,39 @@
+# Fiktive Schlussrechnung: die Gesamtleistung, abzüglich zweier vereinnahmter
+# Abschläge. Netto und Steuer stehen je Abschlag ausgeschrieben (ADR-0001) –
+# sie werden nicht aus den Dateien der Abschlagsrechnungen nachgeschlagen.
+nummer: R26-014
+art: schlussrechnung
+datum: 2026-11-05
+leistungszeitraum:
+  von: 2026-06-01
+  bis: 2026-10-31
+kunde:
+  name: Beispiel Software GmbH
+  anschrift:
+    strasse: Industriestraße 1
+    plz: "90402"
+    ort: Nürnberg
+positionen:
+  - bezeichnung: Projekt Nord, Gesamtleistung
+    menge: 1
+    einheit: pauschal
+    einzelpreis: 20000.00
+abschlaege:
+  # Derselbe Abschlag wie in abschlagsrechnung.yaml – Nummer, Datum und
+  # Zeitpunkt der Vereinnahmung stimmen mit dieser Datei überein.
+  - rechnungsnummer: R26-009
+    rechnungsdatum: 2026-06-15
+    vereinnahmt-am: 2026-06-10
+    steueranteile:
+      - steuerkategorie: S
+        ust-satz: 19
+        netto: 4000.00
+        ust: 760.00
+  - rechnungsnummer: R26-011
+    rechnungsdatum: 2026-08-20
+    vereinnahmt-am: 2026-09-02
+    steueranteile:
+      - steuerkategorie: S
+        ust-satz: 19
+        netto: 4000.00
+        ust: 760.00

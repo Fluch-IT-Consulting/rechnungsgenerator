@@ -3,6 +3,7 @@ package de.fluchitconsulting.rechnung
 import de.fluchitconsulting.rechnung.model.CheckMethod
 import de.fluchitconsulting.rechnung.model.Invoice
 import de.fluchitconsulting.rechnung.model.LineItem
+import de.fluchitconsulting.rechnung.model.Prepayment
 import de.fluchitconsulting.rechnung.model.SellerConfig
 import de.fluchitconsulting.rechnung.values.EuMemberStates
 import de.fluchitconsulting.rechnung.values.InvoiceType
@@ -43,6 +44,20 @@ data class VatGroup(
     val exemptionReason: String? = null,
 )
 
+/**
+ * Ein abgesetzter Abschlag mit seinen Summen.
+ *
+ * Netto und Steuer bleiben getrennt (ADR-0002): §14 Abs. 5 Satz 2 UStG setzt
+ * das Entgelt *und* die darauf entfallende Steuer ab, und aus einem
+ * Bruttobetrag ließe sich beides nicht zurückgewinnen.
+ */
+data class DeductedPrepayment(
+    val prepayment: Prepayment,
+    val net: Money,
+    val vat: Money,
+    val gross: Money,
+)
+
 data class InvoiceTotals(
     val lines: List<CalculatedLine>,
     val netTotal: Money,
@@ -55,7 +70,16 @@ data class InvoiceTotals(
      * gehören, und Dinge, die zwar zulässig, aber erklärungsbedürftig sind.
      */
     val hints: List<String> = emptyList(),
-)
+    /** Die abgesetzten Abschläge, in der Reihenfolge der Rechnungsdatei. */
+    val prepayments: List<DeductedPrepayment> = emptyList(),
+) {
+    // Abgeleitet statt gespeichert: Zwei Felder, die dasselbe sagen wie die
+    // Liste, könnten von ihr abweichen.
+    val prepaymentTotal: Money get() = prepayments.sumOf { it.gross }
+
+    /** Was nach der Absetzung noch zu zahlen ist. Null ist zulässig, negativ nicht. */
+    val remainingAmount: Money get() = grossTotal - prepaymentTotal
+}
 
 object InvoiceCalculator {
     fun calculate(invoice: Invoice, config: SellerConfig): InvoiceTotals {
@@ -94,7 +118,18 @@ object InvoiceCalculator {
         val termDays = invoice.paymentTermDaysOverride ?: config.paymentTermDays
         val dueDate = invoice.issueDate.plusDays(termDays.toLong())
 
-        return InvoiceTotals(lines, netTotal, vatGroups, grossTotal, dueDate, hints)
+        val prepayments =
+            invoice.prepayments.map { abschlag ->
+                val net = abschlag.taxShares.sumOf { it.net }
+                val vat = abschlag.taxShares.sumOf { it.vat }
+                DeductedPrepayment(abschlag, net = net, vat = vat, gross = net + vat)
+            }
+        // Die übrigen sechs Regeln stehen in validatePrepayments, das validate()
+        // aufruft: Sie kommen ohne die Summen aus und sollen zuschlagen, bevor
+        // überhaupt gerechnet wird.
+        validateDeduction(vatGroups, grossTotal, prepayments)
+
+        return InvoiceTotals(lines, netTotal, vatGroups, grossTotal, dueDate, hints, prepayments)
     }
 
     /**
@@ -147,7 +182,132 @@ object InvoiceCalculator {
         }
 
         validateReceipt(invoice)
+        validatePrepayments(invoice)
         validateVatIdCheck(invoice, config, brauchtKundenUstId.toSet())
+    }
+
+    /**
+     * Die Angaben je Abschlag – alles, was sich ohne die Summen der Rechnung
+     * prüfen lässt. Die Absetzung gegen die Rechnung selbst folgt in
+     * [validateDeduction], sobald die Steueraufschlüsselung steht.
+     */
+    private fun validatePrepayments(invoice: Invoice) {
+        // Regel 1: Sobald abgesetzt wird, *ist* das Dokument eine Schlussrechnung.
+        if (invoice.prepayments.isNotEmpty() && invoice.type != InvoiceType.FINAL) {
+            throw InvoiceValidationException(
+                "Abschläge werden nur in einer Schlussrechnung abgesetzt (art: schlussrechnung); " +
+                    "dieses Dokument ist eine ${invoice.type.documentName}.",
+            )
+        }
+        // Regel 2: Umgekehrt fehlt dann entweder die Absetzung – oder es ist
+        // gar keine Schlussrechnung.
+        if (invoice.type == InvoiceType.FINAL && invoice.prepayments.isEmpty()) {
+            throw InvoiceValidationException(
+                "Eine Schlussrechnung setzt die vereinnahmten Abschläge ab, hier ist keiner angegeben. " +
+                    "Bitte 'abschlaege' füllen – oder, wenn es keine gab, 'art: rechnung' schreiben.",
+            )
+        }
+
+        // Regel 7: Derselbe Abschlag zweimal abgesetzt ist ein Kopierfehler und
+        // fiele sonst nur über den Restbetrag auf.
+        // Normalisiert verglichen, anders als sonst im Programm: Hier geht es
+        // nicht darum, wie die Nummer geschrieben wird, sondern ob zweimal
+        // dasselbe Dokument gemeint ist. "R26-009 " und "r26-009" sind es.
+        invoice.prepayments
+            .groupBy { it.invoiceNumber.trim().uppercase() }
+            .filterValues { it.size > 1 }
+            .values
+            .firstOrNull()
+            ?.let { doppelt ->
+                throw InvoiceValidationException(
+                    "Der Abschlag ${doppelt.first().invoiceNumber} steht zweimal in dieser Schlussrechnung.",
+                )
+            }
+
+        invoice.prepayments.forEach { abschlag ->
+            val bezeichnung = "Abschlag ${abschlag.invoiceNumber}"
+
+            // Regel 3: §14 Abs. 5 Satz 2 UStG setzt ab, was vereinnahmt wurde,
+            // nicht was berechnet wurde.
+            val vereinnahmtAm =
+                abschlag.receivedOn
+                    ?: throw InvoiceValidationException(
+                        "$bezeichnung: ohne 'vereinnahmt-am' keine Absetzung. Abgesetzt wird, was vereinnahmt " +
+                            "wurde – ein berechneter, aber unbezahlter Abschlag ist eine offene Forderung " +
+                            "und wird gemahnt oder storniert.",
+                    )
+
+            // Regel 4: Was nach dem Rechnungsdatum liegt, ist für diese
+            // Rechnung nicht vereinnahmt.
+            if (vereinnahmtAm.isAfter(invoice.issueDate)) {
+                throw InvoiceValidationException(
+                    "$bezeichnung: vereinnahmt am $vereinnahmtAm, also nach dem Rechnungsdatum " +
+                        "${invoice.issueDate}. Für diese Schlussrechnung ist er nicht vereinnahmt.",
+                )
+            }
+
+            // Regel 9, aus demselben Grund wie Regel 5: Ohne Anteile liefe die
+            // Prüfsumme über eine leere Schleife, und der Abschlag setzte still
+            // 0,00 € ab.
+            if (abschlag.taxShares.isEmpty()) {
+                throw InvoiceValidationException(
+                    "$bezeichnung: keine 'steueranteile' angegeben. Ein Abschlag ohne Netto und Steuer lässt " +
+                        "sich nicht absetzen – §14 Abs. 5 Satz 2 UStG setzt das Entgelt und die darauf " +
+                        "entfallende Steuer ab.",
+                )
+            }
+
+            // Regel 5: Die Prüfsumme gegen den Zahlendreher (ADR-0001). Die
+            // Steuer steht in der Datei, weil sie aus der alten Rechnung
+            // abgeschrieben wird – nachgerechnet wird sie trotzdem.
+            abschlag.taxShares.forEach { anteil ->
+                val erwartet = anteil.net * anteil.vatRate
+                if (anteil.vat != erwartet) {
+                    throw InvoiceValidationException(
+                        "$bezeichnung: ${anteil.net} netto zu ${anteil.vatRate} ergeben $erwartet Umsatzsteuer, " +
+                            "angegeben sind ${anteil.vat}.",
+                    )
+                }
+            }
+        }
+    }
+
+    /**
+     * Die Absetzung gegen die Rechnung selbst – die beiden Regeln, die die
+     * Summen brauchen.
+     */
+    private fun validateDeduction(
+        vatGroups: List<VatGroup>,
+        grossTotal: Money,
+        prepayments: List<DeductedPrepayment>,
+    ) {
+        // Regel 6: Zwei Positionen mit 0 % können steuerlich Verschiedenes
+        // bedeuten, deshalb muss die Kombination aus Kategorie und Satz passen –
+        // nicht nur der Satz.
+        val vorhanden = vatGroups.map { it.category to it.rate }.toSet()
+        prepayments.forEach { abgesetzt ->
+            abgesetzt.prepayment.taxShares.forEach { anteil ->
+                if ((anteil.taxCategory to anteil.vatRate) !in vorhanden) {
+                    throw InvoiceValidationException(
+                        "Abschlag ${abgesetzt.prepayment.invoiceNumber}: ${anteil.taxCategory.code} zu " +
+                            "${anteil.vatRate} kommt in dieser Schlussrechnung nicht vor. Entweder war der " +
+                            "Abschlag damals falsch oder die Schlussrechnung ist es jetzt.",
+                    )
+                }
+            }
+        }
+
+        // Regel 8: Eine Überzahlung ist kein Restbetrag, sondern ein anderes
+        // Dokument – Gutschrift oder Storno, beides gibt es hier noch nicht.
+        val abgesetzt = prepayments.sumOf { it.gross }
+        val restbetrag = grossTotal - abgesetzt
+        if (restbetrag.isNegative()) {
+            throw InvoiceValidationException(
+                "Der Restbetrag wäre $restbetrag: Es sind mehr Abschläge abgesetzt ($abgesetzt) als die " +
+                    "Schlussrechnung ausmacht ($grossTotal). Eine Überzahlung gehört in eine Gutschrift, " +
+                    "nicht in eine Rechnung.",
+            )
+        }
     }
 
     /**

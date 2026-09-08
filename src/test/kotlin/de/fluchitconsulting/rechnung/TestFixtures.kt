@@ -5,11 +5,14 @@ import de.fluchitconsulting.rechnung.model.BankDetails
 import de.fluchitconsulting.rechnung.model.Customer
 import de.fluchitconsulting.rechnung.model.Invoice
 import de.fluchitconsulting.rechnung.model.LineItem
+import de.fluchitconsulting.rechnung.model.Prepayment
 import de.fluchitconsulting.rechnung.model.SellerConfig
 import de.fluchitconsulting.rechnung.model.ServicePeriod
+import de.fluchitconsulting.rechnung.model.TaxShare
 import de.fluchitconsulting.rechnung.values.Bic
 import de.fluchitconsulting.rechnung.values.Iban
 import de.fluchitconsulting.rechnung.values.InvoiceType
+import de.fluchitconsulting.rechnung.values.Money
 import de.fluchitconsulting.rechnung.values.Percent
 import de.fluchitconsulting.rechnung.values.Price
 import de.fluchitconsulting.rechnung.values.TaxCategory
@@ -56,12 +59,33 @@ fun testItem(
     taxExemptionReason = taxExemptionReason,
 )
 
+fun testPrepayment(
+    invoiceNumber: String = "R26-009",
+    issueDate: LocalDate = LocalDate.of(2026, 6, 15),
+    receivedOn: LocalDate? = LocalDate.of(2026, 6, 10),
+    net: String = "4000.00",
+    vat: String = "760.00",
+    vatRate: String = "19",
+    taxCategory: TaxCategory = TaxCategory.STANDARD,
+    taxShares: List<TaxShare>? = null,
+) = Prepayment(
+    invoiceNumber = invoiceNumber,
+    issueDate = issueDate,
+    receivedOn = receivedOn,
+    taxShares =
+        taxShares
+            ?: listOf(
+                TaxShare(taxCategory = taxCategory, vatRate = Percent(vatRate), net = Money(net), vat = Money(vat)),
+            ),
+)
+
 fun testInvoice(
     items: List<LineItem> = listOf(testItem()),
     paymentTermDaysOverride: Int? = null,
     customerVatId: VatId? = null,
     type: InvoiceType = InvoiceType.INVOICE,
     receivedOn: LocalDate? = null,
+    prepayments: List<Prepayment> = emptyList(),
 ) = Invoice(
     number = "R26-001",
     issueDate = LocalDate.of(2026, 8, 14),
@@ -75,5 +99,6 @@ fun testInvoice(
             vatId = customerVatId,
         ),
     items = items,
+    prepayments = prepayments,
     paymentTermDaysOverride = paymentTermDaysOverride,
 )
