@@ -36,7 +36,7 @@ class FinalInvoiceRulesTest : FunSpec({
     fun fehlerVon(invoice: Invoice): String =
         shouldThrow<InvoiceValidationException> { InvoiceCalculator.calculate(invoice, config) }.message!!
 
-    context("die acht Abbruchregeln") {
+    context("die neun Abbruchregeln") {
         test("1. Abschläge nur in einer Schlussrechnung") {
             val fehler = fehlerVon(testInvoice(items = gesamtleistung(), prepayments = listOf(testPrepayment())))
 
@@ -119,6 +119,10 @@ class FinalInvoiceRulesTest : FunSpec({
             val totals = InvoiceCalculator.calculate(invoice, config)
 
             totals.grossTotal shouldBe Money("23800.00")
+            // Netto und Steuer bleiben getrennt (ADR-0002) – deshalb hier
+            // einzeln geprüft und nicht nur der Bruttobetrag.
+            totals.prepayments.map { it.net } shouldBe listOf(Money("4000.00"), Money("4000.00"))
+            totals.prepayments.map { it.vat } shouldBe listOf(Money("760.00"), Money("760.00"))
             totals.prepayments.map { it.gross } shouldBe listOf(Money("4760.00"), Money("4760.00"))
             totals.prepaymentTotal shouldBe Money("9520.00")
             totals.remainingAmount shouldBe Money("14280.00")

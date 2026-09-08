@@ -124,7 +124,7 @@ object InvoiceCalculator {
                 val vat = abschlag.taxShares.sumOf { it.vat }
                 DeductedPrepayment(abschlag, net = net, vat = vat, gross = net + vat)
             }
-        // Die übrigen sechs Regeln stehen in validatePrepayments, das validate()
+        // Die übrigen sieben Regeln stehen in validatePrepayments, das validate()
         // aufruft: Sie kommen ohne die Summen aus und sollen zuschlagen, bevor
         // überhaupt gerechnet wird.
         validateDeduction(vatGroups, grossTotal, prepayments)

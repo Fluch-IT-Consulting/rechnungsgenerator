@@ -87,12 +87,23 @@ abschlaege:
 ```
 
 Im PDF stehen die Abschläge einzeln unter dem Gesamtbetrag, mit Netto und
-Steuer getrennt, darunter der Restbetrag. Abgeschriebene Zahlen übernimmt der
-Generator nicht stillschweigend: Er bricht ab, wenn die Steuer nicht zum
-Satz passt, eine Kombination aus Kategorie und Satz in der Rechnung gar nicht
-vorkommt, eine Rechnungsnummer doppelt steht, das Datum der Vereinnahmung fehlt
-oder nach dem Rechnungsdatum liegt – oder wenn mehr abgesetzt würde, als die
-Rechnung ausmacht.
+Steuer getrennt, darunter der Restbetrag. Ist er null, steht dort ein Satz
+statt einer Zahl.
+
+Abgeschriebene Zahlen übernimmt der Generator nicht stillschweigend. Er bricht
+ab, wenn
+
+- `abschlaege` ohne `art: schlussrechnung` steht – oder eine Schlussrechnung
+  keine trägt,
+- `vereinnahmt-am` fehlt oder nach dem Rechnungsdatum liegt,
+- `steueranteile` leer sind,
+- `ust` nicht zu `netto × ust-satz` passt,
+- eine Kombination aus Steuerkategorie und Satz in der Rechnung gar nicht
+  vorkommt,
+- dieselbe Rechnungsnummer zweimal abgesetzt wird,
+- oder mehr abgesetzt würde, als die Rechnung ausmacht.
+
+Jede Meldung nennt den betroffenen Abschlag und was zu tun ist.
 
 ## Entwicklung
 

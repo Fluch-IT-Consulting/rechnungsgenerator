@@ -176,7 +176,7 @@ class InvoiceRendererTest : FunSpec({
 
         test("jeder Abschlag steht einzeln, mit Netto und Steuer") {
             // UStAE 14.8 Abs. 7 ließe die Summe genügen; einzeln, damit der
-            // Kunde sieht, welche seiner Zahlungen verrechnet wurde.
+            // Kunde sieht, welche seiner Zahlungen abgesetzt wurde.
             val tex =
                 schlussrechnung(
                     gesamtleistung,

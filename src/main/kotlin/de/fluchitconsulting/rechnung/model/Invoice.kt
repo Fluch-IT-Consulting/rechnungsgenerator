@@ -109,7 +109,7 @@ data class Customer(
  *  - [name] (BT-153, Pflicht): Wie heißt die Leistung? Kurz, ein Bezeichner.
  *  - [description] (BT-154): Was umfasst sie? Angaben über die Leistung selbst.
  *  - [note] (BT-127): Was ist zu dieser Abrechnungszeile anzumerken? Kein
- *    Merkmal der Leistung, sondern Kontext – etwa "Abschlag September 2026".
+ *    Merkmal der Leistung, sondern Kontext – etwa "Nachtrag zu Bestellung 4711".
  *
  * Zusammen decken [name] und [description] die Forderung aus §14 Abs. 4 Nr. 5
  * UStG ab: die *Art* der Leistung im Namen, ihren *Umfang* in der Beschreibung.
