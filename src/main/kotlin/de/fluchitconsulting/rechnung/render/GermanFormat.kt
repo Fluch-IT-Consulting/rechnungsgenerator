@@ -77,16 +77,16 @@ object GermanFormat {
      * mehr, sondern eine andere.
      */
     fun monthPeriod(start: LocalDate, end: LocalDate): String {
-        val fuelltRandmonate = start.dayOfMonth == 1 && end == end.withDayOfMonth(end.lengthOfMonth())
-        if (!fuelltRandmonate) return servicePeriod(start, end)
+        val fillsWholeMonths = start.dayOfMonth == 1 && end == end.withDayOfMonth(end.lengthOfMonth())
+        if (!fillsWholeMonths) return servicePeriod(start, end)
 
-        val monat = DateTimeFormatter.ofPattern("MMMM", Locale.GERMANY)
-        val monatMitJahr = DateTimeFormatter.ofPattern("MMMM yyyy", Locale.GERMANY)
+        val month = DateTimeFormatter.ofPattern("MMMM", Locale.GERMANY)
+        val monthWithYear = DateTimeFormatter.ofPattern("MMMM yyyy", Locale.GERMANY)
         return when {
-            YearMonth.from(start) == YearMonth.from(end) -> monatMitJahr.format(start)
+            YearMonth.from(start) == YearMonth.from(end) -> monthWithYear.format(start)
             // Dasselbe Jahr wird einmal genannt, nicht zweimal.
-            start.year == end.year -> "${monat.format(start)} bis ${monatMitJahr.format(end)}"
-            else -> "${monatMitJahr.format(start)} bis ${monatMitJahr.format(end)}"
+            start.year == end.year -> "${month.format(start)} bis ${monthWithYear.format(end)}"
+            else -> "${monthWithYear.format(start)} bis ${monthWithYear.format(end)}"
         }
     }
 

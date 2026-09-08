@@ -218,21 +218,21 @@ object InvoiceCalculator {
             .filterValues { it.size > 1 }
             .values
             .firstOrNull()
-            ?.let { doppelt ->
+            ?.let { duplicates ->
                 throw InvoiceValidationException(
-                    "Der Abschlag ${doppelt.first().invoiceNumber} steht zweimal in dieser Schlussrechnung.",
+                    "Der Abschlag ${duplicates.first().invoiceNumber} steht zweimal in dieser Schlussrechnung.",
                 )
             }
 
         invoice.prepayments.forEach { abschlag ->
-            val bezeichnung = "Abschlag ${abschlag.invoiceNumber}"
+            val label = "Abschlag ${abschlag.invoiceNumber}"
 
             // Regel 3: §14 Abs. 5 Satz 2 UStG setzt ab, was vereinnahmt wurde,
             // nicht was berechnet wurde.
             val vereinnahmtAm =
                 abschlag.receivedOn
                     ?: throw InvoiceValidationException(
-                        "$bezeichnung: ohne 'vereinnahmt-am' keine Absetzung. Abgesetzt wird, was vereinnahmt " +
+                        "$label: ohne 'vereinnahmt-am' keine Absetzung. Abgesetzt wird, was vereinnahmt " +
                             "wurde – ein berechneter, aber unbezahlter Abschlag ist eine offene Forderung " +
                             "und wird gemahnt oder storniert.",
                     )
@@ -241,7 +241,7 @@ object InvoiceCalculator {
             // Rechnung nicht vereinnahmt.
             if (vereinnahmtAm.isAfter(invoice.issueDate)) {
                 throw InvoiceValidationException(
-                    "$bezeichnung: vereinnahmt am $vereinnahmtAm, also nach dem Rechnungsdatum " +
+                    "$label: vereinnahmt am $vereinnahmtAm, also nach dem Rechnungsdatum " +
                         "${invoice.issueDate}. Für diese Schlussrechnung ist er nicht vereinnahmt.",
                 )
             }
@@ -251,7 +251,7 @@ object InvoiceCalculator {
             // 0,00 € ab.
             if (abschlag.taxShares.isEmpty()) {
                 throw InvoiceValidationException(
-                    "$bezeichnung: keine 'steueranteile' angegeben. Ein Abschlag ohne Netto und Steuer lässt " +
+                    "$label: keine 'steueranteile' angegeben. Ein Abschlag ohne Netto und Steuer lässt " +
                         "sich nicht absetzen – §14 Abs. 5 Satz 2 UStG setzt das Entgelt und die darauf " +
                         "entfallende Steuer ab.",
                 )
@@ -261,10 +261,10 @@ object InvoiceCalculator {
             // Steuer steht in der Datei, weil sie aus der alten Rechnung
             // abgeschrieben wird – nachgerechnet wird sie trotzdem.
             abschlag.taxShares.forEach { anteil ->
-                val erwartet = anteil.net * anteil.vatRate
-                if (anteil.vat != erwartet) {
+                val expected = anteil.net * anteil.vatRate
+                if (anteil.vat != expected) {
                     throw InvoiceValidationException(
-                        "$bezeichnung: ${anteil.net} netto zu ${anteil.vatRate} ergeben $erwartet Umsatzsteuer, " +
+                        "$label: ${anteil.net} netto zu ${anteil.vatRate} ergeben $expected Umsatzsteuer, " +
                             "angegeben sind ${anteil.vat}.",
                     )
                 }
@@ -284,10 +284,10 @@ object InvoiceCalculator {
         // Regel 6: Zwei Positionen mit 0 % können steuerlich Verschiedenes
         // bedeuten, deshalb muss die Kombination aus Kategorie und Satz passen –
         // nicht nur der Satz.
-        val vorhanden = vatGroups.map { it.category to it.rate }.toSet()
+        val present = vatGroups.map { it.category to it.rate }.toSet()
         prepayments.forEach { abgesetzt ->
             abgesetzt.prepayment.taxShares.forEach { anteil ->
-                if ((anteil.taxCategory to anteil.vatRate) !in vorhanden) {
+                if ((anteil.taxCategory to anteil.vatRate) !in present) {
                     throw InvoiceValidationException(
                         "Abschlag ${abgesetzt.prepayment.invoiceNumber}: ${anteil.taxCategory.code} zu " +
                             "${anteil.vatRate} kommt in dieser Schlussrechnung nicht vor. Entweder war der " +

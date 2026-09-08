@@ -239,7 +239,7 @@ object InvoiceRenderer {
 
         // 2.5mm wie bei den Positionen: Jede Zeile hat eine Zusatzzeile, und bei
         // knapperem Abstand verschmilzt sie optisch mit der nächsten.
-        val zeilen =
+        val rows =
             totals.prepayments.joinToString(" $BR[2.5mm]\n") { abgesetzt ->
                 "  ${describePrepayment(abgesetzt.prepayment)} & " +
                     "\u2212${GermanFormat.amountWithCurrency(abgesetzt.gross)}"
@@ -248,7 +248,7 @@ object InvoiceRenderer {
         // Ein Restbetrag von null bekommt einen Satz statt einer Zahl: Ein
         // nacktes "0,00 €" unter dem Strich sieht aus wie ein Fehler, nicht wie
         // ein ausgeglichener Betrag.
-        val (abschluss, nachsatz) =
+        val (closingRow, trailingNote) =
             if (totals.remainingAmount.isZero()) {
                 "" to
                     "\n\n\\hinweisabsatz{Der Rechnungsbetrag ist durch die vereinnahmten Abschläge " +
@@ -258,7 +258,7 @@ object InvoiceRenderer {
             }
 
         return "\\absetzungskopf{Abzüglich der berechneten und vereinnahmten Abschläge:}\n" +
-            "\\absetzungstabelle{\n" + zeilen + abschluss + "\n}" + nachsatz
+            "\\absetzungstabelle{\n" + rows + closingRow + "\n}" + trailingNote
     }
 
     /**
@@ -271,7 +271,7 @@ object InvoiceRenderer {
         // lässt keinen Abschlag ohne Vereinnahmung durch. Wäre hier doch einer,
         // soll es krachen und nicht eine Zeile ohne Datum gedruckt werden.
         val vereinnahmtAm = checkNotNull(abschlag.receivedOn) { "Abschlag ${abschlag.invoiceNumber} ohne Vereinnahmung" }
-        val kopf =
+        val heading =
             "Abschlagsrechnung ${abschlag.invoiceNumber.escapeLatex()} vom " +
                 GermanFormat.shortDate(abschlag.issueDate) +
                 ", vereinnahmt am ${GermanFormat.shortDate(vereinnahmtAm)}"
@@ -280,7 +280,7 @@ object InvoiceRenderer {
                 "netto ${GermanFormat.amountWithCurrency(anteil.net)} zzgl. " +
                     "${GermanFormat.percent(anteil.vatRate)} USt. ${GermanFormat.amountWithCurrency(anteil.vat)}"
             }
-        return "$kopf\\absetzungsdetail{${anteile.escapeLatex()}}"
+        return "$heading\\absetzungsdetail{${anteile.escapeLatex()}}"
     }
 
     /**

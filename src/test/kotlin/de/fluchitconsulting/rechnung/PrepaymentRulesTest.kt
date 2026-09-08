@@ -31,17 +31,17 @@ class PrepaymentRulesTest : FunSpec({
     }
 
     test("vereinnahmt-am gehört nur auf eine Abschlagsrechnung") {
-        val fehler =
+        val exception =
             shouldThrow<InvoiceValidationException> {
                 InvoiceCalculator.calculate(testInvoice(receivedOn = LocalDate.of(2026, 8, 10)), config)
             }
 
-        fehler.message!! shouldContain "abschlagsrechnung"
-        fehler.message!! shouldContain "Rechnung"
+        exception.message!! shouldContain "abschlagsrechnung"
+        exception.message!! shouldContain "Rechnung"
     }
 
     test("die Meldung nennt das Dokument, auf dem die Angabe steht") {
-        val fehler =
+        val exception =
             shouldThrow<InvoiceValidationException> {
                 InvoiceCalculator.calculate(
                     testInvoice(type = InvoiceType.FINAL, receivedOn = LocalDate.of(2026, 8, 10)),
@@ -49,7 +49,7 @@ class PrepaymentRulesTest : FunSpec({
                 )
             }
 
-        fehler.message!! shouldContain "Schlussrechnung"
+        exception.message!! shouldContain "Schlussrechnung"
     }
 
     test("eine Vereinnahmung nach dem Rechnungsdatum belegt für diese Rechnung nichts") {
@@ -62,8 +62,8 @@ class PrepaymentRulesTest : FunSpec({
                 receivedOn = LocalDate.of(2026, 8, 15),
             )
 
-        val fehler = shouldThrow<InvoiceValidationException> { InvoiceCalculator.calculate(invoice, config) }
+        val exception = shouldThrow<InvoiceValidationException> { InvoiceCalculator.calculate(invoice, config) }
 
-        fehler.message!! shouldContain "2026-08-15"
+        exception.message!! shouldContain "2026-08-15"
     }
 })

@@ -135,6 +135,15 @@ CV/Web-Auftritt des Autors), Validierung über veraPDF.
 - Bezeichner Englisch, Kommentare Deutsch. Kommentare sind lernorientiert
   (der Autor lernt Kotlin), aber knapp: Kotlin-Idiome kurz erklären, wo sie
   zum ersten Mal auftauchen – nicht jede Zeile kommentieren.
+
+  **Ausnahme: die Fachbegriffe aus `CONTEXT.md`.** `abschlag`, `anteil`,
+  `restbetrag`, `vereinnahmt`, `zeitraum` heißen auch in lokalen Variablen und
+  Parametern so wie im Glossar. Eine Übersetzung (`downPayment`, `remainder`)
+  wäre ein zweites Vokabular neben dem, das die Domäne schon hat, und zwänge
+  beim Lesen zum Hin- und Herübersetzen – das Glossar gibt es genau deshalb.
+  Die Ausnahme gilt eng: Alles ohne Fachbezug bleibt englisch, also `expected`
+  statt `erwartet`, `rows` statt `zeilen`, `message` statt `meldung`. Die Grenze
+  verläuft nicht an der Sprache, sondern daran, ob das Wort im Glossar steht.
 - Keine echten Firmen-/Kundendaten im Repo (Projekt wird ggf. öffentlich).
   Testdaten: fiktive Firma, Test-IBAN (DE89 3704 0044 …), erfundene USt-ID.
   Das gilt auch für **Beispiele in Dokumentation und Skills** – dort rutschen

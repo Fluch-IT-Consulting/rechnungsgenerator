@@ -33,78 +33,78 @@ class FinalInvoiceRulesTest : FunSpec({
     fun schlussrechnung(vararg prepayments: Prepayment) =
         testInvoice(type = InvoiceType.FINAL, items = gesamtleistung(), prepayments = prepayments.toList())
 
-    fun fehlerVon(invoice: Invoice): String =
+    fun errorMessageOf(invoice: Invoice): String =
         shouldThrow<InvoiceValidationException> { InvoiceCalculator.calculate(invoice, config) }.message!!
 
     context("die neun Abbruchregeln") {
         test("1. Abschläge nur in einer Schlussrechnung") {
-            val fehler = fehlerVon(testInvoice(items = gesamtleistung(), prepayments = listOf(testPrepayment())))
+            val message = errorMessageOf(testInvoice(items = gesamtleistung(), prepayments = listOf(testPrepayment())))
 
-            fehler shouldContain "schlussrechnung"
+            message shouldContain "schlussrechnung"
         }
 
         test("2. eine Schlussrechnung ohne Abschläge") {
-            val fehler = fehlerVon(schlussrechnung())
+            val message = errorMessageOf(schlussrechnung())
 
-            fehler shouldContain "abschlaege"
+            message shouldContain "abschlaege"
         }
 
         test("3. ein Abschlag ohne Vereinnahmung wird nicht abgesetzt") {
             // §14 Abs. 5 Satz 2 UStG setzt ab, was vereinnahmt wurde. Ein
             // berechneter, aber unbezahlter Abschlag ist eine offene Forderung.
-            val fehler = fehlerVon(schlussrechnung(testPrepayment(receivedOn = null)))
+            val message = errorMessageOf(schlussrechnung(testPrepayment(receivedOn = null)))
 
-            fehler shouldContain "R26-009"
-            fehler shouldContain "vereinnahmt-am"
+            message shouldContain "R26-009"
+            message shouldContain "vereinnahmt-am"
         }
 
         test("4. vereinnahmt nach dem Rechnungsdatum") {
-            val fehler = fehlerVon(schlussrechnung(testPrepayment(receivedOn = LocalDate.of(2026, 9, 1))))
+            val message = errorMessageOf(schlussrechnung(testPrepayment(receivedOn = LocalDate.of(2026, 9, 1))))
 
-            fehler shouldContain "2026-09-01"
-            fehler shouldContain "2026-08-14"
+            message shouldContain "2026-09-01"
+            message shouldContain "2026-08-14"
         }
 
         test("5. die Steuer des Abschlags stimmt nicht mit Netto und Satz überein") {
-            val fehler = fehlerVon(schlussrechnung(testPrepayment(vat = "670.00")))
+            val message = errorMessageOf(schlussrechnung(testPrepayment(vat = "670.00")))
 
-            fehler shouldContain "670"
-            fehler shouldContain "760"
+            message shouldContain "670"
+            message shouldContain "760"
         }
 
         test("6. eine Kombination, die in der Schlussrechnung nicht vorkommt") {
             // Die Gesamtleistung ist mit 19 % abgerechnet; ein Abschlag mit 7 %
             // gehört entweder zu einer anderen Rechnung oder war damals falsch.
-            val fehler = fehlerVon(schlussrechnung(testPrepayment(vatRate = "7", vat = "280.00")))
+            val message = errorMessageOf(schlussrechnung(testPrepayment(vatRate = "7", vat = "280.00")))
 
-            fehler shouldContain "kommt in dieser Schlussrechnung nicht vor"
-            fehler shouldContain "R26-009"
+            message shouldContain "kommt in dieser Schlussrechnung nicht vor"
+            message shouldContain "R26-009"
         }
 
         test("7. dieselbe Rechnungsnummer zweimal") {
-            val fehler = fehlerVon(schlussrechnung(testPrepayment(), testPrepayment()))
+            val message = errorMessageOf(schlussrechnung(testPrepayment(), testPrepayment()))
 
-            fehler shouldContain "R26-009"
-            fehler shouldContain "zweimal"
+            message shouldContain "R26-009"
+            message shouldContain "zweimal"
         }
 
         test("8. ein negativer Restbetrag") {
             // Mehr abgesetzt als berechnet: Das ist keine Rechnung mehr,
             // sondern ein Fall für eine Gutschrift.
-            val zuViel = testPrepayment(net = "30000.00", vat = "5700.00")
+            val tooLarge = testPrepayment(net = "30000.00", vat = "5700.00")
 
-            val fehler = fehlerVon(schlussrechnung(zuViel))
+            val message = errorMessageOf(schlussrechnung(tooLarge))
 
-            fehler shouldContain "Restbetrag"
+            message shouldContain "Restbetrag"
         }
 
         test("9. ein Abschlag ohne Steueranteile") {
             // Aus demselben Grund wie Regel 5: Sonst setzte der Abschlag still
             // 0,00 € ab, ohne dass die Prüfsumme je etwas zu prüfen hätte.
-            val fehler = fehlerVon(schlussrechnung(testPrepayment(taxShares = emptyList())))
+            val message = errorMessageOf(schlussrechnung(testPrepayment(taxShares = emptyList())))
 
-            fehler shouldContain "steueranteile"
-            fehler shouldContain "R26-009"
+            message shouldContain "steueranteile"
+            message shouldContain "R26-009"
         }
     }
 
