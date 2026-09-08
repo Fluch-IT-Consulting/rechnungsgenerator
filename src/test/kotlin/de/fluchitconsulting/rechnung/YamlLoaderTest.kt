@@ -1,5 +1,6 @@
 package de.fluchitconsulting.rechnung
 
+import de.fluchitconsulting.rechnung.values.InvoiceType
 import de.fluchitconsulting.rechnung.values.Money
 import de.fluchitconsulting.rechnung.values.Price
 import io.kotest.assertions.throwables.shouldThrow
@@ -45,6 +46,24 @@ class YamlLoaderTest : FunSpec({
         // Strikter Modus: Tippfehler wie "nummmer" sollen laut scheitern.
         shouldThrow<Exception> {
             YamlLoader.parseInvoice(resource("rechnung.yaml").replace("nummer:", "nummmer:"))
+        }
+    }
+
+    test("eine Rechnungsdatei ohne art ist eine gewöhnliche Rechnung") {
+        // Der negative Test dieses Schritts: Bestehende Dateien kennen den
+        // Schlüssel nicht und sollen sich trotzdem verhalten wie bisher.
+        YamlLoader.parseInvoice(resource("rechnung.yaml")).type shouldBe InvoiceType.INVOICE
+    }
+
+    test("art wählt die Rechnungsart") {
+        val yaml = resource("rechnung.yaml").replace("nummer:", "art: abschlagsrechnung\nnummer:")
+
+        YamlLoader.parseInvoice(yaml).type shouldBe InvoiceType.PREPAYMENT
+    }
+
+    test("eine unbekannte art wird abgelehnt") {
+        shouldThrow<Exception> {
+            YamlLoader.parseInvoice(resource("rechnung.yaml").replace("nummer:", "art: anzahlung\nnummer:"))
         }
     }
 })
