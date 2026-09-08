@@ -8,7 +8,9 @@ description: >
   ein Kunde und ein Zeitraum genannt werden ("mach mal die August-Rechnung
   fertig") und das Wort "Rechnung" gar nicht fällt. Ebenso bei Fragen nach der
   nächsten freien Rechnungsnummer oder wenn eine bestehende Rechnung als Vorlage
-  für eine neue dienen soll.
+  für eine neue dienen soll. Ebenso für Abschlagsrechnungen ("Abschlag auf
+  Projekt X") und Schlussrechnungen, in denen bereits vereinnahmte Abschläge
+  abgesetzt werden.
 ---
 
 # Rechnung anlegen
@@ -92,6 +94,7 @@ soll die Zahlen prüfen können, ohne die Datei zu öffnen.
 
 ```yaml
 nummer: R26-012
+art: rechnung                       # optional, Vorgabe: rechnung
 datum: 2026-09-02
 leistungszeitraum:
   von: 2026-08-01
@@ -106,7 +109,7 @@ kunde:
 positionen:
   - bezeichnung: IT-Beratungsleistungen      # Pflicht: die Art der Leistung
     beschreibung: Arbeitspaket Nord 26.3     # optional: ihr Umfang
-    hinweis: Abschlag September 2026         # optional: Abrechnungskontext
+    hinweis: Nachtrag zu Bestellung 4711     # optional: Abrechnungskontext
     menge: 86.5
     einheit: Std.                   # geschlossene Liste, siehe unten
     einzelpreis: 95.00
@@ -133,6 +136,89 @@ und nennt die zulässigen:
 9362), USt-IdNr. (Länderpräfix, bei deutschen Nummern auch die Prüfziffer) und
 Steuernummer (Struktur). Schreibweise mit oder ohne Leerzeichen ist egal – auf
 der Rechnung erscheint immer die gruppierte Form.
+
+## Abschlagsrechnung und Schlussrechnung
+
+`art` sagt, worüber abgerechnet wird: `rechnung` (Vorgabe), `abschlagsrechnung`,
+`schlussrechnung` oder `teilrechnung`. Der Unterschied ist keine Formsache. Wer
+einen Abschlag wie eine gewöhnliche Rechnung abrechnet und später noch einmal
+die Gesamtleistung, weist die Umsatzsteuer zweimal aus und schuldet sie nach
+§14c Abs. 1 UStG auch zweimal.
+
+**Abschlagsrechnung** – die Leistung ist noch nicht erbracht:
+
+```yaml
+nummer: R26-009
+art: abschlagsrechnung
+datum: 2026-06-15
+leistungszeitraum:                  # der voraussichtliche; Monate genügen
+  von: 2026-06-01
+  bis: 2026-10-31
+vereinnahmt-am: 2026-06-10          # nur wenn das Geld schon da ist
+kunde: …
+positionen:
+  - bezeichnung: Abschlag auf Projekt Nord
+    beschreibung: 1. von 3 Abschlägen (30 % des Auftragswerts)
+    menge: 1
+    einheit: pauschal
+    einzelpreis: 4000.00
+```
+
+Das PDF beschriftet den Zeitraum als voraussichtlichen und trägt den Pflichtsatz,
+dass die Leistung noch aussteht und eine Schlussrechnung folgt. Prozentsätze
+kennt das Format nicht: "30 % von 40.000 €" rechnest du beim Anlegen einmal aus
+und schreibst den Betrag hin; woher er stammt, gehört in `beschreibung`.
+
+`vereinnahmt-am` nur angeben, wenn der Zeitpunkt feststeht – und nur auf einer
+Abschlagsrechnung. Steht er nicht fest, weglassen; **nicht schätzen**.
+
+**Schlussrechnung** – die Gesamtleistung, abzüglich der vereinnahmten Abschläge:
+
+```yaml
+nummer: R26-014
+art: schlussrechnung
+datum: 2026-11-05
+leistungszeitraum:
+  von: 2026-06-01
+  bis: 2026-10-31
+kunde: …
+positionen:
+  - bezeichnung: Projekt Nord, Gesamtleistung
+    menge: 1
+    einheit: pauschal
+    einzelpreis: 20000.00
+abschlaege:
+  - rechnungsnummer: R26-009
+    rechnungsdatum: 2026-06-15
+    vereinnahmt-am: 2026-06-10
+    steueranteile:                  # Liste: ein Abschlag darf gemischt sein
+      - steuerkategorie: S
+        ust-satz: 19
+        netto: 4000.00
+        ust: 760.00
+```
+
+Die Werte stehen ausgeschrieben in der Datei; der Generator schlägt nichts im
+Verzeichnis nach, damit dieselbe Datei in einem Jahr dasselbe PDF ergibt. Sie
+sind also von Hand aus der Abschlagsrechnung zu übernehmen – **abtippen, nicht
+erinnern**, und im Zweifel die Quelldatei öffnen.
+
+Der Generator bricht ab, wenn:
+
+| Fall | Warum |
+|---|---|
+| `abschlaege` ohne `art: schlussrechnung` | Sobald abgesetzt wird, *ist* es eine Schlussrechnung |
+| `art: schlussrechnung` ohne `abschlaege` | Dann fehlt die Absetzung – oder es ist keine Schlussrechnung |
+| `vereinnahmt-am` fehlt | Abgesetzt wird, was vereinnahmt wurde (§14 Abs. 5 Satz 2 UStG) |
+| `vereinnahmt-am` nach dem Rechnungsdatum | Für diese Rechnung ist der Abschlag nicht vereinnahmt |
+| `ust` passt nicht zu `netto × ust-satz` | Prüfsumme gegen den Zahlendreher beim Abschreiben |
+| Kategorie und Satz kommen in der Rechnung nicht vor | Entweder war der Abschlag falsch oder die Schlussrechnung ist es |
+| Dieselbe `rechnungsnummer` zweimal | Kopierfehler |
+| Restbetrag negativ | Eine Überzahlung ist eine Gutschrift, keine Rechnung |
+| Leere `steueranteile` | Ein Abschlag ohne Netto und Steuer lässt sich nicht absetzen |
+
+Ist ein Abschlag **nicht** bezahlt, gehört er nicht in die Schlussrechnung: Er
+wird gemahnt oder storniert. Sag das, statt ein Datum zu erfinden.
 
 ## Die drei Textfelder einer Position
 
@@ -212,5 +298,11 @@ Hinweis weiter.
 Sprich es an, wenn einer dieser Fälle auftaucht, statt etwas Falsches zu bauen:
 
 - **Skonto und andere Entgeltminderungen**: kein Feld vorhanden.
-- **Abschlags- und Schlussrechnungen**: Abschläge lassen sich in der
-  Schlussrechnung nicht absetzen.
+- **Gutschrift und Storno**: fehlen – und damit der Fall, dass ein Kunde zu viel
+  gezahlt hat. Ein negativer Restbetrag bricht ab, statt eine Erstattung
+  auszuweisen.
+- **Abschläge selbst heraussuchen**: Dieser Skill sucht die Abschlagsrechnungen
+  eines Kunden nicht im Ablageverzeichnis zusammen und gleicht die eingetragenen
+  Werte auch nicht gegen die Quelldateien ab. Beides ist vorgesehen, aber noch
+  nicht gebaut. Bis dahin: Werte aus der Abschlagsrechnung übernehmen und vor
+  dem Erzeugen einmal gegenlesen.
