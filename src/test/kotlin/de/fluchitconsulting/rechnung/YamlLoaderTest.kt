@@ -73,4 +73,23 @@ class YamlLoaderTest : FunSpec({
         invoice.type shouldBe InvoiceType.PREPAYMENT
         invoice.receivedOn shouldBe LocalDate.of(2026, 6, 10)
     }
+    test("die Schlussrechnung bringt ihre Abschläge mit und rechnet den Restbetrag") {
+        val config = YamlLoader.parseSellerConfig(resource("stammdaten.yaml"))
+        val invoice = YamlLoader.parseInvoice(resource("schlussrechnung.yaml"))
+
+        invoice.type shouldBe InvoiceType.FINAL
+        invoice.prepayments.map { it.invoiceNumber } shouldBe listOf("R26-009", "R26-011")
+        invoice.prepayments
+            .first()
+            .taxShares
+            .single()
+            .vat shouldBe Money("760.00")
+
+        val totals = InvoiceCalculator.calculate(invoice, config)
+
+        // 20.000 netto + 19 % = 23.800 brutto, abzüglich zweimal 4.760.
+        totals.grossTotal shouldBe Money("23800.00")
+        totals.prepaymentTotal shouldBe Money("9520.00")
+        totals.remainingAmount shouldBe Money("14280.00")
+    }
 })

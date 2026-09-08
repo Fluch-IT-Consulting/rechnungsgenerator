@@ -1,6 +1,7 @@
 package de.fluchitconsulting.rechnung.model
 
 import de.fluchitconsulting.rechnung.values.InvoiceType
+import de.fluchitconsulting.rechnung.values.Money
 import de.fluchitconsulting.rechnung.values.Percent
 import de.fluchitconsulting.rechnung.values.Price
 import de.fluchitconsulting.rechnung.values.TaxCategory
@@ -29,7 +30,52 @@ data class Invoice(
     @SerialName("vereinnahmt-am") val receivedOn: IsoDate? = null,
     // Überschreibt bei Bedarf das Zahlungsziel aus den Stammdaten.
     @SerialName("zahlungsziel-tage") val paymentTermDaysOverride: Int? = null,
+    // Die vereinnahmten Abschläge, die diese Schlussrechnung absetzt. Nur dort;
+    // sobald abgesetzt wird, *ist* das Dokument eine Schlussrechnung.
+    @SerialName("abschlaege") val prepayments: List<Prepayment> = emptyList(),
     @SerialName("bemerkung") val note: String? = null,
+)
+
+/**
+ * Ein vereinnahmter Abschlag, der in der Schlussrechnung abgesetzt wird.
+ *
+ * Die Werte stehen ausgeschrieben in der Schlussrechnungs-Datei und werden
+ * nicht aus der Datei der Abschlagsrechnung nachgeschlagen (ADR-0001):
+ * Zwischen beiden liegen Monate, in denen Dateien in Jahresordner wandern und
+ * der Code sich ändert. Eine Rechnung, die sich beim Erzeugen auf fremde
+ * Dateien verlässt, ist keine zweimal.
+ *
+ * [receivedOn] heißt hier wie auf der Abschlagsrechnung selbst: Es ist
+ * dieselbe Tatsache, die Vereinnahmung. Fachlich ist die Angabe Pflicht, im
+ * Modell aber optional – fehlt sie, soll der Calculator erklären dürfen, warum
+ * ein nicht vereinnahmter Abschlag nicht abgesetzt wird, statt eine Meldung
+ * über ein fehlendes YAML-Feld zu zeigen.
+ */
+@Serializable
+data class Prepayment(
+    @SerialName("rechnungsnummer") val invoiceNumber: String,
+    @SerialName("rechnungsdatum") val issueDate: IsoDate,
+    @SerialName("vereinnahmt-am") val receivedOn: IsoDate? = null,
+    // Liste, weil ein Abschlag gemischt sein darf – etwa 19 % und 7 %.
+    @SerialName("steueranteile") val taxShares: List<TaxShare>,
+)
+
+/**
+ * Der Anteil eines Abschlags, der auf eine Steuerkategorie und einen Satz
+ * entfällt – mit Bemessungsgrundlage und Steuerbetrag getrennt.
+ *
+ * Getrennt, weil die Schlussrechnung nach §14 Abs. 5 Satz 2 UStG das Entgelt
+ * *und* die darauf entfallende Steuer absetzt. Ein Bruttobetrag allein ließe
+ * sich nicht mehr auf die Steuerarten aufteilen (ADR-0002).
+ */
+@Serializable
+data class TaxShare(
+    @SerialName("steuerkategorie") val taxCategory: TaxCategory = TaxCategory.STANDARD,
+    @SerialName("ust-satz") val vatRate: Percent,
+    @SerialName("netto") val net: Money,
+    // Redundant zu netto × satz – und genau deshalb da: Der Calculator rechnet
+    // nach und findet den Zahlendreher (ADR-0001).
+    @SerialName("ust") val vat: Money,
 )
 
 @Serializable
