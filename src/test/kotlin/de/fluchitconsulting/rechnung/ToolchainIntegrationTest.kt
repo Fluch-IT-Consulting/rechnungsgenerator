@@ -56,6 +56,17 @@ class ToolchainIntegrationTest : FunSpec({
         }
     }
 
+    test("erzeugt aus einer Schlussrechnung ein gültiges PDF/A-1b") {
+        val config = YamlLoader.parseSellerConfig(resource("stammdaten.yaml"))
+        val invoice = YamlLoader.parseInvoice(resource("schlussrechnung.yaml"))
+
+        val result = InvoiceGenerator.generate(invoice, config, workDir)
+
+        withClue(result.validation.describe()) {
+            result.validation.valid shouldBe true
+        }
+    }
+
     test("der Dateiname nennt Rechnungsart und -nummer") {
         InvoiceGenerator.jobNameFor(testInvoice()) shouldBe "Rechnung-R26-001"
         InvoiceGenerator.jobNameFor(testInvoice(type = InvoiceType.PREPAYMENT)) shouldBe "Abschlagsrechnung-R26-001"

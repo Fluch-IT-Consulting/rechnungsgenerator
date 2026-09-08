@@ -2,9 +2,12 @@ package de.fluchitconsulting.rechnung.render
 
 import de.fluchitconsulting.rechnung.InvoiceCalculator
 import de.fluchitconsulting.rechnung.YamlLoader
+import de.fluchitconsulting.rechnung.model.LineItem
+import de.fluchitconsulting.rechnung.model.Prepayment
 import de.fluchitconsulting.rechnung.model.ServicePeriod
 import de.fluchitconsulting.rechnung.testInvoice
 import de.fluchitconsulting.rechnung.testItem
+import de.fluchitconsulting.rechnung.testPrepayment
 import de.fluchitconsulting.rechnung.testSellerConfig
 import de.fluchitconsulting.rechnung.values.InvoiceType
 import io.kotest.core.spec.style.FunSpec
@@ -140,7 +143,9 @@ class InvoiceRendererTest : FunSpec({
 
         test("die Vereinnahmung wird genannt, sobald sie feststeht") {
             abschlag(LocalDate.of(2026, 8, 10)) shouldContain "Abschlag vereinnahmt am 10. August 2026"
-            abschlag() shouldNotContain "vereinnahmt"
+            // Auf die Zeile prüfen, nicht auf das Wort: Es steht auch in einem
+            // Kommentar der Vorlage, und die wird mit gerendert.
+            abschlag() shouldNotContain "Abschlag vereinnahmt am"
         }
 
         test("die Metadaten des PDF tragen dieselbe Bezeichnung") {
@@ -150,6 +155,69 @@ class InvoiceRendererTest : FunSpec({
 
             xmp shouldContain "\\Title{Abschlagsrechnung R26-001}"
             xmp shouldContain "\\Subject{Abschlagsrechnung R26-001 vom 14. August 2026}"
+        }
+    }
+    context("Schlussrechnung") {
+        fun schlussrechnung(items: List<LineItem>, vararg prepayments: Prepayment): String {
+            val invoice = testInvoice(type = InvoiceType.FINAL, items = items, prepayments = prepayments.toList())
+            return InvoiceRenderer.render(invoice, config, InvoiceCalculator.calculate(invoice, config))
+        }
+
+        val gesamtleistung = listOf(testItem(quantity = "1", unitPrice = "20000.00"))
+
+        test("die Abschläge stehen unter dem Gesamtbetrag, nicht in der Positionstabelle") {
+            // ADR-0002: Ein Abschlag ist keine negative Position. Stünde er in
+            // der Tabelle, senkte er die Bemessungsgrundlage und damit die
+            // ausgewiesene Umsatzsteuer.
+            val tex = schlussrechnung(gesamtleistung, testPrepayment())
+
+            tex.indexOf("R26-009") shouldBeGreaterThan tex.indexOf("Gesamtbetrag")
+        }
+
+        test("jeder Abschlag steht einzeln, mit Netto und Steuer") {
+            // UStAE 14.8 Abs. 7 ließe die Summe genügen; einzeln, damit der
+            // Kunde sieht, welche seiner Zahlungen verrechnet wurde.
+            val tex =
+                schlussrechnung(
+                    gesamtleistung,
+                    testPrepayment(invoiceNumber = "R26-009"),
+                    testPrepayment(
+                        invoiceNumber = "R26-011",
+                        issueDate = LocalDate.of(2026, 7, 20),
+                        receivedOn = LocalDate.of(2026, 7, 25),
+                    ),
+                )
+
+            tex shouldContain "Abschlagsrechnung R26-009 vom 15.06.2026, vereinnahmt am 10.06.2026"
+            tex shouldContain "Abschlagsrechnung R26-011 vom 20.07.2026, vereinnahmt am 25.07.2026"
+            // \u00A0 ist das geschützte Leerzeichen vor Einheit und Währung,
+            // das GermanFormat setzt – im Quelltext von einem normalen nicht zu
+            // unterscheiden, deshalb hier ausgeschrieben.
+            tex shouldContain "netto 4.000,00\u00A0€ zzgl. 19\u00A0\\% USt. 760,00\u00A0€"
+            // Abgesetzt wird, also mit Minuszeichen – und zwar dem typografischen.
+            tex shouldContain "\u22124.760,00\u00A0€"
+        }
+
+        test("der Restbetrag steht unter dem Strich") {
+            val tex = schlussrechnung(gesamtleistung, testPrepayment())
+
+            tex shouldContain "\\textbf{Restbetrag}"
+            tex shouldContain "\\textbf{19.040,00\u00A0€}"
+        }
+
+        test("ein Restbetrag von null bekommt einen Satz statt einer Zahl") {
+            // Ein nacktes "0,00 €" unter dem Strich sieht aus wie ein Fehler.
+            val tex = schlussrechnung(listOf(testItem(quantity = "1", unitPrice = "4000.00")), testPrepayment())
+
+            tex shouldContain "es verbleibt kein Restbetrag"
+            tex shouldNotContain "\\textbf{Restbetrag}"
+            // Und kein Zahlungsziel daneben: Das wäre die zweite, andere
+            // Aussage desselben Blattes.
+            tex shouldNotContain "Zahlbar ohne Abzug"
+        }
+
+        test("eine gewöhnliche Rechnung bekommt keine Absetzung") {
+            renderMit(testItem()) shouldNotContain "Abzüglich"
         }
     }
 })
