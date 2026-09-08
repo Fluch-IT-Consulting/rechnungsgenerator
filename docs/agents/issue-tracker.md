@@ -13,6 +13,33 @@ Issues and specs for this repo live as GitHub issues. Use the `gh` CLI for all o
 
 Infer the repo from `git remote -v`; `gh` does this automatically when run inside a clone.
 
+## Commits und Issues verbinden
+
+GitHub trägt einen Commit-Verweis erst in die Zeitleiste des Issues ein, wenn
+der Commit den Standardzweig erreicht. Auf einem Feature-Zweig bleibt ein `#1`
+in der Nachricht also unsichtbar, bis gemerged wird. Wer die Verbindung sofort
+sehen will, nennt das Issue im Rumpf des Pull Requests – dieser Querverweis
+erscheint beim Anlegen.
+
+Schlusszeile je Commit, direkt vor `Co-Authored-By`:
+
+```
+Teil von #<nummer>
+```
+
+Automatisch geschlossen wird nur dort, wo das Issue wirklich erledigt ist – im
+letzten Commit oder im Rumpf des PR, der ihn merged:
+
+```
+Closes #<nummer>
+```
+
+Die Schlüsselwörter (`closes`, `fixes`, `resolves`) versteht GitHub nur auf
+Englisch; ein deutsches "schließt #1" bleibt ein bloßer Verweis. Ein Issue mit
+mehreren Schritten – jeder Schritt ein eigener Commit – darf in den
+Zwischenschritten deshalb kein Schlüsselwort tragen: Sonst schließt der erste
+Merge das ganze Issue, während vier Schritte noch offen sind.
+
 ## Pull requests as a triage surface
 
 **PRs as a request surface: no.** _(Set to `yes` if this repo treats external PRs as feature requests; `/triage` reads this flag.)_
