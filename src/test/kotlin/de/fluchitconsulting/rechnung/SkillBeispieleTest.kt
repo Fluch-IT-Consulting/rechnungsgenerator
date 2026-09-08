@@ -34,7 +34,7 @@ class SkillBeispieleTest : FunSpec({
         val config = YamlLoader.parseSellerConfig(File("src/test/resources/stammdaten.yaml").readText())
         val skill = File(".claude/skills/rechnung/SKILL.md").readText()
 
-        val rechnungen =
+        val invoices =
             Regex("```yaml\n(.*?)```", RegexOption.DOT_MATCHES_ALL)
                 .findAll(skill)
                 .map { it.groupValues[1] }
@@ -44,16 +44,16 @@ class SkillBeispieleTest : FunSpec({
 
         // Die Anzahl mitprüfen: Sonst wäre der Test auch dann grün, wenn das
         // Suchmuster nichts mehr findet.
-        rechnungen.map { it.type } shouldBe
+        invoices.map { it.type } shouldBe
             listOf(InvoiceType.INVOICE, InvoiceType.PREPAYMENT, InvoiceType.FINAL)
 
-        val schlussrechnung = rechnungen.last()
+        val schlussrechnung = invoices.last()
         val totals = InvoiceCalculator.calculate(schlussrechnung, config)
         totals.grossTotal shouldBe Money("23800.00")
         totals.remainingAmount shouldBe Money("19040.00")
 
         // Und die beiden anderen wenigstens durchrechnen lassen: Auch eine
         // gültige Datei kann eine widersprüchliche Rechnung beschreiben.
-        rechnungen.dropLast(1).forEach { InvoiceCalculator.calculate(it, config) }
+        invoices.dropLast(1).forEach { InvoiceCalculator.calculate(it, config) }
     }
 })

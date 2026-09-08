@@ -40,14 +40,14 @@ class InvoiceTypeTest : FunSpec({
     }
 
     test("eine unbekannte Art nennt die zulässigen") {
-        val fehler = shouldThrow<Exception> { decode("anzahlung") }
+        val exception = shouldThrow<Exception> { decode("anzahlung") }
 
         // kaml verpackt die SerializationException; die Meldung muss durchkommen.
-        val meldung = generateSequence<Throwable>(fehler) { it.cause }.joinToString(" ") { it.message.orEmpty() }
+        val message = generateSequence<Throwable>(exception) { it.cause }.joinToString(" ") { it.message.orEmpty() }
         assertSoftly {
-            meldung shouldContain "anzahlung"
-            meldung shouldContain "abschlagsrechnung"
-            meldung shouldContain "schlussrechnung"
+            message shouldContain "anzahlung"
+            message shouldContain "abschlagsrechnung"
+            message shouldContain "schlussrechnung"
         }
     }
 })

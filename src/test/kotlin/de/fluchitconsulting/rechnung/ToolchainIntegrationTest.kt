@@ -90,7 +90,7 @@ class ToolchainIntegrationTest : FunSpec({
     }
 
     test("ein LaTeX-Fehler nennt die Fundstelle statt tausend Zeilen Log") {
-        val fehler =
+        val exception =
             shouldThrow<ToolchainException> {
                 LatexCompiler.compile(
                     workingDir = workDir,
@@ -100,9 +100,9 @@ class ToolchainIntegrationTest : FunSpec({
                 )
             }
 
-        fehler.message!! shouldContain "gibtesnicht"
-        fehler.message!!.lines().size shouldBe
-            fehler.message!!
+        exception.message!! shouldContain "gibtesnicht"
+        exception.message!!.lines().size shouldBe
+            exception.message!!
                 .lines()
                 .size
                 .coerceAtMost(20)
