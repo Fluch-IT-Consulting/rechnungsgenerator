@@ -5,6 +5,8 @@ import de.fluchitconsulting.rechnung.model.Address
 import de.fluchitconsulting.rechnung.model.Invoice
 import de.fluchitconsulting.rechnung.model.LineItem
 import de.fluchitconsulting.rechnung.model.SellerConfig
+import de.fluchitconsulting.rechnung.model.ServicePeriod
+import de.fluchitconsulting.rechnung.values.InvoiceType
 
 /**
  * Setzt die LaTeX-Vorlage mit den Werten einer Rechnung zusammen.
@@ -31,10 +33,12 @@ object InvoiceRenderer {
                 "ABSENDER_KONTAKT" to senderContact(config),
                 "EMPFAENGER" to recipient(invoice),
                 "EMPFAENGER_RECHTS" to recipientSideBlock(invoice, config, totals),
+                "DOKUMENTART" to invoice.type.documentName.escapeLatex(),
                 "RECHNUNGSNUMMER" to invoice.number.escapeLatex(),
                 "RECHNUNGSDATUM" to GermanFormat.date(invoice.issueDate),
-                "POSITIONEN" to lineItems(totals),
+                "POSITIONEN" to lineItems(invoice, totals),
                 "SUMMEN" to totalsBlock(totals),
+                "ARTHINWEIS" to typeNote(invoice),
                 "STEUERHINWEISE" to taxNotes(totals),
                 "SCHLUSSSATZ" to (invoice.note ?: config.closingLine).escapeLatex(),
                 "BANKVERBINDUNG" to bankDetails(config),
@@ -59,9 +63,9 @@ object InvoiceRenderer {
      */
     fun renderMetadata(invoice: Invoice, config: SellerConfig): String =
         """
-        \Title{Rechnung ${invoice.number.escapeLatex()}}
+        \Title{${invoice.type.documentName.escapeLatex()} ${invoice.number.escapeLatex()}}
         \Author{${config.companyName.escapeLatex()}}
-        \Subject{Rechnung ${invoice.number.escapeLatex()} vom ${GermanFormat.date(invoice.issueDate)}}
+        \Subject{${invoice.type.documentName.escapeLatex()} ${invoice.number.escapeLatex()} vom ${GermanFormat.date(invoice.issueDate)}}
         \Language{de-DE}
         """.trimIndent()
 
@@ -98,6 +102,17 @@ object InvoiceRenderer {
         return anschrift + ustId
     }
 
+    /**
+     * Ein Zeitraum, geschrieben wie es die Rechnungsart verlangt: die Prognose
+     * einer Abschlagsrechnung in Monaten, der tatsächliche Zeitraum auf den Tag.
+     */
+    private fun servicePeriod(period: ServicePeriod, type: InvoiceType): String =
+        if (type.servicePeriodIsForecast) {
+            GermanFormat.monthPeriod(period.start, period.end)
+        } else {
+            GermanFormat.servicePeriod(period.start, period.end)
+        }
+
     private fun addressLines(address: Address): List<String> =
         buildList {
             add(address.street.escapeLatex())
@@ -115,8 +130,17 @@ object InvoiceRenderer {
      */
     private fun metadata(invoice: Invoice, totals: InvoiceTotals): String =
         buildList {
-            // Pflichtangabe nach §14 Abs. 4 Nr. 6 UStG.
-            add("Leistungszeitraum: ${GermanFormat.servicePeriod(invoice.servicePeriod.start, invoice.servicePeriod.end)}")
+            // Pflichtangabe nach §14 Abs. 4 Nr. 6 UStG. Wie der Zeitraum heißt,
+            // hängt an der Rechnungsart – siehe InvoiceType.servicePeriodLabel.
+            // \mbox: Im schmalen Block oben rechts bricht "Juni bis Oktober 2026"
+            // sonst hinter dem "bis" um und liest sich wie zwei Angaben. Die
+            // Zeile darf stattdessen hinter dem Doppelpunkt umbrechen – der
+            // Zeitraum selbst bleibt zusammen.
+            val zeitraum = "\\mbox{${servicePeriod(invoice.servicePeriod, invoice.type)}}"
+            add("${invoice.type.servicePeriodLabel}: $zeitraum")
+            // BT-7: Steht der Zeitpunkt der Vereinnahmung fest, gehört er zu
+            // den Pflichtangaben – deshalb hier und nicht in den Fließtext.
+            invoice.receivedOn?.let { add("Abschlag vereinnahmt am ${GermanFormat.date(it)}") }
             invoice.customer.buyerReference?.let { add("Ihre Referenz: ${it.escapeLatex()}") }
             // "ohne Abzug" stand bisher im Zahlungssatz unter den Summen. Der Satz
             // ist entfallen, weil er das Fälligkeitsdatum ein zweites Mal nannte –
@@ -129,11 +153,11 @@ object InvoiceRenderer {
     //
     // 2.5mm statt 1.5mm: Sobald eine Position eine Zusatzzeile hat, verschmilzt
     // sie bei knappem Abstand optisch mit der nächsten Position.
-    private fun lineItems(totals: InvoiceTotals): String =
+    private fun lineItems(invoice: Invoice, totals: InvoiceTotals): String =
         totals.lines.joinToString(" $BR[2.5mm]\n") { line ->
             val item = line.item
             listOf(
-                describeItem(item),
+                describeItem(item, invoice.type),
                 GermanFormat.quantity(item.quantity),
                 item.unit.label.escapeLatex(),
                 GermanFormat.priceWithCurrency(item.unitPrice),
@@ -152,12 +176,15 @@ object InvoiceRenderer {
      * ein Absatz. Ein \\ darin würde die Tabellenzeile beenden statt die
      * Textzeile.
      */
-    private fun describeItem(item: LineItem): String {
+    private fun describeItem(item: LineItem, type: InvoiceType): String {
         val zusatz =
             buildList {
                 item.description?.let { add(it.escapeLatex()) }
                 item.note?.let { add(it.escapeLatex()) }
-                item.servicePeriod?.let { add("Zeitraum: ${GermanFormat.servicePeriod(it.start, it.end)}") }
+                // Auch hier die Beschriftung der Rechnungsart: Auf einer
+                // Abschlagsrechnung ist der Zeitraum einer Position genauso eine
+                // Prognose wie der Zeitraum der ganzen Rechnung.
+                item.servicePeriod?.let { add("${type.itemPeriodLabel}: ${servicePeriod(it, type)}") }
             }
         val bezeichnung = item.name.escapeLatex()
         if (zusatz.isEmpty()) return bezeichnung
@@ -183,6 +210,17 @@ object InvoiceRenderer {
         }.joinToString(" $BR[1mm]\n") { (label, value) -> "  $label & $value" } +
             " $BR\n  \\midrule\n" +
             "  \\textbf{Gesamtbetrag} & \\textbf{${GermanFormat.amountWithCurrency(totals.grossTotal)}}"
+
+    /**
+     * Der Pflichtsatz der Rechnungsart, unter den Summen – heute hat ihn nur
+     * die Abschlagsrechnung. Den Wortlaut trägt [InvoiceType], den Abstand die
+     * Vorlage: \hinweisabsatz bringt ihn mit, sodass bei den übrigen Arten der
+     * leere Platzhalter auch wirklich nichts einnimmt.
+     */
+    private fun typeNote(invoice: Invoice): String =
+        invoice.type.mandatoryNote
+            ?.let { "\\hinweisabsatz{${it.escapeLatex()}}" }
+            .orEmpty()
 
     /**
      * Die Begründungen für Positionen ohne Umsatzsteuer – EN 16931 BT-120.

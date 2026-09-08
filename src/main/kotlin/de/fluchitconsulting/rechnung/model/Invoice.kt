@@ -23,6 +23,10 @@ data class Invoice(
     @SerialName("leistungszeitraum") val servicePeriod: ServicePeriod,
     @SerialName("kunde") val customer: Customer,
     @SerialName("positionen") val items: List<LineItem>,
+    // BT-7, §14 Abs. 4 Nr. 6 UStG: der Zeitpunkt der Vereinnahmung. Nur auf
+    // einer Abschlagsrechnung und nur, wenn er feststeht – war das Geld bei
+    // Rechnungsstellung noch nicht da, entfällt die Angabe.
+    @SerialName("vereinnahmt-am") val receivedOn: IsoDate? = null,
     // Überschreibt bei Bedarf das Zahlungsziel aus den Stammdaten.
     @SerialName("zahlungsziel-tage") val paymentTermDaysOverride: Int? = null,
     @SerialName("bemerkung") val note: String? = null,

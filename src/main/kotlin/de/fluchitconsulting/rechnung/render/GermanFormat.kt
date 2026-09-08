@@ -7,6 +7,7 @@ import java.math.BigDecimal
 import java.text.DecimalFormat
 import java.text.DecimalFormatSymbols
 import java.time.LocalDate
+import java.time.YearMonth
 import java.time.format.DateTimeFormatter
 import java.util.Locale
 
@@ -63,6 +64,31 @@ object GermanFormat {
         } else {
             "${shortDate(start)}\u2009–\u2009${shortDate(end)}"
         }
+
+    /**
+     * Ein Zeitraum in Kalendermonaten: `Juni bis Oktober 2026`.
+     *
+     * Für den voraussichtlichen Leistungszeitraum einer Abschlagsrechnung –
+     * UStAE 14.8 Abs. 1 und 4 lassen dort den Monat genügen, und eine Prognose
+     * auf den Tag genau zu nennen behauptet mehr, als man weiß.
+     *
+     * Füllt der Zeitraum die Randmonate nicht aus, bleiben die Daten stehen:
+     * "Juni bis Oktober" für den 15.06. bis 20.10. wäre keine gröbere Angabe
+     * mehr, sondern eine andere.
+     */
+    fun monthPeriod(start: LocalDate, end: LocalDate): String {
+        val fuelltRandmonate = start.dayOfMonth == 1 && end == end.withDayOfMonth(end.lengthOfMonth())
+        if (!fuelltRandmonate) return servicePeriod(start, end)
+
+        val monat = DateTimeFormatter.ofPattern("MMMM", Locale.GERMANY)
+        val monatMitJahr = DateTimeFormatter.ofPattern("MMMM yyyy", Locale.GERMANY)
+        return when {
+            YearMonth.from(start) == YearMonth.from(end) -> monatMitJahr.format(start)
+            // Dasselbe Jahr wird einmal genannt, nicht zweimal.
+            start.year == end.year -> "${monat.format(start)} bis ${monatMitJahr.format(end)}"
+            else -> "${monatMitJahr.format(start)} bis ${monatMitJahr.format(end)}"
+        }
+    }
 
     /** Kurzes Datum für Zeiträume: `01.07.2026` */
     fun shortDate(date: LocalDate): String = DateTimeFormatter.ofPattern("dd.MM.yyyy", Locale.GERMANY).format(date)

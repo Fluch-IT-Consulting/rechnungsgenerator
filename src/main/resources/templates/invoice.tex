@@ -73,6 +73,12 @@
 
 \newcommand{\rubrik}[1]{{\footnotesize\color{gedaempft}\addfontfeature{LetterSpace=14}\MakeUppercase{#1}}}
 
+%% Ein Hinweisabsatz unter den Summen – heute der Pflichtsatz der
+%% Abschlagsrechnung. Er bringt seinen Abstand selbst mit, weil er nur bei
+%% einzelnen Rechnungsarten gesetzt wird: Stünde der \vspace in der Vorlage,
+%% nähme er bei allen anderen Raum ein, obwohl dort nichts steht.
+\newcommand{\hinweisabsatz}[1]{\par\vspace{6mm}\noindent #1}
+
 \begin{document}
 
 %% ------------------------------------------------------------------ Kopf
@@ -116,7 +122,7 @@
 \noindent\colorbox{akzent}{%
   \raisebox{0pt}[\balkenhoehe][0pt]{%
     \makebox[\dimexpr\linewidth-2\fboxsep\relax][s]{%
-      \large\bfseries\color{white}Rechnung <<RECHNUNGSNUMMER>>\hfill <<RECHNUNGSDATUM>>}}}}
+      \large\bfseries\color{white}<<DOKUMENTART>> <<RECHNUNGSNUMMER>>\hfill <<RECHNUNGSDATUM>>}}}}
 
 \vspace{9mm}
 
@@ -138,6 +144,10 @@
 <<SUMMEN>>
   \end{tabularx}
 \end{minipage}
+
+%% Der Pflichtsatz der Rechnungsart (siehe \hinweisabsatz oben). Bei jeder
+%% anderen Art bleibt der Platzhalter leer und nimmt dann auch keinen Raum ein.
+<<ARTHINWEIS>>
 
 %% Begründungen für Positionen ohne Umsatzsteuer (BT-120). Bleibt der Platz-
 %% halter leer, entsteht hier nichts – der Abstand darunter trägt beide Fälle.

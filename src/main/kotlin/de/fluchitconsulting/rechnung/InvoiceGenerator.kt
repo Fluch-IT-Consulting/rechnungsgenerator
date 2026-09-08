@@ -53,12 +53,15 @@ object InvoiceGenerator {
     }
 
     /**
-     * Die Rechnungsnummer als Dateiname. LuaLaTeX stolpert über Leerzeichen und
-     * Sonderzeichen im Jobnamen, deshalb bleibt nur Unverfängliches übrig.
+     * Rechnungsart und -nummer als Dateiname – "Abschlagsrechnung-R26-009".
+     * Im Ordner liegen die Dokumente zu einem Vorgang nebeneinander; welches
+     * davon der Abschlag ist, soll man am Namen sehen und nicht erst nach dem
+     * Öffnen. LuaLaTeX stolpert über Leerzeichen und Sonderzeichen im
+     * Jobnamen, deshalb bleibt von der Nummer nur Unverfängliches übrig.
      */
     internal fun jobNameFor(invoice: Invoice): String {
         val safe = invoice.number.replace(Regex("[^A-Za-z0-9._-]"), "-").trim('-')
         if (safe.isEmpty()) throw ToolchainException("Die Rechnungsnummer '${invoice.number}' ergibt keinen Dateinamen.")
-        return "Rechnung-$safe"
+        return "${invoice.type.documentName}-$safe"
     }
 }

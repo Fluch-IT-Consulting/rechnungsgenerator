@@ -6,6 +6,7 @@ import de.fluchitconsulting.rechnung.values.Price
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import java.time.LocalDate
 
 // Testressourcen liegen in src/test/resources und landen im Classpath.
 private fun resource(name: String): String = checkNotNull(YamlLoaderTest::class.java.getResource("/$name")).readText()
@@ -65,5 +66,11 @@ class YamlLoaderTest : FunSpec({
         shouldThrow<Exception> {
             YamlLoader.parseInvoice(resource("rechnung.yaml").replace("nummer:", "art: anzahlung\nnummer:"))
         }
+    }
+    test("die Abschlagsrechnung bringt Art und Vereinnahmung mit") {
+        val invoice = YamlLoader.parseInvoice(resource("abschlagsrechnung.yaml"))
+
+        invoice.type shouldBe InvoiceType.PREPAYMENT
+        invoice.receivedOn shouldBe LocalDate.of(2026, 6, 10)
     }
 })

@@ -3,6 +3,7 @@ package de.fluchitconsulting.rechnung
 import de.fluchitconsulting.rechnung.toolchain.LatexCompiler
 import de.fluchitconsulting.rechnung.toolchain.PdfAValidator
 import de.fluchitconsulting.rechnung.toolchain.ToolchainException
+import de.fluchitconsulting.rechnung.values.InvoiceType
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.assertions.withClue
 import io.kotest.core.spec.style.FunSpec
@@ -44,8 +45,20 @@ class ToolchainIntegrationTest : FunSpec({
         }
     }
 
-    test("der Dateiname leitet sich aus der Rechnungsnummer ab") {
+    test("erzeugt aus einer Abschlagsrechnung ein gültiges PDF/A-1b") {
+        val config = YamlLoader.parseSellerConfig(resource("stammdaten.yaml"))
+        val invoice = YamlLoader.parseInvoice(resource("abschlagsrechnung.yaml"))
+
+        val result = InvoiceGenerator.generate(invoice, config, workDir)
+
+        withClue(result.validation.describe()) {
+            result.validation.valid shouldBe true
+        }
+    }
+
+    test("der Dateiname nennt Rechnungsart und -nummer") {
         InvoiceGenerator.jobNameFor(testInvoice()) shouldBe "Rechnung-R26-001"
+        InvoiceGenerator.jobNameFor(testInvoice(type = InvoiceType.PREPAYMENT)) shouldBe "Abschlagsrechnung-R26-001"
     }
 
     test("ein nicht konformes PDF wird als solches gemeldet, nicht als Fehler") {
