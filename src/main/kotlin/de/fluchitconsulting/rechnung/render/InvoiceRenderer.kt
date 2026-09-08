@@ -35,6 +35,7 @@ object InvoiceRenderer {
                 "RECHNUNGSDATUM" to GermanFormat.date(invoice.issueDate),
                 "POSITIONEN" to lineItems(totals),
                 "SUMMEN" to totalsBlock(totals),
+                "STEUERHINWEISE" to taxNotes(totals),
                 "SCHLUSSSATZ" to (invoice.note ?: config.closingLine).escapeLatex(),
                 "BANKVERBINDUNG" to bankDetails(config),
                 "FUSSZEILE_OBEN" to footerCompanyLine(config),
@@ -77,11 +78,25 @@ object InvoiceRenderer {
             add(config.email.escapeLatex())
         }.joinToString(BR)
 
-    private fun recipient(invoice: Invoice): String =
-        buildList {
-            add(invoice.customer.name.escapeLatex())
-            addAll(addressLines(invoice.customer.address))
-        }.joinToString(BR)
+    private fun recipient(invoice: Invoice): String {
+        val anschrift =
+            buildList {
+                add(invoice.customer.name.escapeLatex())
+                addAll(addressLines(invoice.customer.address))
+            }.joinToString(BR)
+        // BT-48. Bei Reverse Charge und innergemeinschaftlicher Lieferung verlangt
+        // §14a UStG die USt-IdNr. beider Parteien auf der Rechnung – die des
+        // Ausstellers steht im Fuß, die des Empfängers hier.
+        //
+        // Der Abstand wird angehängt, nicht in die Liste gelegt: joinToString
+        // setzt selbst ein \\ zwischen die Einträge, und \\ direkt gefolgt von
+        // \\[2mm] ist in LaTeX ein Fehler ("There's no line here to end").
+        val ustId =
+            invoice.customer.vatId
+                ?.let { "$BR[2mm]USt-IdNr. ${it.formatted().escapeLatex()}" }
+                .orEmpty()
+        return anschrift + ustId
+    }
 
     private fun addressLines(address: Address): List<String> =
         buildList {
@@ -149,10 +164,15 @@ object InvoiceRenderer {
         return "$bezeichnung\\newline{\\footnotesize\\color{gedaempft} ${zusatz.joinToString(" · ")}}"
     }
 
+    /**
+     * Der Summenblock. Gruppen ohne Steuerbetrag erscheinen hier NICHT als
+     * "zzgl. 0 % USt. 0,00 €" – das sähe aus wie ein Rechenfehler oder eine
+     * vergessene Zeile. Warum keine Steuer anfällt, sagt [taxNotes] darunter.
+     */
     private fun totalsBlock(totals: InvoiceTotals): String =
         buildList {
             add("Nettobetrag" to GermanFormat.amountWithCurrency(totals.netTotal))
-            totals.vatGroups.forEach { group ->
+            totals.vatGroups.filterNot { it.amount.isZero() }.forEach { group ->
                 // escapeLatex auch hier: GermanFormat.percent liefert "19 %", und
                 // ein nacktes % kommentiert in LaTeX den Rest der Zeile aus – samt
                 // Spaltentrenner und Zeilenumbruch. Nicht nur Eingaben aus der YAML
@@ -163,6 +183,21 @@ object InvoiceRenderer {
         }.joinToString(" $BR[1mm]\n") { (label, value) -> "  $label & $value" } +
             " $BR\n  \\midrule\n" +
             "  \\textbf{Gesamtbetrag} & \\textbf{${GermanFormat.amountWithCurrency(totals.grossTotal)}}"
+
+    /**
+     * Die Begründungen für Positionen ohne Umsatzsteuer – EN 16931 BT-120.
+     *
+     * Bei Reverse Charge ist das keine Höflichkeit: §14a Abs. 5 UStG verlangt
+     * den Hinweis auf die Steuerschuldnerschaft des Leistungsempfängers
+     * ausdrücklich auf der Rechnung.
+     */
+    private fun taxNotes(totals: InvoiceTotals): String =
+        totals.vatGroups
+            .filter { it.amount.isZero() && it.exemptionReason != null }
+            .joinToString(BR) { group ->
+                "Auf ${GermanFormat.amountWithCurrency(group.base)} entfällt keine Umsatzsteuer: " +
+                    "${group.exemptionReason!!.escapeLatex()}."
+            }
 
     private fun bankDetails(config: SellerConfig): String =
         listOf(

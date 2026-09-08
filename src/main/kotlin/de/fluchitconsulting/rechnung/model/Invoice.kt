@@ -2,7 +2,9 @@ package de.fluchitconsulting.rechnung.model
 
 import de.fluchitconsulting.rechnung.values.Percent
 import de.fluchitconsulting.rechnung.values.Price
+import de.fluchitconsulting.rechnung.values.TaxCategory
 import de.fluchitconsulting.rechnung.values.Unit
+import de.fluchitconsulting.rechnung.values.VatId
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
@@ -34,6 +36,10 @@ data class Customer(
     @SerialName("anschrift") val address: Address,
     // EN 16931 BT-10: z. B. Bestellnummer oder Leitweg-ID des Kunden.
     @SerialName("referenz") val buyerReference: String? = null,
+    // BT-48: Pflicht, sobald die Steuerschuld übergeht (Kategorie AE) oder
+    // innergemeinschaftlich geliefert wird (K) – dann muss der Empfänger
+    // umsatzsteuerlich identifizierbar sein.
+    @SerialName("umsatzsteuer-id") val vatId: VatId? = null,
 )
 
 /**
@@ -70,4 +76,10 @@ data class LineItem(
     @SerialName("einzelpreis") val unitPrice: Price,
     // Pro Position, damit gemischte Sätze (19 %/7 %/0 %) möglich sind – EN 16931 BT-152.
     @SerialName("ust-satz") val vatRate: Percent = Percent("19"),
+    // BT-151, Pflicht nach BR-CO-04. Der ermäßigte Satz von 7 % ist ebenfalls
+    // STANDARD – die Kategorie sagt nicht, wie hoch besteuert wird, sondern ob.
+    @SerialName("steuerkategorie") val taxCategory: TaxCategory = TaxCategory.STANDARD,
+    // BT-120: Warum keine Steuer anfällt. Für die meisten Kategorien Pflicht;
+    // fehlt er, setzt der Calculator den vorgesehenen Wortlaut ein.
+    @SerialName("steuerbefreiungsgrund") val taxExemptionReason: String? = null,
 )

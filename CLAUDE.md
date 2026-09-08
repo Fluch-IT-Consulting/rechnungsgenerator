@@ -55,6 +55,15 @@ CV/Web-Auftritt des Autors), Validierung über veraPDF.
   `formatted()` wieder gruppiert. Grund: Diese Werte tippt man einmal und
   schaut sie nie wieder an; ein Zahlendreher in der IBAN fällt sonst erst auf,
   wenn das Geld nicht ankommt.
+- **Steuerkategorie**: `TaxCategory` (BT-151, Codeliste UNCL 5305) pro Position,
+  Vorgabe S. Der Satz allein genügt nicht – ohne Kategorie lässt sich "0 %"
+  nicht von "steuerbefreit" und nicht von "Steuerschuldnerschaft des
+  Leistungsempfängers" unterscheiden. Die Folgeregeln (Satz 0 bei steuerfreien
+  Kategorien, Befreiungsgrund BT-120, USt-IdNr. des Kunden BT-48 bei AE und K)
+  prüft der `InvoiceCalculator`, nicht erst ein späterer Export: Eine
+  widersprüchliche Rechnung soll nicht als PDF hinausgehen. Gruppiert wird nach
+  Kategorie **und** Satz, weil zwei Positionen mit 0 % steuerlich Verschiedenes
+  bedeuten können.
 - **ZUGFeRD-Vorbereitung**: Datenmodell enthält von Anfang an alle
   EN-16931-Pflichtfelder (Leistungsdatum, Steuerkategorie, Kennungen), damit
   ZUGFeRD (PDF/A-3 + XML) später ein zusätzlicher Ausgabemodus wird, kein Umbau.

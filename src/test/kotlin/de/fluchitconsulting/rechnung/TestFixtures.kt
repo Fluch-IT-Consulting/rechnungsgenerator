@@ -11,6 +11,7 @@ import de.fluchitconsulting.rechnung.values.Bic
 import de.fluchitconsulting.rechnung.values.Iban
 import de.fluchitconsulting.rechnung.values.Percent
 import de.fluchitconsulting.rechnung.values.Price
+import de.fluchitconsulting.rechnung.values.TaxCategory
 import de.fluchitconsulting.rechnung.values.VatId
 import java.math.BigDecimal
 import java.time.LocalDate
@@ -41,6 +42,8 @@ fun testItem(
     vatRate: String = "19",
     description: String? = null,
     note: String? = null,
+    taxCategory: TaxCategory = TaxCategory.STANDARD,
+    taxExemptionReason: String? = null,
 ) = LineItem(
     name = "Testposition",
     description = description,
@@ -48,11 +51,14 @@ fun testItem(
     quantity = BigDecimal(quantity),
     unitPrice = Price(unitPrice),
     vatRate = Percent(vatRate),
+    taxCategory = taxCategory,
+    taxExemptionReason = taxExemptionReason,
 )
 
 fun testInvoice(
     items: List<LineItem> = listOf(testItem()),
     paymentTermDaysOverride: Int? = null,
+    customerVatId: VatId? = null,
 ) = Invoice(
     number = "R26-001",
     issueDate = LocalDate.of(2026, 8, 14),
@@ -61,6 +67,7 @@ fun testInvoice(
         Customer(
             name = "Beispiel Software GmbH",
             address = Address(street = "Industriestraße 1", postalCode = "90402", city = "Nürnberg"),
+            vatId = customerVatId,
         ),
     items = items,
     paymentTermDaysOverride = paymentTermDaysOverride,

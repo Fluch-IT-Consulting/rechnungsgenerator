@@ -111,6 +111,7 @@ positionen:
     einheit: Std.                   # geschlossene Liste, siehe unten
     einzelpreis: 95.00
     ust-satz: 19                    # optional, Vorgabe 19
+    steuerkategorie: S              # optional, Vorgabe S (Regelsatz)
     positions-leistungszeitraum:    # optional, nur bei Abweichung
       von: 2026-09-01
       bis: 2026-09-30
@@ -154,12 +155,40 @@ Projektkürzel als Bezeichnung erfüllt das nicht; es sagt einem Prüfer nicht, 
 geleistet wurde. Nennt der Nutzer nur ein Kürzel, ergänze die Art der Leistung
 von dir aus und sage, dass du es getan hast.
 
+## Steuerkategorien
+
+Jede Position trägt eine Kategorie (EN 16931 BT-151); ohne Angabe `S`. Der
+ermäßigte Satz von 7 % ist ebenfalls `S` – die Kategorie sagt nicht, wie hoch
+besteuert wird, sondern ob.
+
+| Code | Bedeutung | verlangt |
+|---|---|---|
+| `S` | Regelsatz | Satz > 0 |
+| `Z` | Nullsatz | Satz 0 |
+| `E` | steuerbefreit | Satz 0 **und** `steuerbefreiungsgrund` |
+| `AE` | Steuerschuldnerschaft des Leistungsempfängers | Satz 0, USt-IdNr. des Kunden |
+| `K` | innergemeinschaftliche Lieferung | Satz 0, USt-IdNr. des Kunden |
+| `G` | Ausfuhrlieferung | Satz 0 |
+| `O` | nicht steuerbar | Satz 0 **und** `steuerbefreiungsgrund` |
+
+Bei `AE`, `K` und `G` setzt der Generator den vorgeschriebenen Wortlaut selbst
+ein; bei `E` und `O` hängt er vom Befreiungstatbestand ab und muss angegeben
+werden. Die Regeln werden beim Rechnen geprüft – eine widersprüchliche Rechnung
+entsteht gar nicht erst als PDF.
+
+Für ausländische Kunden gehört die USt-IdNr. unter `kunde`:
+
+```yaml
+kunde:
+  name: Beispiel Software AG
+  anschrift: {strasse: Musterstrasse 5, plz: "8005", ort: Zürich, land: CH}
+  umsatzsteuer-id: CHE123456789
+```
+
 ## Was dieser Weg noch nicht kann
 
 Sprich es an, wenn einer dieser Fälle auftaucht, statt etwas Falsches zu bauen:
 
-- **Reverse Charge** (§13b UStG, Kunden außerhalb Deutschlands): Datenmodell
-  kennt weder die USt-IdNr. des Kunden noch steuerfreie Positionen.
 - **Skonto und andere Entgeltminderungen**: kein Feld vorhanden.
 - **Abschlags- und Schlussrechnungen**: Abschläge lassen sich in der
   Schlussrechnung nicht absetzen.

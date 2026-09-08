@@ -60,6 +60,8 @@ class RechnungCommand : CoreCliktCommand(name = "rechnung") {
             erzeuge()
         } catch (e: ToolchainException) {
             throw CliktError(e.message)
+        } catch (e: InvoiceValidationException) {
+            throw CliktError(e.message)
         } catch (e: SerializationException) {
             throw CliktError("Die Eingabedateien konnten nicht gelesen werden:\n${e.message}")
         }
