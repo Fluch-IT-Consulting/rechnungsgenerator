@@ -7,8 +7,11 @@ import de.fluchitconsulting.rechnung.model.Invoice
 import de.fluchitconsulting.rechnung.model.LineItem
 import de.fluchitconsulting.rechnung.model.SellerConfig
 import de.fluchitconsulting.rechnung.model.ServicePeriod
+import de.fluchitconsulting.rechnung.values.Bic
+import de.fluchitconsulting.rechnung.values.Iban
 import de.fluchitconsulting.rechnung.values.Percent
 import de.fluchitconsulting.rechnung.values.Price
+import de.fluchitconsulting.rechnung.values.VatId
 import java.math.BigDecimal
 import java.time.LocalDate
 
@@ -21,12 +24,12 @@ fun testSellerConfig(paymentTermDays: Int = 14) =
         ownerName = "Dr. Erika Musterfrau",
         address = Address(street = "Beispielweg 42", postalCode = "97070", city = "Würzburg"),
         email = "rechnung@muster-it-consulting.example",
-        vatId = "DE123456789",
+        vatId = VatId("DE123456788"),
         bank =
             BankDetails(
                 accountHolder = "Dr. Erika Musterfrau",
-                iban = "DE89 3704 0044 0532 0130 00",
-                bic = "MUSTDEFFXXX",
+                iban = Iban("DE89 3704 0044 0532 0130 00"),
+                bic = Bic("MUSTDEFFXXX"),
                 bankName = "Musterbank",
             ),
         paymentTermDays = paymentTermDays,

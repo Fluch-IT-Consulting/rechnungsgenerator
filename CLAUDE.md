@@ -47,6 +47,14 @@ CV/Web-Auftritt des Autors), Validierung über veraPDF.
   beim ZUGFeRD-Export aber zum Raten zwingen: Ein Programm, das
   "IT-Beratung, Arbeitspaket X" an einem Komma zerteilt, liegt falsch, sobald
   die Bezeichnung selbst ein Komma enthält.
+- **Geprüfte Werte statt Freitext**: `einheit` ist ein Enum mit den Codes aus
+  UN/ECE Rec. 20 (BT-130 verlangt einen Code, Freitext ist unzulässig – Regeln
+  BR-23/BR-CL-23). IBAN, BIC, USt-IdNr. und Steuernummer sind Value Objects mit
+  Syntaxprüfung; IBAN über die Prüfsumme mod 97, deutsche USt-IdNr. über die
+  Prüfziffer des BZSt. Intern normalisiert (ohne Leerzeichen), fürs PDF über
+  `formatted()` wieder gruppiert. Grund: Diese Werte tippt man einmal und
+  schaut sie nie wieder an; ein Zahlendreher in der IBAN fällt sonst erst auf,
+  wenn das Geld nicht ankommt.
 - **ZUGFeRD-Vorbereitung**: Datenmodell enthält von Anfang an alle
   EN-16931-Pflichtfelder (Leistungsdatum, Steuerkategorie, Kennungen), damit
   ZUGFeRD (PDF/A-3 + XML) später ein zusätzlicher Ausgabemodus wird, kein Umbau.

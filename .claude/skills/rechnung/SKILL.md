@@ -108,7 +108,7 @@ positionen:
     beschreibung: Arbeitspaket Nord 26.3     # optional: ihr Umfang
     hinweis: Abschlag September 2026         # optional: Abrechnungskontext
     menge: 86.5
-    einheit: Std.                   # oder "pauschal", "Tage", …
+    einheit: Std.                   # geschlossene Liste, siehe unten
     einzelpreis: 95.00
     ust-satz: 19                    # optional, Vorgabe 19
     positions-leistungszeitraum:    # optional, nur bei Abweichung
@@ -120,7 +120,18 @@ bemerkung: …                        # optional, ersetzt den Schlusssatz
 
 Der Parser ist streng: Ein unbekannter Schlüssel bricht mit einer Meldung ab,
 die den Tippfehler nennt. Das ist Absicht – eine stillschweigend ignorierte
-Zeile wäre schlimmer.
+Zeile wäre schlimmer. Dasselbe gilt für die geprüften Felder unten.
+
+**Zulässige Einheiten** – EN 16931 verlangt für BT-130 einen Code aus UN/ECE
+Rec. 20, deshalb ist die Liste geschlossen. Eine unbekannte Einheit bricht ab
+und nennt die zulässigen:
+
+`Std.` · `Tage` · `Wochen` · `Monate` · `Stück` · `pauschal` · `km`
+
+**Geprüfte Kennungen in den Stammdaten**: IBAN (Prüfsumme mod 97), BIC (ISO
+9362), USt-IdNr. (Länderpräfix, bei deutschen Nummern auch die Prüfziffer) und
+Steuernummer (Struktur). Schreibweise mit oder ohne Leerzeichen ist egal – auf
+der Rechnung erscheint immer die gruppierte Form.
 
 ## Die drei Textfelder einer Position
 

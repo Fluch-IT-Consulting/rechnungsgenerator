@@ -1,5 +1,9 @@
 package de.fluchitconsulting.rechnung.model
 
+import de.fluchitconsulting.rechnung.values.Bic
+import de.fluchitconsulting.rechnung.values.Iban
+import de.fluchitconsulting.rechnung.values.TaxNumber
+import de.fluchitconsulting.rechnung.values.VatId
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
@@ -15,9 +19,9 @@ data class SellerConfig(
     // Nullable Typ (`String?`) + Default `null` = optionaler YAML-Schlüssel.
     @SerialName("telefon") val phone: String? = null,
     @SerialName("webseite") val website: String? = null,
-    @SerialName("steuernummer") val taxNumber: String? = null,
+    @SerialName("steuernummer") val taxNumber: TaxNumber? = null,
     // Pflicht für EN 16931 (BT-31) und §14 UStG bei B2B: die USt-IdNr.
-    @SerialName("umsatzsteuer-id") val vatId: String,
+    @SerialName("umsatzsteuer-id") val vatId: VatId,
     @SerialName("bank") val bank: BankDetails,
     @SerialName("zahlungsziel-tage") val paymentTermDays: Int = 14,
     // Handelsregister-Angaben: für Kapitalgesellschaften (UG, GmbH) nach §35a GmbHG
@@ -43,7 +47,7 @@ data class Address(
 @Serializable
 data class BankDetails(
     @SerialName("kontoinhaber") val accountHolder: String,
-    @SerialName("iban") val iban: String,
-    @SerialName("bic") val bic: String,
+    @SerialName("iban") val iban: Iban,
+    @SerialName("bic") val bic: Bic,
     @SerialName("institut") val bankName: String,
 )

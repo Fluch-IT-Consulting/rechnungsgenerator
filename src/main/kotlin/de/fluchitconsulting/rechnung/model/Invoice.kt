@@ -2,6 +2,7 @@ package de.fluchitconsulting.rechnung.model
 
 import de.fluchitconsulting.rechnung.values.Percent
 import de.fluchitconsulting.rechnung.values.Price
+import de.fluchitconsulting.rechnung.values.Unit
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
@@ -63,7 +64,7 @@ data class LineItem(
     // abweicht – so definiert es die Norm, deshalb hier optional.
     @SerialName("positions-leistungszeitraum") val servicePeriod: ServicePeriod? = null,
     @SerialName("menge") val quantity: Quantity,
-    @SerialName("einheit") val unit: String = "Std.",
+    @SerialName("einheit") val unit: Unit = Unit.HOUR,
     // Price statt Money: EN 16931 lässt beim Einzelpreis (BT-146) beliebig viele
     // Nachkommastellen zu. Gerundet wird erst das Positionsnetto (BT-131).
     @SerialName("einzelpreis") val unitPrice: Price,

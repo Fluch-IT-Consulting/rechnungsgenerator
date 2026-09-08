@@ -120,7 +120,7 @@ object InvoiceRenderer {
             listOf(
                 describeItem(item),
                 GermanFormat.quantity(item.quantity),
-                item.unit.escapeLatex(),
+                item.unit.label.escapeLatex(),
                 GermanFormat.priceWithCurrency(item.unitPrice),
                 GermanFormat.amountWithCurrency(line.net),
             ).joinToString(" & ")
@@ -168,15 +168,9 @@ object InvoiceRenderer {
         listOf(
             "Kontoinhaber: ${config.bank.accountHolder.escapeLatex()}",
             "Institut: ${config.bank.bankName.escapeLatex()}",
-            "IBAN: ${config.bank.iban.escapeLatex()}",
-            "BIC: ${config.bank.bic.escapeLatex()}",
+            "IBAN: ${config.bank.iban.formatted().escapeLatex()}",
+            "BIC: ${config.bank.bic.value.escapeLatex()}",
         ).joinToString(BR)
-
-    private fun taxDetails(config: SellerConfig): String =
-        buildList {
-            config.taxNumber?.let { add("Steuernummer ${it.escapeLatex()}") }
-            add("USt-IdNr. ${config.vatId.escapeLatex()}")
-        }.joinToString(BR)
 
     /**
      * Die Person unter dem Firmennamen im Briefkopf – aber nur dann, wenn sie
@@ -230,9 +224,9 @@ object InvoiceRenderer {
      */
     private fun footerTaxAndBankLine(config: SellerConfig): String =
         buildList {
-            add("USt-IdNr. ${config.vatId.escapeLatex()}")
+            add("USt-IdNr. ${config.vatId.formatted().escapeLatex()}")
             add(config.bank.bankName.escapeLatex())
-            add("BIC ${config.bank.bic.escapeLatex()}")
-            add("IBAN ${config.bank.iban.escapeLatex()}")
+            add("BIC ${config.bank.bic.value.escapeLatex()}")
+            add("IBAN ${config.bank.iban.formatted().escapeLatex()}")
         }.joinToString(" · ")
 }
