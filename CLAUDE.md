@@ -103,6 +103,15 @@ CV/Web-Auftritt des Autors), Validierung über veraPDF.
   echte Kunden- und Projektnamen am ehesten hinein, weil sie beim Schreiben
   gerade zur Hand sind. Die echten Stammdaten liegen außerhalb des Repos, der
   Pfad dorthin kommt aus `RECHNUNGEN_DIR` in `.claude/settings.local.json`.
+
+  Ebenso in **GitHub-Issues** – Titel, Rumpf, Kommentare, angehängte YAML- oder
+  Log-Ausschnitte. Ein Ticket zu Abschlagsrechnungen beschreibt den Fall mit
+  "Kunde A" und erfundenen Beträgen, nicht mit dem Vorgang, der ihn ausgelöst
+  hat. Issues wiegen hier schwerer als Code: Sie werden mit dem Repo öffentlich,
+  aber ein `--amend` gibt es für sie nicht. Editieren löscht nur die sichtbare
+  Fassung; die Versionshistorie eines Issues bleibt für jeden lesbar, der sie
+  aufklappt, und die Benachrichtigungsmail mit dem Originaltext ist ohnehin
+  schon draußen. Wirklich weg ist ein Text erst, wenn das Issue gelöscht wird.
 - Linting (ktlint) muss vor jedem Commit grün sein. Ein Hook in
   `.claude/settings.json` ruft nach jeder Änderung an einer `.kt`/`.kts`-Datei
   `./gradlew ktlintFormat` auf, damit das nicht von Hand nachgezogen werden muss.
@@ -112,3 +121,21 @@ CV/Web-Auftritt des Autors), Validierung über veraPDF.
 
 - macOS, TeX Live lokal (`lualatex` in /Library/TeX/texbin), veraPDF via
   Homebrew (`verapdf`), JDK 25 lokal; Build zielt per Toolchain auf JDK 21.
+
+## Agent skills
+
+### Issue tracker
+
+Issues und Specs liegen als GitHub-Issues in
+`Fluch-IT-Consulting/rechnungsgenerator`, bedient über die `gh`-CLI.
+Siehe `docs/agents/issue-tracker.md`.
+
+### Triage labels
+
+Die fünf Standardrollen, Label gleich Rollenname.
+Siehe `docs/agents/triage-labels.md`.
+
+### Domain docs
+
+Single-Context: ein `CONTEXT.md` und `docs/adr/` in der Wurzel.
+Siehe `docs/agents/domain.md`.
