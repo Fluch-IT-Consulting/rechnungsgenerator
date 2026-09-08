@@ -84,6 +84,44 @@ CV/Web-Auftritt des Autors), Validierung über veraPDF.
     ohne je `./gradlew build` zu laufen. Bei Inlandsrechnungen schweigt er,
     weil die Liste dort nicht befragt wird und Dauerhinweise dazu führen, dass
     auch die wichtigen überlesen werden.
+- **Rechnungsart**: `InvoiceType` (BT-3, Codeliste UNTDID 1001) mit Vorgabe
+  `rechnung`, geschlossene Menge wie `Unit` und `TaxCategory`. Sie ist keine
+  Beschriftung: Wer einen Abschlag wie eine gewöhnliche Rechnung abrechnet und
+  später noch einmal die Gesamtleistung, weist die Umsatzsteuer zweimal aus und
+  schuldet sie nach §14c Abs. 1 UStG auch zweimal. Die YAML-Werte heißen wie die
+  Dokumente in `CONTEXT.md` (`abschlagsrechnung`, nicht `anzahlung`), nicht wie
+  die Codeliste. Die Schlussrechnung trägt denselben Code 380 wie die
+  gewöhnliche Rechnung – sie *ist* die Rechnung über die Gesamtleistung,
+  kenntlich an der Absetzung, nicht am Dokumenttyp. Aus der einen Tatsache
+  `servicePeriodIsForecast` folgen beide Zeitraum-Beschriftungen und die
+  Schreibweise des Datums (Kalendermonate, UStAE 14.8 Abs. 1 und 4): Auf einer
+  Abschlagsrechnung ist der Zeitraum eine Prognose, und auf den Tag genau
+  genannt behauptete er eine Genauigkeit, die er nicht hat.
+
+  Dazu gehört ein Sicherungsnetz: `src/test/resources/rechnung-erwartet.tex` ist
+  das erwartete LaTeX der Beispielrechnung, zeichengleich verglichen. Der Satz
+  einer gewöhnlichen Rechnung soll sich nicht nebenbei ändern, während die
+  anderen Arten dazukommen. Wird der Test rot, ist das eine Frage und keine
+  Aufgabe: erst nachsehen, ob die Änderung gewollt ist, dann die Datei neu
+  erzeugen – und das erzeugte PDF gegen das vorherige prüfen (`pdftoppm` und
+  Prüfsumme genügen), denn Kommentar- und Leerzeilen im `.tex` ändern es nicht.
+- **Absetzung**: Die Schlussrechnung trägt die vereinnahmten Abschläge unter
+  `abschlaege` ausgeschrieben, mit `steueranteile` je Kombination aus Kategorie
+  und Satz. Nachgeschlagen wird nichts (ADR-0001): Zwischen Abschlag und
+  Schlussrechnung liegen Monate, in denen Dateien in Jahresordner wandern; eine
+  Rechnung, die beim Erzeugen fremde Dateien liest, ergibt nicht zweimal
+  dasselbe PDF. Der Preis ist Abtipparbeit, deshalb neun Abbruchregeln im
+  `InvoiceCalculator` – darunter die Prüfsumme `netto × satz = ust` und die
+  Forderung, dass Kategorie und Satz in der Schlussrechnung überhaupt
+  vorkommen. Abgesetzt wird nur, was **vereinnahmt** ist (§14 Abs. 5 Satz 2
+  UStG); ein unbezahlter Abschlag ist eine offene Forderung.
+
+  Im PDF steht die Absetzung unter dem Gesamtbetrag und nie als Position
+  (ADR-0002): Eine negative Position senkte die Bemessungsgrundlage und damit
+  die ausgewiesene Umsatzsteuer, die aber in voller Höhe geschuldet wird.
+  Restbetrag null bekommt einen Satz statt einer Zahl, und dann entfällt auch
+  das Zahlungsziel – sonst stünden zwei verschiedene Aussagen auf einem Blatt.
+  `prepaymentTotal` und `remainingAmount` sind abgeleitet, nicht gespeichert.
 - **ZUGFeRD-Vorbereitung**: Datenmodell enthält von Anfang an alle
   EN-16931-Pflichtfelder (Leistungsdatum, Steuerkategorie, Kennungen), damit
   ZUGFeRD (PDF/A-3 + XML) später ein zusätzlicher Ausgabemodus wird, kein Umbau.
