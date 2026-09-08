@@ -41,6 +41,12 @@ CV/Web-Auftritt des Autors), Validierung über veraPDF.
   JNA nach und schreibt auf JDK 24+ bei jedem Start vier Warnzeilen auf stderr.
   `main()` von Clikt beendet den Prozess mit Code 0 auch im Fehlerfall, deshalb
   `parse()` mit eigenem `exitProcess(e.statusCode)`.
+- **Positionstexte**: drei Felder statt einem, entlang der Aufteilung von
+  EN 16931 – `bezeichnung` (BT-153, Pflicht), `beschreibung` (BT-154) und
+  `hinweis` (BT-127). Ein einziges Freitextfeld hätte fürs PDF gereicht, würde
+  beim ZUGFeRD-Export aber zum Raten zwingen: Ein Programm, das
+  "IT-Beratung, Arbeitspaket X" an einem Komma zerteilt, liegt falsch, sobald
+  die Bezeichnung selbst ein Komma enthält.
 - **ZUGFeRD-Vorbereitung**: Datenmodell enthält von Anfang an alle
   EN-16931-Pflichtfelder (Leistungsdatum, Steuerkategorie, Kennungen), damit
   ZUGFeRD (PDF/A-3 + XML) später ein zusätzlicher Ausgabemodus wird, kein Umbau.

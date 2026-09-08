@@ -12,11 +12,15 @@ kunde:
     ort: Nürnberg
   referenz: BST-2026-0815
 positionen:
-  - beschreibung: IT-Beratung gemäß Rahmenvertrag vom 01.02.2026
+  # bezeichnung ist die Art der Leistung (BT-153), beschreibung ihr Umfang
+  # (BT-154), hinweis der Abrechnungskontext (BT-127). Nur bezeichnung ist Pflicht.
+  - bezeichnung: IT-Beratungsleistungen
+    beschreibung: Rahmenvertrag vom 01.02.2026
     menge: 86.5
     einheit: Std.
     einzelpreis: 95.00
-  - beschreibung: Fahrtkostenpauschale Juli 2026
+  - bezeichnung: Fahrtkostenpauschale
+    hinweis: Juli 2026
     menge: 1
     einheit: pauschal
     einzelpreis: 120.00

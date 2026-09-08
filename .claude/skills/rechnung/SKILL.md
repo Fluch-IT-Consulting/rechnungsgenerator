@@ -104,11 +104,16 @@ kunde:
     ort: Nürnberg
   referenz: BST-2026-0815           # optional, Bestellnummer des Kunden
 positionen:
-  - beschreibung: IT-Beratungsleistungen, Arbeitspaket Nord 26.3
+  - bezeichnung: IT-Beratungsleistungen      # Pflicht: die Art der Leistung
+    beschreibung: Arbeitspaket Nord 26.3     # optional: ihr Umfang
+    hinweis: Abschlag September 2026         # optional: Abrechnungskontext
     menge: 86.5
     einheit: Std.                   # oder "pauschal", "Tage", …
     einzelpreis: 95.00
     ust-satz: 19                    # optional, Vorgabe 19
+    positions-leistungszeitraum:    # optional, nur bei Abweichung
+      von: 2026-09-01
+      bis: 2026-09-30
 zahlungsziel-tage: 30               # optional, sonst aus den Stammdaten
 bemerkung: …                        # optional, ersetzt den Schlusssatz
 ```
@@ -117,13 +122,26 @@ Der Parser ist streng: Ein unbekannter Schlüssel bricht mit einer Meldung ab,
 die den Tippfehler nennt. Das ist Absicht – eine stillschweigend ignorierte
 Zeile wäre schlimmer.
 
-## Beschreibungen der Positionen
+## Die drei Textfelder einer Position
 
-§14 Abs. 4 Nr. 5 UStG verlangt „Umfang und Art der sonstigen Leistung". Ein
-reines Projektkürzel wie „Arbeitspaket Nord 26.3" erfüllt das nicht – es sagt
-einem Prüfer nicht, was geleistet wurde. Stelle die Art der Leistung voran:
-„IT-Beratungsleistungen, Arbeitspaket Nord 26.3". Wenn der Nutzer nur das
-Kürzel nennt, ergänze das von dir aus und sage, dass du es getan hast.
+Sie bilden ab, was EN 16931 unterscheidet – und zwar danach, *worüber* der Text
+spricht. Das kostet beim Schreiben nichts (nur `bezeichnung` ist Pflicht),
+erspart aber später das Raten beim ZUGFeRD-Export.
+
+| Feld | EN 16931 | Frage, die es beantwortet |
+|---|---|---|
+| `bezeichnung` | BT-153 | Wie heißt die Leistung? |
+| `beschreibung` | BT-154 | Was umfasst sie? |
+| `hinweis` | BT-127 | Was ist zur Abrechnung anzumerken? |
+
+Im PDF stehen `beschreibung` und `hinweis` als zweite Zeile unter der
+Bezeichnung, klein und gedämpft.
+
+§14 Abs. 4 Nr. 5 UStG verlangt „Umfang und Art der sonstigen Leistung" – die
+**Art** gehört in `bezeichnung`, der **Umfang** in `beschreibung`. Ein reines
+Projektkürzel als Bezeichnung erfüllt das nicht; es sagt einem Prüfer nicht, was
+geleistet wurde. Nennt der Nutzer nur ein Kürzel, ergänze die Art der Leistung
+von dir aus und sage, dass du es getan hast.
 
 ## Was dieser Weg noch nicht kann
 

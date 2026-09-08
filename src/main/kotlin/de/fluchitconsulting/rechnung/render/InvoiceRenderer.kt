@@ -3,6 +3,7 @@ package de.fluchitconsulting.rechnung.render
 import de.fluchitconsulting.rechnung.InvoiceTotals
 import de.fluchitconsulting.rechnung.model.Address
 import de.fluchitconsulting.rechnung.model.Invoice
+import de.fluchitconsulting.rechnung.model.LineItem
 import de.fluchitconsulting.rechnung.model.SellerConfig
 
 /**
@@ -110,17 +111,43 @@ object InvoiceRenderer {
 
     // Die Zeilen werden mit \\ VERBUNDEN, nicht damit abgeschlossen: Ein
     // Umbruch hinter der letzten Zeile erzeugt in LaTeX eine leere Extrazeile.
+    //
+    // 2.5mm statt 1.5mm: Sobald eine Position eine Zusatzzeile hat, verschmilzt
+    // sie bei knappem Abstand optisch mit der nächsten Position.
     private fun lineItems(totals: InvoiceTotals): String =
-        totals.lines.joinToString(" $BR[1.5mm]\n") { line ->
+        totals.lines.joinToString(" $BR[2.5mm]\n") { line ->
             val item = line.item
             listOf(
-                item.description.escapeLatex(),
+                describeItem(item),
                 GermanFormat.quantity(item.quantity),
                 item.unit.escapeLatex(),
                 GermanFormat.priceWithCurrency(item.unitPrice),
                 GermanFormat.amountWithCurrency(line.net),
             ).joinToString(" & ")
         }
+
+    /**
+     * Die Beschreibungsspalte einer Position: Bezeichnung, darunter – falls
+     * vorhanden – die Zusatzangaben klein und gedämpft. Das ergibt die
+     * zweizeilige Position, die die bisherigen Rechnungen hatten, nur dass die
+     * zweite Zeile hier aus benannten Feldern entsteht statt aus einem
+     * Textzusatz.
+     *
+     * \newline statt \\ für den Umbruch: Die Spalte ist eine X-Spalte, also
+     * ein Absatz. Ein \\ darin würde die Tabellenzeile beenden statt die
+     * Textzeile.
+     */
+    private fun describeItem(item: LineItem): String {
+        val zusatz =
+            buildList {
+                item.description?.let { add(it.escapeLatex()) }
+                item.note?.let { add(it.escapeLatex()) }
+                item.servicePeriod?.let { add("Zeitraum: ${GermanFormat.servicePeriod(it.start, it.end)}") }
+            }
+        val bezeichnung = item.name.escapeLatex()
+        if (zusatz.isEmpty()) return bezeichnung
+        return "$bezeichnung\\newline{\\footnotesize\\color{gedaempft} ${zusatz.joinToString(" · ")}}"
+    }
 
     private fun totalsBlock(totals: InvoiceTotals): String =
         buildList {

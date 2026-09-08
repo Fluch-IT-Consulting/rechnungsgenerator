@@ -27,6 +27,10 @@ class YamlLoaderTest : FunSpec({
         invoice.number shouldBe "R26-042"
         invoice.items.size shouldBe 2
         invoice.items.first().unitPrice shouldBe Price("95.00")
+        invoice.items.first().name shouldBe "IT-Beratungsleistungen"
+        invoice.items.first().description shouldBe "Rahmenvertrag vom 01.02.2026"
+        // Nicht gesetzte Zusatzfelder bleiben null, statt zu einem leeren String zu werden.
+        invoice.items.first().note shouldBe null
 
         val totals = InvoiceCalculator.calculate(invoice, config)
 

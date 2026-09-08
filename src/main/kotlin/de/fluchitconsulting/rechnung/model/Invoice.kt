@@ -35,9 +35,33 @@ data class Customer(
     @SerialName("referenz") val buyerReference: String? = null,
 )
 
+/**
+ * Eine Rechnungsposition.
+ *
+ * Die drei Textfelder bilden die Aufteilung ab, die EN 16931 vorgibt – sie
+ * unterscheidet danach, *worüber* der Text spricht:
+ *
+ *  - [name] (BT-153, Pflicht): Wie heißt die Leistung? Kurz, ein Bezeichner.
+ *  - [description] (BT-154): Was umfasst sie? Angaben über die Leistung selbst.
+ *  - [note] (BT-127): Was ist zu dieser Abrechnungszeile anzumerken? Kein
+ *    Merkmal der Leistung, sondern Kontext – etwa "Abschlag September 2026".
+ *
+ * Zusammen decken [name] und [description] die Forderung aus §14 Abs. 4 Nr. 5
+ * UStG ab: die *Art* der Leistung im Namen, ihren *Umfang* in der Beschreibung.
+ *
+ * Ein einziges Freitextfeld hätte für das PDF gereicht, würde aber beim
+ * späteren ZUGFeRD-Export zum Raten zwingen – ein Programm, das
+ * "IT-Beratung, Arbeitspaket X" an einem Komma zerteilt, liegt falsch, sobald
+ * der Name selbst ein Komma enthält.
+ */
 @Serializable
 data class LineItem(
-    @SerialName("beschreibung") val description: String,
+    @SerialName("bezeichnung") val name: String,
+    @SerialName("beschreibung") val description: String? = null,
+    @SerialName("hinweis") val note: String? = null,
+    // BG-26: Zeitraum dieser Position, falls er vom Zeitraum der Rechnung
+    // abweicht – so definiert es die Norm, deshalb hier optional.
+    @SerialName("positions-leistungszeitraum") val servicePeriod: ServicePeriod? = null,
     @SerialName("menge") val quantity: Quantity,
     @SerialName("einheit") val unit: String = "Std.",
     // Price statt Money: EN 16931 lässt beim Einzelpreis (BT-146) beliebig viele

@@ -36,8 +36,12 @@ fun testItem(
     quantity: String = "1",
     unitPrice: String = "100.00",
     vatRate: String = "19",
+    description: String? = null,
+    note: String? = null,
 ) = LineItem(
-    description = "Testposition",
+    name = "Testposition",
+    description = description,
+    note = note,
     quantity = BigDecimal(quantity),
     unitPrice = Price(unitPrice),
     vatRate = Percent(vatRate),
