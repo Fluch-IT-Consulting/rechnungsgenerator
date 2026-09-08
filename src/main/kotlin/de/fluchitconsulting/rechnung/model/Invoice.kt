@@ -1,5 +1,6 @@
 package de.fluchitconsulting.rechnung.model
 
+import de.fluchitconsulting.rechnung.values.InvoiceType
 import de.fluchitconsulting.rechnung.values.Percent
 import de.fluchitconsulting.rechnung.values.Price
 import de.fluchitconsulting.rechnung.values.TaxCategory
@@ -15,6 +16,9 @@ import kotlinx.serialization.Serializable
 data class Invoice(
     @SerialName("nummer") val number: String,
     @SerialName("datum") val issueDate: IsoDate,
+    // BT-3. Ohne Angabe die gewöhnliche Rechnung – bestehende Rechnungsdateien
+    // kennen den Schlüssel nicht und sollen sich weiter verhalten wie bisher.
+    @SerialName("art") val type: InvoiceType = InvoiceType.INVOICE,
     // Leistungszeitraum: Pflichtangabe nach §14 UStG, EN 16931 BT-73/BT-74.
     @SerialName("leistungszeitraum") val servicePeriod: ServicePeriod,
     @SerialName("kunde") val customer: Customer,

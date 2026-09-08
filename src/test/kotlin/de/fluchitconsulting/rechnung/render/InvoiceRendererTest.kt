@@ -1,14 +1,20 @@
 package de.fluchitconsulting.rechnung.render
 
 import de.fluchitconsulting.rechnung.InvoiceCalculator
+import de.fluchitconsulting.rechnung.YamlLoader
 import de.fluchitconsulting.rechnung.model.ServicePeriod
 import de.fluchitconsulting.rechnung.testInvoice
 import de.fluchitconsulting.rechnung.testItem
 import de.fluchitconsulting.rechnung.testSellerConfig
 import io.kotest.core.spec.style.FunSpec
+import io.kotest.matchers.shouldBe
 import io.kotest.matchers.string.shouldContain
 import io.kotest.matchers.string.shouldNotContain
 import java.time.LocalDate
+
+// Testressourcen liegen in src/test/resources und landen im Classpath.
+private fun resource(name: String): String =
+    checkNotNull(InvoiceRendererTest::class.java.getResource("/$name")).readText()
 
 /**
  * Prüft das erzeugte LaTeX, nicht das PDF. Ob daraus ein gültiges PDF/A wird,
@@ -60,5 +66,24 @@ class InvoiceRendererTest : FunSpec({
         val tex = renderMit(testItem(description = "Meier & Söhne", note = "50 % Anzahlung"))
 
         tex shouldContain "Meier \\& Söhne · 50 \\% Anzahlung"
+    }
+
+    /**
+     * Der negative Test der Rechnungsart: Eine bestehende Rechnungsdatei kennt
+     * den Schlüssel `art` nicht und muss unverändert dasselbe Ergebnis liefern.
+     *
+     * Verglichen wird das LaTeX, nicht das PDF – zwei PDF-Läufe unterscheiden
+     * sich schon im Zeitstempel, und alles, was am PDF anders werden könnte,
+     * steht vorher hier drin. Wird die Vorlage absichtlich geändert, muss
+     * `rechnung-erwartet.tex` bewusst neu erzeugt werden; genau das ist der
+     * Zweck: Der Satz einer gewöhnlichen Rechnung soll sich nicht nebenbei
+     * ändern, während die anderen Rechnungsarten dazukommen.
+     */
+    test("eine Rechnungsdatei ohne art wird gesetzt wie bisher") {
+        val seller = YamlLoader.parseSellerConfig(resource("stammdaten.yaml"))
+        val invoice = YamlLoader.parseInvoice(resource("rechnung.yaml"))
+
+        InvoiceRenderer.render(invoice, seller, InvoiceCalculator.calculate(invoice, seller)) shouldBe
+            resource("rechnung-erwartet.tex")
     }
 })
