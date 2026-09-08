@@ -170,7 +170,10 @@ kennt das Format nicht: "30 % von 40.000 €" rechnest du beim Anlegen einmal au
 und schreibst den Betrag hin; woher er stammt, gehört in `beschreibung`.
 
 `vereinnahmt-am` nur angeben, wenn der Zeitpunkt feststeht – und nur auf einer
-Abschlagsrechnung. Steht er nicht fest, weglassen; **nicht schätzen**.
+Abschlagsrechnung. Steht er nicht fest, weglassen; **nicht schätzen**. Auf einer
+anderen Rechnungsart bricht der Generator ab (dort entsteht die Steuer mit der
+Leistung, nicht mit dem Geldeingang), ebenso bei einem Datum nach dem
+Rechnungsdatum – dann ist der Betrag für diese Rechnung nicht vereinnahmt.
 
 **Schlussrechnung** – die Gesamtleistung, abzüglich der vereinnahmten Abschläge:
 
