@@ -79,6 +79,20 @@
 %% nähme er bei allen anderen Raum ein, obwohl dort nichts steht.
 \newcommand{\hinweisabsatz}[1]{\par\vspace{6mm}\noindent #1}
 
+%% Der Kopf des Abzugsblocks: wie ein Hinweisabsatz, aber mit etwas Luft zur
+%% Tabelle darunter – sonst klebt die erste Rechnung an der Ankündigung.
+\newcommand{\absetzungskopf}[1]{\par\vspace{6mm}\noindent #1\par\vspace{1.5mm}}
+
+%% Die Tabelle der abgesetzten Abschläge: links die Rechnung, rechts der Betrag.
+%% Dieselbe Spaltenaufteilung wie beim Summenblock, nur über die volle Breite –
+%% die Zeilen tragen Nummer und zwei Daten und passen nicht in 0,55.
+\newcommand{\absetzungstabelle}[1]{%
+  \begin{tabularx}{\linewidth}{@{}>{\raggedright\arraybackslash}X r@{}}#1\end{tabularx}}
+
+%% Die Aufteilung eines Abschlags in Netto und Steuer: klein, gedämpft und
+%% eingerückt unter der Zeile, zu der sie gehört.
+\newcommand{\absetzungsdetail}[1]{\newline\hspace*{4mm}{\footnotesize\color{gedaempft}#1}}
+
 \begin{document}
 
 %% ------------------------------------------------------------------ Kopf
@@ -154,6 +168,13 @@
 \vspace{6mm}
 
 <<STEUERHINWEISE>>
+
+%% Die Absetzung der vereinnahmten Abschläge in einer Schlussrechnung – unter
+%% dem Gesamtbetrag, nie in der Positionstabelle (ADR-0002), und nach den
+%% Steuerhinweisen: Die begründen die Steuerzeilen darüber und gehören zu
+%% ihnen. Leer bei jeder anderen Rechnungsart; den Abstand bringt
+%% \absetzungskopf mit.
+<<ABSETZUNG>>
 
 \vspace{5mm}
 

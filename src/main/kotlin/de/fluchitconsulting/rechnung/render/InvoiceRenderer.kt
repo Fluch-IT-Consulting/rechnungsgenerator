@@ -4,9 +4,11 @@ import de.fluchitconsulting.rechnung.InvoiceTotals
 import de.fluchitconsulting.rechnung.model.Address
 import de.fluchitconsulting.rechnung.model.Invoice
 import de.fluchitconsulting.rechnung.model.LineItem
+import de.fluchitconsulting.rechnung.model.Prepayment
 import de.fluchitconsulting.rechnung.model.SellerConfig
 import de.fluchitconsulting.rechnung.model.ServicePeriod
 import de.fluchitconsulting.rechnung.values.InvoiceType
+import de.fluchitconsulting.rechnung.values.Money
 
 /**
  * Setzt die LaTeX-Vorlage mit den Werten einer Rechnung zusammen.
@@ -38,6 +40,7 @@ object InvoiceRenderer {
                 "RECHNUNGSDATUM" to GermanFormat.date(invoice.issueDate),
                 "POSITIONEN" to lineItems(invoice, totals),
                 "SUMMEN" to totalsBlock(totals),
+                "ABSETZUNG" to deductionBlock(totals),
                 "ARTHINWEIS" to typeNote(invoice),
                 "STEUERHINWEISE" to taxNotes(totals),
                 "SCHLUSSSATZ" to (invoice.note ?: config.closingLine).escapeLatex(),
@@ -145,7 +148,14 @@ object InvoiceRenderer {
             // "ohne Abzug" stand bisher im Zahlungssatz unter den Summen. Der Satz
             // ist entfallen, weil er das Fälligkeitsdatum ein zweites Mal nannte –
             // der Hinweis, dass kein Skonto gewährt wird, gehört aber erhalten.
-            add("Zahlbar ohne Abzug bis ${GermanFormat.date(totals.dueDate)}")
+            //
+            // Nicht bei ausgeglichenem Betrag: Eine Schlussrechnung, deren
+            // Abschläge den Betrag decken, sagt unten "es verbleibt kein
+            // Restbetrag". Ein Zahlungsziel daneben wäre die zweite, andere
+            // Aussage desselben Blattes.
+            if (!totals.remainingAmount.isZero()) {
+                add("Zahlbar ohne Abzug bis ${GermanFormat.date(totals.dueDate)}")
+            }
         }.joinToString(BR)
 
     // Die Zeilen werden mit \\ VERBUNDEN, nicht damit abgeschlossen: Ein
@@ -208,8 +218,70 @@ object InvoiceRenderer {
                 add(label to GermanFormat.amountWithCurrency(group.amount))
             }
         }.joinToString(" $BR[1mm]\n") { (label, value) -> "  $label & $value" } +
-            " $BR\n  \\midrule\n" +
-            "  \\textbf{Gesamtbetrag} & \\textbf{${GermanFormat.amountWithCurrency(totals.grossTotal)}}"
+            summaryRow("Gesamtbetrag", totals.grossTotal)
+
+    /**
+     * Die Absetzung der vereinnahmten Abschläge – der Block unter dem
+     * Gesamtbetrag, den eine Schlussrechnung bekommt.
+     *
+     * Er steht **unter** den Summen und nie in der Positionstabelle (ADR-0002):
+     * Ein Abschlag ist keine negative Leistung. Als Position gerechnet, senkte
+     * er die Bemessungsgrundlage und damit die ausgewiesene Umsatzsteuer der
+     * Schlussrechnung – die aber schuldet der Rechnungssteller in voller Höhe;
+     * abgesetzt wird nur, was auf den Abschlag schon entrichtet wurde.
+     *
+     * Jeder Abschlag steht einzeln da. UStAE 14.8 Abs. 7 ließe die Summe
+     * genügen, aber der Kunde soll sehen, welche seiner Zahlungen abgesetzt
+     * wurde – und die Zeilen liegen ohnehin im Modell.
+     */
+    private fun deductionBlock(totals: InvoiceTotals): String {
+        if (totals.prepayments.isEmpty()) return ""
+
+        // 2.5mm wie bei den Positionen: Jede Zeile hat eine Zusatzzeile, und bei
+        // knapperem Abstand verschmilzt sie optisch mit der nächsten.
+        val zeilen =
+            totals.prepayments.joinToString(" $BR[2.5mm]\n") { abgesetzt ->
+                "  ${describePrepayment(abgesetzt.prepayment)} & " +
+                    "\u2212${GermanFormat.amountWithCurrency(abgesetzt.gross)}"
+            }
+
+        // Ein Restbetrag von null bekommt einen Satz statt einer Zahl: Ein
+        // nacktes "0,00 €" unter dem Strich sieht aus wie ein Fehler, nicht wie
+        // ein ausgeglichener Betrag.
+        val (abschluss, nachsatz) =
+            if (totals.remainingAmount.isZero()) {
+                "" to
+                    "\n\n\\hinweisabsatz{Der Rechnungsbetrag ist durch die vereinnahmten Abschläge " +
+                    "ausgeglichen; es verbleibt kein Restbetrag.}"
+            } else {
+                summaryRow("Restbetrag", totals.remainingAmount) to ""
+            }
+
+        return "\\absetzungskopf{Abzüglich der berechneten und vereinnahmten Abschläge:}\n" +
+            "\\absetzungstabelle{\n" + zeilen + abschluss + "\n}" + nachsatz
+    }
+
+    /**
+     * Die Beschreibungsspalte eines abgesetzten Abschlags: Nummer und Daten in
+     * der ersten Zeile, die Aufteilung in Netto und Steuer klein darunter –
+     * dieselbe Zweizeiligkeit wie bei einer Position.
+     */
+    private fun describePrepayment(abschlag: Prepayment): String {
+        // checkNotNull statt eines stillen Ausweichzweigs: Regel 3 im Calculator
+        // lässt keinen Abschlag ohne Vereinnahmung durch. Wäre hier doch einer,
+        // soll es krachen und nicht eine Zeile ohne Datum gedruckt werden.
+        val vereinnahmtAm = checkNotNull(abschlag.receivedOn) { "Abschlag ${abschlag.invoiceNumber} ohne Vereinnahmung" }
+        val kopf =
+            "Abschlagsrechnung ${abschlag.invoiceNumber.escapeLatex()} vom " +
+                GermanFormat.shortDate(abschlag.issueDate) +
+                ", vereinnahmt am ${GermanFormat.shortDate(vereinnahmtAm)}"
+        val anteile =
+            abschlag.taxShares.joinToString(" · ") { anteil ->
+                "netto ${GermanFormat.amountWithCurrency(anteil.net)} zzgl. " +
+                    "${GermanFormat.percent(anteil.vatRate)} USt. ${GermanFormat.amountWithCurrency(anteil.vat)}"
+            }
+        return "$kopf\\absetzungsdetail{${anteile.escapeLatex()}}"
+    }
 
     /**
      * Der Pflichtsatz der Rechnungsart, unter den Summen – heute hat ihn nur
@@ -221,6 +293,13 @@ object InvoiceRenderer {
         invoice.type.mandatoryNote
             ?.let { "\\hinweisabsatz{${it.escapeLatex()}}" }
             .orEmpty()
+
+    /**
+     * Die fette Zeile unter dem Strich, mit der ein Betragsblock endet – der
+     * Gesamtbetrag der Summen, der Restbetrag der Absetzung.
+     */
+    private fun summaryRow(label: String, amount: Money): String =
+        " $BR\n  \\midrule\n  \\textbf{$label} & \\textbf{${GermanFormat.amountWithCurrency(amount)}}"
 
     /**
      * Die Begründungen für Positionen ohne Umsatzsteuer – EN 16931 BT-120.
