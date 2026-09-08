@@ -75,10 +75,15 @@ CV/Web-Auftritt des Autors), Validierung über veraPDF.
   setzt eine BZSt-Registrierung voraus und muss ein aufbewahrbares Protokoll
   erzeugen. Die Liste der EU-Mitgliedstaaten trägt ihr Prüfdatum als Wert
   (`EuMemberStates.AS_OF`), nicht als Kommentar: Sie ist heute richtig und wird
-  irgendwann still falsch. Bei Auslandsrechnungen fordert ein Hinweis nach zwölf
-  Monaten zum Abgleich auf – bei Inlandsrechnungen nicht, weil die Liste dort
-  gar nicht befragt wird und Dauerhinweise dazu führen, dass auch die wichtigen
-  überlesen werden.
+  irgendwann still falsch. Zwei Netze, absichtlich versetzt:
+  - Ein **Test** wird rot, sobald das Prüfdatum sechs Monate alt ist. Er
+    scheitert also irgendwann ohne Codeänderung – das ist der Zweck, nicht ein
+    Defekt. Die Fehlermeldung sagt, was zu tun ist.
+  - Ein **Laufzeit-Hinweis** meldet sich nach zwölf Monaten, aber nur bei
+    Auslandsrechnungen. Er fängt den ab, der nur das gebaute Programm benutzt,
+    ohne je `./gradlew build` zu laufen. Bei Inlandsrechnungen schweigt er,
+    weil die Liste dort nicht befragt wird und Dauerhinweise dazu führen, dass
+    auch die wichtigen überlesen werden.
 - **ZUGFeRD-Vorbereitung**: Datenmodell enthält von Anfang an alle
   EN-16931-Pflichtfelder (Leistungsdatum, Steuerkategorie, Kennungen), damit
   ZUGFeRD (PDF/A-3 + XML) später ein zusätzlicher Ausgabemodus wird, kein Umbau.
