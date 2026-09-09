@@ -42,8 +42,12 @@ CV/Web-Auftritt des Autors), Validierung über veraPDF.
   Build.
 - **Externe Prozesse**: Ausgabe wird in eine Datei umgeleitet, nicht in einen
   Stream gelesen – sonst blockiert das Lesen bei einem hängenden Prozess, und
-  die Zeitgrenze käme nie zum Zug. LuaLaTeX läuft zweimal (hyperref schreibt
-  die `.out`-Datei erst im ersten Lauf).
+  die Zeitgrenze käme nie zum Zug. LuaLaTeX läuft, solange die Log-Datei einen
+  weiteren Lauf verlangt, höchstens dreimal – wer nach drei Läufen immer noch
+  einen vierten fordert, konvergiert nicht. Bei den Rechnungen dieses Projekts
+  ist es einer: Sie haben weder Querverweise noch Lesezeichen, und nachgemessen
+  mit TeX Live 2026 sind die PDFs nach einem und nach zwei Läufen im Satzbild
+  gleich.
 - **CLI**: Clikt, und zwar `clikt-core` ohne Mordant – die Vollvariante zieht
   JNA nach und schreibt auf JDK 24+ bei jedem Start vier Warnzeilen auf stderr.
   `main()` von Clikt beendet den Prozess mit Code 0 auch im Fehlerfall, deshalb
