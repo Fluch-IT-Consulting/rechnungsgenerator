@@ -63,6 +63,65 @@ ist, siehe `triage-labels.md`. Die GitHub-Vorgaben `bug` und `enhancement`
 werden **nicht** benutzt: Sie sagten dasselbe wie der Typ und widersprachen ihm
 prompt (ein Issue vom Typ `Bug` mit dem Label `enhancement`).
 
+## Der Commit-Titel nennt Typ und Issue
+
+```
+typ(#nummer): Ein Satz, der sagt, was der Commit tut
+```
+
+Beispiel: `fix(#14): Gedruckte Zahlen runden nicht mehr stillschweigend`
+
+Die Nummer gehört in die **Betreffzeile**, nicht nur in den Rumpf: Die
+Commit-Liste auf GitHub zeigt allein den Betreff, alles andere steckt hinter
+dem Aufklapp-Knopf. In dieser Schreibweise wird die Nummer verlinkt –
+nachgemessen über die Markdown-Schnittstelle, `fix(#14):` liefert den `href`
+aufs Issue.
+
+Die Typwörter stammen aus Conventional Commits. Die Spezifikation schreibt nur
+`feat` und `fix` vor, alles andere ist Empfehlung; hier gilt diese Auswahl:
+
+| Typ | wofür |
+|---|---|
+| `feat` | eine neue Fähigkeit für den Benutzer |
+| `fix` | Verhalten, das so niemand wollte |
+| `refactor` | Umbau ohne Verhaltensänderung |
+| `docs` | README, Skills, CLAUDE.md, diese Anleitungen |
+| `test` | nur Tests, ohne Produktivcode |
+| `chore` | Werkzeug- und Ablagekram ohne Bezug zum Programm |
+| `build`, `ci` | Gradle-Aufbau, Pipelines – falls je gebraucht |
+
+`style` fehlt bewusst: ktlint formatiert automatisch, ein reiner
+Formatierungs-Commit entsteht hier nicht.
+
+Zum **Issue-Typ**: `Bug` wird zu `fix`, `Feature` zu `feat`. Ein `Task`
+zerfällt in das, was tatsächlich getan wurde – meist `refactor` oder `docs`.
+Das ist Absicht: Stünde über jedem Task-Commit `chore`, wäre die Zeile beim
+Überfliegen wertlos, und der Issue-Typ ist ohnehin einen Klick entfernt.
+
+Gehört ein Commit zu keinem Issue, entfällt der Geltungsbereich – die leere
+Klammer wäre Lärm:
+
+```
+docs: Der Zweigname sagt, welcher Art die Arbeit ist
+```
+
+Bricht eine Änderung bestehende **Rechnungsdateien**, trägt der Typ ein
+Ausrufezeichen, dazu eine Fußzeile `BREAKING CHANGE: <was bricht>`. Eine
+umbenannte YAML-Schlüssel wie `bezahlt-am` zu `vereinnahmt-am` ist genau so ein
+Fall:
+
+```
+feat(#1)!: Die Schlussrechnung setzt ab, was vereinnahmt wurde
+```
+
+Der Rumpf behält trotzdem seine Schlusszeile (siehe unten): Betreffzeilen werden
+abgeschnitten, in Merge-Commits umgeschrieben und in Listen gekürzt – die Zeile
+im Rumpf hält die Verbindung, wenn der Titel sie verliert.
+
+Bestehende Commits werden dafür **nicht** umgeschrieben. Sie liegen auf `main`
+und in gemergten Pull Requests; die Historie neu zu schreiben wäre teurer als
+der Gewinn.
+
 ## Commits und Issues verbinden
 
 GitHub trägt einen Commit-Verweis erst in die Zeitleiste des Issues ein, wenn
