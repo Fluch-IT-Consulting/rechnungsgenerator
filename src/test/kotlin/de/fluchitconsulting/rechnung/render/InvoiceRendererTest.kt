@@ -9,6 +9,7 @@ import de.fluchitconsulting.rechnung.testInvoice
 import de.fluchitconsulting.rechnung.testItem
 import de.fluchitconsulting.rechnung.testPrepayment
 import de.fluchitconsulting.rechnung.testSellerConfig
+import de.fluchitconsulting.rechnung.values.CountryCode
 import de.fluchitconsulting.rechnung.values.InvoiceType
 import io.kotest.assertions.withClue
 import io.kotest.core.spec.style.FunSpec
@@ -108,6 +109,45 @@ class InvoiceRendererTest : FunSpec({
                 InvoiceRenderer.render(invoice, seller, InvoiceCalculator.calculate(invoice, seller)) shouldBe
                     resource("$name-erwartet.tex")
             }
+        }
+    }
+
+    context("Das Land in der Anschrift") {
+
+        /** Die eine Zeile, in der die Anschrift des Kunden steht. */
+        fun anschrift(kundenland: String, stellerland: String): String {
+            val basis = testInvoice()
+            val invoice =
+                basis.copy(
+                    customer =
+                        basis.customer.copy(
+                            address = basis.customer.address.copy(countryCode = CountryCode(kundenland)),
+                        ),
+                )
+            val stammdaten = config.copy(address = config.address.copy(countryCode = CountryCode(stellerland)))
+            val tex = InvoiceRenderer.render(invoice, stammdaten, InvoiceCalculator.calculate(invoice, stammdaten))
+            return tex.lines().first { it.contains("Nürnberg") }.trim()
+        }
+
+        test("ein kleingeschriebenes Land ist dasselbe Land") {
+            // Der Defekt, der diesen Typ ausgelöst hat: Vorher stand hier eine
+            // Zeile "de" unter der Anschrift, während der Calculator dieselbe
+            // Rechnung als Inlandsrechnung behandelte.
+            anschrift(kundenland = "de", stellerland = "DE") shouldBe
+                """Beispiel Software GmbH\\Industriestraße 1\\90402 Nürnberg"""
+        }
+
+        test("Inland ist relativ zum Rechnungssteller, nicht zu Deutschland") {
+            // Sitzt der Rechnungssteller in Österreich, ist ein deutscher Kunde
+            // für ihn Ausland – und bekommt sein Land genannt. Vorher stand
+            // "DE" fest im Code, und diese Rechnung hätte es verschwiegen.
+            anschrift(kundenland = "DE", stellerland = "AT") shouldBe
+                """Beispiel Software GmbH\\Industriestraße 1\\90402 Nürnberg\\DE"""
+        }
+
+        test("das Land des Kunden wird genannt, wenn es ein anderes ist") {
+            anschrift(kundenland = "at", stellerland = "DE") shouldBe
+                """Beispiel Software GmbH\\Industriestraße 1\\90402 Nürnberg\\AT"""
         }
     }
 

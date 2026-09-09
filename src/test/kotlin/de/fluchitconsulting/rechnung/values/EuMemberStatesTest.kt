@@ -12,20 +12,22 @@ class EuMemberStatesTest : FunSpec({
 
     test("erkennt Mitgliedstaaten und Drittländer") {
         assertSoftly {
-            EuMemberStates.contains("DE") shouldBe true
-            EuMemberStates.contains("AT") shouldBe true
-            EuMemberStates.contains("at") shouldBe true
-            EuMemberStates.contains("CH") shouldBe false
-            EuMemberStates.contains("GB") shouldBe false
-            EuMemberStates.contains("US") shouldBe false
+            EuMemberStates.contains(CountryCode("DE")) shouldBe true
+            EuMemberStates.contains(CountryCode("AT")) shouldBe true
+            // "at" klein: Die Vereinheitlichung passiert jetzt in CountryCode,
+            // nicht mehr hier – geprüft wird, dass sie ankommt.
+            EuMemberStates.contains(CountryCode("at")) shouldBe true
+            EuMemberStates.contains(CountryCode("CH")) shouldBe false
+            EuMemberStates.contains(CountryCode("GB")) shouldBe false
+            EuMemberStates.contains(CountryCode("US")) shouldBe false
         }
     }
 
     test("Griechenland zählt unter beiden Codes") {
         // ISO 3166 kennt GR, die Umsatzsteuer-Systeme der EU verwenden EL.
         assertSoftly {
-            EuMemberStates.contains("GR") shouldBe true
-            EuMemberStates.contains("EL") shouldBe true
+            EuMemberStates.contains(CountryCode("GR")) shouldBe true
+            EuMemberStates.contains(CountryCode("EL")) shouldBe true
         }
     }
 

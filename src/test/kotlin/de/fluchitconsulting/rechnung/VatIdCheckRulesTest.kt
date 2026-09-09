@@ -4,6 +4,7 @@ import de.fluchitconsulting.rechnung.model.Address
 import de.fluchitconsulting.rechnung.model.CheckMethod
 import de.fluchitconsulting.rechnung.model.Customer
 import de.fluchitconsulting.rechnung.model.VatIdCheck
+import de.fluchitconsulting.rechnung.values.CountryCode
 import de.fluchitconsulting.rechnung.values.EuMemberStates
 import de.fluchitconsulting.rechnung.values.TaxCategory
 import de.fluchitconsulting.rechnung.values.VatId
@@ -35,7 +36,7 @@ class VatIdCheckRulesTest : FunSpec({
         customer =
             Customer(
                 name = "Beispiel Software GmbH",
-                address = Address(street = "Industriestraße 1", postalCode = "1010", city = "Wien", countryCode = land),
+                address = Address(street = "Industriestraße 1", postalCode = "1010", city = "Wien", countryCode = CountryCode(land)),
                 vatId = vatId,
                 vatIdCheck = pruefung,
             ),

@@ -35,8 +35,14 @@ object EuMemberStates {
      */
     val AS_OF: LocalDate = LocalDate.of(2026, 8, 30)
 
+    // Die Liste steht als Text da, wird aber sofort in Werte umgewandelt: So
+    // bleibt sie beim Pflegen lesbar, und ein verrutschter Eintrag ("D", "DEE",
+    // "AT ") lässt schon den Aufbau scheitern. Als Set<String> täte er das
+    // nicht – der betroffene Staat gälte still als Drittland, und still würde
+    // eine andere Steuerregel angewandt. Genau diese Sorte Fehler ist der
+    // Grund, warum diese Liste ein Prüfdatum trägt.
     private val CODES =
-        setOf(
+        listOf(
             "AT",
             "BE",
             "BG",
@@ -65,7 +71,9 @@ object EuMemberStates {
             "SE",
             "SI",
             "SK",
-        )
+        ).map(::CountryCode).toSet()
 
-    fun contains(countryCode: String): Boolean = CODES.contains(countryCode.trim().uppercase())
+    // Kein Auspacken mehr: Beide Seiten sind Werte, und die Schreibweise ist
+    // schon beim Bauen vereinheitlicht.
+    fun contains(country: CountryCode): Boolean = CODES.contains(country)
 }

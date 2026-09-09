@@ -5,6 +5,7 @@ import de.fluchitconsulting.rechnung.model.Invoice
 import de.fluchitconsulting.rechnung.model.LineItem
 import de.fluchitconsulting.rechnung.model.Prepayment
 import de.fluchitconsulting.rechnung.model.SellerConfig
+import de.fluchitconsulting.rechnung.values.CountryCode
 import de.fluchitconsulting.rechnung.values.EuMemberStates
 import de.fluchitconsulting.rechnung.values.InvoiceType
 import de.fluchitconsulting.rechnung.values.Money
@@ -376,7 +377,7 @@ object InvoiceCalculator {
     private fun validateVatIdCheck(invoice: Invoice, config: SellerConfig, kategorien: Set<TaxCategory>) {
         if (kategorien.isEmpty()) return
         val kunde = invoice.customer
-        val ausland = !kunde.address.countryCode.equals(config.address.countryCode, ignoreCase = true)
+        val ausland = istAusland(invoice, config)
         val inEu = EuMemberStates.contains(kunde.address.countryCode)
         val pflicht =
             TaxCategory.INTRA_COMMUNITY in kategorien ||
@@ -400,12 +401,25 @@ object InvoiceCalculator {
         }
     }
 
+    /**
+     * Ausland heißt hier: Das Land des Kunden ist nicht das Land des
+     * Rechnungsstellers – nicht "nicht Deutschland". Die beiden fallen nur
+     * zusammen, solange der Rechnungssteller in Deutschland sitzt, und genau
+     * diese Verwechslung stand vorher im Renderer.
+     *
+     * Zwei Regeln fragen danach, und vorher stand die Zeile zweimal wortgleich
+     * da. Der Vergleich selbst ist inzwischen ein schlichtes `!=`, weil
+     * [CountryCode] die Schreibweise vereinheitlicht.
+     */
+    private fun istAusland(invoice: Invoice, config: SellerConfig): Boolean =
+        invoice.customer.address.countryCode != config.address.countryCode
+
     /** Hinweise, die den Lauf nicht abbrechen, aber in die eigene Akte gehören. */
     private fun collectHints(invoice: Invoice, config: SellerConfig): List<String> =
         buildList {
             val kunde = invoice.customer
             val kategorien = invoice.items.map { it.taxCategory }.toSet()
-            val ausland = !kunde.address.countryCode.equals(config.address.countryCode, ignoreCase = true)
+            val ausland = istAusland(invoice, config)
 
             // Die Altersprüfung der EU-Liste hängt bewusst an `ausland` und läuft
             // nicht immer: Bei einer Inlandsrechnung wird die Liste gar nicht
