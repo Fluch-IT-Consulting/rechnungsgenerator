@@ -34,11 +34,28 @@ value class Latex private constructor(val tex: String) {
         val EMPTY = Latex("")
 
         /**
-         * Markup, das der Renderer selbst schreibt: `\midrule`, `\textbf{…}`,
-         * die Makros der Vorlage, Spaltentrenner. Der Name ist die Warnung –
-         * wer hier Daten hineinreicht, umgeht die Maskierung.
+         * Markup, das der Renderer selbst schreibt: `\midrule`, Spaltentrenner,
+         * Zeilenumbrüche mit Abstand. Der Name ist die Warnung – wer hier Daten
+         * hineinreicht, umgeht die Maskierung.
+         *
+         * Für den häufigsten Fall gibt es [macro]; sonst stünde diese Warnung
+         * an zwanzig Stellen, von denen siebzehn nur Klammern setzen, und wäre
+         * damit keine mehr.
          */
         fun raw(tex: String): Latex = Latex(tex)
+
+        /**
+         * Ein Makroaufruf mit einem Argument: `\name{inhalt}`.
+         *
+         * Bildet nicht die einzelnen Makros der Vorlage ab – das wäre eine
+         * zweite Beschreibung des Satzes in Kotlin –, sondern ihre gemeinsame
+         * Form. Der Name bleibt eine Zeichenkette an genau einer Stelle; wer
+         * ein Makro in der Vorlage umbenennt, ändert hier ein Wort.
+         *
+         * [name] ist ein Makroname aus der Vorlage und **niemals** ein Wert aus
+         * den Eingabedaten: Er landet unmaskiert hinter einem Backslash.
+         */
+        fun macro(name: String, content: Latex): Latex = raw("\\$name{") + content + raw("}")
     }
 }
 
