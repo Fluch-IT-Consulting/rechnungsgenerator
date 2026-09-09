@@ -11,6 +11,7 @@ import de.fluchitconsulting.rechnung.values.InvoiceType
 import de.fluchitconsulting.rechnung.values.Money
 import de.fluchitconsulting.rechnung.values.Percent
 import de.fluchitconsulting.rechnung.values.TaxCategory
+import de.fluchitconsulting.rechnung.values.VatIdConfirmation
 import de.fluchitconsulting.rechnung.values.sumOf
 import java.time.LocalDate
 import java.time.temporal.ChronoUnit
@@ -195,7 +196,7 @@ object InvoiceCalculator {
         val brauchtKundenUstId =
             invoice.items
                 .map { it.taxCategory }
-                .filter { it == TaxCategory.REVERSE_CHARGE || it == TaxCategory.INTRA_COMMUNITY }
+                .filter { it.requiresCustomerVatId }
         if (brauchtKundenUstId.isNotEmpty() && invoice.customer.vatId == null) {
             throw InvoiceValidationException(
                 "Kategorie ${brauchtKundenUstId.first().code} verlangt die USt-IdNr. des Kunden – " +
@@ -357,24 +358,15 @@ object InvoiceCalculator {
      * Verlangt den dokumentierten Nachweis der Bestätigungsabfrage, bevor ohne
      * Umsatzsteuer abgerechnet wird.
      *
-     * Rechtsstand August 2026. Die Regeln sind bewusst verschieden streng, weil
-     * die Rechtslage es auch ist:
+     * **Welche** Kategorie was verlangt, steht am Enum: [VatIdConfirmation]
+     * und die Werte in [TaxCategory]. Dort und nicht hier, weil es eine
+     * Eigenschaft der Kategorie ist und keine dieser Funktion – vorher stand
+     * die Fallunterscheidung als Konstantenvergleich in dieser Zeile, und wer
+     * wissen wollte, was für "G" gilt, musste den ganzen Calculator lesen.
      *
-     *  - Innergemeinschaftliche Lieferung (K): §6a UStG verlangt die geprüfte
-     *    USt-IdNr., unabhängig davon, wo der Kunde sitzt. Kein Spielraum.
-     *  - Reverse Charge (AE) grenzüberschreitend in die EU: Seit Januar 2024
-     *    ist die gültige USt-IdNr. keine zwingende Voraussetzung des §13b mehr
-     *    – entscheidend ist die Unternehmereigenschaft. Ohne dokumentierte
-     *    Abfrage entfällt aber der Vertrauensschutz, deshalb hier trotzdem
-     *    Pflicht.
-     *  - Reverse Charge im Inland (§13b Abs. 2, etwa Bauleistungen): kein
-     *    Nachweis. Das BZSt bestätigt *ausländische* USt-IdNrn.; für die Nummer
-     *    eines deutschen Kunden gibt es diese Abfrage gar nicht.
-     *  - Reverse Charge an einen Drittlandskunden: VIES und die Abfrage beim
-     *    BZSt decken nur EU-Mitgliedstaaten ab. Für die Schweiz oder das
-     *    Vereinigte Königreich gibt es dort nichts abzufragen; einen Nachweis
-     *    zu verlangen, den es nicht geben kann, wäre keine Strenge, sondern ein
-     *    Fehler. Stattdessen ein Hinweis, siehe [collectHints].
+     * Hier steht nur noch, wie daraus eine Pflicht wird: Der Nachweis muss
+     * vorliegen, er muss vor dem Rechnungsdatum erbracht sein, und fehlt er,
+     * bricht der Lauf ab.
      *
      * Das ist Steuerrecht und keine Rechtsberatung – wer die Regeln ändert,
      * sollte sie mit dem Steuerberater abgleichen.
@@ -385,8 +377,13 @@ object InvoiceCalculator {
         val ausland = istAusland(invoice, config)
         val inEu = EuMemberStates.contains(kunde.address.countryCode)
         val pflicht =
-            TaxCategory.INTRA_COMMUNITY in kategorien ||
-                (TaxCategory.REVERSE_CHARGE in kategorien && inEu && ausland)
+            kategorien.any {
+                when (it.vatIdConfirmation) {
+                    VatIdConfirmation.ALWAYS -> true
+                    VatIdConfirmation.IN_EU -> ausland && inEu
+                    VatIdConfirmation.NEVER -> false
+                }
+            }
         if (!pflicht) return
 
         val pruefung =
@@ -443,7 +440,12 @@ object InvoiceCalculator {
                 }
             }
 
-            if (TaxCategory.REVERSE_CHARGE in kategorien && ausland && !EuMemberStates.contains(kunde.address.countryCode)) {
+            // Eine Kategorie, deren Nachweis nur innerhalb der EU zu führen
+            // ist, trifft hier auf einen Kunden ausserhalb: Verlangt wird dann
+            // nichts (siehe validateVatIdCheck), aber die Akte braucht trotzdem
+            // etwas.
+            val nurInEu = kategorien.any { it.vatIdConfirmation == VatIdConfirmation.IN_EU }
+            if (nurInEu && ausland && !EuMemberStates.contains(kunde.address.countryCode)) {
                 add(
                     "${kunde.address.countryCode} ist kein EU-Mitgliedstaat – eine VIES-Abfrage gibt es dafür " +
                         "nicht. Für die Akte braucht es einen anderen Nachweis der Unternehmereigenschaft, " +

@@ -3,7 +3,9 @@ package de.fluchitconsulting.rechnung
 import de.fluchitconsulting.rechnung.values.Money
 import de.fluchitconsulting.rechnung.values.TaxCategory
 import de.fluchitconsulting.rechnung.values.VatId
+import de.fluchitconsulting.rechnung.values.VatIdConfirmation
 import io.kotest.assertions.throwables.shouldThrow
+import io.kotest.assertions.withClue
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.string.shouldContain
@@ -16,6 +18,36 @@ import io.kotest.matchers.string.shouldContain
 class TaxCategoryRulesTest : FunSpec({
 
     val config = testSellerConfig()
+
+    test("für jede Kategorie ist entschieden, was sie verlangt") {
+        // Die Tabelle steht absichtlich ausgeschrieben da und wird nicht aus
+        // dem Enum abgeleitet – sie ist die zweite Meinung dazu. Ihr Zweck ist
+        // weniger, die heutigen Werte zu bestätigen, als eine künftige
+        // Kategorie nicht durchrutschen zu lassen: Wer eine ergänzt, ohne hier
+        // eine Zeile hinzuzufügen, bekommt einen roten Test statt einer stillen
+        // Vorgabe.
+        //
+        // Vorher stand dieselbe Frage als Konstantenvergleich an drei Stellen
+        // im Calculator, und G, Z und O kamen in keiner davon vor. Ob das
+        // Absicht war, sah man dem Enum nicht an.
+        val erwartet =
+            mapOf(
+                TaxCategory.STANDARD to (false to VatIdConfirmation.NEVER),
+                TaxCategory.ZERO_RATED to (false to VatIdConfirmation.NEVER),
+                TaxCategory.EXEMPT to (false to VatIdConfirmation.NEVER),
+                TaxCategory.REVERSE_CHARGE to (true to VatIdConfirmation.IN_EU),
+                TaxCategory.INTRA_COMMUNITY to (true to VatIdConfirmation.ALWAYS),
+                TaxCategory.EXPORT to (false to VatIdConfirmation.NEVER),
+                TaxCategory.OUT_OF_SCOPE to (false to VatIdConfirmation.NEVER),
+            )
+
+        erwartet.keys shouldBe TaxCategory.entries.toSet()
+        TaxCategory.entries.forEach { kategorie ->
+            withClue("${kategorie.code} (${kategorie.label})") {
+                (kategorie.requiresCustomerVatId to kategorie.vatIdConfirmation) shouldBe erwartet[kategorie]
+            }
+        }
+    }
 
     test("Regelsatz bleibt der Normalfall und braucht nichts weiter") {
         val totals = InvoiceCalculator.calculate(testInvoice(), config)
