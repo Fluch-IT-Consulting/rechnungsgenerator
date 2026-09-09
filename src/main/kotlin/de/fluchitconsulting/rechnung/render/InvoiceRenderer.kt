@@ -75,11 +75,10 @@ object InvoiceRenderer {
     fun renderMetadata(invoice: Invoice, config: SellerConfig): String {
         val document = invoice.type.documentName.escapeLatex() + " ".escapeLatex() + invoice.number.escapeLatex()
         return listOf(
-            Latex.raw("\\Title{") + document + Latex.raw("}"),
-            Latex.raw("\\Author{") + config.companyName.escapeLatex() + Latex.raw("}"),
-            Latex.raw("\\Subject{") + document + " vom ".escapeLatex() + GermanFormat.date(invoice.issueDate) +
-                Latex.raw("}"),
-            Latex.raw("\\Language{de-DE}"),
+            Latex.macro("Title", document),
+            Latex.macro("Author", config.companyName.escapeLatex()),
+            Latex.macro("Subject", document + " vom ".escapeLatex() + GermanFormat.date(invoice.issueDate)),
+            Latex.macro("Language", "de-DE".escapeLatex()),
         ).joinToLatex("\n").tex
     }
 
@@ -150,7 +149,7 @@ object InvoiceRenderer {
             // sonst hinter dem "bis" um und liest sich wie zwei Angaben. Die
             // Zeile darf stattdessen hinter dem Doppelpunkt umbrechen – der
             // Zeitraum selbst bleibt zusammen.
-            val zeitraum = Latex.raw("\\mbox{") + servicePeriod(invoice.servicePeriod, invoice.type) + Latex.raw("}")
+            val zeitraum = Latex.macro("mbox", servicePeriod(invoice.servicePeriod, invoice.type))
             add("${invoice.type.servicePeriodLabel}: ".escapeLatex() + zeitraum)
             // BT-7: Steht der Zeitpunkt der Vereinnahmung fest, gehört er zu
             // den Pflichtangaben – deshalb hier und nicht in den Fließtext.
@@ -259,18 +258,22 @@ object InvoiceRenderer {
         val (closingRow, trailingNote) =
             if (totals.remainingAmount.isZero()) {
                 Latex.EMPTY to
-                    Latex.raw("\n\n\\hinweisabsatz{") +
-                    (
-                        "Der Rechnungsbetrag ist durch die vereinnahmten Abschläge ausgeglichen; " +
-                            "es verbleibt kein Restbetrag."
-                    ).escapeLatex() + Latex.raw("}")
+                    Latex.raw("\n\n") +
+                    Latex.macro(
+                        "hinweisabsatz",
+                        (
+                            "Der Rechnungsbetrag ist durch die vereinnahmten Abschläge ausgeglichen; " +
+                                "es verbleibt kein Restbetrag."
+                        ).escapeLatex(),
+                    )
             } else {
                 summaryRow("Restbetrag", totals.remainingAmount) to Latex.EMPTY
             }
 
-        return Latex.raw("\\absetzungskopf{") +
-            "Abzüglich der berechneten und vereinnahmten Abschläge:".escapeLatex() +
-            Latex.raw("}\n\\absetzungstabelle{\n") + rows + closingRow + Latex.raw("\n}") + trailingNote
+        return Latex.macro("absetzungskopf", "Abzüglich der berechneten und vereinnahmten Abschläge:".escapeLatex()) +
+            Latex.raw("\n") +
+            Latex.macro("absetzungstabelle", Latex.raw("\n") + rows + closingRow + Latex.raw("\n")) +
+            trailingNote
     }
 
     /**
@@ -294,7 +297,7 @@ object InvoiceRenderer {
                         GermanFormat.percent(anteil.vatRate) + " USt. ".escapeLatex() +
                         GermanFormat.amountWithCurrency(anteil.vat)
                 }.joinToLatex(" · ")
-        return heading + Latex.raw("\\absetzungsdetail{") + anteile + Latex.raw("}")
+        return heading + Latex.macro("absetzungsdetail", anteile)
     }
 
     /**
@@ -305,7 +308,7 @@ object InvoiceRenderer {
      */
     private fun typeNote(invoice: Invoice): Latex =
         invoice.type.mandatoryNote
-            ?.let { Latex.raw("\\hinweisabsatz{") + it.escapeLatex() + Latex.raw("}") }
+            ?.let { Latex.macro("hinweisabsatz", it.escapeLatex()) }
             ?: Latex.EMPTY
 
     /**
@@ -313,8 +316,8 @@ object InvoiceRenderer {
      * Gesamtbetrag der Summen, der Restbetrag der Absetzung.
      */
     private fun summaryRow(label: String, amount: Money): Latex =
-        Latex.raw(" $BR\n  \\midrule\n  \\textbf{") + label.escapeLatex() + Latex.raw("} & \\textbf{") +
-            GermanFormat.amountWithCurrency(amount) + Latex.raw("}")
+        Latex.raw(" $BR\n  \\midrule\n  ") + Latex.macro("textbf", label.escapeLatex()) +
+            Latex.raw(" & ") + Latex.macro("textbf", GermanFormat.amountWithCurrency(amount))
 
     /**
      * Die Begründungen für Positionen ohne Umsatzsteuer – EN 16931 BT-120.
