@@ -1,5 +1,6 @@
 package de.fluchitconsulting.rechnung.values
 
+import com.charleskorn.kaml.Yaml
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
@@ -14,7 +15,7 @@ import kotlinx.serialization.SerializationException
  *
  * Hier wird es bemerkt: Die Werte tragen absichtlich Großbuchstaben.
  */
-class CodeLookupTest : FunSpec({
+class EnumSerializerTest : FunSpec({
 
     data class Farbe(val name: String)
 
@@ -35,6 +36,19 @@ class CodeLookupTest : FunSpec({
 
         fehler.message!! shouldContain "Unbekannte Farbe 'Lila'"
         fehler.message!! shouldContain "Rot, Grün, Blau"
+    }
+
+    test("enumSerializer verpackt beides: lesen und melden") {
+        // Die öffentliche Tür. Dass sie dieselbe Vereinheitlichung mitbringt
+        // wie CodeLookup, ist der Sinn der Übung – ein Enum deklariert damit
+        // an einer Stelle, was unter seinem Schlüssel stehen darf.
+        val serializer = enumSerializer("Farbe", farben, "Unbekannte Farbe", { it.trim().lowercase() }, Farbe::name)
+
+        Yaml.default.decodeFromString(serializer, "  ROT  ") shouldBe Farbe("Rot")
+        Yaml.default.encodeToString(serializer, Farbe("Grün")) shouldBe "\"Grün\""
+
+        val fehler = shouldThrow<SerializationException> { Yaml.default.decodeFromString(serializer, "Lila") }
+        fehler.message!! shouldContain "Unbekannte Farbe 'Lila'"
     }
 
     test("die Beschreibung in der Meldung darf mehr zeigen als den Schlüssel") {

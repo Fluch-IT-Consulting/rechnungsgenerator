@@ -1,7 +1,6 @@
 package de.fluchitconsulting.rechnung.model
 
-import de.fluchitconsulting.rechnung.values.CodeLookup
-import de.fluchitconsulting.rechnung.values.stringSerializer
+import de.fluchitconsulting.rechnung.values.enumSerializer
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
@@ -41,14 +40,13 @@ enum class CheckMethod(val label: String) {
     ;
 
     override fun toString(): String = label
-
-    companion object {
-        private val LOOKUP =
-            CodeLookup("Unbekanntes Prüfverfahren", entries, { it.trim().lowercase() }, CheckMethod::label)
-
-        fun fromLabel(label: String): CheckMethod = LOOKUP.of(label)
-    }
 }
 
 object CheckMethodSerializer :
-    KSerializer<CheckMethod> by stringSerializer("CheckMethod", CheckMethod::label, CheckMethod::fromLabel)
+    KSerializer<CheckMethod> by enumSerializer(
+        name = "CheckMethod",
+        values = CheckMethod.entries,
+        unknown = "Unbekanntes Prüfverfahren",
+        normalize = { it.trim().lowercase() },
+        keyOf = CheckMethod::label,
+    )

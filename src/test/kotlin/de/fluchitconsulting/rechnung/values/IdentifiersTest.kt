@@ -1,5 +1,6 @@
 package de.fluchitconsulting.rechnung.values
 
+import com.charleskorn.kaml.Yaml
 import io.kotest.assertions.assertSoftly
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.FunSpec
@@ -108,21 +109,27 @@ class IdentifiersTest : FunSpec({
     }
 
     context("Einheit") {
+        // Gelesen wird über den Serializer und nicht über eine eigene
+        // Nachschlagefunktion: Das ist der Weg, den eine YAML-Datei tatsächlich
+        // nimmt, und seit die Deklaration an einer Stelle steht, gibt es
+        // daneben keine zweite Tür mehr.
+        fun einheit(text: String): Unit = Yaml.default.decodeFromString(UnitSerializer, text)
+
         test("löst die deutschen Schreibweisen auf Rec-20-Codes auf") {
             assertSoftly {
-                Unit.fromLabel("Std.").code shouldBe "HUR"
-                Unit.fromLabel("Tage").code shouldBe "DAY"
-                Unit.fromLabel("pauschal").code shouldBe "LS"
-                Unit.fromLabel("Stück").code shouldBe "H87"
+                einheit("Std.").code shouldBe "HUR"
+                einheit("Tage").code shouldBe "DAY"
+                einheit("pauschal").code shouldBe "LS"
+                einheit("Stück").code shouldBe "H87"
             }
         }
 
         test("ist unempfindlich gegen Groß- und Kleinschreibung") {
-            Unit.fromLabel("STD.") shouldBe Unit.HOUR
+            einheit("STD.") shouldBe Unit.HOUR
         }
 
         test("eine unbekannte Einheit nennt die zulässigen") {
-            val fehler = shouldThrow<Exception> { Unit.fromLabel("Stnd.") }
+            val fehler = shouldThrow<Exception> { einheit("Stnd.") }
             assertSoftly {
                 fehler.message!! shouldContain "Stnd."
                 fehler.message!! shouldContain "Std."

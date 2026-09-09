@@ -87,14 +87,13 @@ enum class InvoiceType(
     val documentName: String get() = label.replaceFirstChar { it.uppercase() }
 
     override fun toString(): String = label
-
-    companion object {
-        private val LOOKUP = CodeLookup("Unbekannte Rechnungsart", entries, { it.trim().lowercase() }, InvoiceType::label)
-
-        /** Löst die YAML-Schreibweise auf; unbekannte Arten nennen die zulässigen. */
-        fun fromLabel(label: String): InvoiceType = LOOKUP.of(label)
-    }
 }
 
 object InvoiceTypeSerializer :
-    KSerializer<InvoiceType> by stringSerializer("InvoiceType", InvoiceType::label, InvoiceType::fromLabel)
+    KSerializer<InvoiceType> by enumSerializer(
+        name = "InvoiceType",
+        values = InvoiceType.entries,
+        unknown = "Unbekannte Rechnungsart",
+        normalize = { it.trim().lowercase() },
+        keyOf = InvoiceType::label,
+    )
