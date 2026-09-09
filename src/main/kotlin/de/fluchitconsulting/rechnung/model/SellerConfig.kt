@@ -1,6 +1,7 @@
 package de.fluchitconsulting.rechnung.model
 
 import de.fluchitconsulting.rechnung.values.Bic
+import de.fluchitconsulting.rechnung.values.CountryCode
 import de.fluchitconsulting.rechnung.values.Iban
 import de.fluchitconsulting.rechnung.values.TaxNumber
 import de.fluchitconsulting.rechnung.values.VatId
@@ -41,7 +42,7 @@ data class Address(
     @SerialName("plz") val postalCode: String,
     @SerialName("ort") val city: String,
     // ISO 3166-1 alpha-2, wie EN 16931 es verlangt (BT-40/BT-55).
-    @SerialName("land") val countryCode: String = "DE",
+    @SerialName("land") val countryCode: CountryCode = CountryCode("DE"),
 )
 
 @Serializable
