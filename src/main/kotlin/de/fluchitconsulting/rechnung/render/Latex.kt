@@ -23,8 +23,6 @@ package de.fluchitconsulting.rechnung.render
 value class Latex private constructor(val tex: String) {
     operator fun plus(other: Latex): Latex = Latex(tex + other.tex)
 
-    val isEmpty: Boolean get() = tex.isEmpty()
-
     // Bewusst KEIN toString(), das den Inhalt liefert: Sonst rutschte ein
     // Fragment unbemerkt in eine Zeichenkette ("$fragment"), und die Prüfung,
     // die dieser Typ sein soll, hätte ein stilles Loch. Wer den Text will,

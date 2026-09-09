@@ -23,15 +23,6 @@ class PercentTest : FunSpec({
         }
     }
 
-    context("Percent × Percent (Anteil vom Anteil)") {
-        test("50 % von 19 % sind 9,5 %") {
-            Percent("50") * Percent("19") shouldBe Percent("9.5")
-        }
-        test("100 % ist neutral") {
-            Percent("100") * Percent("7") shouldBe Percent("7")
-        }
-    }
-
     context("Wertgleichheit") {
         test("scale-unabhängig mit gleichem hashCode") {
             Percent("10") shouldBe Percent("10.00")

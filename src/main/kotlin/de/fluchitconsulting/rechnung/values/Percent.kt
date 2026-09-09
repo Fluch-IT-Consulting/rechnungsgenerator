@@ -25,13 +25,6 @@ class Percent(value: BigDecimal) {
     /** Der Wert in Prozent-Schreibweise: 19 % -> `19.0000000` (Scale 7 = Scale 9 im Multiplikator). */
     val valueAsPercentage: BigDecimal get() = value.movePointRight(2)
 
-    // Anteil vom Anteil: 50 % × 19 % = 9,5 %. Gerechnet wird im Multiplikator
-    // (0.5 × 0.19), der Konstruktor erwartet aber Prozent-Schreibweise.
-    operator fun times(other: Percent): Percent = Percent(value.multiply(other.value).movePointRight(2))
-
-    // Kommutatives Gegenstück zu Money.times(Percent), damit beide Reihenfolgen kompilieren.
-    operator fun times(money: Money): Money = money * this
-
     // Value-Object-Hygiene wie bei Money: numerische Gleichheit über compareTo,
     // scale-unabhängiger hashCode.
     override fun equals(other: Any?): Boolean = other is Percent && value.compareTo(other.value) == 0

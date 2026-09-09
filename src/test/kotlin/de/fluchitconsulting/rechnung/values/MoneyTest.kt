@@ -38,16 +38,15 @@ class MoneyTest : FunSpec({
         test("Kommutativität") { checkAll(money, money) { a, b -> a + b shouldBe b + a } }
         test("Assoziativität") { checkAll(money, money, money) { a, b, c -> (a + b) + c shouldBe a + (b + c) } }
         test("ZERO ist neutrales Element") { checkAll(money) { a -> a + Money.ZERO shouldBe a } }
-        test("negate liefert das inverse Element") { checkAll(money) { a -> a + a.negate() shouldBe Money.ZERO } }
-        test("a - b == a + (-b)") { checkAll(money, money) { a, b -> a - b shouldBe a + b.negate() } }
-        test("negate ist involutiv") { checkAll(money) { a -> a.negate().negate() shouldBe a } }
+        // negate() ist mit #32 entfallen – ungerufen. Das inverse Element prüft
+        // jetzt a - a, ohne dafür eine Operation vorzuhalten.
         test("a - a == ZERO") { checkAll(money) { a -> a - a shouldBe Money.ZERO } }
     }
 
     context("Vorzeichen & Prädikate") {
         test("isZero genau dann, wenn == ZERO") { checkAll(money) { a -> a.isZero() shouldBe (a == Money.ZERO) } }
-        test("isPositive und isNegative schließen sich aus") {
-            checkAll(money) { a -> (a.isPositive() && a.isNegative()) shouldBe false }
+        test("isNegative genau dann, wenn kleiner als ZERO") {
+            checkAll(money) { a -> a.isNegative() shouldBe (a < Money.ZERO) }
         }
         test("compareTo==0 ist deckungsgleich mit equals") {
             checkAll(money, money) { a, b -> (a.compareTo(b) == 0) shouldBe (a == b) }
@@ -68,9 +67,6 @@ class MoneyTest : FunSpec({
     context("Multiplikation mit Percent") {
         test("Prozentanteil eines Betrags") { Money("100") * Percent("10") shouldBe Money("10.00") }
         test("100 % ist neutral") { checkAll(money) { a -> a * Percent("100") shouldBe a } }
-        test("Percent × Money ist kommutativ zu Money × Percent") {
-            checkAll(money) { a -> Percent("19") * a shouldBe a * Percent("19") }
-        }
     }
 
     // Money × Menge gibt es bewusst nicht – das ist Sache von Price, siehe PriceTest.
@@ -80,8 +76,8 @@ class MoneyTest : FunSpec({
         test("sumOf über eine Liste") {
             listOf("1.10", "2.20", "3.30").map(::Money).sumOf { it } shouldBe Money("6.60")
         }
-        test("sum einer leeren Liste ist ZERO") {
-            emptyList<Money>().sum() shouldBe Money.ZERO
+        test("sumOf über eine leere Liste ist ZERO") {
+            emptyList<Money>().sumOf { it } shouldBe Money.ZERO
         }
     }
 
