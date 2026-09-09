@@ -64,16 +64,10 @@ data class InvoiceTotals(
     val netTotal: Money,
     val vatGroups: List<VatGroup>,
     val grossTotal: Money,
-    /**
-     * Bis wann zu zahlen ist – oder `null`, wenn nichts mehr zu zahlen ist.
-     *
-     * Das ist der Fall bei einer Schlussrechnung, deren Abschläge den Betrag
-     * decken: Sie sagt unten "es verbleibt kein Restbetrag", und ein
-     * Zahlungsziel daneben wäre die zweite, andere Aussage desselben Blattes.
-     * Die Entscheidung fällt hier und nicht im Renderer – der setzt, was
-     * dasteht, und entscheidet nicht, was dastehen soll.
-     */
-    val dueDate: LocalDate?,
+    /** Das Datum der Rechnung – Ausgangspunkt für die Frist. */
+    val issueDate: LocalDate,
+    /** Die vereinbarte Zahlungsfrist in Tagen, aus den Stammdaten oder der Rechnung. */
+    val paymentTermDays: Int,
     /**
      * Hinweise für den Rechnungssteller – nicht für den Kunden, sie stehen
      * nicht auf dem PDF. Sie betreffen Nachweise, die in die eigene Akte
@@ -89,6 +83,24 @@ data class InvoiceTotals(
 
     /** Was nach der Absetzung noch zu zahlen ist. Null ist zulässig, negativ nicht. */
     val remainingAmount: Money get() = grossTotal - prepaymentTotal
+
+    /**
+     * Bis wann zu zahlen ist – oder `null`, wenn nichts mehr zu zahlen ist.
+     *
+     * Das ist der Fall bei einer Schlussrechnung, deren Abschläge den Betrag
+     * decken: Sie sagt unten "es verbleibt kein Restbetrag", und ein
+     * Zahlungsziel daneben wäre die zweite, andere Aussage desselben Blattes.
+     * Die Entscheidung fällt hier und nicht im Renderer – der setzt, was
+     * dasteht, und entscheidet nicht, was dastehen soll.
+     *
+     * Abgeleitet und nicht gesetzt, aus demselben Grund wie [remainingAmount]:
+     * Vorher entstand das Ergebnis erst ohne Zahlungsziel und wurde danach
+     * kopiert, und wer eines in der Hand hielt, sah ihm nicht an, ob die
+     * Entscheidung schon gefallen war. Jetzt ist ein Ergebnis mit Zahlungsziel
+     * *und* Restbetrag null nicht mehr baubar – nicht bloß ungebaut.
+     */
+    val dueDate: LocalDate? get() =
+        if (remainingAmount.isZero()) null else issueDate.plusDays(paymentTermDays.toLong())
 }
 
 object InvoiceCalculator {
@@ -130,23 +142,16 @@ object InvoiceCalculator {
                 val vat = abschlag.taxShares.sumOf { it.vat }
                 DeductedPrepayment(abschlag, net = net, vat = vat, gross = net + vat)
             }
-        // Das Ergebnis entsteht erst ohne Zahlungsziel, damit Prüfung und
-        // Entscheidung den Restbetrag von dort lesen können statt ihn je neu
-        // auszurechnen: Die Formel steht einmal, in InvoiceTotals.
-        val totals = InvoiceTotals(lines, netTotal, vatGroups, grossTotal, dueDate = null, hints, prepayments)
+        // Elvis-Operator `?:` – nimm den Override, sonst den Default aus den Stammdaten.
+        val termDays = invoice.paymentTermDaysOverride ?: config.paymentTermDays
+        val totals =
+            InvoiceTotals(lines, netTotal, vatGroups, grossTotal, invoice.issueDate, termDays, hints, prepayments)
 
         // Die übrigen sieben Regeln stehen in validatePrepayments, das validate()
         // aufruft: Sie kommen ohne die Summen aus und sollen zuschlagen, bevor
         // überhaupt gerechnet wird.
-        validateDeduction(vatGroups, totals)
-
-        // Ein Zahlungsziel gibt es nur, wenn etwas offen ist – siehe
-        // InvoiceTotals.dueDate.
-        if (totals.remainingAmount.isZero()) return totals
-
-        // Elvis-Operator `?:` – nimm den Override, sonst den Default aus den Stammdaten.
-        val termDays = invoice.paymentTermDaysOverride ?: config.paymentTermDays
-        return totals.copy(dueDate = invoice.issueDate.plusDays(termDays.toLong()))
+        validateDeduction(totals)
+        return totals
     }
 
     /**
@@ -293,12 +298,12 @@ object InvoiceCalculator {
      * Die Absetzung gegen die Rechnung selbst – die beiden Regeln, die die
      * Summen brauchen.
      */
-    private fun validateDeduction(vatGroups: List<VatGroup>, totals: InvoiceTotals) {
+    private fun validateDeduction(totals: InvoiceTotals) {
         val prepayments = totals.prepayments
         // Regel 6: Zwei Positionen mit 0 % können steuerlich Verschiedenes
         // bedeuten, deshalb muss die Kombination aus Kategorie und Satz passen –
         // nicht nur der Satz.
-        val present = vatGroups.map { it.category to it.rate }.toSet()
+        val present = totals.vatGroups.map { it.category to it.rate }.toSet()
         prepayments.forEach { abgesetzt ->
             abgesetzt.prepayment.taxShares.forEach { anteil ->
                 if ((anteil.taxCategory to anteil.vatRate) !in present) {
