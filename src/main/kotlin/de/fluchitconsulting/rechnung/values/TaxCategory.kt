@@ -2,12 +2,6 @@ package de.fluchitconsulting.rechnung.values
 
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.Serializable
-import kotlinx.serialization.SerializationException
-import kotlinx.serialization.descriptors.PrimitiveKind
-import kotlinx.serialization.descriptors.PrimitiveSerialDescriptor
-import kotlinx.serialization.descriptors.SerialDescriptor
-import kotlinx.serialization.encoding.Decoder
-import kotlinx.serialization.encoding.Encoder
 
 /**
  * Die Umsatzsteuerkategorie einer Position – EN 16931 BT-151, Codeliste UNCL 5305.
@@ -78,21 +72,20 @@ enum class TaxCategory(
     override fun toString(): String = code
 
     companion object {
-        private val BY_CODE = entries.associateBy { it.code }
+        // Über den Code und in Großschreibung, anders als bei Unit und
+        // InvoiceType: Die Codeliste UNCL 5305 schreibt "S", "AE", "K".
+        private val LOOKUP =
+            CodeLookup(
+                unknown = "Unbekannte Steuerkategorie",
+                values = entries,
+                normalize = { it.trim().uppercase() },
+                keyOf = TaxCategory::code,
+                describe = { "${it.code} (${it.label})" },
+            )
 
-        fun fromCode(code: String): TaxCategory =
-            BY_CODE[code.trim().uppercase()]
-                ?: throw SerializationException(
-                    "Unbekannte Steuerkategorie '$code'. Zulässig sind: " +
-                        entries.joinToString { "${it.code} (${it.label})" },
-                )
+        fun fromCode(code: String): TaxCategory = LOOKUP.of(code)
     }
 }
 
-object TaxCategorySerializer : KSerializer<TaxCategory> {
-    override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("TaxCategory", PrimitiveKind.STRING)
-
-    override fun serialize(encoder: Encoder, value: TaxCategory) = encoder.encodeString(value.code)
-
-    override fun deserialize(decoder: Decoder): TaxCategory = TaxCategory.fromCode(decoder.decodeString())
-}
+object TaxCategorySerializer :
+    KSerializer<TaxCategory> by stringSerializer("TaxCategory", TaxCategory::code, TaxCategory::fromCode)

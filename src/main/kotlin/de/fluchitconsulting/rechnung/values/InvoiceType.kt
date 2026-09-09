@@ -2,12 +2,6 @@ package de.fluchitconsulting.rechnung.values
 
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.Serializable
-import kotlinx.serialization.SerializationException
-import kotlinx.serialization.descriptors.PrimitiveKind
-import kotlinx.serialization.descriptors.PrimitiveSerialDescriptor
-import kotlinx.serialization.descriptors.SerialDescriptor
-import kotlinx.serialization.encoding.Decoder
-import kotlinx.serialization.encoding.Encoder
 
 /**
  * Die Rechnungsart – EN 16931 BT-3, Codeliste UNTDID 1001.
@@ -95,21 +89,12 @@ enum class InvoiceType(
     override fun toString(): String = label
 
     companion object {
-        private val BY_LABEL = entries.associateBy { it.label.lowercase() }
+        private val LOOKUP = CodeLookup("Unbekannte Rechnungsart", entries, { it.trim().lowercase() }, InvoiceType::label)
 
         /** Löst die YAML-Schreibweise auf; unbekannte Arten nennen die zulässigen. */
-        fun fromLabel(label: String): InvoiceType =
-            BY_LABEL[label.trim().lowercase()]
-                ?: throw SerializationException(
-                    "Unbekannte Rechnungsart '$label'. Zulässig sind: ${entries.joinToString { it.label }}",
-                )
+        fun fromLabel(label: String): InvoiceType = LOOKUP.of(label)
     }
 }
 
-object InvoiceTypeSerializer : KSerializer<InvoiceType> {
-    override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("InvoiceType", PrimitiveKind.STRING)
-
-    override fun serialize(encoder: Encoder, value: InvoiceType) = encoder.encodeString(value.label)
-
-    override fun deserialize(decoder: Decoder): InvoiceType = InvoiceType.fromLabel(decoder.decodeString())
-}
+object InvoiceTypeSerializer :
+    KSerializer<InvoiceType> by stringSerializer("InvoiceType", InvoiceType::label, InvoiceType::fromLabel)

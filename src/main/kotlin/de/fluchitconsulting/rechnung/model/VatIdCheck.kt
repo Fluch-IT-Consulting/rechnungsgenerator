@@ -1,14 +1,10 @@
 package de.fluchitconsulting.rechnung.model
 
+import de.fluchitconsulting.rechnung.values.CodeLookup
+import de.fluchitconsulting.rechnung.values.stringSerializer
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
-import kotlinx.serialization.SerializationException
-import kotlinx.serialization.descriptors.PrimitiveKind
-import kotlinx.serialization.descriptors.PrimitiveSerialDescriptor
-import kotlinx.serialization.descriptors.SerialDescriptor
-import kotlinx.serialization.encoding.Decoder
-import kotlinx.serialization.encoding.Encoder
 
 /**
  * Der Nachweis, dass die USt-IdNr. des Kunden geprüft wurde.
@@ -47,18 +43,12 @@ enum class CheckMethod(val label: String) {
     override fun toString(): String = label
 
     companion object {
-        fun fromLabel(label: String): CheckMethod =
-            entries.firstOrNull { it.label.equals(label.trim(), ignoreCase = true) }
-                ?: throw SerializationException(
-                    "Unbekanntes Prüfverfahren '$label'. Zulässig sind: ${entries.joinToString { it.label }}",
-                )
+        private val LOOKUP =
+            CodeLookup("Unbekanntes Prüfverfahren", entries, { it.trim().lowercase() }, CheckMethod::label)
+
+        fun fromLabel(label: String): CheckMethod = LOOKUP.of(label)
     }
 }
 
-object CheckMethodSerializer : KSerializer<CheckMethod> {
-    override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("CheckMethod", PrimitiveKind.STRING)
-
-    override fun serialize(encoder: Encoder, value: CheckMethod) = encoder.encodeString(value.label)
-
-    override fun deserialize(decoder: Decoder): CheckMethod = CheckMethod.fromLabel(decoder.decodeString())
-}
+object CheckMethodSerializer :
+    KSerializer<CheckMethod> by stringSerializer("CheckMethod", CheckMethod::label, CheckMethod::fromLabel)
