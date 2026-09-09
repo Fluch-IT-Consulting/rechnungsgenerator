@@ -31,8 +31,15 @@ CV/Web-Auftritt des Autors), Validierung über veraPDF.
 
   Berechnungen (Summen, USt., Fälligkeit) im Kotlin-Code, nie im Template.
 - **Ausgabe**: PDF/A-1b via LuaLaTeX + `pdfx`-Paket. Externe Tools (lualatex,
-  verapdf) werden im PATH erwartet; `InvoiceGenerator.checkTools()` prüft das
-  beim Start und nennt die fehlenden mit Installationshinweis.
+  verapdf) werden im PATH erwartet; `LuaLatexTypesetter.checkAvailable()` prüft
+  das beim Start und nennt die fehlenden mit Installationshinweis.
+- **Naht zu den Werkzeugen**: `Typesetter` – "aus Quelltext wird ein geprüftes
+  PDF". Dahinter im Betrieb LuaLaTeX und veraPDF, im Test ein vorbereitetes
+  Ergebnis. Zwei Adapter, also eine echte Naht: Erst dadurch sind Kopieren,
+  Ausgabereihenfolge, Exitcode und das Aufräumen des Arbeitsverzeichnisses
+  prüfbar, ohne dass ein fremdes Programm läuft. Der Integrationstest mit den
+  echten Werkzeugen bleibt daneben bestehen – ohne gültiges PDF/A kein grüner
+  Build.
 - **Externe Prozesse**: Ausgabe wird in eine Datei umgeleitet, nicht in einen
   Stream gelesen – sonst blockiert das Lesen bei einem hängenden Prozess, und
   die Zeitgrenze käme nie zum Zug. LuaLaTeX läuft zweimal (hyperref schreibt

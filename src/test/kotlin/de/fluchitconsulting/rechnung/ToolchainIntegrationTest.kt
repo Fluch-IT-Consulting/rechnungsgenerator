@@ -1,6 +1,7 @@
 package de.fluchitconsulting.rechnung
 
 import de.fluchitconsulting.rechnung.toolchain.LatexCompiler
+import de.fluchitconsulting.rechnung.toolchain.LuaLatexTypesetter
 import de.fluchitconsulting.rechnung.toolchain.PdfAValidator
 import de.fluchitconsulting.rechnung.toolchain.ToolchainException
 import de.fluchitconsulting.rechnung.values.InvoiceType
@@ -27,7 +28,7 @@ class ToolchainIntegrationTest : FunSpec({
     fun resource(name: String) = File("src/test/resources/$name").readText()
 
     test("die benötigten Werkzeuge sind vorhanden") {
-        InvoiceGenerator.checkTools()
+        LuaLatexTypesetter.checkAvailable()
     }
 
     test("erzeugt aus den Beispieldaten ein gültiges PDF/A-1b") {
