@@ -46,7 +46,13 @@ class Percent(value: BigDecimal) {
 
     // Debug-Darstellung: locale-unabhängig, Prozentzeichen direkt am Wert.
     // Die deutsche Report-Form ("19 %") macht die Ausgabeschicht.
-    override fun toString(): String = "${valueAsPercentage.toPlainString()}%"
+    //
+    // stripTrailingZeros wie beim Serializer daneben: Intern rechnet Percent
+    // mit sieben Nachkommastellen, in einer Fehlermeldung liest das aber
+    // niemand als Genauigkeit. Wer "angegeben ist 19.0000000%" liest, sucht den
+    // Fehler zuerst bei den Nullen statt bei seinem Steuersatz – die Meldung
+    // lenkt dann von sich selbst ab.
+    override fun toString(): String = "${valueAsPercentage.stripTrailingZeros().toPlainString()}%"
 
     companion object {
         private val HUNDREDTH = BigDecimal("0.01")
