@@ -209,19 +209,19 @@ class InvoiceRendererTest : FunSpec({
 
             tex shouldContain "Abschlagsrechnung R26-009 vom 15.06.2026, vereinnahmt am 10.06.2026"
             tex shouldContain "Abschlagsrechnung R26-011 vom 20.07.2026, vereinnahmt am 25.07.2026"
-            // \u00A0 ist das geschützte Leerzeichen vor Einheit und Währung,
-            // das GermanFormat setzt – im Quelltext von einem normalen nicht zu
-            // unterscheiden, deshalb hier ausgeschrieben.
-            tex shouldContain "netto 4.000,00\u00A0€ zzgl. 19\u00A0\\% USt. 760,00\u00A0€"
+            // Die Tilde vor Einheit und Währung ist das geschützte Leerzeichen
+            // aus GermanFormat, beim Maskieren übersetzt – LaTeX liest sie als
+            // \nobreakspace.
+            tex shouldContain "netto 4.000,00~€ zzgl. 19~\\% USt. 760,00~€"
             // Abgesetzt wird, also mit Minuszeichen – und zwar dem typografischen.
-            tex shouldContain "\u22124.760,00\u00A0€"
+            tex shouldContain "\u22124.760,00~€"
         }
 
         test("der Restbetrag steht unter dem Strich") {
             val tex = schlussrechnung(gesamtleistung, testPrepayment())
 
             tex shouldContain "\\textbf{Restbetrag}"
-            tex shouldContain "\\textbf{19.040,00\u00A0€}"
+            tex shouldContain "\\textbf{19.040,00~€}"
         }
 
         test("ein Restbetrag von null bekommt einen Satz statt einer Zahl") {

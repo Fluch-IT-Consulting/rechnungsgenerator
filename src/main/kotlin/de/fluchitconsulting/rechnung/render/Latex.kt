@@ -65,6 +65,21 @@ fun String.escapeLatex(): Latex =
                     // Diese beiden sind in LaTeX Akzent-Befehle, keine Zeichen.
                     '~' -> append("\\textasciitilde{}")
                     '^' -> append("\\textasciicircum{}")
+                    // Das geschützte Leerzeichen aus GermanFormat wird zur
+                    // Tilde – die ist in LaTeX kein Zeichen, sondern die
+                    // Abkürzung für \nobreakspace (latex.ltx: \def~{...}).
+                    // Sie wird also NICHT von der Zeile darüber wieder
+                    // maskiert: Dort geht eine Tilde aus den Eingabedaten
+                    // hinein, hier kommt Markup heraus.
+                    //
+                    // Warum überhaupt: LuaLaTeX bricht auch am nackten U+00A0
+                    // nicht um, aber das Zeichen ist ein FESTER Zwischenraum,
+                    // während ~ dehnbar ist wie ein gewöhnlicher. Nachgemessen
+                    // in einer \hbox fester Breite: Beim U+00A0 bleibt die
+                    // Lücke schmal, die übrigen nehmen die Dehnung auf. Im
+                    // Flattersatz dieser Vorlage fällt das nicht auf; in einem
+                    // Block, dem jemand den Flattersatz vergisst, schon.
+                    '\u00A0' -> append('~')
                     else -> append(char)
                 }
             }
