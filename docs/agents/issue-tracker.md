@@ -106,9 +106,9 @@ docs: Der Zweigname sagt, welcher Art die Arbeit ist
 ```
 
 Bricht eine Änderung bestehende **Rechnungsdateien**, trägt der Typ ein
-Ausrufezeichen, dazu eine Fußzeile `BREAKING CHANGE: <was bricht>`. Eine
-umbenannte YAML-Schlüssel wie `bezahlt-am` zu `vereinnahmt-am` ist genau so ein
-Fall:
+Ausrufezeichen, dazu eine Fußzeile `BREAKING CHANGE: <was bricht>`. Ein
+umbenannter YAML-Schlüssel wie `bezahlt-am` zu `vereinnahmt-am` ist genau so
+ein Fall:
 
 ```
 feat(#1)!: Die Schlussrechnung setzt ab, was vereinnahmt wurde
