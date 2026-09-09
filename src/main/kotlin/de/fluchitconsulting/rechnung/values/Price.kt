@@ -24,15 +24,9 @@ class Price(val value: BigDecimal) : Comparable<Price> {
     // --- Arithmetik -----------------------------------------------------------
     // Alles bleibt exakt: Es gibt in diesem Typ keine einzige Rundung.
 
-    operator fun plus(other: Price): Price = Price(value.add(other.value))
-
-    operator fun minus(other: Price): Price = Price(value.subtract(other.value))
-
     // Menge × Einzelpreis. Ergibt wieder einen exakten Wert, keinen Betrag –
     // gerundet wird erst beim Übergang, siehe roundToAmount().
     operator fun times(quantity: BigDecimal): Price = Price(value.multiply(quantity))
-
-    operator fun times(percent: Percent): Price = Price(value.multiply(percent.valueAsMultiplier))
 
     /**
      * Der einzige Weg von einem exakten Preis zu einem Betrag. Hier – und nur hier –
@@ -45,8 +39,6 @@ class Price(val value: BigDecimal) : Comparable<Price> {
 
     fun isZero(): Boolean = value.signum() == 0
 
-    fun negate(): Price = Price(value.negate())
-
     override operator fun compareTo(other: Price): Int = value.compareTo(other.value)
 
     // Wertgleichheit wie bei Money: numerisch über compareTo, damit "0.10" und
@@ -56,14 +48,7 @@ class Price(val value: BigDecimal) : Comparable<Price> {
     override fun hashCode(): Int = value.stripTrailingZeros().hashCode()
 
     override fun toString(): String = value.toPlainString()
-
-    companion object {
-        val ZERO = Price(BigDecimal.ZERO)
-    }
 }
-
-// Kommutatives Gegenstück zu Price.times(Percent).
-operator fun Percent.times(price: Price): Price = price * this
 
 object PriceSerializer :
     KSerializer<Price> by stringSerializer(

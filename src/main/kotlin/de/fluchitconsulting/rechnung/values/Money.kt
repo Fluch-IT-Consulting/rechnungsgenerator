@@ -42,16 +42,13 @@ class Money(value: BigDecimal) : Comparable<Money> {
 
     fun isZero(): Boolean = signum() == 0
 
-    fun signum(): Int = value.signum()
-
-    fun isPositive(): Boolean = signum() > 0
+    // Privat: Draußen wird nach isZero oder isNegative gefragt, nicht nach
+    // einem Vorzeichen als Zahl.
+    private fun signum(): Int = value.signum()
 
     fun isNegative(): Boolean = signum() < 0
 
     // Ohne Sonderfall für die Null: BigDecimal kennt kein negatives Vorzeichen der Null,
-    // ZERO.negate() ist wieder ZERO.
-    fun negate(): Money = Money(value.negate())
-
     override operator fun compareTo(other: Money): Int = value.compareTo(other.value)
 
     // Wertgleichheit statt Identität – bewusst über compareTo, damit die Gleichheit
@@ -75,8 +72,6 @@ class Money(value: BigDecimal) : Comparable<Money> {
 // Zahlentypen) auf Money. `inline` kopiert das Lambda in die Aufrufstelle –
 // stdlib-Gewohnheit bei kleinen Helfern mit Funktionsparameter.
 inline fun <T> Iterable<T>.sumOf(selector: (T) -> Money): Money = fold(Money.ZERO) { acc, element -> acc + selector(element) }
-
-fun Iterable<Money>.sum(): Money = fold(Money.ZERO, Money::plus)
 
 // YAML ↔ Money: "95.00" ↔ Money("95.00"). Als String-Primitive serialisiert,
 // damit nie Fließkomma-Parsing dazwischenfunkt.

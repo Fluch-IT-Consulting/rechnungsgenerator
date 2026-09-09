@@ -19,19 +19,19 @@ class GermanFormatTest : FunSpec({
 
     test("Beträge mit Tausenderpunkt und Dezimalkomma") {
         assertSoftly {
-            GermanFormat.amount(Money("8337.50")).tex shouldBe "8.337,50"
-            GermanFormat.amount(Money("0.5")).tex shouldBe "0,50"
-            GermanFormat.amount(Money("-1234.05")).tex shouldBe "-1.234,05"
+            GermanFormat.amountWithCurrency(Money("8337.50")).tex shouldBe "8.337,50~€"
+            GermanFormat.amountWithCurrency(Money("0.5")).tex shouldBe "0,50~€"
+            GermanFormat.amountWithCurrency(Money("-1234.05")).tex shouldBe "-1.234,05~€"
             GermanFormat.amountWithCurrency(Money("9921.63")).tex shouldBe "9.921,63~€"
         }
     }
 
     test("Einzelpreise zeigen bis zu vier Nachkommastellen") {
         assertSoftly {
-            GermanFormat.price(Price("95.00")).tex shouldBe "95,00"
+            GermanFormat.priceWithCurrency(Price("95.00")).tex shouldBe "95,00~€"
             // Der Sub-Cent-Preis bleibt sichtbar – das ist der Sinn von Price.
-            GermanFormat.price(Price("0.335")).tex shouldBe "0,335"
-            GermanFormat.price(Price("0.0425")).tex shouldBe "0,0425"
+            GermanFormat.priceWithCurrency(Price("0.335")).tex shouldBe "0,335~€"
+            GermanFormat.priceWithCurrency(Price("0.0425")).tex shouldBe "0,0425~€"
         }
     }
 
@@ -79,9 +79,9 @@ class GermanFormatTest : FunSpec({
     test("nichts wird stillschweigend gerundet") {
         assertSoftly {
             // Preis: mindestens zwei Stellen, sonst so viele wie da sind.
-            GermanFormat.price(Price("0.00001")).tex shouldBe "0,00001"
-            GermanFormat.price(Price("0.12345")).tex shouldBe "0,12345"
-            GermanFormat.price(Price("95")).tex shouldBe "95,00"
+            GermanFormat.priceWithCurrency(Price("0.00001")).tex shouldBe "0,00001~€"
+            GermanFormat.priceWithCurrency(Price("0.12345")).tex shouldBe "0,12345~€"
+            GermanFormat.priceWithCurrency(Price("95")).tex shouldBe "95,00~€"
             // Menge: keine Untergrenze.
             GermanFormat.quantity(BigDecimal("86.5678")).tex shouldBe "86,5678"
             GermanFormat.quantity(BigDecimal("0.0004")).tex shouldBe "0,0004"

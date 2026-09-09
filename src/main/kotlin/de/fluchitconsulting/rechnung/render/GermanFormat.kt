@@ -63,19 +63,15 @@ object GermanFormat {
             }.format(value)
     }
 
-    /** Betrag ohne Währung: `8.337,50` */
-    fun amount(money: Money): Latex = exact(money.value, minFraction = 2).escapeLatex()
-
     /** Betrag mit Währung und geschütztem Leerzeichen: `8.337,50 €` */
     fun amountWithCurrency(money: Money): Latex = "${exact(money.value, minFraction = 2)} €".escapeLatex()
 
     /**
-     * Einzelpreis: mindestens zwei, höchstens vier Nachkommastellen.
-     * Price darf mehr Stellen tragen als Money (EN 16931 BT-146), und die
-     * sollen auf der Rechnung auch sichtbar sein: `0,3350` statt `0,34`.
+     * Einzelpreis mit Währung: mindestens zwei, höchstens so viele
+     * Nachkommastellen, wie der Wert selbst trägt. Price darf mehr Stellen
+     * haben als Money (EN 16931 BT-146), und die sollen auf der Rechnung auch
+     * sichtbar sein: `0,3350 €` statt `0,34 €`.
      */
-    fun price(price: Price): Latex = exact(price.value, minFraction = 2).escapeLatex()
-
     fun priceWithCurrency(price: Price): Latex = "${exact(price.value, minFraction = 2)} €".escapeLatex()
 
     /** Menge ohne überflüssige Nullen: `86,5`, `1`, `1000` */
