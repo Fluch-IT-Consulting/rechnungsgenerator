@@ -2,12 +2,6 @@ package de.fluchitconsulting.rechnung.values
 
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.Serializable
-import kotlinx.serialization.SerializationException
-import kotlinx.serialization.descriptors.PrimitiveKind
-import kotlinx.serialization.descriptors.PrimitiveSerialDescriptor
-import kotlinx.serialization.descriptors.SerialDescriptor
-import kotlinx.serialization.encoding.Decoder
-import kotlinx.serialization.encoding.Encoder
 import java.math.BigDecimal
 
 /**
@@ -71,17 +65,9 @@ class Price(val value: BigDecimal) : Comparable<Price> {
 // Kommutatives Gegenstück zu Price.times(Percent).
 operator fun Percent.times(price: Price): Price = price * this
 
-object PriceSerializer : KSerializer<Price> {
-    override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("Price", PrimitiveKind.STRING)
-
-    override fun serialize(encoder: Encoder, value: Price) = encoder.encodeString(value.value.toPlainString())
-
-    override fun deserialize(decoder: Decoder): Price {
-        val raw = decoder.decodeString()
-        return try {
-            Price(raw)
-        } catch (e: NumberFormatException) {
-            throw SerializationException("Kein gültiger Preis: '$raw'", e)
-        }
-    }
-}
+object PriceSerializer :
+    KSerializer<Price> by stringSerializer(
+        name = "Price",
+        encode = { it.value.toPlainString() },
+        decode = { raw -> parsedNumber(raw, "Preis", ::Price) },
+    )

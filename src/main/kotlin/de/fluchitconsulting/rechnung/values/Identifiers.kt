@@ -3,11 +3,6 @@ package de.fluchitconsulting.rechnung.values
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.SerializationException
-import kotlinx.serialization.descriptors.PrimitiveKind
-import kotlinx.serialization.descriptors.PrimitiveSerialDescriptor
-import kotlinx.serialization.descriptors.SerialDescriptor
-import kotlinx.serialization.encoding.Decoder
-import kotlinx.serialization.encoding.Encoder
 import java.math.BigInteger
 
 // Kennungen aus den Stammdaten, die beim Einlesen geprüft werden.
@@ -180,34 +175,14 @@ private inline fun <T> parseOrFail(raw: String, bauen: (String) -> T): T =
         throw SerializationException(e.message, e)
     }
 
-object IbanSerializer : KSerializer<Iban> {
-    override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("Iban", PrimitiveKind.STRING)
+object IbanSerializer :
+    KSerializer<Iban> by stringSerializer("Iban", { it.formatted() }, { parseOrFail(it, ::Iban) })
 
-    override fun serialize(encoder: Encoder, value: Iban) = encoder.encodeString(value.formatted())
+object BicSerializer :
+    KSerializer<Bic> by stringSerializer("Bic", { it.value }, { parseOrFail(it, ::Bic) })
 
-    override fun deserialize(decoder: Decoder): Iban = parseOrFail(decoder.decodeString(), ::Iban)
-}
+object VatIdSerializer :
+    KSerializer<VatId> by stringSerializer("VatId", { it.value }, { parseOrFail(it, ::VatId) })
 
-object BicSerializer : KSerializer<Bic> {
-    override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("Bic", PrimitiveKind.STRING)
-
-    override fun serialize(encoder: Encoder, value: Bic) = encoder.encodeString(value.value)
-
-    override fun deserialize(decoder: Decoder): Bic = parseOrFail(decoder.decodeString(), ::Bic)
-}
-
-object VatIdSerializer : KSerializer<VatId> {
-    override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("VatId", PrimitiveKind.STRING)
-
-    override fun serialize(encoder: Encoder, value: VatId) = encoder.encodeString(value.formatted())
-
-    override fun deserialize(decoder: Decoder): VatId = parseOrFail(decoder.decodeString(), ::VatId)
-}
-
-object TaxNumberSerializer : KSerializer<TaxNumber> {
-    override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("TaxNumber", PrimitiveKind.STRING)
-
-    override fun serialize(encoder: Encoder, value: TaxNumber) = encoder.encodeString(value.value)
-
-    override fun deserialize(decoder: Decoder): TaxNumber = parseOrFail(decoder.decodeString(), ::TaxNumber)
-}
+object TaxNumberSerializer :
+    KSerializer<TaxNumber> by stringSerializer("TaxNumber", { it.value }, { parseOrFail(it, ::TaxNumber) })

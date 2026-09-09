@@ -2,12 +2,6 @@ package de.fluchitconsulting.rechnung.values
 
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.Serializable
-import kotlinx.serialization.SerializationException
-import kotlinx.serialization.descriptors.PrimitiveKind
-import kotlinx.serialization.descriptors.PrimitiveSerialDescriptor
-import kotlinx.serialization.descriptors.SerialDescriptor
-import kotlinx.serialization.encoding.Decoder
-import kotlinx.serialization.encoding.Encoder
 import java.math.BigDecimal
 import java.math.RoundingMode
 
@@ -61,18 +55,9 @@ class Percent(value: BigDecimal) {
 
 // YAML ↔ Percent in Prozent-Schreibweise: "19" ↔ Percent("19").
 // stripTrailingZeros beim Schreiben, damit nicht "19.0000000" in der YAML landet.
-object PercentSerializer : KSerializer<Percent> {
-    override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("Percent", PrimitiveKind.STRING)
-
-    override fun serialize(encoder: Encoder, value: Percent) =
-        encoder.encodeString(value.valueAsPercentage.stripTrailingZeros().toPlainString())
-
-    override fun deserialize(decoder: Decoder): Percent {
-        val raw = decoder.decodeString()
-        return try {
-            Percent(raw)
-        } catch (e: NumberFormatException) {
-            throw SerializationException("Kein gültiger Prozentwert: '$raw'", e)
-        }
-    }
-}
+object PercentSerializer :
+    KSerializer<Percent> by stringSerializer(
+        name = "Percent",
+        encode = { it.valueAsPercentage.stripTrailingZeros().toPlainString() },
+        decode = { raw -> parsedNumber(raw, "Prozentwert", ::Percent) },
+    )

@@ -2,12 +2,6 @@ package de.fluchitconsulting.rechnung.values
 
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.Serializable
-import kotlinx.serialization.SerializationException
-import kotlinx.serialization.descriptors.PrimitiveKind
-import kotlinx.serialization.descriptors.PrimitiveSerialDescriptor
-import kotlinx.serialization.descriptors.SerialDescriptor
-import kotlinx.serialization.encoding.Decoder
-import kotlinx.serialization.encoding.Encoder
 import java.math.BigDecimal
 import java.math.RoundingMode
 
@@ -86,22 +80,9 @@ fun Iterable<Money>.sum(): Money = fold(Money.ZERO, Money::plus)
 
 // YAML ↔ Money: "95.00" ↔ Money("95.00"). Als String-Primitive serialisiert,
 // damit nie Fließkomma-Parsing dazwischenfunkt.
-object MoneySerializer : KSerializer<Money> {
-    override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("Money", PrimitiveKind.STRING)
-
-    override fun serialize(encoder: Encoder, value: Money) = encoder.encodeString(value.value.toPlainString())
-
-    // Der BigDecimal-Konstruktor wirft ein nacktes "Character n is neither a decimal digit
-    // number, decimal point, nor ..." – ohne den Wert und ohne Bezug zur Rechnung. Die
-    // SerializationException nennt wenigstens den Wert. Zeile und Spalte ergänzt kaml
-    // NICHT (nachgemessen); dafür müsste der Decoder auf YamlInput geprüft werden, was
-    // den Serializer an ein konkretes Format binden würde.
-    override fun deserialize(decoder: Decoder): Money {
-        val raw = decoder.decodeString()
-        return try {
-            Money(raw)
-        } catch (e: NumberFormatException) {
-            throw SerializationException("Kein gültiger Geldbetrag: '$raw'", e)
-        }
-    }
-}
+object MoneySerializer :
+    KSerializer<Money> by stringSerializer(
+        name = "Money",
+        encode = { it.value.toPlainString() },
+        decode = { raw -> parsedNumber(raw, "Geldbetrag", ::Money) },
+    )

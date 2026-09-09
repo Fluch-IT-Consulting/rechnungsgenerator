@@ -2,12 +2,6 @@ package de.fluchitconsulting.rechnung.values
 
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.Serializable
-import kotlinx.serialization.SerializationException
-import kotlinx.serialization.descriptors.PrimitiveKind
-import kotlinx.serialization.descriptors.PrimitiveSerialDescriptor
-import kotlinx.serialization.descriptors.SerialDescriptor
-import kotlinx.serialization.encoding.Decoder
-import kotlinx.serialization.encoding.Encoder
 
 /**
  * Die Maßeinheit einer Position – EN 16931 BT-130.
@@ -38,21 +32,11 @@ enum class Unit(val label: String, val code: String) {
     override fun toString(): String = label
 
     companion object {
-        private val BY_LABEL = entries.associateBy { it.label.lowercase() }
+        private val LOOKUP = CodeLookup("Unbekannte Einheit", entries, { it.trim().lowercase() }, Unit::label)
 
         /** Löst die YAML-Schreibweise auf; unbekannte Einheiten nennen die zulässigen. */
-        fun fromLabel(label: String): Unit =
-            BY_LABEL[label.trim().lowercase()]
-                ?: throw SerializationException(
-                    "Unbekannte Einheit '$label'. Zulässig sind: ${entries.joinToString { it.label }}",
-                )
+        fun fromLabel(label: String): Unit = LOOKUP.of(label)
     }
 }
 
-object UnitSerializer : KSerializer<Unit> {
-    override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("Unit", PrimitiveKind.STRING)
-
-    override fun serialize(encoder: Encoder, value: Unit) = encoder.encodeString(value.label)
-
-    override fun deserialize(decoder: Decoder): Unit = Unit.fromLabel(decoder.decodeString())
-}
+object UnitSerializer : KSerializer<Unit> by stringSerializer("Unit", Unit::label, Unit::fromLabel)
