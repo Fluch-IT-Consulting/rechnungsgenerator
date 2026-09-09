@@ -111,6 +111,14 @@ class InvoiceRendererTest : FunSpec({
         }
     }
 
+    test("ein Kleinstpreis steht so da, dass man die Zeile nachrechnen kann") {
+        // Der Fall aus #14: Vorher stand hier "10.000 & Std. & 0,00 € & 0,10 €"
+        // – die Summe stimmte, aber der Einzelpreis war gerundet.
+        val tex = renderMit(testItem(quantity = "10000", unitPrice = "0.00001"))
+
+        tex shouldContain "10.000 & Std. & 0,00001~€ & 0,10~€"
+    }
+
     context("Abschlagsrechnung") {
         fun abschlag(receivedOn: LocalDate? = null): String {
             val invoice = testInvoice(type = InvoiceType.PREPAYMENT, receivedOn = receivedOn)
