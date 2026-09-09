@@ -1,18 +1,20 @@
 package de.fluchitconsulting.rechnung
 
+import com.github.ajalt.clikt.core.context
+import com.github.ajalt.clikt.core.parse
 import de.fluchitconsulting.rechnung.toolchain.ExternalTool
 import de.fluchitconsulting.rechnung.toolchain.LatexCompiler
 import de.fluchitconsulting.rechnung.toolchain.LuaLatexTypesetter
 import de.fluchitconsulting.rechnung.toolchain.PdfAValidator
 import de.fluchitconsulting.rechnung.toolchain.ToolchainException
-import de.fluchitconsulting.rechnung.values.InvoiceType
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.assertions.withClue
 import io.kotest.core.spec.style.FunSpec
+import io.kotest.matchers.collections.shouldContain
 import io.kotest.matchers.collections.shouldNotBeEmpty
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.string.shouldContain
-import java.io.File
+import java.nio.file.Path
 import kotlin.io.path.createTempDirectory
 import kotlin.io.path.exists
 import kotlin.io.path.fileSize
@@ -26,52 +28,63 @@ class ToolchainIntegrationTest : FunSpec({
 
     val workDir = createTempDirectory("rechnungsgenerator-test")
 
-    fun resource(name: String) = File("src/test/resources/$name").readText()
+    /**
+     * Erzeugt eine Rechnung mit den echten Werkzeugen – über dasselbe Kommando,
+     * das auch ein Mensch aufruft.
+     *
+     * Nicht über die Einzelteile: Rechnen, Setzen und Prüfen stehen genau
+     * einmal zusammen, nämlich im Kommando. Baute dieser Test sie noch einmal
+     * nach, gäbe es die Abfolge an zwei Stellen, und die zweite wäre die, die
+     * niemand pflegt.
+     *
+     * Die Ausgaben werden eingesammelt, damit die Meldung von veraPDF im
+     * Testbericht landet – sonst stünde dort nur "expected true but was false".
+     */
+    fun erzeuge(rechnung: String): Pair<Path, List<String>> {
+        val ziel = workDir.resolve("$rechnung.pdf")
+        val ausgabe = mutableListOf<String>()
+        val command = RechnungCommand()
+        command.context { echoMessage = { _, message, _, _ -> ausgabe += message.toString() } }
+
+        val fehler =
+            runCatching {
+                command.parse(
+                    arrayOf(
+                        "src/test/resources/$rechnung.yaml",
+                        "-s",
+                        "src/test/resources/stammdaten.yaml",
+                        "-o",
+                        ziel.toString(),
+                    ),
+                )
+            }.exceptionOrNull()
+
+        withClue(ausgabe.joinToString("\n")) { fehler shouldBe null }
+        return ziel to ausgabe
+    }
 
     test("die benötigten Werkzeuge sind vorhanden") {
         LuaLatexTypesetter.checkAvailable()
     }
 
     test("erzeugt aus den Beispieldaten ein gültiges PDF/A-1b") {
-        val config = YamlLoader.parseSellerConfig(resource("stammdaten.yaml"))
-        val invoice = YamlLoader.parseInvoice(resource("rechnung.yaml"))
+        val (pdf, ausgabe) = erzeuge("rechnung")
 
-        val result = InvoiceGenerator.generate(invoice, config, workDir)
-
-        result.pdf.exists() shouldBe true
-        result.pdf.fileSize() shouldBe result.pdf.fileSize().coerceAtLeast(1000)
-        // withClue hängt die veraPDF-Meldung an die Fehlermeldung – sonst stünde
-        // im Testbericht nur "expected true but was false".
-        withClue(result.validation.describe()) {
-            result.validation.valid shouldBe true
-        }
+        pdf.exists() shouldBe true
+        pdf.fileSize() shouldBe pdf.fileSize().coerceAtLeast(1000)
+        withClue(ausgabe.joinToString("\n")) { ausgabe shouldContain "PDF/A-1b: gültig" }
     }
 
     test("erzeugt aus einer Abschlagsrechnung ein gültiges PDF/A-1b") {
-        val config = YamlLoader.parseSellerConfig(resource("stammdaten.yaml"))
-        val invoice = YamlLoader.parseInvoice(resource("abschlagsrechnung.yaml"))
+        val (_, ausgabe) = erzeuge("abschlagsrechnung")
 
-        val result = InvoiceGenerator.generate(invoice, config, workDir)
-
-        withClue(result.validation.describe()) {
-            result.validation.valid shouldBe true
-        }
+        withClue(ausgabe.joinToString("\n")) { ausgabe shouldContain "PDF/A-1b: gültig" }
     }
 
     test("erzeugt aus einer Schlussrechnung ein gültiges PDF/A-1b") {
-        val config = YamlLoader.parseSellerConfig(resource("stammdaten.yaml"))
-        val invoice = YamlLoader.parseInvoice(resource("schlussrechnung.yaml"))
+        val (_, ausgabe) = erzeuge("schlussrechnung")
 
-        val result = InvoiceGenerator.generate(invoice, config, workDir)
-
-        withClue(result.validation.describe()) {
-            result.validation.valid shouldBe true
-        }
-    }
-
-    test("der Dateiname nennt Rechnungsart und -nummer") {
-        InvoiceGenerator.jobNameFor(testInvoice()) shouldBe "Rechnung-R26-001"
-        InvoiceGenerator.jobNameFor(testInvoice(type = InvoiceType.PREPAYMENT)) shouldBe "Abschlagsrechnung-R26-001"
+        withClue(ausgabe.joinToString("\n")) { ausgabe shouldContain "PDF/A-1b: gültig" }
     }
 
     /**

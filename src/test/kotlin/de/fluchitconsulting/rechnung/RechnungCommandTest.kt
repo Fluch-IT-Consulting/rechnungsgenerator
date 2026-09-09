@@ -129,6 +129,26 @@ class RechnungCommandTest : FunSpec({
         fake.jobName shouldBe "Rechnung-R26-042"
     }
 
+    test("eine Rechnungsnummer, von der kein Dateiname übrig bleibt, wird abgelehnt") {
+        // Die Nummer wird für den Jobnamen von allem befreit, womit LuaLaTeX
+        // nicht umgehen kann. Bleibt nichts übrig, ist das ein Fehler in der
+        // Rechnungsdatei – und wird als solcher gemeldet, nicht als Fehler der
+        // Werkzeuge.
+        val ohneNummer =
+            eingaben.resolve("ohne-nummer.yaml").also {
+                it.writeText(quelle("rechnung.yaml").replace("nummer: R26-042", "nummer: \"///\""))
+            }
+
+        val fehler =
+            shouldThrow<CliktError> {
+                val command = RechnungCommand(FakeTypesetter())
+                command.context { echoMessage = { _, _, _, _ -> } }
+                command.parse(arrayOf(ohneNummer.toString(), "-s", stammdaten.toString()))
+            }
+
+        fehler.message!! shouldContain "ergibt keinen Dateinamen"
+    }
+
     test("die Hinweise für die eigene Akte stehen nach dem Ergebnis, nicht davor") {
         // Eine Rechnung ohne Umsatzsteuer an einen Kunden in Österreich, deren
         // Bestätigungsabfrage nur einfach war: Der Calculator gibt dazu einen
