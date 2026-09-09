@@ -74,11 +74,19 @@ class ToolchainIntegrationTest : FunSpec({
         InvoiceGenerator.jobNameFor(testInvoice(type = InvoiceType.PREPAYMENT)) shouldBe "Abschlagsrechnung-R26-001"
     }
 
+    /**
+     * Sieht aus wie ein Doppelgänger von `PdfAValidatorTest`, ist aber das
+     * Gegenstück dazu: Der schnelle Test beweist, dass wir einen
+     * aufgezeichneten Bericht richtig lesen. Dieser hier beweist, dass die
+     * Aufzeichnung noch stimmt – dass echtes veraPDF bei einem nicht konformen
+     * PDF weiterhin Exitcode 1 liefert und weiterhin dieses XML.
+     *
+     * Ein Mitschnitt ist die Momentaufnahme eines fremden Programms. Er wird
+     * still falsch, wenn das Programm sein Format ändert, und dann sind die
+     * schnellen Tests weiterhin grün und prüfen das Falsche. Wer hier aufräumen
+     * will, nimmt genau das Netz weg, das die anderen trägt.
+     */
     test("ein nicht konformes PDF wird als solches gemeldet, nicht als Fehler") {
-        // veraPDF unterscheidet über den Exitcode: 1 heißt "nicht konform" und
-        // ist ein Prüfergebnis, kein Fehler unsererseits. Genau das prüft dieser
-        // Test – wie der Bericht danach gelesen wird, steht im
-        // WerkzeugausgabenTest und braucht kein Werkzeug.
         val plain =
             LatexCompiler(ExternalTool).compile(
                 workingDir = workDir,
@@ -93,11 +101,12 @@ class ToolchainIntegrationTest : FunSpec({
         validation.violations.shouldNotBeEmpty()
     }
 
+    /**
+     * Das Gegenstück zu `LatexCompilerTest` aus demselben Grund: Dieser Test
+     * belegt, dass echtes LuaLaTeX seine Fehler weiterhin mit "!" beginnt – die
+     * Annahme, auf der das Auswerten des Protokolls beruht.
+     */
     test("ein LaTeX-Fehler kommt als ToolchainException an") {
-        // Nur der Weg wird hier geprüft: dass ein gescheiterter Lauf zur
-        // Ausnahme wird und die Meldung des Übersetzers mitbringt. Wie aus
-        // tausend Zeilen Protokoll eine Handvoll wird, prüft der
-        // WerkzeugausgabenTest an einem echten, gespeicherten Log.
         val fehler =
             shouldThrow<ToolchainException> {
                 LatexCompiler(ExternalTool).compile(
