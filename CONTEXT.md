@@ -80,3 +80,25 @@ _Vermeiden_: Abrechnungszeitraum, Leistungsdatum
 Der erwartete Zeitraum auf einer Abschlagsrechnung. Eine Prognose, keine
 Tatsache; der Kalendermonat genügt.
 _Vermeiden_: geplanter Zeitraum, Lieferdatum
+
+## Orte
+
+**Inland**:
+Das Land des Rechnungsstellers. Eine Rechnung ist eine Inlandsrechnung, wenn der
+Kunde im selben Land sitzt – nicht, wenn dieses Land Deutschland ist. Der
+Unterschied wird erst sichtbar, wenn der Rechnungssteller umzieht, und bis dahin
+sind beide Lesarten ununterscheidbar; genau daran ist die Anschrift im PDF schon
+einmal falsch geworden.
+_Vermeiden_: Deutschland (als Synonym), Heimatland
+
+**Ausland**:
+Jedes andere Land als das des Rechnungsstellers. Ob dort Umsatzsteuer anfällt und
+ob die USt-IdNr. überhaupt geprüft werden kann, hängt zusätzlich daran, ob es ein
+EU-Mitgliedstaat ist – Ausland und EU sind zwei Fragen, nicht eine.
+_Vermeiden_: nicht-Deutschland, Drittland (das ist enger)
+
+**Drittland**:
+Ein Land außerhalb der EU. Für eine USt-IdNr. von dort gibt es weder eine
+VIES-Abfrage noch eine Bestätigung durch das BZSt; die Unternehmereigenschaft
+muss anders nachgewiesen werden, etwa durch eine Unternehmerbescheinigung.
+_Vermeiden_: Nicht-EU-Land, Ausland (für diesen Fall)
