@@ -53,8 +53,13 @@ class TaxCategoryRulesTest : FunSpec({
                 items = listOf(testItem(vatRate = "19", taxCategory = TaxCategory.EXEMPT, taxExemptionReason = "Grund")),
             )
 
-        shouldThrow<InvoiceValidationException> { InvoiceCalculator.calculate(invoice, config) }
-            .message!! shouldContain "verlangt einen Steuersatz von 0"
+        val message = shouldThrow<InvoiceValidationException> { InvoiceCalculator.calculate(invoice, config) }.message!!
+
+        message shouldContain "verlangt einen Steuersatz von 0"
+        // Der Satz, der beanstandet wird, steht lesbar in der Meldung: "19%"
+        // und nicht "19.0000000%" – sonst sucht der Leser den Fehler bei den
+        // Nullen statt bei seinem Steuersatz.
+        message shouldContain "angegeben ist 19%"
     }
 
     test("Regelsatz mit 0 % weist auf die vermutlich gemeinte Kategorie hin") {
