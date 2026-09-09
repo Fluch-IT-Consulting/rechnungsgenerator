@@ -11,6 +11,7 @@ import de.fluchitconsulting.rechnung.testPrepayment
 import de.fluchitconsulting.rechnung.testSellerConfig
 import de.fluchitconsulting.rechnung.values.CountryCode
 import de.fluchitconsulting.rechnung.values.InvoiceType
+import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.assertions.withClue
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.ints.shouldBeGreaterThan
@@ -109,6 +110,42 @@ class InvoiceRendererTest : FunSpec({
                 InvoiceRenderer.render(invoice, seller, InvoiceCalculator.calculate(invoice, seller)) shouldBe
                     resource("$name-erwartet.tex")
             }
+        }
+    }
+
+    context("Vorlage und Werte müssen zusammenpassen") {
+        // Diese Prüfung kann keine Rechnungsdatei auslösen – sie schlägt zu,
+        // wenn Vorlage und Renderer auseinanderlaufen. Deshalb wird fillIn hier
+        // direkt gerufen: Sonst wäre die Zusicherung eingebaut, aber unbelegt.
+
+        test("ein Platzhalter ohne Wert bleibt nicht stehen, sondern bricht ab") {
+            // Der teure Fall: Ohne die Prüfung stünde "<<SUMMEN>>" gesetzt im
+            // PDF. LuaLaTeX übersetzt das klaglos, und veraPDF bestätigt ein
+            // einwandfreies PDF/A – es ist ja eines.
+            val fehler =
+                shouldThrow<IllegalStateException> {
+                    InvoiceRenderer.fillIn("\\textbf{<<FIRMA>>} <<SUMMEN>>", mapOf("FIRMA" to "Muster".escapeLatex()))
+                }
+
+            fehler.message!! shouldContain "<<SUMMEN>>"
+            fehler.message!! shouldContain "keinen Wert"
+        }
+
+        test("ein Wert ohne Platzhalter bricht ebenfalls ab") {
+            // Der häufigere Fall, und der mit der besseren Meldung: Wer sich
+            // beim Schlüssel verschreibt, erfährt hier, welcher Schlüssel
+            // gemeint war – nicht bloß, welcher Platzhalter stehen blieb.
+            val fehler =
+                shouldThrow<IllegalStateException> {
+                    InvoiceRenderer.fillIn("<<FIRMA>>", mapOf("FIRMA" to "Muster".escapeLatex(), "FRIMA" to Latex.EMPTY))
+                }
+
+            fehler.message!! shouldContain "<<FRIMA>>"
+        }
+
+        test("passen beide zusammen, kommt der gefüllte Text heraus") {
+            InvoiceRenderer.fillIn("<<A>> und <<B>>", mapOf("A" to "eins".escapeLatex(), "B" to "zwei".escapeLatex())) shouldBe
+                "eins und zwei"
         }
     }
 

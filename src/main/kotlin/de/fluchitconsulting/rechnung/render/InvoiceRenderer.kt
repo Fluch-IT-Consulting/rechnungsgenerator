@@ -29,6 +29,9 @@ object InvoiceRenderer {
     // schwer zu lesen ist: vier Backslashes für zwei im Ergebnis.
     private const val BR = "\\\\"
 
+    // Ein Platzhalter der Vorlage: <<GROSSGESCHRIEBEN>>.
+    private val PLACEHOLDER = Regex("<<[A-Z_]+>>")
+
     fun render(invoice: Invoice, config: SellerConfig, totals: InvoiceTotals): String {
         val template = checkNotNull(javaClass.getResource(TEMPLATE_PATH)) { "Vorlage $TEMPLATE_PATH fehlt" }.readText()
 
@@ -54,10 +57,44 @@ object InvoiceRenderer {
                 "FUSSZEILE_UNTEN" to footerTaxAndBankLine(config),
             )
 
-        // fold statt einer Schleife mit var: Jeder Schritt ersetzt einen
-        // Platzhalter und gibt den neuen Text zurück. Hier – und nur hier –
-        // wird aus Fragmenten wieder Text.
-        return values.entries.fold(template) { text, (key, value) -> text.replace("<<$key>>", value.tex) }
+        return fillIn(template, values)
+    }
+
+    /**
+     * Setzt die Werte in die Vorlage – und prüft, dass beide Seiten
+     * zusammenpassen.
+     *
+     * Hier – und nur hier – wird aus Fragmenten wieder Text. `fold` statt einer
+     * Schleife mit `var`: Jeder Schritt ersetzt einen Platzhalter und gibt den
+     * neuen Text zurück.
+     *
+     * Die zwei Prüfungen drumherum fangen einen Fehler ab, den sonst niemand
+     * bemerkt. Verschreibt sich jemand bei einem Schlüssel, oder bekommt die
+     * Vorlage einen Platzhalter ohne Gegenstück, dann steht die Zeichenkette
+     * `<<XYZ>>` am Ende **gesetzt im PDF**: Der Compiler kennt die Schlüssel
+     * nicht, LuaLaTeX übersetzt sie klaglos, und veraPDF bestätigt ein
+     * einwandfreies PDF/A – es ist ja eines. Aufgefallen wäre es bisher nur
+     * mittelbar, als Unterschied in einer der Vergleichsdateien, und dort als
+     * Diff über 216 Zeilen statt als benannte Meldung.
+     *
+     * [check] und nicht eine Ausnahme für den Benutzer: Keine Rechnungsdatei
+     * kann das auslösen. Wenn Vorlage und Renderer auseinanderlaufen, ist das
+     * ein Fehler im Programm, so wie die fehlende Vorlage eine Zeile weiter
+     * oben.
+     */
+    internal fun fillIn(template: String, values: Map<String, Latex>): String {
+        values.keys.forEach { key ->
+            check(template.contains("<<$key>>")) {
+                "Der Renderer liefert einen Wert für <<$key>>, aber die Vorlage hat dort keinen Platzhalter."
+            }
+        }
+
+        val text = values.entries.fold(template) { text, (key, value) -> text.replace("<<$key>>", value.tex) }
+
+        PLACEHOLDER.find(text)?.let {
+            error("Die Vorlage enthält ${it.value}, aber der Renderer liefert dafür keinen Wert.")
+        }
+        return text
     }
 
     /**
