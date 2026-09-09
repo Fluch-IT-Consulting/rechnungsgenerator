@@ -237,6 +237,9 @@ class InvoiceRendererTest : FunSpec({
             val tex = schlussrechnung(listOf(testItem(quantity = "1", unitPrice = "4000.00")), testPrepayment())
 
             tex shouldContain "es verbleibt kein Restbetrag"
+            // Die Gegenprobe steht bei den Angaben oben rechts: Eine
+            // gewöhnliche Rechnung nennt sehr wohl ein Zahlungsziel.
+            renderMit(testItem()) shouldContain "Zahlbar ohne Abzug bis"
             tex shouldNotContain "\\textbf{Restbetrag}"
             // Und kein Zahlungsziel daneben: Das wäre die zweite, andere
             // Aussage desselben Blattes.

@@ -160,13 +160,9 @@ object InvoiceRenderer {
             // ist entfallen, weil er das Fälligkeitsdatum ein zweites Mal nannte –
             // der Hinweis, dass kein Skonto gewährt wird, gehört aber erhalten.
             //
-            // Nicht bei ausgeglichenem Betrag: Eine Schlussrechnung, deren
-            // Abschläge den Betrag decken, sagt unten "es verbleibt kein
-            // Restbetrag". Ein Zahlungsziel daneben wäre die zweite, andere
-            // Aussage desselben Blattes.
-            if (!totals.remainingAmount.isZero()) {
-                add("Zahlbar ohne Abzug bis ".escapeLatex() + GermanFormat.date(totals.dueDate))
-            }
+            // Ob es ein Zahlungsziel gibt, entscheidet der Calculator; hier wird
+            // nur gesetzt, was dasteht.
+            totals.dueDate?.let { add("Zahlbar ohne Abzug bis ".escapeLatex() + GermanFormat.date(it)) }
         }.joinToLatex(BR)
 
     // Die Zeilen werden mit \\ VERBUNDEN, nicht damit abgeschlossen: Ein
