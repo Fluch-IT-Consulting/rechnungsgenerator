@@ -9,7 +9,9 @@ import com.github.ajalt.clikt.parameters.options.default
 import com.github.ajalt.clikt.parameters.options.flag
 import com.github.ajalt.clikt.parameters.options.option
 import com.github.ajalt.clikt.parameters.types.path
+import de.fluchitconsulting.rechnung.toolchain.LuaLatexTypesetter
 import de.fluchitconsulting.rechnung.toolchain.ToolchainException
+import de.fluchitconsulting.rechnung.toolchain.Typesetter
 import kotlinx.serialization.SerializationException
 import java.io.IOException
 import java.nio.file.Path
@@ -37,7 +39,14 @@ fun main(args: Array<String>) {
     }
 }
 
-class RechnungCommand : CoreCliktCommand(name = "rechnung") {
+/**
+ * Das Kommando bekommt den [Typesetter] gereicht, statt ihn sich zu nehmen –
+ * so lässt sich alles prüfen, was danach kommt: das Kopieren der Datei, die
+ * Reihenfolge der Ausgaben, der Exitcode bei ungültigem PDF/A und das
+ * Aufräumen des Arbeitsverzeichnisses. Im Betrieb steht dort LuaLaTeX und
+ * veraPDF, im Test ein vorbereitetes Ergebnis.
+ */
+class RechnungCommand(private val typesetter: Typesetter = LuaLatexTypesetter) : CoreCliktCommand(name = "rechnung") {
     override fun help(context: Context) =
         "Erzeugt aus einer YAML-Rechnung ein geprüftes PDF/A-1b."
 
@@ -75,14 +84,14 @@ class RechnungCommand : CoreCliktCommand(name = "rechnung") {
 
     private fun erzeuge() {
         // Erst die Werkzeuge prüfen: Ein Abbruch mitten im Satz wäre schwerer zu deuten.
-        InvoiceGenerator.checkTools()
+        typesetter.checkAvailable()
 
         val config = YamlLoader.loadSellerConfig(configFile)
         val invoice = YamlLoader.loadInvoice(invoiceFile)
 
         val workDir = createTempDirectory("rechnungsgenerator")
         try {
-            val result = InvoiceGenerator.generate(invoice, config, workDir)
+            val result = InvoiceGenerator.generate(invoice, config, workDir, typesetter)
             val target = outputFile ?: Path.of(result.pdf.name)
             result.pdf.copyTo(target, overwrite = true)
 

@@ -3,10 +3,9 @@ package de.fluchitconsulting.rechnung
 import de.fluchitconsulting.rechnung.model.Invoice
 import de.fluchitconsulting.rechnung.model.SellerConfig
 import de.fluchitconsulting.rechnung.render.InvoiceRenderer
-import de.fluchitconsulting.rechnung.toolchain.ExternalTool
-import de.fluchitconsulting.rechnung.toolchain.LatexCompiler
-import de.fluchitconsulting.rechnung.toolchain.PdfAValidator
+import de.fluchitconsulting.rechnung.toolchain.LuaLatexTypesetter
 import de.fluchitconsulting.rechnung.toolchain.ToolchainException
+import de.fluchitconsulting.rechnung.toolchain.Typesetter
 import de.fluchitconsulting.rechnung.toolchain.ValidationResult
 import java.nio.file.Path
 
@@ -14,19 +13,11 @@ import java.nio.file.Path
  * Der ganze Weg von den Eingabedaten zum geprüften PDF an einer Stelle:
  * rechnen, setzen, übersetzen, validieren.
  *
- * Die Schritte davor bleiben ohne LaTeX testbar (InvoiceCalculator, Renderer);
- * erst hier kommen die externen Werkzeuge ins Spiel.
+ * Die externen Werkzeuge stehen hinter [Typesetter] – im Betrieb LuaLaTeX und
+ * veraPDF, im Test ein vorbereitetes Ergebnis. Alles, was diese Funktion selbst
+ * tut, bleibt damit prüfbar, ohne dass ein fremdes Programm laufen muss.
  */
 object InvoiceGenerator {
-    private val REQUIRED_TOOLS =
-        arrayOf(
-            "lualatex" to "TeX Live, siehe https://tug.org/texlive/",
-            "verapdf" to "brew install verapdf",
-        )
-
-    /** Prüft die Werkzeuge einmal beim Start, statt mitten im Satz zu scheitern. */
-    fun checkTools() = ExternalTool.requireAll(*REQUIRED_TOOLS)
-
     data class Result(
         val pdf: Path,
         val validation: ValidationResult,
@@ -39,17 +30,21 @@ object InvoiceGenerator {
      * der Rechnungsnummer ab; im Arbeitsverzeichnis landen daneben die .tex und
      * die Hilfsdateien von LuaLaTeX – nützlich, wenn der Satz mal schiefgeht.
      */
-    fun generate(invoice: Invoice, config: SellerConfig, workingDir: Path): Result {
+    fun generate(
+        invoice: Invoice,
+        config: SellerConfig,
+        workingDir: Path,
+        typesetter: Typesetter = LuaLatexTypesetter,
+    ): Result {
         val totals = InvoiceCalculator.calculate(invoice, config)
-        val jobName = jobNameFor(invoice)
-        val pdf =
-            LatexCompiler.compile(
+        val gesetzt =
+            typesetter.typeset(
                 workingDir = workingDir,
-                jobName = jobName,
+                jobName = jobNameFor(invoice),
                 texSource = InvoiceRenderer.render(invoice, config, totals),
                 xmpMetadata = InvoiceRenderer.renderMetadata(invoice, config),
             )
-        return Result(pdf, PdfAValidator.validate(pdf), totals.hints)
+        return Result(gesetzt.pdf, gesetzt.validation, totals.hints)
     }
 
     /**
