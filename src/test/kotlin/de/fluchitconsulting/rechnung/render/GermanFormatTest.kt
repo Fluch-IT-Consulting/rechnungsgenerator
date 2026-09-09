@@ -44,9 +44,10 @@ class GermanFormatTest : FunSpec({
     }
 
     // \u00A0 steht als Escape-Sequenz da, sonst wäre es von einem gewöhnlichen
-    // Leerzeichen nicht zu unterscheiden. Es soll den Betrag zusammenhalten –
-    // dass LuaLaTeX dort trotzdem umbricht, ist der Fehler in #5 und hier noch
-    // nicht behoben.
+    // Leerzeichen nicht zu unterscheiden. Es hält den Betrag zusammen:
+    // nachgemessen in einem 18 mm breiten \parbox mit der Präambel dieses
+    // Projekts – mit gewöhnlichem Leerzeichen bricht LuaLaTeX um, mit U+00A0
+    // läuft der Kasten über, statt zu brechen (wie bei \nobreakspace).
     //
     // Das Prozentzeichen ist maskiert: Die Formatierung liefert ein fertiges
     // LaTeX-Fragment, damit keine Aufrufstelle daran denken muss.
