@@ -10,6 +10,7 @@ import de.fluchitconsulting.rechnung.testItem
 import de.fluchitconsulting.rechnung.testPrepayment
 import de.fluchitconsulting.rechnung.testSellerConfig
 import de.fluchitconsulting.rechnung.values.InvoiceType
+import io.kotest.assertions.withClue
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.ints.shouldBeGreaterThan
 import io.kotest.matchers.shouldBe
@@ -90,6 +91,24 @@ class InvoiceRendererTest : FunSpec({
 
         InvoiceRenderer.render(invoice, seller, InvoiceCalculator.calculate(invoice, seller)) shouldBe
             resource("rechnung-erwartet.tex")
+    }
+
+    /**
+     * Dasselbe für die beiden anderen Arten. Sie tragen das meiste Markup –
+     * Absetzungstabelle, Makros, Pflichtsatz –, also gerade das, was ein Umbau
+     * an der Maskierung durcheinanderbringen könnte.
+     */
+    test("Abschlags- und Schlussrechnung werden gesetzt wie festgehalten") {
+        val seller = YamlLoader.parseSellerConfig(resource("stammdaten.yaml"))
+
+        listOf("abschlagsrechnung", "schlussrechnung").forEach { name ->
+            val invoice = YamlLoader.parseInvoice(resource("$name.yaml"))
+
+            withClue(name) {
+                InvoiceRenderer.render(invoice, seller, InvoiceCalculator.calculate(invoice, seller)) shouldBe
+                    resource("$name-erwartet.tex")
+            }
+        }
     }
 
     context("Abschlagsrechnung") {
