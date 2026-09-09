@@ -71,6 +71,28 @@ class GermanFormatTest : FunSpec({
         }
     }
 
+    /**
+     * Der Kern von #14: Feste Muster haben hier gerundet, ohne es zu sagen.
+     * Ein Einzelpreis von 0,00001 € wurde zu `0,00` – und dann stand auf der
+     * Rechnung "10.000 zu 0,00 € = 0,10 €".
+     */
+    test("nichts wird stillschweigend gerundet") {
+        assertSoftly {
+            // Preis: mindestens zwei Stellen, sonst so viele wie da sind.
+            GermanFormat.price(Price("0.00001")).tex shouldBe "0,00001"
+            GermanFormat.price(Price("0.12345")).tex shouldBe "0,12345"
+            GermanFormat.price(Price("95")).tex shouldBe "95,00"
+            // Menge: keine Untergrenze.
+            GermanFormat.quantity(BigDecimal("86.5678")).tex shouldBe "86,5678"
+            GermanFormat.quantity(BigDecimal("0.0004")).tex shouldBe "0,0004"
+            GermanFormat.quantity(BigDecimal("1000")).tex shouldBe "1.000"
+            // Satz: "0 %" wäre auf einer Rechnung nicht ungenau, sondern eine
+            // andere Aussage – die Kategorie unterscheidet steuerfrei von 0 %.
+            GermanFormat.percent(Percent("0.0004")).tex shouldBe "0,0004~\\%"
+            GermanFormat.percent(Percent("19.1234")).tex shouldBe "19,1234~\\%"
+        }
+    }
+
     test("Datumsangaben") {
         assertSoftly {
             GermanFormat.date(LocalDate.of(2026, 8, 14)).tex shouldBe "14. August 2026"

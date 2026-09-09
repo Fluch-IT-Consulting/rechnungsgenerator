@@ -4,6 +4,7 @@ import de.fluchitconsulting.rechnung.values.Money
 import de.fluchitconsulting.rechnung.values.Percent
 import de.fluchitconsulting.rechnung.values.Price
 import java.math.BigDecimal
+import java.math.RoundingMode
 import java.text.DecimalFormat
 import java.text.DecimalFormatSymbols
 import java.time.LocalDate
@@ -33,23 +34,52 @@ object GermanFormat {
     // Rechnung – der Aufwand ist gegenüber dem LaTeX-Lauf nicht messbar.
     private fun format(pattern: String, value: BigDecimal): String = DecimalFormat(pattern, SYMBOLS).format(value)
 
+    /**
+     * Zahl mit so vielen Nachkommastellen, wie der Wert hat – mindestens
+     * [minFraction], höchstens so viele, wie tatsächlich da sind.
+     *
+     * Feste Muster haben hier vorher stillschweigend gerundet: `#,##0.00##`
+     * machte aus einem Einzelpreis von 0,00001 € ein `0,00`, und dann steht auf
+     * der Rechnung "10.000 Stück zu 0,00 € = 0,10 €". Die Summen stimmten – der
+     * Calculator rechnet mit dem exakten Wert –, aber nachrechnen konnte das
+     * niemand. Genau das soll eine Rechnung erlauben.
+     *
+     * Der Preis dafür ist eine breitere Spalte in genau den Fällen, in denen
+     * die Breite die Wahrheit ist.
+     *
+     * Gerundet wird hier also nicht mehr. Sollte es doch je dazu kommen, dann
+     * HALF_UP wie überall sonst – die Vorgabe von DecimalFormat wäre HALF_EVEN
+     * und damit die zweite Rundungsart im Programm.
+     */
+    private fun exact(value: BigDecimal, minFraction: Int): String {
+        // stripTrailingZeros macht aus 19,0000000 die 19 und aus 1000 ein
+        // 1E+3 mit negativem scale – deshalb der Boden bei minFraction.
+        val stellen = maxOf(value.stripTrailingZeros().scale(), minFraction)
+        return DecimalFormat("#,##0", SYMBOLS)
+            .apply {
+                roundingMode = RoundingMode.HALF_UP
+                minimumFractionDigits = minFraction
+                maximumFractionDigits = stellen
+            }.format(value)
+    }
+
     /** Betrag ohne Währung: `8.337,50` */
-    fun amount(money: Money): Latex = format("#,##0.00", money.value).escapeLatex()
+    fun amount(money: Money): Latex = exact(money.value, minFraction = 2).escapeLatex()
 
     /** Betrag mit Währung und geschütztem Leerzeichen: `8.337,50 €` */
-    fun amountWithCurrency(money: Money): Latex = "${format("#,##0.00", money.value)} €".escapeLatex()
+    fun amountWithCurrency(money: Money): Latex = "${exact(money.value, minFraction = 2)} €".escapeLatex()
 
     /**
      * Einzelpreis: mindestens zwei, höchstens vier Nachkommastellen.
      * Price darf mehr Stellen tragen als Money (EN 16931 BT-146), und die
      * sollen auf der Rechnung auch sichtbar sein: `0,3350` statt `0,34`.
      */
-    fun price(price: Price): Latex = format("#,##0.00##", price.value).escapeLatex()
+    fun price(price: Price): Latex = exact(price.value, minFraction = 2).escapeLatex()
 
-    fun priceWithCurrency(price: Price): Latex = "${format("#,##0.00##", price.value)} €".escapeLatex()
+    fun priceWithCurrency(price: Price): Latex = "${exact(price.value, minFraction = 2)} €".escapeLatex()
 
     /** Menge ohne überflüssige Nullen: `86,5`, `1`, `1000` */
-    fun quantity(quantity: BigDecimal): Latex = format("#,##0.###", quantity).escapeLatex()
+    fun quantity(quantity: BigDecimal): Latex = exact(quantity, minFraction = 0).escapeLatex()
 
     /**
      * Steuersatz in Prozentschreibweise: `19 %`, `7 %`, `2,5 %`.
@@ -58,7 +88,7 @@ object GermanFormat {
      * nacktes `%` kommentiert in LaTeX den Rest der Zeile aus, samt
      * Spaltentrenner und Zeilenumbruch.
      */
-    fun percent(percent: Percent): Latex = "${format("#,##0.###", percent.valueAsPercentage)} %".escapeLatex()
+    fun percent(percent: Percent): Latex = "${exact(percent.valueAsPercentage, minFraction = 0)} %".escapeLatex()
 
     /** Ausgeschriebenes Datum: `14. August 2026` */
     fun date(date: LocalDate): Latex =
