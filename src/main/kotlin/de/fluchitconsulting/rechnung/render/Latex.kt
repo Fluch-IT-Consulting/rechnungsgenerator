@@ -54,6 +54,17 @@ value class Latex private constructor(val tex: String) {
          *
          * [name] ist ein Makroname aus der Vorlage und **niemals** ein Wert aus
          * den Eingabedaten: Er landet unmaskiert hinter einem Backslash.
+         *
+         * Bewusst **keine** zweite Fassung, die einen `String` nimmt und selbst
+         * maskiert. Sie wäre kürzer, machte aber die Aufrufstelle stumm: Heute
+         * liest man dort, ob Daten hereinkommen (`x.escapeLatex()`) oder ein
+         * fertiges Fragment (`anteile`) – mit einer Überladung hinge das am Typ
+         * einer Variablen, den man nachschlagen müsste. Sicherheit gewänne man
+         * nicht, der Compiler lässt ohnehin keinen `String` durch; man verlöre
+         * eine der drei benannten Türen von Text zu Markup ([escapeLatex],
+         * [GermanFormat], [raw]), die man durchsuchen kann. Und
+         * `macro("textbf", "\\LaTeX")` würde still das Falsche drucken, statt
+         * nicht zu übersetzen.
          */
         fun macro(name: String, content: Latex): Latex = raw("\\$name{") + content + raw("}")
     }
