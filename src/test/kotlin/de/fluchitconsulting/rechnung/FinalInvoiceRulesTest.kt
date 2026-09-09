@@ -12,6 +12,7 @@ import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.collections.shouldBeEmpty
 import io.kotest.matchers.shouldBe
+import io.kotest.matchers.shouldNotBe
 import io.kotest.matchers.string.shouldContain
 import java.time.LocalDate
 
@@ -168,6 +169,9 @@ class FinalInvoiceRulesTest : FunSpec({
 
             totals.remainingAmount shouldBe Money.ZERO
             totals.prepaymentTotal shouldBe totals.grossTotal
+            // Und kein Zahlungsziel: Es gibt nichts mehr zu zahlen. Die
+            // Entscheidung fällt hier, nicht im Renderer.
+            totals.dueDate shouldBe null
         }
 
         test("ohne Abschläge bleibt der Restbetrag der Gesamtbetrag") {
@@ -175,6 +179,8 @@ class FinalInvoiceRulesTest : FunSpec({
 
             totals.prepayments.shouldBeEmpty()
             totals.remainingAmount shouldBe totals.grossTotal
+            // Offener Betrag, also ein Zahlungsziel.
+            totals.dueDate shouldNotBe null
         }
     }
 })

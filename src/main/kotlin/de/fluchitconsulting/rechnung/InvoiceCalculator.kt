@@ -63,7 +63,16 @@ data class InvoiceTotals(
     val netTotal: Money,
     val vatGroups: List<VatGroup>,
     val grossTotal: Money,
-    val dueDate: LocalDate,
+    /**
+     * Bis wann zu zahlen ist – oder `null`, wenn nichts mehr zu zahlen ist.
+     *
+     * Das ist der Fall bei einer Schlussrechnung, deren Abschläge den Betrag
+     * decken: Sie sagt unten "es verbleibt kein Restbetrag", und ein
+     * Zahlungsziel daneben wäre die zweite, andere Aussage desselben Blattes.
+     * Die Entscheidung fällt hier und nicht im Renderer – der setzt, was
+     * dasteht, und entscheidet nicht, was dastehen soll.
+     */
+    val dueDate: LocalDate?,
     /**
      * Hinweise für den Rechnungssteller – nicht für den Kunden, sie stehen
      * nicht auf dem PDF. Sie betreffen Nachweise, die in die eigene Akte
@@ -114,22 +123,29 @@ object InvoiceCalculator {
 
         val grossTotal = netTotal + vatGroups.sumOf { it.amount }
 
-        // Elvis-Operator `?:` – nimm den Override, sonst den Default aus den Stammdaten.
-        val termDays = invoice.paymentTermDaysOverride ?: config.paymentTermDays
-        val dueDate = invoice.issueDate.plusDays(termDays.toLong())
-
         val prepayments =
             invoice.prepayments.map { abschlag ->
                 val net = abschlag.taxShares.sumOf { it.net }
                 val vat = abschlag.taxShares.sumOf { it.vat }
                 DeductedPrepayment(abschlag, net = net, vat = vat, gross = net + vat)
             }
+        // Das Ergebnis entsteht erst ohne Zahlungsziel, damit Prüfung und
+        // Entscheidung den Restbetrag von dort lesen können statt ihn je neu
+        // auszurechnen: Die Formel steht einmal, in InvoiceTotals.
+        val totals = InvoiceTotals(lines, netTotal, vatGroups, grossTotal, dueDate = null, hints, prepayments)
+
         // Die übrigen sieben Regeln stehen in validatePrepayments, das validate()
         // aufruft: Sie kommen ohne die Summen aus und sollen zuschlagen, bevor
         // überhaupt gerechnet wird.
-        validateDeduction(vatGroups, grossTotal, prepayments)
+        validateDeduction(vatGroups, totals)
 
-        return InvoiceTotals(lines, netTotal, vatGroups, grossTotal, dueDate, hints, prepayments)
+        // Ein Zahlungsziel gibt es nur, wenn etwas offen ist – siehe
+        // InvoiceTotals.dueDate.
+        if (totals.remainingAmount.isZero()) return totals
+
+        // Elvis-Operator `?:` – nimm den Override, sonst den Default aus den Stammdaten.
+        val termDays = invoice.paymentTermDaysOverride ?: config.paymentTermDays
+        return totals.copy(dueDate = invoice.issueDate.plusDays(termDays.toLong()))
     }
 
     /**
@@ -276,11 +292,8 @@ object InvoiceCalculator {
      * Die Absetzung gegen die Rechnung selbst – die beiden Regeln, die die
      * Summen brauchen.
      */
-    private fun validateDeduction(
-        vatGroups: List<VatGroup>,
-        grossTotal: Money,
-        prepayments: List<DeductedPrepayment>,
-    ) {
+    private fun validateDeduction(vatGroups: List<VatGroup>, totals: InvoiceTotals) {
+        val prepayments = totals.prepayments
         // Regel 6: Zwei Positionen mit 0 % können steuerlich Verschiedenes
         // bedeuten, deshalb muss die Kombination aus Kategorie und Satz passen –
         // nicht nur der Satz.
@@ -299,13 +312,11 @@ object InvoiceCalculator {
 
         // Regel 8: Eine Überzahlung ist kein Restbetrag, sondern ein anderes
         // Dokument – Gutschrift oder Storno, beides gibt es hier noch nicht.
-        val abgesetzt = prepayments.sumOf { it.gross }
-        val restbetrag = grossTotal - abgesetzt
-        if (restbetrag.isNegative()) {
+        if (totals.remainingAmount.isNegative()) {
             throw InvoiceValidationException(
-                "Der Restbetrag wäre $restbetrag: Es sind mehr Abschläge abgesetzt ($abgesetzt) als die " +
-                    "Schlussrechnung ausmacht ($grossTotal). Eine Überzahlung gehört in eine Gutschrift, " +
-                    "nicht in eine Rechnung.",
+                "Der Restbetrag wäre ${totals.remainingAmount}: Es sind mehr Abschläge abgesetzt " +
+                    "(${totals.prepaymentTotal}) als die Schlussrechnung ausmacht (${totals.grossTotal}). " +
+                    "Eine Überzahlung gehört in eine Gutschrift, nicht in eine Rechnung.",
             )
         }
     }
