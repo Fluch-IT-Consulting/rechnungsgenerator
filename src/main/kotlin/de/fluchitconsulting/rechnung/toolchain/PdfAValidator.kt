@@ -26,14 +26,16 @@ data class ValidationResult(val valid: Boolean, val violations: List<PdfAViolati
  * Nur der dritte Fall ist ein Fehler unsererseits; ein nicht konformes PDF ist
  * ein gültiges Prüfergebnis und wird als solches zurückgegeben.
  */
-object PdfAValidator {
-    private const val PROGRAM = "verapdf"
-    private const val EXIT_COMPLIANT = 0
-    private const val EXIT_NOT_COMPLIANT = 1
+class PdfAValidator(private val runner: ProcessRunner) {
+    private companion object {
+        private const val PROGRAM = "verapdf"
+        private const val EXIT_COMPLIANT = 0
+        private const val EXIT_NOT_COMPLIANT = 1
+    }
 
     fun validate(pdf: Path): ValidationResult {
         val result =
-            ExternalTool.run(
+            runner.run(
                 listOf(PROGRAM, "--format", "xml", "-f", "1b", pdf.absolutePathString()),
                 pdf.parent,
             )
