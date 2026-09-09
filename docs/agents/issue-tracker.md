@@ -13,6 +13,33 @@ Issues and specs for this repo live as GitHub issues. Use the `gh` CLI for all o
 
 Infer the repo from `git remote -v`; `gh` does this automatically when run inside a clone.
 
+## Beziehungen zwischen Issues
+
+GitHub kennt drei – zwei davon lassen sich automatisieren, die dritte nicht:
+
+| Beziehung | Bedeutung | Wie |
+|---|---|---|
+| Parent / Sub-Issue | Teil-von, mit Fortschrittsanzeige am Elternteil | `gh issue edit <n> --parent <m>` |
+| Blocked by / Blocking | echte Reihenfolge: erst das eine, dann das andere | `gh issue edit <n> --add-blocked-by <m>` |
+| **Relates to** | gleichrangiger Bezug, ohne Hierarchie und ohne Zustandslogik | **nur von Hand** in der Oberfläche (`B R`) |
+
+"Relates to" gibt es in der Web-Oberfläche unter *Relationships*, aber weder in
+der REST-API (auch nicht unter neueren `X-GitHub-Api-Version`-Werten) noch in
+GraphQL noch in `gh`. Nachgemessen am 09.09.2026: Die dokumentierten Endpunkte
+unter `issues/{n}/dependencies` decken ausschließlich `blocked_by` und
+`blocking` ab; `/related` und `/relationships` antworten mit 404. Wer etwas
+anderes behauptet, hat den Endpunkt geraten – der echte Pfad trägt immer
+`/blocked_by` am Ende.
+
+Praktisch heißt das: Ein Agent legt das Issue an und schreibt den Bezug in den
+Rumpf (die Erwähnung erzeugt beidseitig einen Querverweis in der Zeitleiste);
+die Beziehung selbst setzt ein Mensch nach. Wird sie später über die API
+erreichbar, gehört diese Tabelle nachgezogen.
+
+Ein **Sub-Issue** ist die falsche Wahl, wenn das Elternteil vor dem Kind fertig
+wird: Ein geschlossenes Elternteil mit offenem Kind behauptet eine
+Vollständigkeit, die es nicht hat. Dann "relates to".
+
 ## Typ und Label sagen Verschiedenes
 
 Jedes Issue bekommt einen **Typ**. Die Organisation führt drei, und sie
