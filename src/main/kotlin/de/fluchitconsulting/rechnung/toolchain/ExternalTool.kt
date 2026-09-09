@@ -7,7 +7,6 @@ import kotlin.io.path.deleteIfExists
 import kotlin.io.path.isExecutable
 import kotlin.io.path.readText
 import kotlin.time.Duration
-import kotlin.time.Duration.Companion.minutes
 
 /** Wird geworfen, wenn ein externes Werkzeug fehlt, abstürzt oder hängen bleibt. */
 class ToolchainException(message: String, cause: Throwable? = null) : Exception(message, cause)
@@ -24,7 +23,7 @@ data class ToolResult(val exitCode: Int, val output: String) {
  * selben Thread lesen und danach auf das Ende warten, blockiert das Lesen bei
  * einem hängenden Prozess für immer – die Zeitgrenze käme nie zum Zug.
  */
-object ExternalTool {
+object ExternalTool : ProcessRunner {
     // Verzeichnisse, in denen die Werkzeuge typischerweise liegen, falls die JVM
     // einen kürzeren PATH geerbt hat als die Shell (häufig bei GUI-gestarteten IDEs).
     private val EXTRA_PATHS = listOf("/Library/TeX/texbin", "/usr/local/bin", "/opt/homebrew/bin")
@@ -52,10 +51,10 @@ object ExternalTool {
         }
     }
 
-    fun run(
+    override fun run(
         command: List<String>,
         workingDir: Path,
-        timeout: Duration = 2.minutes,
+        timeout: Duration,
     ): ToolResult {
         val program = command.first()
         val executable = locate(program) ?: throw ToolchainException("Programm nicht gefunden: $program")

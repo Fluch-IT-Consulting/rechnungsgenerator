@@ -10,20 +10,13 @@ import kotlin.io.path.writeText
  *
  * Die .xmpdata-Datei muss neben der .tex liegen und denselben Namen tragen –
  * daraus baut das Paket pdfx die XMP-Metadaten des PDF/A-Dokuments.
+ *
+ * Der [runner] kommt herein, statt hier gegriffen zu werden: Dadurch lässt sich
+ * das, was zwischen Prozessaufruf und PDF passiert – Exitcode deuten, Protokoll
+ * lesen, Läufe zählen –, mit einem aufgezeichneten Lauf prüfen, ohne dass
+ * LuaLaTeX vorhanden sein muss.
  */
-object LatexCompiler {
-    private const val PROGRAM = "lualatex"
-
-    // Die Obergrenze, nicht die Anzahl: Gelaufen wird, solange LaTeX einen
-    // weiteren Lauf verlangt – siehe LatexLog.needsAnotherPass. Bei den
-    // Rechnungen dieses Projekts ist das heute keiner; sie haben weder
-    // Querverweise noch Lesezeichen, und nachgemessen mit TeX Live 2026 sind
-    // die PDFs nach einem und nach zwei Läufen im Satzbild gleich.
-    //
-    // Drei als Grenze, weil ein Dokument, das nach dreien immer noch einen
-    // weiteren verlangt, nicht konvergiert – ein vierter änderte daran nichts.
-    private const val MAX_PASSES = 3
-
+class LatexCompiler(private val runner: ProcessRunner) {
     fun compile(
         workingDir: Path,
         jobName: String,
@@ -35,7 +28,7 @@ object LatexCompiler {
 
         repeat(MAX_PASSES) { pass ->
             val result =
-                ExternalTool.run(
+                runner.run(
                     listOf(PROGRAM, "-interaction=nonstopmode", "-halt-on-error", "$jobName.tex"),
                     workingDir,
                 )
@@ -44,6 +37,20 @@ object LatexCompiler {
             if (!LatexLog.needsAnotherPass(log)) return pdfOrFail(workingDir, jobName)
         }
         return pdfOrFail(workingDir, jobName)
+    }
+
+    private companion object {
+        private const val PROGRAM = "lualatex"
+
+        // Die Obergrenze, nicht die Anzahl: Gelaufen wird, solange LaTeX einen
+        // weiteren Lauf verlangt – siehe LatexLog.needsAnotherPass. Bei den
+        // Rechnungen dieses Projekts ist das heute keiner; sie haben weder
+        // Querverweise noch Lesezeichen, und nachgemessen mit TeX Live 2026 sind
+        // die PDFs nach einem und nach zwei Läufen im Satzbild gleich.
+        //
+        // Drei als Grenze, weil ein Dokument, das nach dreien immer noch einen
+        // weiteren verlangt, nicht konvergiert – ein vierter änderte daran nichts.
+        private const val MAX_PASSES = 3
     }
 
     private fun pdfOrFail(workingDir: Path, jobName: String): Path =

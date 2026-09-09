@@ -44,10 +44,15 @@ object LuaLatexTypesetter : Typesetter {
             "verapdf" to "brew install verapdf",
         )
 
+    // Die beiden Teile bekommen den echten Prozessläufer; im Test steht an
+    // seiner Stelle ein aufgezeichneter Lauf.
+    private val compiler = LatexCompiler(ExternalTool)
+    private val validator = PdfAValidator(ExternalTool)
+
     override fun checkAvailable() = ExternalTool.requireAll(*REQUIRED_TOOLS)
 
     override fun typeset(workingDir: Path, jobName: String, texSource: String, xmpMetadata: String): TypesetPdf {
-        val pdf = LatexCompiler.compile(workingDir, jobName, texSource, xmpMetadata)
-        return TypesetPdf(pdf, PdfAValidator.validate(pdf))
+        val pdf = compiler.compile(workingDir, jobName, texSource, xmpMetadata)
+        return TypesetPdf(pdf, validator.validate(pdf))
     }
 }

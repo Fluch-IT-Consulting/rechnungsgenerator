@@ -1,5 +1,6 @@
 package de.fluchitconsulting.rechnung
 
+import de.fluchitconsulting.rechnung.toolchain.ExternalTool
 import de.fluchitconsulting.rechnung.toolchain.LatexCompiler
 import de.fluchitconsulting.rechnung.toolchain.LuaLatexTypesetter
 import de.fluchitconsulting.rechnung.toolchain.PdfAValidator
@@ -79,14 +80,14 @@ class ToolchainIntegrationTest : FunSpec({
         // Test – wie der Bericht danach gelesen wird, steht im
         // WerkzeugausgabenTest und braucht kein Werkzeug.
         val plain =
-            LatexCompiler.compile(
+            LatexCompiler(ExternalTool).compile(
                 workingDir = workDir,
                 jobName = "ohne-pdfa",
                 texSource = "\\documentclass{article}\\begin{document}Kein PDF/A.\\end{document}",
                 xmpMetadata = "",
             )
 
-        val validation = PdfAValidator.validate(plain)
+        val validation = PdfAValidator(ExternalTool).validate(plain)
 
         validation.valid shouldBe false
         validation.violations.shouldNotBeEmpty()
@@ -99,7 +100,7 @@ class ToolchainIntegrationTest : FunSpec({
         // WerkzeugausgabenTest an einem echten, gespeicherten Log.
         val fehler =
             shouldThrow<ToolchainException> {
-                LatexCompiler.compile(
+                LatexCompiler(ExternalTool).compile(
                     workingDir = workDir,
                     jobName = "kaputt",
                     texSource = "\\documentclass{article}\\begin{document}\\gibtesnicht\\end{document}",
