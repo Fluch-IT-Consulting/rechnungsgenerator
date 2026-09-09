@@ -30,13 +30,13 @@ enum class Unit(val label: String, val code: String) {
     ;
 
     override fun toString(): String = label
-
-    companion object {
-        private val LOOKUP = CodeLookup("Unbekannte Einheit", entries, { it.trim().lowercase() }, Unit::label)
-
-        /** Löst die YAML-Schreibweise auf; unbekannte Einheiten nennen die zulässigen. */
-        fun fromLabel(label: String): Unit = LOOKUP.of(label)
-    }
 }
 
-object UnitSerializer : KSerializer<Unit> by stringSerializer("Unit", Unit::label, Unit::fromLabel)
+object UnitSerializer :
+    KSerializer<Unit> by enumSerializer(
+        name = "Unit",
+        values = Unit.entries,
+        unknown = "Unbekannte Einheit",
+        normalize = { it.trim().lowercase() },
+        keyOf = Unit::label,
+    )

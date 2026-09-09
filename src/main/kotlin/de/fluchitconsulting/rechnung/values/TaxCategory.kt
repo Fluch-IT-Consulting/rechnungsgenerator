@@ -158,22 +158,17 @@ enum class TaxCategory(
     ;
 
     override fun toString(): String = code
-
-    companion object {
-        // Über den Code und in Großschreibung, anders als bei Unit und
-        // InvoiceType: Die Codeliste UNCL 5305 schreibt "S", "AE", "K".
-        private val LOOKUP =
-            CodeLookup(
-                unknown = "Unbekannte Steuerkategorie",
-                values = entries,
-                normalize = { it.trim().uppercase() },
-                keyOf = TaxCategory::code,
-                describe = { "${it.code} (${it.label})" },
-            )
-
-        fun fromCode(code: String): TaxCategory = LOOKUP.of(code)
-    }
 }
 
 object TaxCategorySerializer :
-    KSerializer<TaxCategory> by stringSerializer("TaxCategory", TaxCategory::code, TaxCategory::fromCode)
+    KSerializer<TaxCategory> by enumSerializer(
+        name = "TaxCategory",
+        values = TaxCategory.entries,
+        unknown = "Unbekannte Steuerkategorie",
+        // Über den Code und in Großschreibung, anders als bei Unit und
+        // InvoiceType: Die Codeliste UNCL 5305 schreibt "S", "AE", "K".
+        normalize = { it.trim().uppercase() },
+        keyOf = TaxCategory::code,
+        // Der Code allein sagt niemandem etwas, "S (Regelsatz)" schon.
+        describe = { "${it.code} (${it.label})" },
+    )
