@@ -54,6 +54,10 @@ beschreiben, *was* das Issue ist:
 Gesetzt wird er beim Anlegen (`--type`) oder nachträglich
 (`gh issue edit <n> --type Task`, `--remove-type`).
 
+Der Typ bestimmt auch den **Zweignamen**: `bugfix/<nummer>` für einen `Bug`,
+`feature/<nummer>` für ein `Feature`, `task/<nummer>` für einen `Task`. Wer die
+Zweigliste liest, sieht damit ohne Nachschlagen, was gerade in Arbeit ist.
+
 Die **Labels** tragen ausschließlich die Triage-Rolle – wer als Nächstes dran
 ist, siehe `triage-labels.md`. Die GitHub-Vorgaben `bug` und `enhancement`
 werden **nicht** benutzt: Sie sagten dasselbe wie der Typ und widersprachen ihm
