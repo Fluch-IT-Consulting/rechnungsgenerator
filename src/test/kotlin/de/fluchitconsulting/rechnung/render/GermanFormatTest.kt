@@ -22,7 +22,7 @@ class GermanFormatTest : FunSpec({
             GermanFormat.amount(Money("8337.50")).tex shouldBe "8.337,50"
             GermanFormat.amount(Money("0.5")).tex shouldBe "0,50"
             GermanFormat.amount(Money("-1234.05")).tex shouldBe "-1.234,05"
-            GermanFormat.amountWithCurrency(Money("9921.63")).tex shouldBe "9.921,63\u00A0€"
+            GermanFormat.amountWithCurrency(Money("9921.63")).tex shouldBe "9.921,63~€"
         }
     }
 
@@ -43,19 +43,18 @@ class GermanFormatTest : FunSpec({
         }
     }
 
-    // \u00A0 steht als Escape-Sequenz da, sonst wäre es von einem gewöhnlichen
-    // Leerzeichen nicht zu unterscheiden. Es hält den Betrag zusammen:
-    // nachgemessen in einem 18 mm breiten \parbox mit der Präambel dieses
-    // Projekts – mit gewöhnlichem Leerzeichen bricht LuaLaTeX um, mit U+00A0
-    // läuft der Kasten über, statt zu brechen (wie bei \nobreakspace).
+    // Aus dem geschützten Leerzeichen, das GermanFormat setzt, wird beim
+    // Maskieren eine Tilde – in LaTeX die Abkürzung für \nobreakspace: gleich
+    // unbrechbar, aber dehnbar wie ein gewöhnlicher Zwischenraum. Das nackte
+    // U+00A0 bliebe fest und risse im Blocksatz eine zu schmale Lücke.
     //
     // Das Prozentzeichen ist maskiert: Die Formatierung liefert ein fertiges
     // LaTeX-Fragment, damit keine Aufrufstelle daran denken muss.
     test("Steuersätze in Prozentschreibweise, mit maskiertem Prozentzeichen") {
         assertSoftly {
-            GermanFormat.percent(Percent("19")).tex shouldBe "19\u00A0\\%"
-            GermanFormat.percent(Percent("7")).tex shouldBe "7\u00A0\\%"
-            GermanFormat.percent(Percent("2.5")).tex shouldBe "2,5\u00A0\\%"
+            GermanFormat.percent(Percent("19")).tex shouldBe "19~\\%"
+            GermanFormat.percent(Percent("7")).tex shouldBe "7~\\%"
+            GermanFormat.percent(Percent("2.5")).tex shouldBe "2,5~\\%"
         }
     }
 
