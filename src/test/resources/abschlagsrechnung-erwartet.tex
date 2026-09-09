@@ -1,0 +1,215 @@
+%% Rechnungsvorlage – wird vom InvoiceRenderer gefüllt.
+%% Platzhalter haben die Form <<NAME>> und werden vollständig ersetzt.
+%%
+%% Gestaltungsprinzip: EIN Blickfang (der Titelbalken), sonst ruhiger Textfluss.
+%% Linien gibt es nur dort, wo sie Zahlen gliedern – nicht als Seitenraster.
+%% Gesperrte Versalien (das Stilmittel des Lebenslaufs) kommen genau einmal vor,
+%% als Spaltenkopf der Positionstabelle.
+\documentclass[11pt,a4paper]{article}
+
+%% pdfx erzeugt das PDF/A-1b: XMP-Metadaten, OutputIntent mit sRGB-Profil und
+%% eingebettete Schriften. Muss früh geladen werden, es zieht hyperref mit.
+%% Die Metadaten kommen aus der gleichnamigen .xmpdata-Datei daneben.
+\usepackage[a-1b]{pdfx}
+
+\usepackage{fontspec}
+\usepackage{geometry}
+%% xcolor lädt pdfx bereits selbst – ein zweites \usepackage mit Optionen
+%% gäbe einen "Option clash". colortbl direkt nachladen liefert \arrayrulecolor.
+\usepackage{colortbl}
+\usepackage{booktabs}  %% \midrule bringt die vertikalen Abstände selbst mit
+\usepackage{tabularx}
+\usepackage{array}
+
+%% Dieselbe Schrift wie im Lebenslauf – dadurch passen die Dokumente zusammen.
+\setmainfont{texgyreheros}[
+  Extension      = .otf,
+  UprightFont    = *-regular,
+  BoldFont       = *-bold,
+  ItalicFont     = *-italic,
+  BoldItalicFont = *-bolditalic,
+]
+
+%% Farben von fluch-it-consulting.de
+%% Mittelweg zwischen dem Rot der Webseite (#8B1A2B) und dem gedämpften Ton
+%% der bisherigen Rechnung (#8E4848): kanalweise das arithmetische Mittel.
+%% Beide Ausgangsfarben stehen daneben, das Umschalten ist eine Zeile.
+\definecolor{akzent}{HTML}{8D313A}
+\definecolor{akzentweb}{HTML}{8B1A2B}
+\definecolor{akzentalt}{HTML}{8E4848}
+\definecolor{haupttext}{HTML}{1C1C1E}
+\definecolor{gedaempft}{HTML}{5C5C62}
+\definecolor{linie}{HTML}{C9C9CF}
+
+%% Tabellenlinien global. Muss AUSSERHALB der Tabelle stehen: Mitten im
+%% Tabellenkörper eröffnet \arrayrulecolor eine neue Zelle, und das \noalign
+%% von \midrule landet dann an der falschen Stelle.
+\arrayrulecolor{linie}
+
+\geometry{a4paper, left=25mm, right=20mm, top=18mm, bottom=16mm}
+
+\color{haupttext}
+\setlength{\parindent}{0pt}
+\pagestyle{empty}
+
+%% Flattersatz statt Blocksatz. In den schmalen Spalten einer Rechnung reißt
+%% Blocksatz sichtbare Löcher zwischen die Wörter; Heros verträgt Flattersatz gut.
+\raggedright
+
+%% Keine Silbentrennung: Auf einer Rechnung stehen fast nur Eigennamen,
+%% Beträge und Adressen – getrennte Firmennamen sehen schlicht falsch aus.
+\hyphenpenalty=10000
+\exhyphenpenalty=10000
+\tolerance=2000
+
+%% Achtung: minipage ruft \@parboxrestore auf und setzt damit die
+%% Absatzparameter zurück – der Flattersatz von oben gilt dort NICHT.
+%% Ein \AtBeginEnvironment-Hook hilft nicht, weil \@parboxrestore erst danach
+%% läuft. Deshalb steht \raggedright unten in jeder Minipage mit Fließtext.
+
+%% Kleine, gesperrte Versalien – dasselbe Stilmittel wie im Lebenslauf.
+%% \rubrik statt \label, das ist in LaTeX vergeben.
+\newlength{\balkenhoehe}
+
+\newcommand{\rubrik}[1]{{\footnotesize\color{gedaempft}\addfontfeature{LetterSpace=14}\MakeUppercase{#1}}}
+
+%% Ein Hinweisabsatz unter den Summen – heute der Pflichtsatz der
+%% Abschlagsrechnung. Er bringt seinen Abstand selbst mit, weil er nur bei
+%% einzelnen Rechnungsarten gesetzt wird: Stünde der \vspace in der Vorlage,
+%% nähme er bei allen anderen Raum ein, obwohl dort nichts steht.
+\newcommand{\hinweisabsatz}[1]{\par\vspace{6mm}\noindent #1}
+
+%% Der Kopf des Absetzungsblocks: wie ein Hinweisabsatz, aber mit Luft zur
+%% Tabelle darunter – sonst klebt die erste Rechnung an der Ankündigung.
+\newcommand{\absetzungskopf}[1]{\par\vspace{6mm}\noindent #1\par\vspace{1.5mm}}
+
+%% Die Tabelle der abgesetzten Abschläge: links die Rechnung, rechts der Betrag.
+%% Dieselbe Spaltenaufteilung wie beim Summenblock, nur über die volle Breite –
+%% die Zeilen tragen Nummer und zwei Daten und passen nicht in 0,55.
+\newcommand{\absetzungstabelle}[1]{%
+  \begin{tabularx}{\linewidth}{@{}>{\raggedright\arraybackslash}X r@{}}#1\end{tabularx}}
+
+%% Die Aufteilung eines Abschlags in Netto und Steuer: klein, gedämpft und
+%% eingerückt unter der Zeile, zu der sie gehört.
+\newcommand{\absetzungsdetail}[1]{\newline\hspace*{4mm}{\footnotesize\color{gedaempft}#1}}
+
+\begin{document}
+
+%% ------------------------------------------------------------------ Kopf
+%% Alles rechtsbündig in einem Block, wie auf der bisherigen Rechnung: die
+%% Firmierung fett, darunter Anschrift und Kontakt in derselben Schriftgröße.
+%% Links bleibt frei – der Balken weiter unten ist der einzige Blickfang.
+{\raggedleft\small\color{gedaempft}
+  {\bfseries\color{haupttext}Muster IT-Consulting UG (haftungsbeschränkt)}\\
+  Beispielweg 42 · 97070 Würzburg\\Tel. +49 931 1234567\\rechnung@muster-it-consulting.example\par}
+
+\vspace{18mm}
+
+%% ----------------------------------------------------------- Empfängerfeld
+%% Ohne Rücksendezeile: Die Rechnung wird als PDF versandt, nie im
+%% Fensterumschlag. Rechts daneben die Vertretung und die Angaben zur
+%% Rechnung. 0.44 der Breite = 72,6 mm; nachgemessen braucht die längste
+%% Zeile ("Leistungszeitraum: 01.07.2026 – 31.08.2026") 69,8 mm.
+\begin{minipage}[t]{0.52\linewidth}\raggedright
+  Beispiel Software GmbH\\Industriestraße 1\\90402 Nürnberg
+\end{minipage}%
+\hfill
+\begin{minipage}[t]{0.44\linewidth}
+  \raggedleft\small\color{gedaempft}
+  Geschäftsführung\\Dr. Erika Musterfrau\\[3mm]Voraussichtlicher Leistungszeitraum: \mbox{Juni bis Oktober 2026}\\Abschlag vereinnahmt am 10. Juni 2026\\Zahlbar ohne Abzug bis 29. Juni 2026
+\end{minipage}
+
+\vspace{14mm}
+
+%% ---------------------------------------------------------- Titel (Blickfang)
+%% Das einzige Flächenelement der Seite. Nummer links, Datum rechts – wie auf
+%% der bisherigen Rechnung, damit beide Angaben zusammen gelesen werden.
+%% \fboxsep steuert den Innenabstand des \colorbox – waagerecht wie senkrecht.
+%% Nachgemessen: Der Balken der bisherigen Rechnung ist 6,0 mm hoch.
+%%
+%% \raisebox erzwingt Höhe = Ziffernhöhe und Tiefe = 0. Ohne das richtet sich
+%% die Boxhöhe nach dem tatsächlichen Text: Die Unterlänge des "g" in "August"
+%% macht den Balken unten dicker als oben. Jetzt liegt die Unterlänge im
+%% Innenabstand, und die Ziffern haben oben wie unten denselben Abstand.
+{\setlength{\fboxsep}{1.4mm}%
+\settoheight{\balkenhoehe}{\large\bfseries 0}%
+\noindent\colorbox{akzent}{%
+  \raisebox{0pt}[\balkenhoehe][0pt]{%
+    \makebox[\dimexpr\linewidth-2\fboxsep\relax][s]{%
+      \large\bfseries\color{white}Abschlagsrechnung R26-009\hfill 15. Juni 2026}}}}
+
+\vspace{9mm}
+
+%% --------------------------------------------------------------- Positionen
+\begin{tabularx}{\linewidth}{@{}>{\raggedright\arraybackslash}X r@{\hspace{1.5mm}}l r r@{}}
+  %% \mbox um jeden Spaltenkopf: In der X-Spalte ist der Inhalt sonst ein Absatz,
+  %% dessen erste Zeile tiefer sitzt als die Grundlinie der r-/l-Spalten.
+  \mbox{\rubrik{Beschreibung}} & \mbox{\rubrik{Menge}} & & \mbox{\rubrik{Einzelpreis}} & \mbox{\rubrik{Betrag}} \\[1.5mm]
+  \midrule
+Abschlag auf Projekt Nord\newline{\footnotesize\color{gedaempft} 1. von 3 Abschlägen (30 \% des Auftragswerts)} & 1 & pauschal & 4.000,00 € & 4.000,00 €
+\end{tabularx}
+
+\vspace{5mm}
+
+%% ------------------------------------------------------------------ Summen
+\hfill
+\begin{minipage}{0.55\linewidth}
+  \begin{tabularx}{\linewidth}{@{}>{\raggedright\arraybackslash}X r@{}}
+  Nettobetrag & 4.000,00 € \\[1mm]
+  zzgl. 19 \% USt. & 760,00 € \\
+  \midrule
+  \textbf{Gesamtbetrag} & \textbf{4.760,00 €}
+  \end{tabularx}
+\end{minipage}
+
+%% Der Pflichtsatz der Rechnungsart (siehe \hinweisabsatz oben). Bei jeder
+%% anderen Art bleibt der Platzhalter leer und nimmt dann auch keinen Raum ein.
+\hinweisabsatz{Die Leistung ist noch nicht erbracht. Über die Gesamtleistung folgt eine Schlussrechnung, in der dieser Abschlag abgesetzt wird.}
+
+%% Begründungen für Positionen ohne Umsatzsteuer (BT-120). Bleibt der Platz-
+%% halter leer, entsteht hier nichts – der Abstand darunter trägt beide Fälle.
+\vspace{6mm}
+
+
+
+%% Die Absetzung der vereinnahmten Abschläge in einer Schlussrechnung – unter
+%% dem Gesamtbetrag, nie in der Positionstabelle (ADR-0002), und nach den
+%% Steuerhinweisen: Die begründen die Steuerzeilen darüber und gehören zu
+%% ihnen. Leer bei jeder anderen Rechnungsart; den Abstand bringt
+%% \absetzungskopf mit.
+
+
+\vspace{5mm}
+
+%% ------------------------------------------------------------------ Schluss
+%% Ohne Zahlungsaufforderung: Das Zahlungsziel steht oben rechts, ein Satz
+%% darüber wäre die zweite Nennung desselben Datums. Auf welches Konto zu
+%% zahlen ist, sagt die Bankverbindung darunter.
+Ich bedanke mich für das Vertrauen und die angenehme Zusammenarbeit.
+
+\vspace{5mm}
+
+Mit freundlichen Grüßen\\[7mm]
+Dr. Erika Musterfrau
+
+\vspace{9mm}
+
+%% ---------------------------------------------------------- Bankverbindung
+%% Im Textfluss, linksbündig, mit schlichter Beschriftung – wie auf der
+%% bisherigen Rechnung. Kein Kasten, keine Linie, keine Versalien.
+{\bfseries Bankverbindung}\\[1.5mm]
+Kontoinhaber: Muster IT-Consulting UG (haftungsbeschränkt)\\Institut: Musterbank Würzburg\\IBAN: DE89 3704 0044 0532 0130 00\\BIC: MUSTDEFFXXX
+
+\vfill
+
+%% ------------------------------------------------------------------ Fußzeile
+%% Zwei zentrierte Zeilen ohne Trennlinie darüber, wie auf der bisherigen
+%% Rechnung: erst die gesellschaftsrechtlichen Angaben (§35a GmbHG),
+%% dann die steuerlichen und die Bankverbindung.
+%% Beide Zeilen passen in den Satzspiegel (nachgemessen 152 mm bzw. 138 mm bei
+%% 165 mm Breite), deshalb ohne den früheren Trick mit negativem \hspace.
+{\centering\scriptsize\color{gedaempft}
+Muster IT-Consulting UG (haftungsbeschränkt) · Beispielweg 42, 97070 Würzburg · Registergericht Würzburg, HRB 12345\\
+USt-IdNr. DE 123 456 788 · Musterbank Würzburg · BIC MUSTDEFFXXX · IBAN DE89 3704 0044 0532 0130 00\par}
+
+\end{document}

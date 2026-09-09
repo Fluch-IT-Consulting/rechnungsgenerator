@@ -19,72 +19,76 @@ class GermanFormatTest : FunSpec({
 
     test("Beträge mit Tausenderpunkt und Dezimalkomma") {
         assertSoftly {
-            GermanFormat.amount(Money("8337.50")) shouldBe "8.337,50"
-            GermanFormat.amount(Money("0.5")) shouldBe "0,50"
-            GermanFormat.amount(Money("-1234.05")) shouldBe "-1.234,05"
-            GermanFormat.amountWithCurrency(Money("9921.63")) shouldBe "9.921,63\u00A0€"
+            GermanFormat.amount(Money("8337.50")).tex shouldBe "8.337,50"
+            GermanFormat.amount(Money("0.5")).tex shouldBe "0,50"
+            GermanFormat.amount(Money("-1234.05")).tex shouldBe "-1.234,05"
+            GermanFormat.amountWithCurrency(Money("9921.63")).tex shouldBe "9.921,63\u00A0€"
         }
     }
 
     test("Einzelpreise zeigen bis zu vier Nachkommastellen") {
         assertSoftly {
-            GermanFormat.price(Price("95.00")) shouldBe "95,00"
+            GermanFormat.price(Price("95.00")).tex shouldBe "95,00"
             // Der Sub-Cent-Preis bleibt sichtbar – das ist der Sinn von Price.
-            GermanFormat.price(Price("0.335")) shouldBe "0,335"
-            GermanFormat.price(Price("0.0425")) shouldBe "0,0425"
+            GermanFormat.price(Price("0.335")).tex shouldBe "0,335"
+            GermanFormat.price(Price("0.0425")).tex shouldBe "0,0425"
         }
     }
 
     test("Mengen ohne überflüssige Nullen") {
         assertSoftly {
-            GermanFormat.quantity(BigDecimal("86.5")) shouldBe "86,5"
-            GermanFormat.quantity(BigDecimal("1")) shouldBe "1"
-            GermanFormat.quantity(BigDecimal("1000")) shouldBe "1.000"
+            GermanFormat.quantity(BigDecimal("86.5")).tex shouldBe "86,5"
+            GermanFormat.quantity(BigDecimal("1")).tex shouldBe "1"
+            GermanFormat.quantity(BigDecimal("1000")).tex shouldBe "1.000"
         }
     }
 
-    // \u00A0 ist ein geschütztes Leerzeichen: "19 %" und "9.921,63 €" sollen
-    // nicht am Zeilenende auseinandergerissen werden. Im Test steht die
-    // Escape-Sequenz statt des Zeichens, sonst wäre der Unterschied unsichtbar.
-    test("Steuersätze in Prozentschreibweise, mit geschütztem Leerzeichen") {
+    // \u00A0 steht als Escape-Sequenz da, sonst wäre es von einem gewöhnlichen
+    // Leerzeichen nicht zu unterscheiden. Es soll den Betrag zusammenhalten –
+    // dass LuaLaTeX dort trotzdem umbricht, ist der Fehler in #5 und hier noch
+    // nicht behoben.
+    //
+    // Das Prozentzeichen ist maskiert: Die Formatierung liefert ein fertiges
+    // LaTeX-Fragment, damit keine Aufrufstelle daran denken muss.
+    test("Steuersätze in Prozentschreibweise, mit maskiertem Prozentzeichen") {
         assertSoftly {
-            GermanFormat.percent(Percent("19")) shouldBe "19\u00A0%"
-            GermanFormat.percent(Percent("7")) shouldBe "7\u00A0%"
-            GermanFormat.percent(Percent("2.5")) shouldBe "2,5\u00A0%"
+            GermanFormat.percent(Percent("19")).tex shouldBe "19\u00A0\\%"
+            GermanFormat.percent(Percent("7")).tex shouldBe "7\u00A0\\%"
+            GermanFormat.percent(Percent("2.5")).tex shouldBe "2,5\u00A0\\%"
         }
     }
 
     test("Leistungszeitraum: ganzer Monat wird zum Monatsnamen") {
         assertSoftly {
-            GermanFormat.servicePeriod(LocalDate.of(2026, 7, 1), LocalDate.of(2026, 7, 31)) shouldBe "Juli 2026"
+            GermanFormat.servicePeriod(LocalDate.of(2026, 7, 1), LocalDate.of(2026, 7, 31)).tex shouldBe "Juli 2026"
             // Februar hat 28 Tage – die Monatslänge muss berechnet, nicht geraten werden.
-            GermanFormat.servicePeriod(LocalDate.of(2026, 2, 1), LocalDate.of(2026, 2, 28)) shouldBe "Februar 2026"
+            GermanFormat.servicePeriod(LocalDate.of(2026, 2, 1), LocalDate.of(2026, 2, 28)).tex shouldBe "Februar 2026"
             // Teilmonat und monatsübergreifend bleiben ein Datumsbereich.
-            GermanFormat.servicePeriod(LocalDate.of(2026, 7, 1), LocalDate.of(2026, 7, 15)) shouldBe
+            GermanFormat.servicePeriod(LocalDate.of(2026, 7, 1), LocalDate.of(2026, 7, 15)).tex shouldBe
                 "01.07.2026\u2009–\u200915.07.2026"
-            GermanFormat.servicePeriod(LocalDate.of(2026, 7, 1), LocalDate.of(2026, 8, 31)) shouldBe
+            GermanFormat.servicePeriod(LocalDate.of(2026, 7, 1), LocalDate.of(2026, 8, 31)).tex shouldBe
                 "01.07.2026\u2009–\u200931.08.2026"
         }
     }
 
     test("Datumsangaben") {
         assertSoftly {
-            GermanFormat.date(LocalDate.of(2026, 8, 14)) shouldBe "14. August 2026"
-            GermanFormat.date(LocalDate.of(2026, 3, 1)) shouldBe "1. März 2026"
-            GermanFormat.shortDate(LocalDate.of(2026, 7, 1)) shouldBe "01.07.2026"
+            GermanFormat.date(LocalDate.of(2026, 8, 14)).tex shouldBe "14. August 2026"
+            GermanFormat.date(LocalDate.of(2026, 3, 1)).tex shouldBe "1. März 2026"
+            GermanFormat.shortDate(LocalDate.of(2026, 7, 1)).tex shouldBe "01.07.2026"
         }
     }
     test("ein voraussichtlicher Zeitraum wird in Monaten geschrieben") {
         assertSoftly {
             // Volle Monate: Der Kalendermonat genügt (UStAE 14.8 Abs. 1 und 4).
-            GermanFormat.monthPeriod(LocalDate.of(2026, 6, 1), LocalDate.of(2026, 10, 31)) shouldBe
+            GermanFormat.monthPeriod(LocalDate.of(2026, 6, 1), LocalDate.of(2026, 10, 31)).tex shouldBe
                 "Juni bis Oktober 2026"
-            GermanFormat.monthPeriod(LocalDate.of(2026, 6, 1), LocalDate.of(2026, 6, 30)) shouldBe "Juni 2026"
-            GermanFormat.monthPeriod(LocalDate.of(2026, 12, 1), LocalDate.of(2027, 3, 31)) shouldBe
+            GermanFormat.monthPeriod(LocalDate.of(2026, 6, 1), LocalDate.of(2026, 6, 30)).tex shouldBe "Juni 2026"
+            GermanFormat.monthPeriod(LocalDate.of(2026, 12, 1), LocalDate.of(2027, 3, 31)).tex shouldBe
                 "Dezember 2026 bis März 2027"
             // Angebrochene Randmonate bleiben datiert – sonst wäre die Angabe
             // nicht gröber, sondern eine andere.
-            GermanFormat.monthPeriod(LocalDate.of(2026, 6, 15), LocalDate.of(2026, 10, 20)) shouldBe
+            GermanFormat.monthPeriod(LocalDate.of(2026, 6, 15), LocalDate.of(2026, 10, 20)).tex shouldBe
                 "15.06.2026\u2009–\u200920.10.2026"
         }
     }
