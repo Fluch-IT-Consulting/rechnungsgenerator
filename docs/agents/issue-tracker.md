@@ -63,6 +63,26 @@ ist, siehe `triage-labels.md`. Die GitHub-Vorgaben `bug` und `enhancement`
 werden **nicht** benutzt: Sie sagten dasselbe wie der Typ und widersprachen ihm
 prompt (ein Issue vom Typ `Bug` mit dem Label `enhancement`).
 
+## Bevor die Arbeit an einem Issue beginnt
+
+Erst nachsehen, ob schon jemand darauf sitzt:
+
+```
+gh issue view <nummer> --json assignees --jq '.assignees | map(.login)'
+```
+
+- **Niemand zugewiesen**: dem Menschen zuweisen, der die Arbeit anstößt.
+  `gh issue edit <nummer> --add-assignee @me` trifft ihn, solange `gh` unter
+  seinem Konto angemeldet ist – bei einem eigenen Bot-Konto stattdessen den
+  Anmeldenamen ausschreiben.
+- **Schon zugewiesen**: sagen, an wen, und nicht stillschweigend übernehmen.
+  Wer dort steht, sitzt womöglich gerade daran.
+
+Der Grund ist banal und trotzdem teuer: Ein Issue ohne Zuweisung sieht frei
+aus, auch wenn längst jemand daran arbeitet. Die Zuweisung kostet einen Aufruf
+und macht aus der Liste offener Issues eine Liste dessen, was wirklich offen
+ist.
+
 ## Der Commit-Titel nennt Typ und Issue
 
 ```
