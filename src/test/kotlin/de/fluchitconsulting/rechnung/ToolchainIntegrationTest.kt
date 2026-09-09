@@ -73,7 +73,10 @@ class ToolchainIntegrationTest : FunSpec({
     }
 
     test("ein nicht konformes PDF wird als solches gemeldet, nicht als Fehler") {
-        // Ein ganz gewöhnliches PDF ohne pdfx – gültiges PDF, aber kein PDF/A.
+        // veraPDF unterscheidet über den Exitcode: 1 heißt "nicht konform" und
+        // ist ein Prüfergebnis, kein Fehler unsererseits. Genau das prüft dieser
+        // Test – wie der Bericht danach gelesen wird, steht im
+        // WerkzeugausgabenTest und braucht kein Werkzeug.
         val plain =
             LatexCompiler.compile(
                 workingDir = workDir,
@@ -86,11 +89,14 @@ class ToolchainIntegrationTest : FunSpec({
 
         validation.valid shouldBe false
         validation.violations.shouldNotBeEmpty()
-        validation.describe() shouldContain "ISO 19005-1"
     }
 
-    test("ein LaTeX-Fehler nennt die Fundstelle statt tausend Zeilen Log") {
-        val exception =
+    test("ein LaTeX-Fehler kommt als ToolchainException an") {
+        // Nur der Weg wird hier geprüft: dass ein gescheiterter Lauf zur
+        // Ausnahme wird und die Meldung des Übersetzers mitbringt. Wie aus
+        // tausend Zeilen Protokoll eine Handvoll wird, prüft der
+        // WerkzeugausgabenTest an einem echten, gespeicherten Log.
+        val fehler =
             shouldThrow<ToolchainException> {
                 LatexCompiler.compile(
                     workingDir = workDir,
@@ -100,11 +106,6 @@ class ToolchainIntegrationTest : FunSpec({
                 )
             }
 
-        exception.message!! shouldContain "gibtesnicht"
-        exception.message!!.lines().size shouldBe
-            exception.message!!
-                .lines()
-                .size
-                .coerceAtMost(20)
+        fehler.message!! shouldContain "gibtesnicht"
     }
 })
