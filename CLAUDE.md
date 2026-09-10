@@ -197,3 +197,10 @@ Siehe `docs/agents/triage-labels.md`.
 
 Single-Context: ein `CONTEXT.md` und `docs/adr/` in der Wurzel.
 Siehe `docs/agents/domain.md`.
+
+Daneben `docs/notizen/`: durchdachte, aber **nicht entschiedene** Fragen, je eine
+Datei mit Datum im Namen. Ein ADR hält eine Entscheidung fest, eine Notiz das
+Gespräch davor – wer eine der dort behandelten Fragen neu aufwirft, liest erst
+nach, was schon einmal erwogen und verworfen wurde. Notizen binden aber nicht:
+Sie sind kein Beschluss, und wer anders entscheidet, schuldet ihnen keine
+Begründung.
