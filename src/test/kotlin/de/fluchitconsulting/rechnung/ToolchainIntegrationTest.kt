@@ -43,13 +43,14 @@ class ToolchainIntegrationTest : FunSpec({
     fun erzeuge(rechnung: String): Pair<Path, List<String>> {
         val ziel = workDir.resolve("$rechnung.pdf")
         val ausgabe = mutableListOf<String>()
-        val command = RechnungCommand()
+        val command = RechnungsgeneratorCommand()
         command.context { echoMessage = { _, message, _, _ -> ausgabe += message.toString() } }
 
         val fehler =
             runCatching {
                 command.parse(
                     arrayOf(
+                        "erzeuge",
                         "src/test/resources/$rechnung.yaml",
                         "-s",
                         "src/test/resources/stammdaten.yaml",

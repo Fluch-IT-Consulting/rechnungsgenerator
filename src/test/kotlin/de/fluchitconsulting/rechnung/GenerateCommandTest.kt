@@ -27,8 +27,12 @@ import kotlin.io.path.writeText
  * Adapter, der ein vorbereitetes PDF und ein vorbereitetes Prüfergebnis
  * liefert – der Weg davor bleibt echt, nur die beiden fremden Programme sind
  * ersetzt.
+ *
+ * Aufgerufen wird über das Elternkommando, so wie ein Mensch es tut:
+ * `rechnungsgenerator erzeuge …`. Die Ausgabe lässt sich trotzdem dort
+ * abgreifen, denn ein Unterkommando erbt `echoMessage` von seinem Elternteil.
  */
-class RechnungCommandTest : FunSpec({
+class GenerateCommandTest : FunSpec({
 
     /**
      * Der Adapter fürs Testen. Er merkt sich, womit er gerufen wurde – das
@@ -64,9 +68,9 @@ class RechnungCommandTest : FunSpec({
     /** Führt das Kommando aus und sammelt, was es ausgegeben hätte. */
     fun lauf(typesetter: Typesetter, vararg args: String): List<String> {
         val ausgabe = mutableListOf<String>()
-        val command = RechnungCommand(typesetter)
+        val command = RechnungsgeneratorCommand(typesetter)
         command.context { echoMessage = { _, message, _, _ -> ausgabe += message.toString() } }
-        command.parse(arrayOf(rechnung.toString(), "-s", stammdaten.toString()) + args)
+        command.parse(arrayOf("erzeuge", rechnung.toString(), "-s", stammdaten.toString()) + args)
         return ausgabe
     }
 
@@ -141,9 +145,9 @@ class RechnungCommandTest : FunSpec({
 
         val fehler =
             shouldThrow<CliktError> {
-                val command = RechnungCommand(FakeTypesetter())
+                val command = RechnungsgeneratorCommand(FakeTypesetter())
                 command.context { echoMessage = { _, _, _, _ -> } }
-                command.parse(arrayOf(ohneNummer.toString(), "-s", stammdaten.toString()))
+                command.parse(arrayOf("erzeuge", ohneNummer.toString(), "-s", stammdaten.toString()))
             }
 
         fehler.message!! shouldContain "ergibt keinen Dateinamen"
@@ -179,10 +183,17 @@ class RechnungCommandTest : FunSpec({
             }
 
         val ausgabe = mutableListOf<String>()
-        val command = RechnungCommand(FakeTypesetter())
+        val command = RechnungsgeneratorCommand(FakeTypesetter())
         command.context { echoMessage = { _, message, _, _ -> ausgabe += message.toString() } }
         command.parse(
-            arrayOf(oesterreich.toString(), "-s", stammdaten.toString(), "-o", eingaben.resolve("at.pdf").toString()),
+            arrayOf(
+                "erzeuge",
+                oesterreich.toString(),
+                "-s",
+                stammdaten.toString(),
+                "-o",
+                eingaben.resolve("at.pdf").toString(),
+            ),
         )
 
         val ergebnis = ausgabe.indexOfFirst { it.contains("PDF/A-1b") }

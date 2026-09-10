@@ -3,7 +3,9 @@ package de.fluchitconsulting.rechnung
 import com.github.ajalt.clikt.core.CliktError
 import com.github.ajalt.clikt.core.Context
 import com.github.ajalt.clikt.core.CoreCliktCommand
+import com.github.ajalt.clikt.core.PrintHelpMessage
 import com.github.ajalt.clikt.core.parse
+import com.github.ajalt.clikt.core.subcommands
 import com.github.ajalt.clikt.parameters.arguments.argument
 import com.github.ajalt.clikt.parameters.options.default
 import com.github.ajalt.clikt.parameters.options.flag
@@ -32,7 +34,7 @@ import kotlin.system.exitProcess
 // ringsherum hätte den Fehlschlag also nicht bemerkt. Hier bestimmt der
 // statusCode des CliktError den Exitcode – 0 nur bei --help und Erfolg.
 fun main(args: Array<String>) {
-    val command = RechnungCommand()
+    val command = RechnungsgeneratorCommand()
     try {
         command.parse(args)
     } catch (e: CliktError) {
@@ -42,13 +44,44 @@ fun main(args: Array<String>) {
 }
 
 /**
+ * Das Programm selbst. Es verteilt nur an seine Unterkommandos.
+ *
+ * Fehlt das Unterkommando, zeigt Clikt von sich aus die Hilfe – und meldet
+ * dabei Erfolg: `PrintHelpMessage` trägt den Exitcode 0, auch dort, wo Clikt
+ * sie selbst wegen des fehlenden Unterkommandos wirft. Dieselbe Falle wie bei
+ * `main()` oben, nur eine Ebene tiefer. Deshalb lässt sich das Kommando auch
+ * ohne Unterkommando aufrufen und wirft die Hilfe selbst, mit Exitcode 1.
+ *
+ * Das Flag `error` der `PrintHelpMessage` bleibt bewusst weg: Es klingt, als
+ * lenke es die Hilfe auf stderr, doch in `clikt-core` liest es niemand aus.
+ */
+class RechnungsgeneratorCommand(typesetter: Typesetter = LuaLatexTypesetter) :
+    CoreCliktCommand(name = "rechnungsgenerator") {
+    override val invokeWithoutSubcommand = true
+
+    init {
+        subcommands(GenerateCommand(typesetter))
+    }
+
+    override fun help(context: Context) = "Erzeugt deutsche Rechnungen als geprüftes PDF/A-1b."
+
+    override fun run() {
+        if (currentContext.invokedSubcommand == null) {
+            throw PrintHelpMessage(currentContext, statusCode = 1)
+        }
+    }
+}
+
+/**
+ * `rechnungsgenerator erzeuge`: aus einer Rechnungsdatei ein geprüftes PDF.
+ *
  * Das Kommando bekommt den [Typesetter] gereicht, statt ihn sich zu nehmen –
  * so lässt sich alles prüfen, was danach kommt: das Kopieren der Datei, die
  * Reihenfolge der Ausgaben, der Exitcode bei ungültigem PDF/A und das
  * Aufräumen des Arbeitsverzeichnisses. Im Betrieb steht dort LuaLaTeX und
  * veraPDF, im Test ein vorbereitetes Ergebnis.
  */
-class RechnungCommand(private val typesetter: Typesetter = LuaLatexTypesetter) : CoreCliktCommand(name = "rechnung") {
+class GenerateCommand(private val typesetter: Typesetter = LuaLatexTypesetter) : CoreCliktCommand(name = "erzeuge") {
     override fun help(context: Context) =
         "Erzeugt aus einer YAML-Rechnung ein geprüftes PDF/A-1b."
 
