@@ -17,7 +17,7 @@ sagt, welches fehlt.
 ## Verwendung
 
 ```
-rechnung [OPTIONEN] <rechnung.yaml>
+rechnungsgenerator erzeuge [OPTIONEN] <rechnung.yaml>
 
   -s, --stammdaten=<pfad>    Stammdaten des Rechnungsstellers
                              (Vorgabe: stammdaten.yaml)
@@ -30,7 +30,7 @@ Beispiel:
 
 ```
 ./gradlew installDist
-./build/install/rechnungsgenerator/bin/rechnungsgenerator rechnung.yaml
+./build/install/rechnungsgenerator/bin/rechnungsgenerator erzeuge rechnung.yaml
 ```
 
 Ausgabe:
@@ -41,7 +41,8 @@ PDF/A-1b: gültig
 ```
 
 Der Exitcode ist 0 nur bei Erfolg. Ein Tippfehler in der YAML, ein LaTeX-Fehler
-oder ein PDF, das die PDF/A-Prüfung nicht besteht, führen zu Exitcode 1.
+oder ein PDF, das die PDF/A-Prüfung nicht besteht, führen zu Exitcode 1 –
+ebenso ein Aufruf ohne Unterkommando, der nur die Hilfe zeigt.
 
 ## Eingabedateien
 

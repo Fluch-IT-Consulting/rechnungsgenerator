@@ -51,7 +51,11 @@ CV/Web-Auftritt des Autors), Validierung über veraPDF.
 - **CLI**: Clikt, und zwar `clikt-core` ohne Mordant – die Vollvariante zieht
   JNA nach und schreibt auf JDK 24+ bei jedem Start vier Warnzeilen auf stderr.
   `main()` von Clikt beendet den Prozess mit Code 0 auch im Fehlerfall, deshalb
-  `parse()` mit eigenem `exitProcess(e.statusCode)`.
+  `parse()` mit eigenem `exitProcess(e.statusCode)`. Das Programm ist ein
+  Elternkommando mit Unterkommandos (`erzeuge`), weil kein Aufruf je nach
+  Schalter mal ein PDF und mal YAML ausgeben soll (ADR-0003). Fehlt das
+  Unterkommando, wirft Clikt die Hilfe ebenfalls mit Code 0 – deshalb wirft
+  `RechnungsgeneratorCommand` sie selbst, mit 1.
 - **Positionstexte**: drei Felder statt einem, entlang der Aufteilung von
   EN 16931 – `bezeichnung` (BT-153, Pflicht), `beschreibung` (BT-154) und
   `hinweis` (BT-127). Ein einziges Freitextfeld hätte fürs PDF gereicht, würde
