@@ -42,7 +42,9 @@ PDF/A-1b: gültig
 
 Der Exitcode ist 0 nur bei Erfolg. Ein Tippfehler in der YAML, ein LaTeX-Fehler
 oder ein PDF, das die PDF/A-Prüfung nicht besteht, führen zu Exitcode 1 –
-ebenso ein Aufruf ohne Unterkommando, der nur die Hilfe zeigt.
+ebenso ein Aufruf ohne Unterkommando, der nur die Hilfe zeigt. Die
+Fehlermeldung steht dann auf stderr; stdout trägt nur das Ergebnis und lässt
+sich gefahrlos umleiten.
 
 ## Eingabedateien
 
