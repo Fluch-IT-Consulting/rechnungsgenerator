@@ -74,13 +74,16 @@ vorhandenen Dateien schon benutzt wird – etwa `beispiel` für die
 **4. PDF erzeugen.**
 
 ```
-build/install/rechnungsgenerator/bin/rechnungsgenerator \
+build/install/rechnungsgenerator/bin/rechnungsgenerator erzeuge \
   "$RECHNUNGEN_DIR/Outgoing/Rechnung_R26-012-beispiel.yaml" \
   -s "$RECHNUNGEN_DIR/stammdaten.yaml" \
   -o "$RECHNUNGEN_DIR/Outgoing/Rechnung_R26-012-beispiel.pdf"
 ```
 
 Fehlt das Programm, baue es mit `./gradlew installDist` im Projektverzeichnis.
+Dasselbe, wenn es `got unexpected extra argument` meldet und dazu, eine Datei
+`erzeuge` gebe es nicht: Dann ist das installierte Programm älter als diese
+Anleitung und kennt das Unterkommando noch nicht.
 
 Das Kommando gibt `PDF/A-1b: gültig` aus und endet mit Exitcode 0. Bei jedem
 anderen Ergebnis ist die Rechnung **nicht** fertig: Melde den Fehler, statt ihn
