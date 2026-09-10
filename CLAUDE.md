@@ -55,7 +55,10 @@ CV/Web-Auftritt des Autors), Validierung über veraPDF.
   Elternkommando mit Unterkommandos (`erzeuge`), weil kein Aufruf je nach
   Schalter mal ein PDF und mal YAML ausgeben soll (ADR-0003). Fehlt das
   Unterkommando, wirft Clikt die Hilfe ebenfalls mit Code 0 – deshalb wirft
-  `RechnungsgeneratorCommand` sie selbst, mit 1.
+  `RechnungsgeneratorCommand` sie selbst, mit 1. Der Kanal folgt dem Exitcode:
+  Was mit Code ungleich 0 endet, steht auf stderr, stdout trägt nur das
+  Ergebnis. Weil `clikt-core` den Parameter `err` ignoriert und alles auf
+  stdout schreibt, setzt `execute()` dafür einen eigenen Ausgeber.
 - **Positionstexte**: drei Felder statt einem, entlang der Aufteilung von
   EN 16931 – `bezeichnung` (BT-153, Pflicht), `beschreibung` (BT-154) und
   `hinweis` (BT-127). Ein einziges Freitextfeld hätte fürs PDF gereicht, würde
