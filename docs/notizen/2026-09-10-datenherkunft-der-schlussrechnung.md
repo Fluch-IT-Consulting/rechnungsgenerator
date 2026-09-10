@@ -6,6 +6,13 @@ liest, weil er dasselbe Problem noch einmal durchdenkt, soll nicht bei null
 anfangen müssen – und soll sehen, warum am Ende trotzdem nichts davon gebaut
 wurde.
 
+> **Nachtrag vom selben Tag:** Idee A ist in abgewandelter Form doch beschlossen
+> worden, siehe ADR-0003. Das Kommando schreibt den `abschlaege`-Block auf
+> stdout, statt ihn in die Schlussrechnung einzutragen. Der Einwand unten, man
+> müsste ein Format raten, trifft darauf nicht zu: Das Kommando braucht kein
+> neues Format, weder als Eingabe noch als Ausgabe. Der Text der Notiz bleibt,
+> wie er war. Was bei der Entscheidung offen blieb, steht am Ende.
+
 ## Der Anlass
 
 Issue #2 legt die Datenübernahme in die Schlussrechnung in den `rechnung`-Skill:
@@ -196,3 +203,20 @@ Generator rechnet und schreibt.
   das reicht, wurde nicht zu Ende gedacht.
 - Ob das Protokoll irgendwann einfach durch echtes ZUGFeRD ersetzt wird und
   dieser ganze Zwischenschritt entfällt.
+
+## Was nach der Entscheidung (ADR-0003) offen blieb
+
+- **Gegenprüfen** (Issue #2, bisher Schritt 5): Soll der Block in einer
+  Schlussrechnung gegen die Abschlagsrechnungen gehalten werden, und wenn ja,
+  wie? Die Ausgabe des Kommandos ist dafür zeichengleich reproduzierbar
+  gehalten, ein `diff` zeigte im Normalfall nur die ergänzten
+  `vereinnahmt-am`-Zeilen. Vertagt, bis sich zeigt, dass es gebraucht wird.
+- **Sortierung**: Das PDF setzt die Abschläge in der Reihenfolge der Datei, das
+  Kommando in der Reihenfolge seiner Argumente. Ein Glob wie `R26-0*.yaml`
+  sortiert bei fortlaufenden Nummern schon richtig. Eine Option zum Sortieren
+  kommt erst, wenn das nicht reicht.
+- **Teilvereinnahmung**: weiter ungelöst. Der Kopfkommentar der Ausgabe weist
+  darauf hin, erkennen kann das Kommando sie nicht.
+- **Protokoll** (Idee B) als spätere, genauere Quelle für denselben Block.
+  Die Werte kämen dann aus dem Lauf, der die Abschlagsrechnung damals erzeugt
+  hat, statt mit dem heutigen Code neu berechnet zu werden.

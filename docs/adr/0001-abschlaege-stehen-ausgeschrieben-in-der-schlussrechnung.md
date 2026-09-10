@@ -26,10 +26,9 @@ Netze dagegen:
 
 - Der Calculator rechnet den eingetragenen Steuerbetrag aus Netto und Satz nach
   und bricht bei Abweichung ab – dieselbe Bauart wie die IBAN-Prüfsumme.
-- Das Übertragen macht nicht der Mensch, sondern der `rechnung`-Skill: Er kennt
-  das Ablageverzeichnis, holt die Werte aus den Quelldateien und meldet
-  Abweichungen. Die Prüfung sitzt dort, wo das Verzeichnis bekannt ist; die
-  Rechnung bleibt für sich allein lesbar.
+- Das Übertragen macht nicht der Mensch, sondern der Generator selbst, mit
+  einem eigenen Kommando vor dem Erzeugen des PDF (ADR-0003). Die Rechnung
+  bleibt für sich allein lesbar.
 
 Nebeneffekt: Die eingetragene Struktur entspricht 1:1 dem
 `SpecifiedAdvancePayment` aus ZUGFeRD EXTENDED (Bruttobetrag, Zahldatum,
