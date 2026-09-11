@@ -9,6 +9,7 @@ import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.string.shouldContain
+import io.kotest.matchers.string.shouldStartWith
 import java.time.LocalDate
 
 /**
@@ -98,5 +99,17 @@ class PrepaymentsTest : FunSpec({
         val failure = shouldThrow<InvoiceValidationException> { prepaymentsOf(listOf(first, again), config) }
 
         failure.message!! shouldContain "zweimal"
+    }
+
+    test("ein Regelverstoß in einer Abschlagsrechnung nennt ihre Nummer") {
+        // Bei mehreren Abschlagsrechnungen sagte "Position 1 (…)" allein nicht,
+        // in welcher. Die Nummer ist das, woran man die Rechnung wiedererkennt.
+        val contradictory = abschlagsrechnung.copy(number = "R26-002", items = listOf(testItem(vatRate = "0")))
+
+        val failure =
+            shouldThrow<InvoiceValidationException> { prepaymentsOf(listOf(abschlagsrechnung, contradictory), config) }
+
+        failure.message!! shouldStartWith "R26-002: "
+        failure.message!! shouldContain "widersprüchlich"
     }
 })

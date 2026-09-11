@@ -77,5 +77,18 @@ fun prepaymentsOf(abschlagsrechnungen: List<Invoice>, config: SellerConfig): Lis
             )
         }
 
-    return abschlagsrechnungen.map { prepaymentOf(it, InvoiceCalculator.calculate(it, config)) }
+    return abschlagsrechnungen.map { abschlagsrechnung ->
+        // `try` ist in Kotlin ein Ausdruck: Sein Wert ist der des letzten
+        // Ausdrucks im Block, hier also das Ergebnis des Calculators.
+        // Die Nummer kommt davor, weil die Meldungen des Calculators nur
+        // "Position 1 (…)" sagen – bei mehreren Abschlagsrechnungen bliebe
+        // offen, in welcher.
+        val totals =
+            try {
+                InvoiceCalculator.calculate(abschlagsrechnung, config)
+            } catch (e: InvoiceValidationException) {
+                throw InvoiceValidationException("${abschlagsrechnung.number}: ${e.message}")
+            }
+        prepaymentOf(abschlagsrechnung, totals)
+    }
 }

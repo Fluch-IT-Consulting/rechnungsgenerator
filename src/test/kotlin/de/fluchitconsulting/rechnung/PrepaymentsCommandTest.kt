@@ -5,7 +5,9 @@ import io.kotest.matchers.shouldBe
 import io.kotest.matchers.string.shouldContain
 import io.kotest.matchers.string.shouldNotContain
 import java.nio.file.Path
+import kotlin.io.path.createTempDirectory
 import kotlin.io.path.readText
+import kotlin.io.path.writeText
 
 private const val RESOURCES = "src/test/resources"
 
@@ -70,5 +72,21 @@ class PrepaymentsCommandTest : FunSpec({
 
         result.exitCode shouldBe 1
         result.out shouldBe ""
+    }
+
+    test("ein YAML-Fehler nennt die Datei, in der er steckt") {
+        // kaml nennt nur den Schlüssel. Bei mehreren Dateien bliebe offen, in
+        // welcher er steht.
+        val broken =
+            createTempDirectory("abschlaege-test")
+                .resolve("kaputt.yaml")
+                .also { it.writeText("nummer: R26-099\ngibtsnicht: 1\n") }
+
+        val result = runCli("abschlaege", june, broken.toString(), "-s", stammdaten)
+
+        result.exitCode shouldBe 1
+        result.out shouldBe ""
+        result.err shouldContain broken.toString()
+        result.err shouldContain "gibtsnicht"
     }
 })

@@ -37,7 +37,17 @@ class PrepaymentsCommand : CoreCliktCommand(name = "abschlaege") {
     override fun run() {
         try {
             val config = YamlLoader.loadSellerConfig(configFile)
-            val abschlaege = prepaymentsOf(invoiceFiles.map(YamlLoader::loadInvoice), config)
+            // Einzeln geladen, damit ein YAML-Fehler seine Datei nennt: kaml sagt
+            // nur, welcher Schlüssel falsch ist, nicht wo.
+            val abschlagsrechnungen =
+                invoiceFiles.map { file ->
+                    try {
+                        YamlLoader.loadInvoice(file)
+                    } catch (e: SerializationException) {
+                        throw CliktError("Die Datei $file konnte nicht gelesen werden:\n${e.message}")
+                    }
+                }
+            val abschlaege = prepaymentsOf(abschlagsrechnungen, config)
             // zip legt zwei Listen paarweise nebeneinander: die n-te Datei zum
             // n-ten Abschlag. Die Reihenfolge ist dieselbe, prepaymentsOf behält sie.
             val entries = invoiceFiles.zip(abschlaege) { file, abschlag -> PrepaymentBlock.Entry(file.name, abschlag) }
