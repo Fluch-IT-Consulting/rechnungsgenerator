@@ -60,12 +60,14 @@ class InvoiceRendererTest : FunSpec({
     }
 
     test("ein abweichender Zeitraum der Position wird benannt") {
+        // Vor dem Rechnungsdatum (14.08.2026): Eine Rechnung rechnet eine
+        // erbrachte Leistung ab, auch je Position (#47).
         val item =
             testItem(description = "Arbeitspaket Nord").copy(
-                servicePeriod = ServicePeriod(LocalDate.of(2026, 9, 1), LocalDate.of(2026, 9, 30)),
+                servicePeriod = ServicePeriod(LocalDate.of(2026, 6, 1), LocalDate.of(2026, 6, 30)),
             )
 
-        renderMit(item) shouldContain "Arbeitspaket Nord · Zeitraum: September 2026"
+        renderMit(item) shouldContain "Arbeitspaket Nord · Zeitraum: Juni 2026"
     }
 
     test("Sonderzeichen werden auch in den Zusatzfeldern maskiert") {
