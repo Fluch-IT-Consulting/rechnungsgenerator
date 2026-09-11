@@ -79,6 +79,18 @@ der Schlussrechnung.
 Zwei YAML-Dateien: die Stammdaten (auf jeder Rechnung gleich) und die Rechnung
 selbst. Beispiele liegen in [src/test/resources](src/test/resources).
 
+Widersprüchliche Angaben brechen ab, statt als PDF hinauszugehen. Der Generator
+verlangt mindestens eine Position und lehnt ab, wenn
+
+- ein Leistungszeitraum endet, bevor er beginnt,
+- das Rechnungsdatum vor dem Ende der Leistung liegt – außer bei der
+  Abschlagsrechnung, deren Zeitraum eine Prognose ist,
+- ein Einzelpreis, das Zahlungsziel oder der Gesamtbetrag negativ ist.
+
+Zulässig, aber verdächtig sind eine Position mit Menge 0 und eine Rechnung, die
+mehr als sechs Monate nach dem Ende der Leistung kommt (§14 Abs. 2 UStG). Dafür
+gibt es einen Hinweis nach dem Ergebnis; die Rechnung entsteht trotzdem.
+
 ### Rechnungsarten
 
 `art` sagt, worüber abgerechnet wird. Ohne Angabe ist es die gewöhnliche
@@ -135,6 +147,7 @@ ab, wenn
 - eine Kombination aus Steuerkategorie und Satz in der Rechnung gar nicht
   vorkommt,
 - dieselbe Rechnungsnummer zweimal abgesetzt wird,
+- ein Abschlag später datiert ist als die Schlussrechnung,
 - oder mehr abgesetzt würde, als die Rechnung ausmacht.
 
 Jede Meldung nennt den betroffenen Abschlag und was zu tun ist.

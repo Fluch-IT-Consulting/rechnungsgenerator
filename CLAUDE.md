@@ -133,7 +133,7 @@ CV/Web-Auftritt des Autors), Validierung über veraPDF.
   beim PDF und gibt den Block auf stdout aus – alles oder nichts, ohne Datum
   und Pfad, ein fehlendes `vereinnahmt-am` als leeres Feld. Eingefügt wird von
   Hand, und danach kann der Block geändert oder ganz von Hand geschrieben sein.
-  Deshalb bleiben neun Abbruchregeln im `InvoiceCalculator` – darunter die
+  Deshalb bleiben zehn Abbruchregeln im `InvoiceCalculator` – darunter die
   Prüfsumme `netto × satz = ust` und die Forderung, dass Kategorie und Satz in
   der Schlussrechnung überhaupt vorkommen. Abgesetzt wird nur, was
   **vereinnahmt** ist (§14 Abs. 5 Satz 2 UStG); ein unbezahlter Abschlag ist
