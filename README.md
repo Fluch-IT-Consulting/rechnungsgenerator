@@ -14,6 +14,12 @@ sagt, welches fehlt.
 - [veraPDF](https://verapdf.org/) – `brew install verapdf`
 - Zum Bauen ein JDK 17+; Gradle lädt das Build-JDK bei Bedarf selbst.
 
+Nur für den `rechnung`-Skill in `.claude/skills/`: Python 3 mit
+[PyYAML](https://pyyaml.org/) – `pip3 install pyyaml`. Das Skript
+`offene-abschlaege.py` liest damit die Rechnungsdateien, um die noch offenen
+Abschlagsrechnungen eines Kunden zu finden. Fehlt PyYAML, sagt das Skript, wie
+man es installiert. Der Generator selbst braucht kein Python.
+
 ## Verwendung
 
 ```
