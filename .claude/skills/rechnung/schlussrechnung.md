@@ -35,10 +35,10 @@ der Nutzer. Fertig, wenn er die Nummern genannt hat.
 
 **3. Block anhängen.** Die Schlussrechnung zuerst ohne `abschlaege` schreiben
 (Schritt 3 in `SKILL.md`). Ihr Rechnungsdatum liegt nicht vor dem Ende des
-Leistungszeitraums, denn sie rechnet die erbrachte Leistung ab. Der Generator
-vergleicht die beiden nicht – widersprechen sie sich, frag nach, was gilt. Dann
-den Block des Generators anhängen, die ausgewählten Dateien in der Reihenfolge
-ihrer Nummern:
+Leistungszeitraums, denn sie rechnet die erbrachte Leistung ab; sonst bricht
+der Generator ab. Widersprechen sich die beiden, frag nach, was gilt, statt eins
+davon anzupassen. Dann den Block des Generators anhängen, die ausgewählten
+Dateien in der Reihenfolge ihrer Nummern:
 
 ```
 build/install/rechnungsgenerator/bin/rechnungsgenerator abschlaege \
@@ -127,3 +127,4 @@ Der Generator bricht ab, wenn:
 | Dieselbe `rechnungsnummer` zweimal | Kopierfehler |
 | Restbetrag negativ | Eine Überzahlung ist eine Gutschrift, keine Rechnung |
 | Leere `steueranteile` | Ein Abschlag ohne Netto und Steuer lässt sich nicht absetzen |
+| `rechnungsdatum` eines Abschlags nach dem Datum der Schlussrechnung | Ein Abschlag geht der Schlussrechnung voraus |

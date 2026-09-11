@@ -114,7 +114,7 @@ kunde:
   name: Beispiel Software GmbH
   anschrift:
     strasse: Industriestraße 1
-    plz: "90402"                    # in Anführungszeichen, sonst fällt die 0 weg
+    plz: "90402"                    # Text, keine Zahl – führende Nullen bleiben
     ort: Nürnberg
   referenz: BST-2026-0815           # optional, Bestellnummer des Kunden
 positionen:
