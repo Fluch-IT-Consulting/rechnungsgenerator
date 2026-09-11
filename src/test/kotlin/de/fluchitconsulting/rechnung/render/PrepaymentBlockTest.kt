@@ -22,7 +22,7 @@ private fun resource(name: String): String =
  * Die Beispiel-Schlussrechnung ohne ihren `abschlaege`-Block, mit dem erzeugten
  * Block dahinter – so, wie `>>` ihn anhängt.
  */
-private fun schlussrechnungMit(block: String): String =
+private fun finalInvoiceWith(block: String): String =
     resource("schlussrechnung.yaml").substringBefore("abschlaege:") + block + "\n"
 
 /**
@@ -32,8 +32,8 @@ private fun schlussrechnungMit(block: String): String =
  */
 class PrepaymentBlockTest : FunSpec({
 
-    val received = PrepaymentBlock.Entry("Rechnung_R26-009-beispiel.yaml", testPrepayment())
-    val notYetReceived =
+    val vereinnahmt = PrepaymentBlock.Entry("Rechnung_R26-009-beispiel.yaml", testPrepayment())
+    val nichtVereinnahmt =
         PrepaymentBlock.Entry(
             "Rechnung_R26-011-beispiel.yaml",
             testPrepayment(invoiceNumber = "R26-011", issueDate = LocalDate.of(2026, 8, 20), receivedOn = null),
@@ -43,7 +43,7 @@ class PrepaymentBlockTest : FunSpec({
         // Zeichengleich verglichen: Damit ist zugleich gesichert, dass weder ein
         // Datum noch ein Pfad hineinrutscht – sonst ergäbe derselbe Aufruf
         // morgen oder aus einem anderen Ordner einen anderen Text.
-        PrepaymentBlock.render(listOf(received, notYetReceived)) shouldBe
+        PrepaymentBlock.render(listOf(vereinnahmt, nichtVereinnahmt)) shouldBe
             """
             |# Abschläge für die Schlussrechnung, vorbereitet von `rechnungsgenerator abschlaege`.
             |# Neu berechnet mit dem heutigen Stand des Generators – nicht gegen die
@@ -91,9 +91,9 @@ class PrepaymentBlockTest : FunSpec({
                         ),
                 ),
             )
-        val entries = listOf(received, mixed)
+        val entries = listOf(vereinnahmt, mixed)
 
-        val parsed = YamlLoader.parseInvoice(schlussrechnungMit(PrepaymentBlock.render(entries)))
+        val parsed = YamlLoader.parseInvoice(finalInvoiceWith(PrepaymentBlock.render(entries)))
 
         parsed.prepayments shouldBe entries.map { it.prepayment }
         // Schon in der Gleichheit enthalten, hier aber eigens genannt: Das leere
@@ -102,7 +102,8 @@ class PrepaymentBlockTest : FunSpec({
     }
 
     test("ein leeres vereinnahmt-am lässt Regel 3 mit ihrer Begründung zuschlagen") {
-        val schlussrechnung = YamlLoader.parseInvoice(schlussrechnungMit(PrepaymentBlock.render(listOf(received, notYetReceived))))
+        val schlussrechnung =
+            YamlLoader.parseInvoice(finalInvoiceWith(PrepaymentBlock.render(listOf(vereinnahmt, nichtVereinnahmt))))
 
         val failure =
             shouldThrow<InvoiceValidationException> { InvoiceCalculator.calculate(schlussrechnung, testSellerConfig()) }
@@ -117,7 +118,7 @@ class PrepaymentBlockTest : FunSpec({
         listOf("R26 #9", "R26: 9", "-R26", "R26 \"neu\"", "R26\\9").forEach { number ->
             val entry = PrepaymentBlock.Entry("x.yaml", testPrepayment(invoiceNumber = number))
 
-            val parsed = YamlLoader.parseInvoice(schlussrechnungMit(PrepaymentBlock.render(listOf(entry))))
+            val parsed = YamlLoader.parseInvoice(finalInvoiceWith(PrepaymentBlock.render(listOf(entry))))
 
             parsed.prepayments.single().invoiceNumber shouldBe number
         }
