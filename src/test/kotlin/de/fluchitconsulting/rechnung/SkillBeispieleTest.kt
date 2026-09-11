@@ -32,7 +32,12 @@ class SkillBeispieleTest : FunSpec({
 
     test("die YAML-Beispiele im Skill sind gültige Rechnungsdateien") {
         val config = YamlLoader.parseSellerConfig(File("src/test/resources/stammdaten.yaml").readText())
-        val skill = File(".claude/skills/rechnung/SKILL.md").readText()
+        // Die Schlussrechnung steht in einer eigenen Datei des Skills. In der
+        // Reihenfolge SKILL.md, dann schlussrechnung.md ergeben die Beispiele
+        // Rechnung, Abschlagsrechnung, Schlussrechnung.
+        val skill =
+            listOf("SKILL.md", "schlussrechnung.md")
+                .joinToString("\n") { File(".claude/skills/rechnung/$it").readText() }
 
         val invoices =
             Regex("```yaml\n(.*?)```", RegexOption.DOT_MATCHES_ALL)
