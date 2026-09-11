@@ -23,10 +23,10 @@ except ImportError:
     sys.exit(1)
 
 
-def normalisiert(nummer) -> str:
-    # Wie Regel 7 der Schlussrechnung: "R26-009 " und "r26-009" meinen
-    # dasselbe Dokument.
-    return str(nummer).strip().upper()
+def als_text(nummer) -> str:
+    # Exakt verglichen wie Regel 7 der Schlussrechnung (#53). str(), weil YAML
+    # eine Nummer wie 123 als Zahl liest, der Generator aber als Text.
+    return str(nummer)
 
 
 def main() -> int:
@@ -65,7 +65,7 @@ def main() -> int:
         elif art == "schlussrechnung":
             for abschlag in rechnung.get("abschlaege") or []:
                 if isinstance(abschlag, dict) and "rechnungsnummer" in abschlag:
-                    abgesetzt.add(normalisiert(abschlag["rechnungsnummer"]))
+                    abgesetzt.add(als_text(abschlag["rechnungsnummer"]))
 
     def kunde_von(rechnung) -> str:
         kunde = rechnung.get("kunde")
@@ -82,8 +82,8 @@ def main() -> int:
             print(f"Keine Abschlagsrechnung im Verzeichnis {args.verzeichnis}.", file=sys.stderr)
         return 0
 
-    offen = [(d, r) for d, r in des_kunden if normalisiert(r.get("nummer", "")) not in abgesetzt]
-    for datei, rechnung in sorted(offen, key=lambda t: normalisiert(t[1].get("nummer", ""))):
+    offen = [(d, r) for d, r in des_kunden if als_text(r.get("nummer", "")) not in abgesetzt]
+    for datei, rechnung in sorted(offen, key=lambda t: als_text(t[1].get("nummer", ""))):
         print(f"{rechnung.get('nummer')}\t{rechnung.get('datum')}\t{datei}")
     if not offen:
         print(f"Alle {len(des_kunden)} Abschlagsrechnungen an '{args.kunde}' sind schon abgesetzt.",

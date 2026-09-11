@@ -90,15 +90,23 @@ class PrepaymentsTest : FunSpec({
         failure.message!! shouldContain "Andere Software AG"
     }
 
-    test("dieselbe Nummer zweimal wird abgelehnt, auch anders geschrieben") {
-        // Normalisiert verglichen wie Regel 7 der Schlussrechnung: "R26-009 "
-        // und "r26-009" meinen dasselbe Dokument.
-        val first = abschlagsrechnung.copy(number = "R26-009 ")
-        val again = abschlagsrechnung.copy(number = "r26-009")
+    test("dieselbe Nummer zweimal wird abgelehnt") {
+        val failure =
+            shouldThrow<InvoiceValidationException> { prepaymentsOf(listOf(abschlagsrechnung, abschlagsrechnung), config) }
 
-        val failure = shouldThrow<InvoiceValidationException> { prepaymentsOf(listOf(first, again), config) }
-
+        failure.message!! shouldContain "R26-001"
         failure.message!! shouldContain "zweimal"
+    }
+
+    test("anders geschriebene Nummern sind verschiedene Abschlagsrechnungen") {
+        // Der Generator nimmt nichts über das Schema einer Nummer an (#53):
+        // Anderswo können "a-1" und "A-1" zwei verschiedene Rechnungen sein.
+        val upper = abschlagsrechnung.copy(number = "R26-009")
+        val lower = abschlagsrechnung.copy(number = "r26-009")
+        val padded = abschlagsrechnung.copy(number = "R26-009 ")
+
+        prepaymentsOf(listOf(upper, lower, padded), config).map { it.invoiceNumber } shouldBe
+            listOf("R26-009", "r26-009", "R26-009 ")
     }
 
     test("ein Regelverstoß in einer Abschlagsrechnung nennt ihre Nummer") {
