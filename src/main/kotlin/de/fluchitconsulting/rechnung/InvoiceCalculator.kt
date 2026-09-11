@@ -137,6 +137,16 @@ object InvoiceCalculator {
 
         val grossTotal = netTotal + vatGroups.sumOf { it.amount }
 
+        // Eine Rechnung über einen negativen Betrag wäre eine Gutschrift (#47).
+        // Bis dahin schlug hier erst Regel 8 der Absetzung zu, mit einer
+        // Meldung über Abschläge, die eine gewöhnliche Rechnung gar nicht hat.
+        if (grossTotal.isNegative()) {
+            throw InvoiceValidationException(
+                "Der Gesamtbetrag wäre $grossTotal. Eine Rechnung über einen negativen Betrag ist eine " +
+                    "Gutschrift, und die gibt es hier noch nicht.",
+            )
+        }
+
         val prepayments =
             invoice.prepayments.map { abschlag ->
                 val net = abschlag.taxShares.sumOf { it.net }
@@ -145,6 +155,15 @@ object InvoiceCalculator {
             }
         // Elvis-Operator `?:` – nimm den Override, sonst den Default aus den Stammdaten.
         val termDays = invoice.paymentTermDaysOverride ?: config.paymentTermDays
+        // Negativ setzte es die Fälligkeit vor das Rechnungsdatum (#47). Die
+        // Meldung nennt, woher der Wert kommt; 0 heißt "sofort" und bleibt.
+        if (termDays < 0) {
+            val quelle = if (invoice.paymentTermDaysOverride != null) "in der Rechnung" else "in den Stammdaten"
+            throw InvoiceValidationException(
+                "Das Zahlungsziel $quelle ist $termDays Tage, die Fälligkeit läge also vor dem " +
+                    "Rechnungsdatum. Bitte 'zahlungsziel-tage' prüfen; 0 heißt sofort.",
+            )
+        }
         val totals =
             InvoiceTotals(lines, netTotal, vatGroups, grossTotal, invoice.issueDate, termDays, hints, prepayments)
 
@@ -162,9 +181,22 @@ object InvoiceCalculator {
      * Empfänger auf – dann ist sie schon verschickt.
      */
     private fun validate(invoice: Invoice, config: SellerConfig) {
+        // EN 16931 BR-16. Ohne Position entstünde eine Rechnung über 0,00 €.
+        if (invoice.items.isEmpty()) {
+            throw InvoiceValidationException("Eine Rechnung braucht mindestens eine Position – 'positionen' ist leer.")
+        }
+
         invoice.items.forEachIndexed { index, item ->
             val position = "Position ${index + 1} (${item.name})"
             val kategorie = item.taxCategory
+
+            // EN 16931 BR-27: Der Einzelpreis ist nie negativ.
+            if (item.unitPrice.value.signum() < 0) {
+                throw InvoiceValidationException(
+                    "$position: Der Einzelpreis ${item.unitPrice.value.toPlainString()} ist negativ. " +
+                        "EN 16931 lässt das nicht zu (BR-27).",
+                )
+            }
 
             if (kategorie.requiresZeroRate && item.vatRate.valueAsMultiplier.signum() != 0) {
                 throw InvoiceValidationException(
