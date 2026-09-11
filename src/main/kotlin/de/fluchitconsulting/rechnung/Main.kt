@@ -96,7 +96,7 @@ class RechnungsgeneratorCommand(typesetter: Typesetter = LuaLatexTypesetter) :
     override val invokeWithoutSubcommand = true
 
     init {
-        subcommands(GenerateCommand(typesetter))
+        subcommands(GenerateCommand(typesetter), PrepaymentsCommand())
     }
 
     override fun help(context: Context) = "Erzeugt deutsche Rechnungen als geprüftes PDF/A-1b."

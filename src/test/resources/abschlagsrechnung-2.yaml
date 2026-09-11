@@ -1,0 +1,21 @@
+# Fiktive zweite Abschlagsrechnung zu demselben Vorgang wie
+# abschlagsrechnung.yaml. Ohne vereinnahmt-am: Das Geld kam erst nach der
+# Rechnung, am 02.09.2026 – so steht es in schlussrechnung.yaml.
+nummer: R26-011
+art: abschlagsrechnung
+datum: 2026-08-20
+leistungszeitraum:
+  von: 2026-06-01
+  bis: 2026-10-31
+kunde:
+  name: Beispiel Software GmbH
+  anschrift:
+    strasse: Industriestraße 1
+    plz: "90402"
+    ort: Nürnberg
+positionen:
+  - bezeichnung: Abschlag auf Projekt Nord
+    beschreibung: 2. von 3 Abschlägen
+    menge: 1
+    einheit: pauschal
+    einzelpreis: 4000.00
