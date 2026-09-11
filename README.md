@@ -46,6 +46,28 @@ ebenso ein Aufruf ohne Unterkommando, der nur die Hilfe zeigt. Die
 Fehlermeldung steht dann auf stderr; stdout trägt nur das Ergebnis und lässt
 sich gefahrlos umleiten.
 
+### Abschläge für die Schlussrechnung vorbereiten
+
+```
+rechnungsgenerator abschlaege [OPTIONEN] <abschlagsrechnung.yaml>...
+
+  -s, --stammdaten=<pfad>    Stammdaten des Rechnungsstellers
+                             (Vorgabe: stammdaten.yaml)
+```
+
+Rechnet die übergebenen Abschlagsrechnungen und gibt daraus den
+`abschlaege`-Block einer Schlussrechnung auf stdout aus. Wo `vereinnahmt-am` in
+keiner Datei steht, bleibt das Feld leer und trägt einen Hinweis – dort gehört
+das Datum der Vereinnahmung hin. An eine Schlussrechnung, die noch keinen
+`abschlaege`-Block hat, lässt sich die Ausgabe direkt anhängen:
+
+```
+rechnungsgenerator abschlaege R26-009.yaml R26-011.yaml >> R26-014.yaml
+```
+
+Bei einem Fehler steht nichts auf stdout, ein halber Block landet also nie in
+der Schlussrechnung.
+
 ## Eingabedateien
 
 Zwei YAML-Dateien: die Stammdaten (auf jeder Rechnung gleich) und die Rechnung
@@ -88,6 +110,9 @@ abschlaege:
         netto: 4000.00
         ust: 760.00                 # Prüfsumme: muss zu netto × satz passen
 ```
+
+Abtippen muss man den Block nicht: `rechnungsgenerator abschlaege` (siehe
+Verwendung) bereitet ihn aus den Abschlagsrechnungen vor.
 
 Im PDF stehen die Abschläge einzeln unter dem Gesamtbetrag, mit Netto und
 Steuer getrennt, darunter der Restbetrag. Ist er null, steht dort ein Satz

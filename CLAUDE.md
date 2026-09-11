@@ -128,11 +128,16 @@ CV/Web-Auftritt des Autors), Validierung über veraPDF.
   und Satz. Nachgeschlagen wird nichts (ADR-0001): Zwischen Abschlag und
   Schlussrechnung liegen Monate, in denen Dateien in Jahresordner wandern; eine
   Rechnung, die beim Erzeugen fremde Dateien liest, ergibt nicht zweimal
-  dasselbe PDF. Der Preis ist Abtipparbeit, deshalb neun Abbruchregeln im
-  `InvoiceCalculator` – darunter die Prüfsumme `netto × satz = ust` und die
-  Forderung, dass Kategorie und Satz in der Schlussrechnung überhaupt
-  vorkommen. Abgesetzt wird nur, was **vereinnahmt** ist (§14 Abs. 5 Satz 2
-  UStG); ein unbezahlter Abschlag ist eine offene Forderung.
+  dasselbe PDF. Das Abtippen übernimmt `rechnungsgenerator abschlaege`
+  (ADR-0003): Es rechnet die Abschlagsrechnungen mit demselben Calculator wie
+  beim PDF und gibt den Block auf stdout aus – alles oder nichts, ohne Datum
+  und Pfad, ein fehlendes `vereinnahmt-am` als leeres Feld. Eingefügt wird von
+  Hand, und danach kann der Block geändert oder ganz von Hand geschrieben sein.
+  Deshalb bleiben neun Abbruchregeln im `InvoiceCalculator` – darunter die
+  Prüfsumme `netto × satz = ust` und die Forderung, dass Kategorie und Satz in
+  der Schlussrechnung überhaupt vorkommen. Abgesetzt wird nur, was
+  **vereinnahmt** ist (§14 Abs. 5 Satz 2 UStG); ein unbezahlter Abschlag ist
+  eine offene Forderung.
 
   Im PDF steht die Absetzung unter dem Gesamtbetrag und nie als Position
   (ADR-0002): Eine negative Position senkte die Bemessungsgrundlage und damit
