@@ -148,7 +148,7 @@ object InvoiceCalculator {
         val totals =
             InvoiceTotals(lines, netTotal, vatGroups, grossTotal, invoice.issueDate, termDays, hints, prepayments)
 
-        // Die übrigen sieben Regeln stehen in validatePrepayments, das validate()
+        // Die übrigen acht Regeln stehen in validatePrepayments, das validate()
         // aufruft: Sie kommen ohne die Summen aus und sollen zuschlagen, bevor
         // überhaupt gerechnet wird.
         validateDeduction(totals)
@@ -204,9 +204,42 @@ object InvoiceCalculator {
             )
         }
 
+        validateServicePeriods(invoice)
         validateReceipt(invoice)
         validatePrepayments(invoice)
         validateVatIdCheck(invoice, config, brauchtKundenUstId.toSet())
+    }
+
+    /**
+     * Die Zeiträume der Rechnung und ihrer Positionen (#47).
+     *
+     * Kein Zeitraum endet vor seinem Beginn – EN 16931 BR-29 für die Rechnung,
+     * BR-30 für die Position. Und eine Rechnung über eine erbrachte Leistung
+     * entsteht nicht, bevor die Leistung zu Ende ist: So definiert das Glossar
+     * den Leistungszeitraum. Ausgenommen ist nur ein Zeitraum, der eine
+     * Prognose ist – der der Abschlagsrechnung.
+     */
+    private fun validateServicePeriods(invoice: Invoice) {
+        val zeitraeume =
+            listOf("Der Leistungszeitraum" to invoice.servicePeriod) +
+                invoice.items.mapIndexedNotNull { index, item ->
+                    item.servicePeriod?.let { "Position ${index + 1} (${item.name}): Der Zeitraum" to it }
+                }
+
+        zeitraeume.forEach { (label, zeitraum) ->
+            if (zeitraum.start.isAfter(zeitraum.end)) {
+                throw InvoiceValidationException(
+                    "$label beginnt am ${zeitraum.start}, endet aber schon am ${zeitraum.end}.",
+                )
+            }
+            if (!invoice.type.servicePeriodIsForecast && zeitraum.end.isAfter(invoice.issueDate)) {
+                throw InvoiceValidationException(
+                    "$label endet am ${zeitraum.end}, nach dem Rechnungsdatum ${invoice.issueDate}. Eine " +
+                        "${invoice.type.documentName} rechnet eine erbrachte Leistung ab – steht die Leistung " +
+                        "noch aus, ist es eine Abschlagsrechnung.",
+                )
+            }
+        }
     }
 
     /**
@@ -266,6 +299,16 @@ object InvoiceCalculator {
                 throw InvoiceValidationException(
                     "$label: vereinnahmt am $vereinnahmtAm, also nach dem Rechnungsdatum " +
                         "${invoice.issueDate}. Für diese Schlussrechnung ist er nicht vereinnahmt.",
+                )
+            }
+
+            // Regel 10, das Gegenstück zu Regel 4 für das Rechnungsdatum (#47):
+            // Ein Abschlag geht der Schlussrechnung voraus. Später datiert ist er
+            // ein Tippfehler – oder eine Rechnung, die nicht hierher gehört.
+            if (abschlag.issueDate.isAfter(invoice.issueDate)) {
+                throw InvoiceValidationException(
+                    "$label: Rechnungsdatum ${abschlag.issueDate}, also nach dem Datum dieser " +
+                        "Schlussrechnung ${invoice.issueDate}. Ein Abschlag geht der Schlussrechnung voraus.",
                 )
             }
 

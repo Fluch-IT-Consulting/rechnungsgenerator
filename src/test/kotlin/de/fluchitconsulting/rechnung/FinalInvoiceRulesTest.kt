@@ -17,7 +17,7 @@ import io.kotest.matchers.string.shouldContain
 import java.time.LocalDate
 
 /**
- * Die Absetzung in der Schlussrechnung: die neun Abbruchregeln aus Issue #1
+ * Die Absetzung in der Schlussrechnung: die Abbruchregeln aus Issue #1 und #47
  * und das, was am Ende dabei herauskommen soll.
  *
  * Jede Regel prüft die Meldung mit, nicht nur den Abbruch. Wer eine
@@ -37,7 +37,7 @@ class FinalInvoiceRulesTest : FunSpec({
     fun errorMessageOf(invoice: Invoice): String =
         shouldThrow<InvoiceValidationException> { InvoiceCalculator.calculate(invoice, config) }.message!!
 
-    context("die neun Abbruchregeln") {
+    context("die Abbruchregeln") {
         test("1. Abschläge nur in einer Schlussrechnung") {
             val message = errorMessageOf(testInvoice(items = gesamtleistung(), prepayments = listOf(testPrepayment())))
 
@@ -106,6 +106,17 @@ class FinalInvoiceRulesTest : FunSpec({
 
             message shouldContain "steueranteile"
             message shouldContain "R26-009"
+        }
+
+        test("10. ein Abschlag, der nach der Schlussrechnung datiert ist") {
+            // Das Gegenstück zu Regel 4, diesmal für das Rechnungsdatum (#47):
+            // Ein Abschlag geht der Schlussrechnung voraus. Später datiert ist er
+            // ein Tippfehler – oder eine Rechnung, die nicht hierher gehört.
+            val message = errorMessageOf(schlussrechnung(testPrepayment(issueDate = LocalDate.of(2026, 9, 1))))
+
+            message shouldContain "R26-009"
+            message shouldContain "2026-09-01"
+            message shouldContain "2026-08-14"
         }
     }
 

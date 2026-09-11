@@ -127,8 +127,8 @@ positionen:
     ust-satz: 19                    # optional, Vorgabe 19
     steuerkategorie: S              # optional, Vorgabe S (Regelsatz)
     positions-leistungszeitraum:    # optional, nur bei Abweichung
-      von: 2026-09-01
-      bis: 2026-09-30
+      von: 2026-07-01
+      bis: 2026-07-31
 zahlungsziel-tage: 30               # optional, sonst aus den Stammdaten
 bemerkung: …                        # optional, ersetzt den Schlusssatz
 ```
