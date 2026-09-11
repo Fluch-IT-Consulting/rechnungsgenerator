@@ -40,6 +40,10 @@ früher die `.ods` neben ihrem PDF lag.
 
 ## Ablauf
 
+Bei einer **Schlussrechnung** lies vor Schritt 2
+[`schlussrechnung.md`](schlussrechnung.md): Dort steht, wie die Abschläge in
+die Datei kommen. Die Schritte hier gelten trotzdem.
+
 **1. Nummer ermitteln.** Nicht selbst zählen, sondern das Skript benutzen:
 
 ```
@@ -47,7 +51,9 @@ scripts/naechste-nummer.py "$RECHNUNGEN_DIR/Outgoing"
 ```
 
 Es durchsucht auch die Jahresunterordner, damit eine versehentlich einsortierte
-Rechnung keine doppelte Nummer verursacht.
+Rechnung keine doppelte Nummer verursacht. Abschlags- und Schlussrechnungen
+zählen in derselben Reihe wie alle anderen – ein zweiter Nummernkreis
+verdoppelte nur die Gelegenheiten für Lücken und Dubletten.
 
 **2. Angaben sammeln.** Nötig sind Kunde mit Anschrift, Leistungszeitraum und
 die Positionen. Erfinde nichts davon – eine falsche Zahl auf einer Rechnung ist
@@ -69,7 +75,9 @@ Punkte gibt – das ist angenehmer als eine Kette von Einzelfragen.
 **3. YAML schreiben** nach `$RECHNUNGEN_DIR/Outgoing/Rechnung_{Nummer}-{kunde}.yaml`.
 Der Kundenteil ist ein kurzer Kleinbuchstaben-Name ohne Rechtsform, wie er in den
 vorhandenen Dateien schon benutzt wird – etwa `beispiel` für die
-"Beispiel Software GmbH", nicht `beispiel-software-gmbh`.
+"Beispiel Software GmbH", nicht `beispiel-software-gmbh`. Bei Abschlags- und
+Schlussrechnungen darf ein Suffix folgen (`Rechnung_R26-014-beispiel-schluss.yaml`),
+reine Ablage-Kosmetik.
 
 **4. PDF erzeugen.**
 
@@ -167,6 +175,10 @@ positionen:
     einzelpreis: 4000.00
 ```
 
+Frage den Leistungszeitraum als *voraussichtlichen* ab; der Kalendermonat
+genügt. Beim Vorlegen sagst du dazu, dass zu diesem Vorgang später eine
+Schlussrechnung gehört, die den Abschlag absetzt, sobald er vereinnahmt ist.
+
 Das PDF beschriftet den Zeitraum als voraussichtlichen und trägt den Pflichtsatz,
 dass die Leistung noch aussteht und eine Schlussrechnung folgt. Prozentsätze
 kennt das Format nicht: "30 % von 40.000 €" rechnest du beim Anlegen einmal aus
@@ -178,53 +190,9 @@ anderen Rechnungsart bricht der Generator ab (dort entsteht die Steuer mit der
 Leistung, nicht mit dem Geldeingang), ebenso bei einem Datum nach dem
 Rechnungsdatum – dann ist der Betrag für diese Rechnung nicht vereinnahmt.
 
-**Schlussrechnung** – die Gesamtleistung, abzüglich der vereinnahmten Abschläge:
-
-```yaml
-nummer: R26-014
-art: schlussrechnung
-datum: 2026-11-05
-leistungszeitraum:
-  von: 2026-06-01
-  bis: 2026-10-31
-kunde: …
-positionen:
-  - bezeichnung: Projekt Nord, Gesamtleistung
-    menge: 1
-    einheit: pauschal
-    einzelpreis: 20000.00
-abschlaege:
-  - rechnungsnummer: R26-009
-    rechnungsdatum: 2026-06-15
-    vereinnahmt-am: 2026-06-10
-    steueranteile:                  # Liste: ein Abschlag darf gemischt sein
-      - steuerkategorie: S
-        ust-satz: 19
-        netto: 4000.00
-        ust: 760.00
-```
-
-Die Werte stehen ausgeschrieben in der Datei; der Generator schlägt nichts im
-Verzeichnis nach, damit dieselbe Datei in einem Jahr dasselbe PDF ergibt. Sie
-sind also von Hand aus der Abschlagsrechnung zu übernehmen – **abtippen, nicht
-erinnern**, und im Zweifel die Quelldatei öffnen.
-
-Der Generator bricht ab, wenn:
-
-| Fall | Warum |
-|---|---|
-| `abschlaege` ohne `art: schlussrechnung` | Sobald abgesetzt wird, *ist* es eine Schlussrechnung |
-| `art: schlussrechnung` ohne `abschlaege` | Dann fehlt die Absetzung – oder es ist keine Schlussrechnung |
-| `vereinnahmt-am` fehlt | Abgesetzt wird, was vereinnahmt wurde (§14 Abs. 5 Satz 2 UStG) |
-| `vereinnahmt-am` nach dem Rechnungsdatum | Für diese Rechnung ist der Abschlag nicht vereinnahmt |
-| `ust` passt nicht zu `netto × ust-satz` | Prüfsumme gegen den Zahlendreher beim Abschreiben |
-| Kategorie und Satz kommen in der Rechnung nicht vor | Entweder war der Abschlag falsch oder die Schlussrechnung ist es |
-| Dieselbe `rechnungsnummer` zweimal | Kopierfehler |
-| Restbetrag negativ | Eine Überzahlung ist eine Gutschrift, keine Rechnung |
-| Leere `steueranteile` | Ein Abschlag ohne Netto und Steuer lässt sich nicht absetzen |
-
-Ist ein Abschlag **nicht** bezahlt, gehört er nicht in die Schlussrechnung: Er
-wird gemahnt oder storniert. Sag das, statt ein Datum zu erfinden.
+**Schlussrechnung** – die Gesamtleistung, abzüglich der vereinnahmten
+Abschläge: Ablauf, Format und Abbruchregeln stehen in
+[`schlussrechnung.md`](schlussrechnung.md).
 
 ## Die drei Textfelder einer Position
 
@@ -307,8 +275,9 @@ Sprich es an, wenn einer dieser Fälle auftaucht, statt etwas Falsches zu bauen:
 - **Gutschrift und Storno**: fehlen – und damit der Fall, dass ein Kunde zu viel
   gezahlt hat. Ein negativer Restbetrag bricht ab, statt eine Erstattung
   auszuweisen.
-- **Abschläge selbst heraussuchen**: Dieser Skill sucht die Abschlagsrechnungen
-  eines Kunden nicht im Ablageverzeichnis zusammen und gleicht die eingetragenen
-  Werte auch nicht gegen die Quelldateien ab. Beides ist vorgesehen, aber noch
-  nicht gebaut. Bis dahin: Werte aus der Abschlagsrechnung übernehmen und vor
-  dem Erzeugen einmal gegenlesen.
+- **Teilvereinnahmung**: Kam auf einen Abschlag nur ein Teil des Geldes, stimmen
+  die Steueranteile im Block des Generators nicht; er gilt nur für den vollen
+  Betrag.
+- **Gegenprüfen**: Ob der Block einer bestehenden Schlussrechnung noch zu den
+  Abschlagsrechnungen passt, prüft bisher niemand. Beide Fälle sind erwogen,
+  aber vertagt, siehe `docs/notizen/2026-09-10-datenherkunft-der-schlussrechnung.md`.
