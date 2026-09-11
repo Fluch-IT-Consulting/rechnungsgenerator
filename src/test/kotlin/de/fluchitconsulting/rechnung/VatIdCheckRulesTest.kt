@@ -161,8 +161,17 @@ class VatIdCheckRulesTest : FunSpec({
         test("bei einer Inlandsrechnung bleibt die Liste unerwähnt") {
             // Sie wird dort gar nicht befragt – ein Hinweis wäre Lärm, und Lärm
             // führt dazu, dass auch die wichtigen Hinweise überlesen werden.
+            // Der Leistungszeitraum rückt mit dem Datum mit: Sonst meldete sich
+            // der Hinweis auf eine späte Rechnung (§14 Abs. 2 UStG, #47), und
+            // um den geht es hier nicht.
+            val datum = EuMemberStates.AS_OF.plusYears(5)
             val inland =
-                testInvoice().copy(issueDate = EuMemberStates.AS_OF.plusYears(5))
+                testInvoice().let {
+                    it.copy(
+                        issueDate = datum,
+                        servicePeriod = it.servicePeriod.copy(start = datum.minusMonths(1), end = datum.minusDays(1)),
+                    )
+                }
 
             InvoiceCalculator.calculate(inland, config).hints.shouldBeEmpty()
         }

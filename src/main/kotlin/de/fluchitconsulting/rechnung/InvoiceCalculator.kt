@@ -498,6 +498,30 @@ object InvoiceCalculator {
             val kategorien = invoice.items.map { it.taxCategory }.toSet()
             val ausland = istAusland(invoice, config)
 
+            // Menge 0 ist zulässig, aber fast immer ein Tippfehler (#47).
+            invoice.items.forEachIndexed { index, item ->
+                if (item.quantity.signum() == 0) {
+                    add(
+                        "Position ${index + 1} (${item.name}) hat die Menge 0 und steht mit 0,00 € auf der " +
+                            "Rechnung. Ist das gewollt?",
+                    )
+                }
+            }
+
+            // §14 Abs. 2 UStG verlangt die Rechnung innerhalb von sechs Monaten nach
+            // Ausführung der Leistung (#47). Verglichen mit dem Ende der Leistung,
+            // nicht mit heute: So ergibt dieselbe Datei jederzeit dieselben
+            // Hinweise, auch wenn sie ein Jahr später noch einmal erzeugt wird. Bei
+            // der Abschlagsrechnung schweigt er, denn ihr Zeitraum ist eine Prognose.
+            val serviceEnd = invoice.servicePeriod.end
+            if (!invoice.type.servicePeriodIsForecast && invoice.issueDate.isAfter(serviceEnd.plusMonths(6))) {
+                add(
+                    "Die Rechnung vom ${invoice.issueDate} kommt mehr als sechs Monate nach dem Ende der " +
+                        "Leistung am $serviceEnd. §14 Abs. 2 UStG verlangt sie innerhalb von sechs Monaten – " +
+                        "ist das Rechnungsdatum richtig?",
+                )
+            }
+
             // Die Altersprüfung der EU-Liste hängt bewusst an `ausland` und läuft
             // nicht immer: Bei einer Inlandsrechnung wird die Liste gar nicht
             // befragt, ein Hinweis darauf wäre also Lärm. Und Hinweise, die bei
