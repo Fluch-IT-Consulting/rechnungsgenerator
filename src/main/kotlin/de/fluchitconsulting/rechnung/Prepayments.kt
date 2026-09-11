@@ -65,15 +65,14 @@ fun prepaymentsOf(abschlagsrechnungen: List<Invoice>, config: SellerConfig): Lis
         )
     }
 
-    // Normalisiert verglichen wie Regel 7 der Schlussrechnung: "R26-009 " und
-    // "r26-009" meinen dasselbe Dokument.
+    // Exakt verglichen wie Regel 7 der Schlussrechnung (#53).
     abschlagsrechnungen
-        .groupBy { it.number.trim().uppercase() }
+        .groupBy { it.number }
         .values
         .firstOrNull { it.size > 1 }
         ?.let { duplicates ->
             throw InvoiceValidationException(
-                "Die Abschlagsrechnung ${duplicates.first().number.trim()} ist zweimal angegeben.",
+                "Die Abschlagsrechnung ${duplicates.first().number} ist zweimal angegeben.",
             )
         }
 

@@ -298,11 +298,11 @@ object InvoiceCalculator {
 
         // Regel 7: Derselbe Abschlag zweimal abgesetzt ist ein Kopierfehler und
         // fiele sonst nur über den Restbetrag auf.
-        // Normalisiert verglichen, anders als sonst im Programm: Hier geht es
-        // nicht darum, wie die Nummer geschrieben wird, sondern ob zweimal
-        // dasselbe Dokument gemeint ist. "R26-009 " und "r26-009" sind es.
+        // Verglichen wird exakt (#53): Ob "r26-009" dasselbe Dokument meint wie
+        // "R26-009", hängt am Nummernkreis des Rechnungsstellers, und den kennt
+        // der Generator nicht.
         invoice.prepayments
-            .groupBy { it.invoiceNumber.trim().uppercase() }
+            .groupBy { it.invoiceNumber }
             .filterValues { it.size > 1 }
             .values
             .firstOrNull()

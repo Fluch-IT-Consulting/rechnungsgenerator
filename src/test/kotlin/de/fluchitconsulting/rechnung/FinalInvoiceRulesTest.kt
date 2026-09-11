@@ -89,6 +89,20 @@ class FinalInvoiceRulesTest : FunSpec({
             message shouldContain "zweimal"
         }
 
+        test("7. gilt nur für exakt gleiche Nummern") {
+            // Der Generator nimmt nichts über das Schema einer Nummer an (#53):
+            // "r26-009" und "R26-009 " sind andere Nummern als "R26-009".
+            val invoice =
+                schlussrechnung(
+                    testPrepayment(invoiceNumber = "R26-009"),
+                    testPrepayment(invoiceNumber = "r26-009"),
+                    testPrepayment(invoiceNumber = "R26-009 "),
+                )
+
+            InvoiceCalculator.calculate(invoice, config).prepayments.map { it.prepayment.invoiceNumber } shouldBe
+                listOf("R26-009", "r26-009", "R26-009 ")
+        }
+
         test("8. ein negativer Restbetrag") {
             // Mehr abgesetzt als berechnet: Das ist keine Rechnung mehr,
             // sondern ein Fall für eine Gutschrift.
