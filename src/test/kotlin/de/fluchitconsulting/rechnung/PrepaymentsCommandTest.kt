@@ -1,0 +1,74 @@
+package de.fluchitconsulting.rechnung
+
+import io.kotest.core.spec.style.FunSpec
+import io.kotest.matchers.shouldBe
+import io.kotest.matchers.string.shouldContain
+import io.kotest.matchers.string.shouldNotContain
+import java.nio.file.Path
+import kotlin.io.path.readText
+
+private const val RESOURCES = "src/test/resources"
+
+/**
+ * Prüft `rechnungsgenerator abschlaege` von den Argumenten bis zur Ausgabe.
+ *
+ * Wie aus einer Abschlagsrechnung ein Abschlag wird und wie er hingeschrieben
+ * wird, prüfen PrepaymentsTest und PrepaymentBlockTest. Hier geht es darum,
+ * dass das Kommando beides mit echten Dateien zusammenbringt – und dass bei
+ * einem Fehler nichts auf stdout landet.
+ */
+class PrepaymentsCommandTest : FunSpec({
+
+    val stammdaten = "$RESOURCES/stammdaten.yaml"
+    val june = "$RESOURCES/abschlagsrechnung.yaml"
+    val august = "$RESOURCES/abschlagsrechnung-2.yaml"
+
+    test("eingetragen und angehängt ergibt der Block die Abschläge der Beispiel-Schlussrechnung") {
+        val result = runCli("abschlaege", june, august, "-s", stammdaten)
+
+        result.exitCode shouldBe 0
+        result.err shouldBe ""
+        // Je Abschlag der Dateiname, aber nie der Pfad: Der wechselt, sobald die
+        // Datei in einen Jahresordner wandert.
+        result.out shouldContain "  # abschlagsrechnung.yaml"
+        result.out shouldNotContain RESOURCES
+
+        // R26-011 wurde erst nach seiner Rechnung vereinnahmt, also bleibt das
+        // Feld leer – ein Mensch trägt es ein, so wie es in der
+        // Beispiel-Schlussrechnung steht.
+        val block =
+            result.out.replace(
+                "vereinnahmt-am:                 # Datum der Vereinnahmung eintragen",
+                "vereinnahmt-am: 2026-09-02",
+            )
+        val handwritten = Path.of("$RESOURCES/schlussrechnung.yaml").readText()
+        val generated = YamlLoader.parseInvoice(handwritten.substringBefore("abschlaege:") + block)
+
+        generated.prepayments shouldBe YamlLoader.parseInvoice(handwritten).prepayments
+        // Und die Schlussrechnung rechnet damit durch, alle neun Regeln inklusive.
+        InvoiceCalculator.calculate(generated, YamlLoader.parseSellerConfig(Path.of(stammdaten).readText()))
+    }
+
+    test("zweimal derselbe Aufruf ergibt zeichengleich dieselbe Ausgabe") {
+        runCli("abschlaege", june, august, "-s", stammdaten).out shouldBe
+            runCli("abschlaege", june, august, "-s", stammdaten).out
+    }
+
+    test("ist eine Datei keine Abschlagsrechnung, steht nichts auf stdout") {
+        // Alles oder nichts: Der gültige Abschlag aus june käme sonst allein in
+        // die Ausgabe, und der fehlende fiele keiner Regel der Schlussrechnung
+        // auf – nur dem Kunden, der ihn doppelt zahlt.
+        val result = runCli("abschlaege", june, "$RESOURCES/rechnung.yaml", "-s", stammdaten)
+
+        result.exitCode shouldBe 1
+        result.out shouldBe ""
+        result.err shouldContain "keine Abschlagsrechnung"
+    }
+
+    test("ohne Datei ist es ein Bedienfehler") {
+        val result = runCli("abschlaege", "-s", stammdaten)
+
+        result.exitCode shouldBe 1
+        result.out shouldBe ""
+    }
+})
