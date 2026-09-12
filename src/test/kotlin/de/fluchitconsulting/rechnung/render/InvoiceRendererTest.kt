@@ -44,13 +44,17 @@ class InvoiceRendererTest : FunSpec({
         tex shouldContain "Testposition"
         // Kein Umbruch, keine zweite Zeile: Die schlichte Position soll so
         // schlicht aussehen wie vorher auch.
-        tex shouldNotContain "Testposition\\newline"
+        // Nicht bloß "positionsdetail": Die Vorlage definiert das Makro, das
+        // Wort steht also ohnehin im Text. Gemeint ist der Aufruf dahinter.
+        tex shouldNotContain "Testposition\\positionsdetail"
     }
 
     test("die Beschreibung wird zur zweiten Zeile, klein und gedämpft") {
         val tex = renderMit(testItem(description = "Rahmenvertrag vom 01.02.2026"))
 
-        tex shouldContain "Testposition\\newline{\\footnotesize\\color{gedaempft} Rahmenvertrag vom 01.02.2026}"
+        // Wie die zweite Zeile aussieht, steht in der Vorlage; hier wird
+        // geprüft, was hineingeht (#51).
+        tex shouldContain "Testposition\\positionsdetail{Rahmenvertrag vom 01.02.2026}"
     }
 
     test("Beschreibung und Hinweis stehen zusammen in der zweiten Zeile") {
@@ -195,7 +199,7 @@ class InvoiceRendererTest : FunSpec({
         // – die Summe stimmte, aber der Einzelpreis war gerundet.
         val tex = renderMit(testItem(quantity = "10000", unitPrice = "0.00001"))
 
-        tex shouldContain "10.000 & Std. & 0,00001~€ & 0,10~€"
+        tex shouldContain "{10.000}{Std.}{0,00001~€}{0,10~€}"
     }
 
     context("Abschlagsrechnung") {
@@ -307,8 +311,7 @@ class InvoiceRendererTest : FunSpec({
         test("der Restbetrag steht unter dem Strich") {
             val tex = schlussrechnung(gesamtleistung, testPrepayment())
 
-            tex shouldContain "\\textbf{Restbetrag}"
-            tex shouldContain "\\textbf{19.040,00~€}"
+            tex shouldContain "\\abschlusszeile{Restbetrag}{19.040,00~€}"
         }
 
         test("ein Restbetrag von null bekommt einen Satz statt einer Zahl") {
@@ -327,6 +330,47 @@ class InvoiceRendererTest : FunSpec({
 
         test("eine gewöhnliche Rechnung bekommt keine Absetzung") {
             renderMit(testItem()) shouldNotContain "Abzüglich"
+        }
+    }
+
+    context("Vorlage und Renderer müssen dieselben Makros kennen") {
+        // Dieselbe Sorte Prüfung wie bei den Platzhaltern (#30), eine Ebene
+        // tiefer: Ein vertippter Makroname übersetzt klaglos und fiele sonst
+        // erst LuaLaTeX auf.
+
+        /** Eine Vorlage, die alle Makros kennt – bis auf die genannten Abweichung. */
+        fun vorlageOhne(fehlend: TemplateMacro? = null, falscheStelligkeit: TemplateMacro? = null) =
+            TemplateMacro.entries
+                .filterNot { it == fehlend }
+                .joinToString("\n") { macro ->
+                    val stelligkeit = if (macro == falscheStelligkeit) macro.arity + 1 else macro.arity
+                    "\\newcommand{\\${macro.macroName}}[$stelligkeit]{}"
+                }
+
+        test("ein Makro, das die Vorlage nicht kennt, wird benannt") {
+            val fehler =
+                shouldThrow<IllegalStateException> {
+                    InvoiceRenderer.checkMacros(vorlageOhne(fehlend = TemplateMacro.POSITIONSZEILE))
+                }
+
+            fehler.message!! shouldContain "positionszeile"
+        }
+
+        test("eine falsche Stelligkeit fällt ebenfalls auf") {
+            val fehler =
+                shouldThrow<IllegalStateException> {
+                    InvoiceRenderer.checkMacros(vorlageOhne(falscheStelligkeit = TemplateMacro.POSITIONSZEILE))
+                }
+
+            fehler.message!! shouldContain "positionszeile"
+            fehler.message!! shouldContain "6"
+        }
+
+        test("die echte Vorlage passt zum Renderer") {
+            // Der Positivfall, damit die Prüfung nicht nur beim Kaputten greift.
+            InvoiceRenderer.checkMacros(
+                checkNotNull(InvoiceRenderer::class.java.getResource("/templates/invoice.tex")).readText(),
+            )
         }
     }
 })

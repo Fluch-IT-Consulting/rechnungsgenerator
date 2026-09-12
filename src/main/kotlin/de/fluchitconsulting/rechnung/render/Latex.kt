@@ -65,6 +65,25 @@ value class Latex private constructor(val tex: String) {
          * nicht zu übersetzen.
          */
         fun macro(name: String, content: Latex): Latex = raw("\\$name{") + content + raw("}")
+
+        /**
+         * Ein Makro der Vorlage mit beliebig vielen Argumenten:
+         * `\positionszeile{a}{b}{c}{d}{e}`.
+         *
+         * Eine Liste statt `vararg`, weil Kotlin `vararg` für einen
+         * `value class` verbietet – und einer ist [Latex].
+         *
+         * Anders als bei [macro] steht der Name nicht als Zeichenkette da,
+         * sondern als [TemplateMacro] – und damit ist er prüfbar. Die
+         * Stelligkeit prüft schon der Aufruf: Eine Zeile mit vier Zellen für ein
+         * fünfspaltiges Makro fiele sonst erst LuaLaTeX auf.
+         */
+        fun macro(macro: TemplateMacro, arguments: List<Latex>): Latex {
+            require(arguments.size == macro.arity) {
+                "\\${macro.macroName} nimmt ${macro.arity} Argumente, hier sind es ${arguments.size}."
+            }
+            return raw("\\${macro.macroName}") + arguments.map { raw("{") + it + raw("}") }.joinToLatex()
+        }
     }
 }
 

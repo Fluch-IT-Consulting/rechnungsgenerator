@@ -74,6 +74,14 @@
 %% \rubrik statt \label, das ist in LaTeX vergeben.
 \newlength{\balkenhoehe}
 
+%% Abstände als benannte Längen (#51): Der Renderer schreibt nur noch den Namen,
+%% der Wert steht hier. Vorher standen die Millimeter in Kotlin – wer das
+%% Satzbild ändern wollte, musste zwei Dateien anfassen und beide treffen.
+\newlength{\positionsabstand}\setlength{\positionsabstand}{2.5mm}
+\newlength{\summenabstand}\setlength{\summenabstand}{1mm}
+\newlength{\blockabstand}\setlength{\blockabstand}{3mm}
+\newlength{\ustidabstand}\setlength{\ustidabstand}{2mm}
+
 \newcommand{\rubrik}[1]{{\footnotesize\color{gedaempft}\addfontfeature{LetterSpace=14}\MakeUppercase{#1}}}
 
 %% Ein Hinweisabsatz unter den Summen – heute der Pflichtsatz der
@@ -95,6 +103,23 @@
 %% Die Aufteilung eines Abschlags in Netto und Steuer: klein, gedämpft und
 %% eingerückt unter der Zeile, zu der sie gehört.
 \newcommand{\absetzungsdetail}[1]{\newline\hspace*{4mm}{\footnotesize\color{gedaempft}#1}}
+
+%% Dasselbe für eine Position, nur ohne Einzug – die Beschreibungsspalte beginnt
+%% ohnehin am linken Rand. Zwei Makros und nicht eines: Der Unterschied im Einzug
+%% ist Satzbild und wird nicht nebenbei in einem Umbau eingeebnet (#51).
+\newcommand{\positionsdetail}[1]{\newline{\footnotesize\color{gedaempft} #1}}
+
+%% Eine Zeile der Positionstabelle. Damit steht die Zahl der Spalten nur noch
+%% hier: Vorher zählte die Vorlage fünf und der Renderer verband fünf Zellen mit
+%% kaufmännischem Und, ohne dass etwas die beiden Zahlen verglich.
+\newcommand{\positionszeile}[5]{#1 & #2 & #3 & #4 & #5}
+
+%% Eine Zeile im Summen- oder Absetzungsblock: Bezeichnung links, Betrag rechts.
+\newcommand{\summenzeile}[2]{#1 & #2}
+
+%% Die fette Zeile unter dem Strich, mit der ein Betragsblock endet – der
+%% Gesamtbetrag der Summen, der Restbetrag der Absetzung.
+\newcommand{\abschlusszeile}[2]{\midrule\textbf{#1} & \textbf{#2}}
 
 \begin{document}
 
@@ -119,7 +144,7 @@
 \hfill
 \begin{minipage}[t]{0.44\linewidth}
   \raggedleft\small\color{gedaempft}
-  Geschäftsführung\\Dr. Erika Musterfrau\\[3mm]Voraussichtlicher Leistungszeitraum: \mbox{Juni bis Oktober 2026}\\Abschlag vereinnahmt am 10. Juni 2026\\Zahlbar ohne Abzug bis 29. Juni 2026
+  Geschäftsführung\\Dr. Erika Musterfrau\\[\blockabstand]Voraussichtlicher Leistungszeitraum: \mbox{Juni bis Oktober 2026}\\Abschlag vereinnahmt am 10. Juni 2026\\Zahlbar ohne Abzug bis 29. Juni 2026
 \end{minipage}
 
 \vspace{14mm}
@@ -149,7 +174,7 @@
   %% dessen erste Zeile tiefer sitzt als die Grundlinie der r-/l-Spalten.
   \mbox{\rubrik{Beschreibung}} & \mbox{\rubrik{Menge}} & & \mbox{\rubrik{Einzelpreis}} & \mbox{\rubrik{Betrag}} \\[1.5mm]
   \midrule
-Abschlag auf Projekt Nord\newline{\footnotesize\color{gedaempft} 1. von 3 Abschlägen (30 \% des Auftragswerts)} & 1 & pauschal & 4.000,00~€ & 4.000,00~€
+\positionszeile{Abschlag auf Projekt Nord\positionsdetail{1. von 3 Abschlägen (30 \% des Auftragswerts)}}{1}{pauschal}{4.000,00~€}{4.000,00~€}
 \end{tabularx}
 
 \vspace{5mm}
@@ -158,10 +183,9 @@ Abschlag auf Projekt Nord\newline{\footnotesize\color{gedaempft} 1. von 3 Abschl
 \hfill
 \begin{minipage}{0.55\linewidth}
   \begin{tabularx}{\linewidth}{@{}>{\raggedright\arraybackslash}X r@{}}
-  Nettobetrag & 4.000,00~€ \\[1mm]
-  zzgl. 19~\% USt. & 760,00~€ \\
-  \midrule
-  \textbf{Gesamtbetrag} & \textbf{4.760,00~€}
+  \summenzeile{Nettobetrag}{4.000,00~€} \\[\summenabstand]
+  \summenzeile{zzgl. 19~\% USt.}{760,00~€} \\
+  \abschlusszeile{Gesamtbetrag}{4.760,00~€}
   \end{tabularx}
 \end{minipage}
 

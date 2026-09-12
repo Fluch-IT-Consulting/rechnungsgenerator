@@ -49,6 +49,18 @@ CV/Web-Auftritt des Autors), Validierung über veraPDF.
   prüfbar, ohne dass ein fremdes Programm läuft. Der Integrationstest mit den
   echten Werkzeugen bleibt daneben bestehen – ohne gültiges PDF/A kein grüner
   Build.
+- **Satz nur in der Vorlage**: Abstände, Schriftgrad, Farbe und Linien stehen in
+  `invoice.tex`. Der Renderer liefert Inhalt und Makroaufrufe und entscheidet
+  weiter, *ob* etwas dasteht. Die Millimeter sind benannte Längen
+  (`\positionsabstand`), die Tabellenzeilen sind Makros (`\positionszeile` mit
+  fünf Argumenten) – damit steht die Spaltenzahl nur an einer Stelle, statt in
+  Vorlage und Kotlin getrennt getroffen zu werden. Welche Makros der Renderer
+  aufruft, zählt das Enum `TemplateMacro` auf; beim Setzen wird geprüft, dass die
+  Vorlage jedes davon mit derselben Stelligkeit kennt. Vorher fiel ein vertippter
+  Name erst im LuaLaTeX-Lauf auf, also im Integrationstest. **Nicht** eingeebnet
+  wurde dabei der Unterschied im Einzug zwischen der gedämpften Zweitzeile einer
+  Position und der eines Abschlags: Das ist Satzbild und gehört vor Augen, nicht
+  in einen Umbau.
 - **Externe Prozesse**: Ausgabe wird in eine Datei umgeleitet, nicht in einen
   Stream gelesen – sonst blockiert das Lesen bei einem hängenden Prozess, und
   die Zeitgrenze käme nie zum Zug. LuaLaTeX läuft, solange die Log-Datei einen
