@@ -32,6 +32,9 @@ object InvoiceRenderer {
     // Ein Platzhalter der Vorlage: <<GROSSGESCHRIEBEN>>.
     private val PLACEHOLDER = Regex("<<[A-Z_]+>>")
 
+    // Eine Makro-Definition der Vorlage: \newcommand{\name}[stelligkeit].
+    private val NEWCOMMAND = Regex("""\\newcommand\{\\([a-zA-Z]+)}(?:\[(\d+)])?""")
+
     fun render(calculatedInvoice: CalculatedInvoice): String {
         val invoice = calculatedInvoice.invoice
         val config = calculatedInvoice.config
@@ -59,7 +62,38 @@ object InvoiceRenderer {
                 "FUSSZEILE_UNTEN" to footerTaxAndBankLine(config),
             )
 
+        checkMacros(template)
         return fillIn(template, values)
+    }
+
+    /**
+     * Prüft, dass die Vorlage jedes Makro kennt, das der Renderer aufruft – und
+     * zwar mit derselben Stelligkeit.
+     *
+     * Dieselbe Sorte Fehler wie beim Platzhalter (#30), nur eine Ebene tiefer:
+     * Ein vertippter Makroname übersetzt in Kotlin klaglos und fällt erst
+     * LuaLaTeX auf, also im Integrationstest, und dort als Fehlermeldung von
+     * TeX. Hier fällt er beim Setzen auf, mit Namen.
+     *
+     * [check] und keine Ausnahme für den Benutzer: Keine Rechnungsdatei kann
+     * das auslösen. Laufen Vorlage und Renderer auseinander, ist das ein Fehler
+     * im Programm.
+     */
+    internal fun checkMacros(template: String) {
+        val definiert =
+            NEWCOMMAND
+                .findAll(template)
+                .associate { it.groupValues[1] to (it.groupValues[2].toIntOrNull() ?: 0) }
+
+        TemplateMacro.entries.forEach { macro ->
+            val stelligkeit = definiert[macro.macroName]
+            check(stelligkeit != null) {
+                "Der Renderer ruft \\${macro.macroName} auf, aber die Vorlage definiert es nicht."
+            }
+            check(stelligkeit == macro.arity) {
+                "\\${macro.macroName} nimmt in der Vorlage $stelligkeit Argumente, im Renderer ${macro.arity}."
+            }
+        }
     }
 
     /**
@@ -151,7 +185,7 @@ object InvoiceRenderer {
         // \\[2mm] ist in LaTeX ein Fehler ("There's no line here to end").
         val ustId =
             invoice.customer.vatId
-                ?.let { Latex.raw("$BR[2mm]") + "USt-IdNr. ".escapeLatex() + it.formatted().escapeLatex() }
+                ?.let { Latex.raw("$BR[\\ustidabstand]") + "USt-IdNr. ".escapeLatex() + it.formatted().escapeLatex() }
                 ?: Latex.EMPTY
         return anschrift + ustId
     }
@@ -227,14 +261,17 @@ object InvoiceRenderer {
         calculatedInvoice.lines
             .map { line ->
                 val item = line.item
-                listOf(
-                    describeItem(item, calculatedInvoice.invoice.type),
-                    GermanFormat.quantity(item.quantity),
-                    item.unit.label.escapeLatex(),
-                    GermanFormat.priceWithCurrency(item.unitPrice),
-                    GermanFormat.amountWithCurrency(line.net),
-                ).joinToLatex(" & ")
-            }.joinToLatex(" $BR[2.5mm]\n")
+                Latex.macro(
+                    TemplateMacro.POSITIONSZEILE,
+                    listOf(
+                        describeItem(item, calculatedInvoice.invoice.type),
+                        GermanFormat.quantity(item.quantity),
+                        item.unit.label.escapeLatex(),
+                        GermanFormat.priceWithCurrency(item.unitPrice),
+                        GermanFormat.amountWithCurrency(line.net),
+                    ),
+                )
+            }.joinToLatex(" $BR[\\positionsabstand]\n")
 
     /**
      * Die Beschreibungsspalte einer Position: Bezeichnung, darunter – falls
@@ -259,8 +296,7 @@ object InvoiceRenderer {
             }
         val bezeichnung = item.name.escapeLatex()
         if (zusatz.isEmpty()) return bezeichnung
-        return bezeichnung + Latex.raw("\\newline{\\footnotesize\\color{gedaempft} ") +
-            zusatz.joinToLatex(" · ") + Latex.raw("}")
+        return bezeichnung + Latex.macro(TemplateMacro.POSITIONSDETAIL, listOf(zusatz.joinToLatex(" · ")))
     }
 
     /**
@@ -277,8 +313,8 @@ object InvoiceRenderer {
                 val label = "zzgl. ".escapeLatex() + GermanFormat.percent(group.rate) + " USt.".escapeLatex()
                 add(label to GermanFormat.amountWithCurrency(group.amount))
             }
-        }.map { (label, value) -> Latex.raw("  ") + label + Latex.raw(" & ") + value }
-            .joinToLatex(" $BR[1mm]\n") + summaryRow("Gesamtbetrag", calculatedInvoice.grossTotal)
+        }.map { (label, value) -> Latex.raw("  ") + Latex.macro(TemplateMacro.SUMMENZEILE, listOf(label, value)) }
+            .joinToLatex(" $BR[\\summenabstand]\n") + summaryRow("Gesamtbetrag", calculatedInvoice.grossTotal)
 
     /**
      * Die Absetzung der vereinnahmten Abschläge – der Block unter dem
@@ -302,9 +338,15 @@ object InvoiceRenderer {
         val rows =
             calculatedInvoice.prepayments
                 .map { abgesetzt ->
-                    Latex.raw("  ") + describePrepayment(abgesetzt.prepayment) + Latex.raw(" & ") +
-                        "\u2212".escapeLatex() + GermanFormat.amountWithCurrency(abgesetzt.gross)
-                }.joinToLatex(" $BR[2.5mm]\n")
+                    Latex.raw("  ") +
+                        Latex.macro(
+                            TemplateMacro.SUMMENZEILE,
+                            listOf(
+                                describePrepayment(abgesetzt.prepayment),
+                                "\u2212".escapeLatex() + GermanFormat.amountWithCurrency(abgesetzt.gross),
+                            ),
+                        )
+                }.joinToLatex(" $BR[\\positionsabstand]\n")
 
         // Ein Restbetrag von null bekommt einen Satz statt einer Zahl: Ein
         // nacktes "0,00 €" unter dem Strich sieht aus wie ein Fehler, nicht wie
@@ -314,19 +356,24 @@ object InvoiceRenderer {
                 Latex.EMPTY to
                     Latex.raw("\n\n") +
                     Latex.macro(
-                        "hinweisabsatz",
-                        (
-                            "Der Rechnungsbetrag ist durch die vereinnahmten Abschläge ausgeglichen; " +
-                                "es verbleibt kein Restbetrag."
-                        ).escapeLatex(),
+                        TemplateMacro.HINWEISABSATZ,
+                        listOf(
+                            (
+                                "Der Rechnungsbetrag ist durch die vereinnahmten Abschläge ausgeglichen; " +
+                                    "es verbleibt kein Restbetrag."
+                            ).escapeLatex(),
+                        ),
                     )
             } else {
                 summaryRow("Restbetrag", calculatedInvoice.remainingAmount) to Latex.EMPTY
             }
 
-        return Latex.macro("absetzungskopf", "Abzüglich der berechneten und vereinnahmten Abschläge:".escapeLatex()) +
+        return Latex.macro(
+            TemplateMacro.ABSETZUNGSKOPF,
+            listOf("Abzüglich der berechneten und vereinnahmten Abschläge:".escapeLatex()),
+        ) +
             Latex.raw("\n") +
-            Latex.macro("absetzungstabelle", Latex.raw("\n") + rows + closingRow + Latex.raw("\n")) +
+            Latex.macro(TemplateMacro.ABSETZUNGSTABELLE, listOf(Latex.raw("\n") + rows + closingRow + Latex.raw("\n"))) +
             trailingNote
     }
 
@@ -351,7 +398,7 @@ object InvoiceRenderer {
                         GermanFormat.percent(anteil.vatRate) + " USt. ".escapeLatex() +
                         GermanFormat.amountWithCurrency(anteil.vat)
                 }.joinToLatex(" · ")
-        return heading + Latex.macro("absetzungsdetail", anteile)
+        return heading + Latex.macro(TemplateMacro.ABSETZUNGSDETAIL, listOf(anteile))
     }
 
     /**
@@ -362,7 +409,7 @@ object InvoiceRenderer {
      */
     private fun typeNote(invoice: Invoice): Latex =
         invoice.type.mandatoryNote
-            ?.let { Latex.macro("hinweisabsatz", it.escapeLatex()) }
+            ?.let { Latex.macro(TemplateMacro.HINWEISABSATZ, listOf(it.escapeLatex())) }
             ?: Latex.EMPTY
 
     /**
@@ -370,8 +417,11 @@ object InvoiceRenderer {
      * Gesamtbetrag der Summen, der Restbetrag der Absetzung.
      */
     private fun summaryRow(label: String, amount: Money): Latex =
-        Latex.raw(" $BR\n  \\midrule\n  ") + Latex.macro("textbf", label.escapeLatex()) +
-            Latex.raw(" & ") + Latex.macro("textbf", GermanFormat.amountWithCurrency(amount))
+        Latex.raw(" $BR\n  ") +
+            Latex.macro(
+                TemplateMacro.ABSCHLUSSZEILE,
+                listOf(label.escapeLatex(), GermanFormat.amountWithCurrency(amount)),
+            )
 
     /**
      * Die Begründungen für Positionen ohne Umsatzsteuer – EN 16931 BT-120.
@@ -431,7 +481,7 @@ object InvoiceRenderer {
                 add("Geschäftsführung".escapeLatex() + Latex.raw(BR) + it.escapeLatex())
             }
             add(metadata(calculatedInvoice))
-        }.joinToLatex("$BR[3mm]")
+        }.joinToLatex("$BR[\\blockabstand]")
 
     /** Erste Fußzeile: Firmierung, Sitz und die Angaben nach §35a GmbHG. */
     private fun footerCompanyLine(config: SellerConfig): Latex =

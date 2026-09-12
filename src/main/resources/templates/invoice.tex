@@ -74,6 +74,14 @@
 %% \rubrik statt \label, das ist in LaTeX vergeben.
 \newlength{\balkenhoehe}
 
+%% Abstände als benannte Längen (#51): Der Renderer schreibt nur noch den Namen,
+%% der Wert steht hier. Vorher standen die Millimeter in Kotlin – wer das
+%% Satzbild ändern wollte, musste zwei Dateien anfassen und beide treffen.
+\newlength{\positionsabstand}\setlength{\positionsabstand}{2.5mm}
+\newlength{\summenabstand}\setlength{\summenabstand}{1mm}
+\newlength{\blockabstand}\setlength{\blockabstand}{3mm}
+\newlength{\ustidabstand}\setlength{\ustidabstand}{2mm}
+
 \newcommand{\rubrik}[1]{{\footnotesize\color{gedaempft}\addfontfeature{LetterSpace=14}\MakeUppercase{#1}}}
 
 %% Ein Hinweisabsatz unter den Summen – heute der Pflichtsatz der
@@ -95,6 +103,23 @@
 %% Die Aufteilung eines Abschlags in Netto und Steuer: klein, gedämpft und
 %% eingerückt unter der Zeile, zu der sie gehört.
 \newcommand{\absetzungsdetail}[1]{\newline\hspace*{4mm}{\footnotesize\color{gedaempft}#1}}
+
+%% Dasselbe für eine Position, nur ohne Einzug – die Beschreibungsspalte beginnt
+%% ohnehin am linken Rand. Zwei Makros und nicht eines: Der Unterschied im Einzug
+%% ist Satzbild und wird nicht nebenbei in einem Umbau eingeebnet (#51).
+\newcommand{\positionsdetail}[1]{\newline{\footnotesize\color{gedaempft} #1}}
+
+%% Eine Zeile der Positionstabelle. Damit steht die Zahl der Spalten nur noch
+%% hier: Vorher zählte die Vorlage fünf und der Renderer verband fünf Zellen mit
+%% kaufmännischem Und, ohne dass etwas die beiden Zahlen verglich.
+\newcommand{\positionszeile}[5]{#1 & #2 & #3 & #4 & #5}
+
+%% Eine Zeile im Summen- oder Absetzungsblock: Bezeichnung links, Betrag rechts.
+\newcommand{\summenzeile}[2]{#1 & #2}
+
+%% Die fette Zeile unter dem Strich, mit der ein Betragsblock endet – der
+%% Gesamtbetrag der Summen, der Restbetrag der Absetzung.
+\newcommand{\abschlusszeile}[2]{\midrule\textbf{#1} & \textbf{#2}}
 
 \begin{document}
 
