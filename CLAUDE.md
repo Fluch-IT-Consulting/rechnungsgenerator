@@ -153,7 +153,10 @@ CV/Web-Auftritt des Autors), Validierung über veraPDF.
   die ausgewiesene Umsatzsteuer, die aber in voller Höhe geschuldet wird.
   Restbetrag null bekommt einen Satz statt einer Zahl, und dann entfällt auch
   das Zahlungsziel – sonst stünden zwei verschiedene Aussagen auf einem Blatt.
-  `prepaymentTotal` und `remainingAmount` sind abgeleitet, nicht gespeichert.
+  `prepaymentTotal`, `remainingAmount` und das Zahlungsziel sind abgeleitet,
+  nicht gespeichert: `calculate` liefert eine `CalculatedInvoice`, die Rechnung,
+  Stammdaten und Ergebnis zusammen trägt – ein Paar aus einer Rechnung und den
+  Summen einer anderen ist damit nicht baubar.
 - **ZUGFeRD-Vorbereitung**: Datenmodell enthält von Anfang an alle
   EN-16931-Pflichtfelder (Leistungsdatum, Steuerkategorie, Kennungen), damit
   ZUGFeRD (PDF/A-3 + XML) später ein zusätzlicher Ausgabemodus wird, kein Umbau.

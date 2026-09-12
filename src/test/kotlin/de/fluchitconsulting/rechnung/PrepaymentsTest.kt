@@ -29,7 +29,7 @@ class PrepaymentsTest : FunSpec({
         )
 
     test("aus einer Abschlagsrechnung wird ihr Abschlag, mit Netto und Steuer je Satz") {
-        val abschlag = prepaymentOf(abschlagsrechnung, InvoiceCalculator.calculate(abschlagsrechnung, config))
+        val abschlag = prepaymentOf(InvoiceCalculator.calculate(abschlagsrechnung, config))
 
         abschlag shouldBe
             testPrepayment(
@@ -47,7 +47,7 @@ class PrepaymentsTest : FunSpec({
                 items = listOf(testItem(unitPrice = "1000.00"), testItem(unitPrice = "500.00", vatRate = "7")),
             )
 
-        val abschlag = prepaymentOf(mixed, InvoiceCalculator.calculate(mixed, config))
+        val abschlag = prepaymentOf(InvoiceCalculator.calculate(mixed, config))
 
         abschlag.taxShares shouldBe
             listOf(
@@ -62,7 +62,7 @@ class PrepaymentsTest : FunSpec({
         val rechnung = testInvoice()
 
         val failure =
-            shouldThrow<InvoiceValidationException> { prepaymentOf(rechnung, InvoiceCalculator.calculate(rechnung, config)) }
+            shouldThrow<InvoiceValidationException> { prepaymentOf(InvoiceCalculator.calculate(rechnung, config)) }
 
         failure.message!! shouldContain "R26-001"
         failure.message!! shouldContain "keine Abschlagsrechnung"
