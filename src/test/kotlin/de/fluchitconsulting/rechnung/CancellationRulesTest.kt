@@ -55,12 +55,22 @@ class CancellationRulesTest : FunSpec({
         message shouldContain "BG-3"
     }
 
-    test("ein Bezug ohne Storno wird ebenso abgelehnt") {
+    test("ein Bezug ohne Storno wird ebenso abgelehnt, und die Meldung nennt die Art des Dokuments") {
         // Dieselbe Symmetrie wie bei 'vereinnahmt-am' und der Abschlagsrechnung.
-        val message = messageFor(testInvoice(cancelled = testCancelled()), Rule.BEZUG_OHNE_STORNO)
+        //
+        // Geprüft wird der ganze Satzschluss und nicht bloß das Wort "Rechnung":
+        // Das steckt in jedem Dokumentnamen dieses Projekts, und eine Meldung,
+        // die fälschlich immer "Stornorechnung" einsetzte, käme damit durch.
+        messageFor(testInvoice(cancelled = testCancelled()), Rule.BEZUG_OHNE_STORNO)
+            .shouldContain("'storniert'")
+            .shouldContain("dieses Dokument ist eine Rechnung.")
 
-        message shouldContain "'storniert'"
-        message shouldContain "Rechnung"
+        // Und mit einer zweiten Art, damit belegt ist, dass der Name wirklich
+        // aus der Rechnung kommt und nicht zufällig passt.
+        messageFor(
+            testInvoice(type = InvoiceType.FINAL, cancelled = testCancelled()),
+            Rule.BEZUG_OHNE_STORNO,
+        ) shouldContain "dieses Dokument ist eine Schlussrechnung."
     }
 
     test("ein Storno auf die eigene Nummer wird abgelehnt") {
