@@ -142,7 +142,7 @@ CV/Web-Auftritt des Autors), Validierung über veraPDF.
   beim PDF und gibt den Block auf stdout aus – alles oder nichts, ohne Datum
   und Pfad, ein fehlendes `vereinnahmt-am` als leeres Feld. Eingefügt wird von
   Hand, und danach kann der Block geändert oder ganz von Hand geschrieben sein.
-  Deshalb bleiben zehn Abbruchregeln im `InvoiceCalculator` – darunter die
+  Deshalb bleiben die Abbruchregeln im `InvoiceCalculator` – darunter die
   Prüfsumme `netto × satz = ust` und die Forderung, dass Kategorie und Satz in
   der Schlussrechnung überhaupt vorkommen. Abgesetzt wird nur, was
   **vereinnahmt** ist (§14 Abs. 5 Satz 2 UStG); ein unbezahlter Abschlag ist
@@ -162,6 +162,20 @@ CV/Web-Auftritt des Autors), Validierung über veraPDF.
   ZUGFeRD (PDF/A-3 + XML) später ein zusätzlicher Ausgabemodus wird, kein Umbau.
   Bis dahin bewusst nur PDF/A-1b (Archivierungsanforderungen der E-Rechnung
   noch offen).
+- **Befunde statt Abbruch beim ersten Fehler**: `calculate` wirft nicht,
+  sondern liefert die Werte samt einer Liste von Befunden. Ein Befund trägt eine
+  Kennung, eine Schwere (Abbruch oder Hinweis), den Gegenstand (Rechnung,
+  Position, Abschlag) und die Meldung; den Gegenstand nennt die Meldung nicht
+  selbst, das tut die Ausgabe. Abgebrochen wird im Kommando – und dann stehen
+  alle Gründe auf einmal da, statt dass fünf Fehler fünf Läufe brauchen.
+  Die Kennungen sind deutsch benannt wie die Regeln und **nicht** nummeriert:
+  Die Nummern standen nur in Kommentaren und Testnamen und liefen dort
+  auseinander. Tests prüfen die Kennung statt des Wortlauts und brauchen dafür
+  keine sonst makellose Rechnung mehr; wo früher "wirft nicht" die stille
+  Zusage war, steht jetzt `aborts().shouldBeEmpty()`. Der Umbau selbst hat
+  prompt eine Regel entlarvt, die sich auf einer Rechnung ganz ohne Abschläge
+  meldete ("mehr Abschläge abgesetzt (0.00)") – solange der erste Wurf gewann,
+  sah das niemand.
 - **Validierung ist Teil der Tests**: erzeugte PDFs werden per veraPDF geprüft;
   ohne valides PDF/A kein grüner Build.
 

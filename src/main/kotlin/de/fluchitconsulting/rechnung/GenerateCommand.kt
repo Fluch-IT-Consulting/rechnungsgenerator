@@ -52,8 +52,6 @@ class GenerateCommand(private val typesetter: Typesetter = LuaLatexTypesetter) :
             erzeuge()
         } catch (e: ToolchainException) {
             throw CliktError(e.message)
-        } catch (e: InvoiceValidationException) {
-            throw CliktError(e.message)
         } catch (e: InputFileException) {
             throw CliktError(e.message)
         } catch (e: IOException) {
@@ -116,13 +114,13 @@ class GenerateCommand(private val typesetter: Typesetter = LuaLatexTypesetter) :
      * deshalb bleibt von der Nummer nur Unverfängliches übrig.
      *
      * Eine Nummer, von der nichts übrig bleibt, ist ein Fehler in der
-     * Rechnungsdatei und keiner der Werkzeuge – daher
-     * [InvoiceValidationException] und nicht ToolchainException.
+     * Rechnungsdatei und keiner der Werkzeuge – deshalb dieselbe Meldung ohne
+     * Stacktrace wie bei einem falschen Argument, nicht ToolchainException.
      */
     private fun jobNameFor(invoice: Invoice): String {
         val safe = invoice.number.replace(Regex("[^A-Za-z0-9._-]"), "-").trim('-')
         if (safe.isEmpty()) {
-            throw InvoiceValidationException("Die Rechnungsnummer '${invoice.number}' ergibt keinen Dateinamen.")
+            throw CliktError("Die Rechnungsnummer '${invoice.number}' ergibt keinen Dateinamen.")
         }
         return "${invoice.type.documentName}-$safe"
     }

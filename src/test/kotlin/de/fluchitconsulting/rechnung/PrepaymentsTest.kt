@@ -5,7 +5,6 @@ import de.fluchitconsulting.rechnung.values.InvoiceType
 import de.fluchitconsulting.rechnung.values.Money
 import de.fluchitconsulting.rechnung.values.Percent
 import de.fluchitconsulting.rechnung.values.TaxCategory
-import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.string.shouldContain
@@ -61,17 +60,16 @@ class PrepaymentsTest : FunSpec({
         // ihrer Regeln kennt die Art des Dokuments, aus dem ein Abschlag stammt.
         val rechnung = testInvoice()
 
-        val failure =
-            shouldThrow<InvoiceValidationException> { prepaymentOf(InvoiceCalculator.calculate(rechnung, config)) }
+        val message = prepaymentsOf(listOf(rechnung), config).findings.messageOf(Rule.KEINE_ABSCHLAGSRECHNUNG)
 
-        failure.message!! shouldContain "R26-001"
-        failure.message!! shouldContain "keine Abschlagsrechnung"
+        message shouldContain "R26-001"
+        message shouldContain "keine Abschlagsrechnung"
     }
 
     test("mehrere Abschlagsrechnungen ergeben ihre Abschläge in der übergebenen Reihenfolge") {
         val second = abschlagsrechnung.copy(number = "R26-002")
 
-        prepaymentsOf(listOf(second, abschlagsrechnung), config).map { it.invoiceNumber } shouldBe
+        prepaymentsOf(listOf(second, abschlagsrechnung), config).prepayments.map { it.invoiceNumber } shouldBe
             listOf("R26-002", "R26-001")
     }
 
@@ -84,18 +82,23 @@ class PrepaymentsTest : FunSpec({
                 customer = abschlagsrechnung.customer.copy(name = "Andere Software AG"),
             )
 
-        val failure = shouldThrow<InvoiceValidationException> { prepaymentsOf(listOf(abschlagsrechnung, otherCustomer), config) }
+        val message =
+            prepaymentsOf(listOf(abschlagsrechnung, otherCustomer), config)
+                .findings
+                .messageOf(Rule.ABSCHLAGSRECHNUNGEN_VERSCHIEDENE_KUNDEN)
 
-        failure.message!! shouldContain "Beispiel Software GmbH"
-        failure.message!! shouldContain "Andere Software AG"
+        message shouldContain "Beispiel Software GmbH"
+        message shouldContain "Andere Software AG"
     }
 
     test("dieselbe Nummer zweimal wird abgelehnt") {
-        val failure =
-            shouldThrow<InvoiceValidationException> { prepaymentsOf(listOf(abschlagsrechnung, abschlagsrechnung), config) }
+        val message =
+            prepaymentsOf(listOf(abschlagsrechnung, abschlagsrechnung), config)
+                .findings
+                .messageOf(Rule.ABSCHLAGSRECHNUNG_DOPPELT)
 
-        failure.message!! shouldContain "R26-001"
-        failure.message!! shouldContain "zweimal"
+        message shouldContain "R26-001"
+        message shouldContain "zweimal"
     }
 
     test("anders geschriebene Nummern sind verschiedene Abschlagsrechnungen") {
@@ -105,19 +108,22 @@ class PrepaymentsTest : FunSpec({
         val lower = abschlagsrechnung.copy(number = "r26-009")
         val padded = abschlagsrechnung.copy(number = "R26-009 ")
 
-        prepaymentsOf(listOf(upper, lower, padded), config).map { it.invoiceNumber } shouldBe
+        prepaymentsOf(listOf(upper, lower, padded), config).prepayments.map { it.invoiceNumber } shouldBe
             listOf("R26-009", "r26-009", "R26-009 ")
     }
 
     test("ein Regelverstoß in einer Abschlagsrechnung nennt ihre Nummer") {
         // Bei mehreren Abschlagsrechnungen sagte "Position 1 (…)" allein nicht,
-        // in welcher. Die Nummer ist das, woran man die Rechnung wiedererkennt.
+        // in welcher. Die Nummer ist das, woran man die Rechnung wiedererkennt –
+        // sie steht jetzt als Herkunft vor dem Gegenstand des Befunds.
         val contradictory = abschlagsrechnung.copy(number = "R26-002", items = listOf(testItem(vatRate = "0")))
 
-        val failure =
-            shouldThrow<InvoiceValidationException> { prepaymentsOf(listOf(abschlagsrechnung, contradictory), config) }
+        val message =
+            prepaymentsOf(listOf(abschlagsrechnung, contradictory), config)
+                .findings
+                .messageOf(Rule.REGELSATZ_MIT_NULL)
 
-        failure.message!! shouldStartWith "R26-002: "
-        failure.message!! shouldContain "widersprüchlich"
+        message shouldStartWith "R26-002, Position 1 "
+        message shouldContain "widersprüchlich"
     }
 })

@@ -19,9 +19,6 @@ import java.time.temporal.ChronoUnit
 // Eine Rechnung samt allem, was sich aus ihr und den Stammdaten ausrechnet.
 // Unveränderlich; der Renderer bekommt nur noch dies.
 
-/** Wird geworfen, wenn die Rechnung in sich nicht stimmig ist. */
-class InvoiceValidationException(message: String) : Exception(message)
-
 data class CalculatedLine(
     val item: LineItem,
     // Netto der Position: Menge × Einzelpreis. Das Runden auf Cent macht Money selbst.

@@ -114,7 +114,8 @@ Die Werte stehen ausgeschrieben in der Datei; beim Erzeugen des PDF schlägt der
 Generator nichts im Verzeichnis nach, damit dieselbe Datei in einem Jahr
 dasselbe PDF ergibt (ADR-0001).
 
-Der Generator bricht ab, wenn:
+Der Generator bricht ab, wenn – und nennt dabei alle zutreffenden Gründe auf
+einmal, nicht nur den ersten:
 
 | Fall | Warum |
 |---|---|

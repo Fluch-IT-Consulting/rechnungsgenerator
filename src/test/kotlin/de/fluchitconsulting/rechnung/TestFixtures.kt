@@ -112,9 +112,13 @@ fun CalculatedInvoice.aborts(): List<Finding> = findings.filter { it.severity ==
 
 fun CalculatedInvoice.hints(): List<Finding> = findings.filter { it.severity == Severity.HINT }
 
-fun CalculatedInvoice.rules(): List<Rule> = findings.map { it.rule }
+fun List<Finding>.rules(): List<Rule> = map { it.rule }
 
 /** Die Zeile zu einer Regel, so wie ein Mensch sie zu sehen bekommt. */
-fun CalculatedInvoice.messageOf(rule: Rule): String =
-    findings.firstOrNull { it.rule == rule }?.describe()
+fun List<Finding>.messageOf(rule: Rule): String =
+    firstOrNull { it.rule == rule }?.describe()
         ?: error("Kein Befund zu $rule. Gefunden: ${rules()}")
+
+fun CalculatedInvoice.rules(): List<Rule> = findings.rules()
+
+fun CalculatedInvoice.messageOf(rule: Rule): String = findings.messageOf(rule)
