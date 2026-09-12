@@ -36,6 +36,21 @@ _Vermeiden_: Zwischenrechnung, Abschlagsrechnung (für diesen Fall)
 Die Angaben des Rechnungsstellers, die auf jeder Rechnung gleich sind.
 _Vermeiden_: Konfiguration, Absenderdaten, Profil
 
+## Kennungen
+
+**Rechnungsnummer**:
+Die Kennung, unter der eine Rechnung geführt wird (§14 Abs. 4 Satz 1 Nr. 4 UStG,
+BT-1). Sie muss einmalig vergeben sein, aber nicht lückenlos aufeinander folgen;
+Ziffern und Buchstaben sind beide erlaubt.
+_Vermeiden_: Belegnummer, Rechnungs-ID, Nummer (für sich allein)
+
+**Nummernkreis**:
+Die Reihe, aus der Rechnungsnummern vergeben werden. Wie viele es gibt, bestimmt
+der Rechnungssteller – etwa je Jahr oder je Geschäftszweig (UStAE 14.5 Abs. 11);
+verlangt ist nur, dass jede Rechnung leicht und eindeutig ihrem Kreis zuzuordnen
+ist.
+_Vermeiden_: Nummernbereich, Zählerkreis, Sequenz
+
 ## Beträge und Vorgänge
 
 **Abschlag**:
