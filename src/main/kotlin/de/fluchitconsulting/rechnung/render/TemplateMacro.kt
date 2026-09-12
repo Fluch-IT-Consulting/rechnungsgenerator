@@ -24,4 +24,5 @@ enum class TemplateMacro(val macroName: String, val arity: Int) {
     POSITIONSZEILE("positionszeile", 5),
     SUMMENZEILE("summenzeile", 2),
     ABSCHLUSSZEILE("abschlusszeile", 2),
+    BANKBLOCK("bankblock", 1),
 }

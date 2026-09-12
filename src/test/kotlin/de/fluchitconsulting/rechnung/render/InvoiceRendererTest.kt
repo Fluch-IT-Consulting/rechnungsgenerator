@@ -102,14 +102,15 @@ class InvoiceRendererTest : FunSpec({
     }
 
     /**
-     * Dasselbe für die beiden anderen Arten. Sie tragen das meiste Markup –
-     * Absetzungstabelle, Makros, Pflichtsatz –, also gerade das, was ein Umbau
-     * an der Maskierung durcheinanderbringen könnte.
+     * Dasselbe für die anderen Arten. Sie tragen das meiste Markup –
+     * Absetzungstabelle, Makros, Pflichtsatz, der Bezug auf die
+     * Ursprungsrechnung –, also gerade das, was ein Umbau an der Maskierung
+     * durcheinanderbringen könnte.
      */
-    test("Abschlags- und Schlussrechnung werden gesetzt wie festgehalten") {
+    test("die übrigen Rechnungsarten werden gesetzt wie festgehalten") {
         val seller = YamlLoader.parseSellerConfig(resource("stammdaten.yaml"))
 
-        listOf("abschlagsrechnung", "schlussrechnung").forEach { name ->
+        listOf("abschlagsrechnung", "schlussrechnung", "stornorechnung").forEach { name ->
             val invoice = YamlLoader.parseInvoice(resource("$name.yaml"))
 
             withClue(name) {

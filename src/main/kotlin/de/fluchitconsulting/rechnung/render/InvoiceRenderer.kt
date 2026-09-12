@@ -57,7 +57,7 @@ object InvoiceRenderer {
                 "ARTHINWEIS" to typeNote(invoice),
                 "STEUERHINWEISE" to taxNotes(calculatedInvoice),
                 "SCHLUSSSATZ" to (invoice.note ?: config.closingLine).escapeLatex(),
-                "BANKVERBINDUNG" to bankDetails(config),
+                "BANKVERBINDUNG" to bankDetails(invoice.type, config),
                 "FUSSZEILE_OBEN" to footerCompanyLine(config),
                 "FUSSZEILE_UNTEN" to footerTaxAndBankLine(config),
             )
@@ -231,12 +231,27 @@ object InvoiceRenderer {
     private fun metadata(calculatedInvoice: CalculatedInvoice): Latex =
         buildList {
             val invoice = calculatedInvoice.invoice
+            // Der Bezug auf die Ursprungsrechnung (BG-3 mit BT-25 und BT-26) –
+            // Pflicht auf einer Stornorechnung. Als eigene Angabe und nicht im
+            // Pflichtsatz, weil EN 16931 ihn als Struktur führt und nicht als
+            // Prosa (ADR-0006): Wer ihn später fürs XML aus einem Satz
+            // herausklauben müsste, rät. Zuerst, weil er sagt, worauf sich das
+            // ganze Blatt bezieht.
+            invoice.cancelled?.let { storniert ->
+                val bezug =
+                    Latex.macro(
+                        "mbox",
+                        storniert.invoiceNumber.escapeLatex() + " vom ".escapeLatex() +
+                            GermanFormat.date(storniert.issueDate),
+                    )
+                add("Ursprungsrechnung: ".escapeLatex() + bezug)
+            }
             // Pflichtangabe nach §14 Abs. 4 Nr. 6 UStG. Wie der Zeitraum heißt,
             // hängt an der Rechnungsart – siehe InvoiceType.servicePeriodLabel.
             // \mbox: Im schmalen Block oben rechts bricht "Juni bis Oktober 2026"
             // sonst hinter dem "bis" um und liest sich wie zwei Angaben. Die
             // Zeile darf stattdessen hinter dem Doppelpunkt umbrechen – der
-            // Zeitraum selbst bleibt zusammen.
+            // Zeitraum selbst bleibt zusammen. Beim Bezug gilt dasselbe.
             val zeitraum = Latex.macro("mbox", servicePeriod(invoice.servicePeriod, invoice.type))
             add("${invoice.type.servicePeriodLabel}: ".escapeLatex() + zeitraum)
             // BT-7: Steht der Zeitpunkt der Vereinnahmung fest, gehört er zu
@@ -439,7 +454,20 @@ object InvoiceRenderer {
                     ".".escapeLatex()
             }.joinToLatex(BR)
 
-    private fun bankDetails(config: SellerConfig): Latex =
+    /**
+     * Die Bankverbindung – auf jedem Dokument außer der Stornorechnung.
+     *
+     * Sie fordert kein Geld, sie kündigt eine Erstattung an; ein Konto darunter
+     * läse sich wie eine Zahlungsaufforderung. Überschrift und Abstand stecken
+     * im Makro der Vorlage, damit hier das Ganze wegfallen kann und nicht eine
+     * Überschrift ohne Inhalt stehen bleibt.
+     */
+    private fun bankDetails(type: InvoiceType, config: SellerConfig): Latex {
+        if (type == InvoiceType.CANCELLATION) return Latex.EMPTY
+        return Latex.macro(TemplateMacro.BANKBLOCK, listOf(bankLines(config)))
+    }
+
+    private fun bankLines(config: SellerConfig): Latex =
         listOf(
             "Kontoinhaber: ".escapeLatex() + config.bank.accountHolder.escapeLatex(),
             "Institut: ".escapeLatex() + config.bank.bankName.escapeLatex(),

@@ -1,0 +1,32 @@
+# Das Storno der Beispielrechnung R26-042: dieselben Positionen, negative Menge.
+# Die Nummer ist eine eigene aus derselben Reihe, nicht die der Ursprungsrechnung.
+art: stornorechnung
+nummer: R26-043
+datum: 2026-08-21
+storniert:
+  rechnungsnummer: R26-042
+  rechnungsdatum: 2026-08-14
+leistungszeitraum:
+  von: 2026-07-01
+  bis: 2026-07-31
+kunde:
+  name: Beispiel Software GmbH
+  anschrift:
+    strasse: Industriestraße 1
+    plz: "90402"
+    ort: Nürnberg
+  referenz: BST-2026-0815
+positionen:
+  # Negativ wird über die Menge, nie über den Einzelpreis: EN 16931 verbietet
+  # den negativen Einzelpreis (BR-27), weil er offenließe, ob Gutschrift,
+  # Rabatt oder Erfassungsfehler gemeint ist.
+  - bezeichnung: IT-Beratungsleistungen
+    beschreibung: Rahmenvertrag vom 01.02.2026
+    menge: -86.5
+    einheit: Std.
+    einzelpreis: 95.00
+  - bezeichnung: Fahrtkostenpauschale
+    hinweis: Juli 2026
+    menge: -1
+    einheit: pauschal
+    einzelpreis: 120.00
