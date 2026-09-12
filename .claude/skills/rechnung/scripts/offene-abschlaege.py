@@ -1,14 +1,20 @@
 #!/usr/bin/env python3
-"""Listet die Abschlagsrechnungen eines Kunden, die noch in keiner
-Schlussrechnung abgesetzt sind.
+"""Listet die Abschlagsrechnungen eines Kunden, die noch abzusetzen sind.
 
 Durchsucht das Ablageverzeichnis samt Jahresunterordnern nach YAML-Dateien.
-Offen ist eine Abschlagsrechnung (art: abschlagsrechnung) des Kunden, deren
-Nummer in keiner Schlussrechnung unter abschlaege/rechnungsnummer steht.
-Ausgabe je Treffer eine Zeile: Nummer, Datum, Datei – durch Tabulatoren
-getrennt, nach Nummer sortiert. Beträge gibt das Skript bewusst nicht aus:
-Die rechnet der Generator (rechnungsgenerator abschlaege), nicht dieses
-Skript.
+Offen ist eine Abschlagsrechnung (art: abschlagsrechnung) des Kunden, die
+nicht storniert ist und deren Nummer in keiner gültigen Schlussrechnung unter
+abschlaege/rechnungsnummer steht. Ausgabe je Treffer eine Zeile: Nummer,
+Datum, Datei – durch Tabulatoren getrennt, nach Nummer sortiert. Beträge gibt
+das Skript bewusst nicht aus: Die rechnet der Generator
+(rechnungsgenerator abschlaege), nicht dieses Skript.
+
+Stornos zählen mit (#66), in beide Richtungen: Eine stornierte
+Abschlagsrechnung ist nichts mehr, was abgesetzt werden könnte, und eine
+stornierte Schlussrechnung setzt nichts mehr ab – ihre Abschläge sind wieder
+offen. Nur das Skript kann das sehen: Der Generator liest beim Erzeugen eine
+einzige Datei (ADR-0001). Was dabei auffällt, steht auf stderr; stdout trägt
+nur die Liste.
 
 Aufruf:  offene-abschlaege.py <Ablageverzeichnis> <Kundenname>
 """
@@ -29,6 +35,17 @@ def als_text(nummer) -> str:
     return str(nummer)
 
 
+def genannt(nummern, eigenschaft: str = "") -> str:
+    # Derselbe Abschlag kann in mehreren Schlussrechnungen stehen – dann
+    # gehören alle in die Meldung, nicht bloß die erste. Dativ, damit sich der
+    # Satzbau der Meldung nicht nach der Anzahl richten muss: "in der
+    # stornierten Schlussrechnung X" / "in den stornierten Schlussrechnungen
+    # X, Y".
+    if len(nummern) == 1:
+        return f"der {eigenschaft}Schlussrechnung {nummern[0]}"
+    return f"den {eigenschaft}Schlussrechnungen " + ", ".join(nummern)
+
+
 def main() -> int:
     p = argparse.ArgumentParser()
     p.add_argument("verzeichnis", type=pathlib.Path)
@@ -40,7 +57,10 @@ def main() -> int:
         return 1
 
     abschlagsrechnungen = []
-    abgesetzt = set()
+    # Nummer der aufgehobenen Rechnung -> Nummer ihres Stornos.
+    storniert_durch = {}
+    # Nummer der Schlussrechnung -> Nummern der darin abgesetzten Abschläge.
+    schlussrechnungen = []
     # rglob wie bei naechste-nummer.py: Abschlag und Schlussrechnung liegen
     # oft in verschiedenen Jahrgängen.
     for datei in sorted(args.verzeichnis.rglob("*.yaml")):
@@ -63,9 +83,28 @@ def main() -> int:
         if art == "abschlagsrechnung":
             abschlagsrechnungen.append((datei, rechnung))
         elif art == "schlussrechnung":
+            abgesetzte = set()
             for abschlag in rechnung.get("abschlaege") or []:
                 if isinstance(abschlag, dict) and "rechnungsnummer" in abschlag:
-                    abgesetzt.add(als_text(abschlag["rechnungsnummer"]))
+                    abgesetzte.add(als_text(abschlag["rechnungsnummer"]))
+            schlussrechnungen.append((als_text(rechnung.get("nummer") or datei.name), abgesetzte))
+        elif art == "stornorechnung":
+            aufgehoben = rechnung.get("storniert")
+            if isinstance(aufgehoben, dict) and "rechnungsnummer" in aufgehoben:
+                # Ohne eigene Nummer wird der Dateiname genannt: Die Meldung
+                # soll das Storno auffindbar machen, auch wenn die Datei noch
+                # unfertig ist.
+                storniert_durch[als_text(aufgehoben["rechnungsnummer"])] = \
+                    als_text(rechnung.get("nummer") or datei.name)
+
+    # Erst jetzt, wo alle Dateien gelesen sind: Ein Storno darf in der
+    # Verzeichnisreihenfolge hinter seiner Schlussrechnung liegen.
+    abgesetzt_in = {}
+    freigegeben_von = {}
+    for nummer, abgesetzte in schlussrechnungen:
+        ziel = freigegeben_von if nummer in storniert_durch else abgesetzt_in
+        for abschlag in abgesetzte:
+            ziel.setdefault(abschlag, []).append(nummer)
 
     def kunde_von(rechnung) -> str:
         kunde = rechnung.get("kunde")
@@ -82,11 +121,34 @@ def main() -> int:
             print(f"Keine Abschlagsrechnung im Verzeichnis {args.verzeichnis}.", file=sys.stderr)
         return 0
 
-    offen = [(d, r) for d, r in des_kunden if als_text(r.get("nummer", "")) not in abgesetzt]
-    for datei, rechnung in sorted(offen, key=lambda t: als_text(t[1].get("nummer", ""))):
+    offen = []
+    for datei, rechnung in sorted(des_kunden, key=lambda t: als_text(t[1].get("nummer", ""))):
+        nummer = als_text(rechnung.get("nummer", ""))
+        storno = storniert_durch.get(nummer)
+        if storno:
+            if nummer in abgesetzt_in:
+                # Weder offen noch in Ordnung: Eine gültige Schlussrechnung
+                # setzt Geld ab, das der Kunde zurückbekommen hat.
+                print(f"Achtung: {nummer} ist durch {storno} storniert, wird aber in "
+                      f"{genannt(abgesetzt_in[nummer])} abgesetzt.", file=sys.stderr)
+            else:
+                print(f"{nummer} ist durch {storno} storniert – gilt nicht als offen.",
+                      file=sys.stderr)
+            continue
+        if nummer in abgesetzt_in:
+            continue
+        if nummer in freigegeben_von:
+            print(f"{nummer} war in {genannt(freigegeben_von[nummer], 'stornierten ')} "
+                  f"abgesetzt – gilt wieder als offen.", file=sys.stderr)
+        offen.append((datei, rechnung))
         print(f"{rechnung.get('nummer')}\t{rechnung.get('datum')}\t{datei}")
     if not offen:
-        print(f"Alle {len(des_kunden)} Abschlagsrechnungen an '{args.kunde}' sind schon abgesetzt.",
+        # "oder storniert" nur, wenn wirklich eines dabei war – sonst nennt die
+        # Meldung einen Grund, den es nicht gibt.
+        wie = ("abgesetzt oder storniert"
+               if any(als_text(r.get("nummer", "")) in storniert_durch for _, r in des_kunden)
+               else "abgesetzt")
+        print(f"Alle {len(des_kunden)} Abschlagsrechnungen an '{args.kunde}' sind schon {wie}.",
               file=sys.stderr)
     return 0
 
