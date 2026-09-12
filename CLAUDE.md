@@ -191,7 +191,10 @@ CV/Web-Auftritt des Autors), Validierung über veraPDF.
   Hand, und danach kann der Block geändert oder ganz von Hand geschrieben sein.
   Deshalb bleiben die Abbruchregeln im `InvoiceCalculator` – darunter die
   Prüfsumme `netto × satz = ust` und die Forderung, dass Kategorie und Satz in
-  der Schlussrechnung überhaupt vorkommen. Abgesetzt wird nur, was
+  der Schlussrechnung überhaupt vorkommen. Dieselbe Nummer zweimal fängt er
+  aber nur *innerhalb* einer Datei; dass zwei Schlussrechnungen denselben
+  Abschlag absetzen, sieht allein `offene-abschlaege.py` (#67), weil nur es das
+  Verzeichnis liest. Abgesetzt wird nur, was
   **vereinnahmt** ist (§14 Abs. 5 Satz 2 UStG); ein unbezahlter Abschlag ist
   eine offene Forderung.
 

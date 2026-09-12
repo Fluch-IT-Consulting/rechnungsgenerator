@@ -30,9 +30,13 @@ Nach Stornos musst du nicht selbst suchen, das Skript wertet sie aus: Eine
 stornierte Abschlagsrechnung steht nicht in der Liste, und die Abschläge einer
 stornierten Schlussrechnung stehen wieder darin. Beides vermerkt es auf stderr,
 und beides gibst du weiter – ein Abschlag, der fehlt oder unerwartet auftaucht,
-gehört erklärt. Eine Zeile, die mit **Achtung** beginnt, hältst du an: Da setzt
-eine gültige Schlussrechnung einen stornierten Abschlag ab, und das ist ein
-Fall für den Nutzer, nicht für die neue Rechnung.
+gehört erklärt.
+
+Eine Zeile, die mit **Achtung** beginnt, hältst du an. Dann widerspricht sich
+die Ablage, und zwar so, dass Geld daran hängt: Entweder setzt eine gültige
+Schlussrechnung einen stornierten Abschlag ab, oder zwei Schlussrechnungen
+setzen denselben ab. Beides ist ein Fall für den Nutzer, nicht für die neue
+Rechnung.
 
 **2. Vorlegen und fragen, welche abgesetzt werden.** Die Beträge liefert der
 Generator: Lass ihn über alle gefundenen Dateien laufen (Aufruf wie in

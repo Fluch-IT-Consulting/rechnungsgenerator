@@ -9,6 +9,10 @@ Datum, Datei – durch Tabulatoren getrennt, nach Nummer sortiert. Beträge gibt
 das Skript bewusst nicht aus: Die rechnet der Generator
 (rechnungsgenerator abschlaege), nicht dieses Skript.
 
+Zwei Widersprüche der Ablage meldet das Skript dabei, weil sie nur beim Lesen
+eines ganzen Verzeichnisses auffallen: ein Abschlag, den zwei Schlussrechnungen
+absetzen (#67), und einer, der storniert ist und trotzdem abgesetzt wird.
+
 Stornos zählen mit (#66), in beide Richtungen: Eine stornierte
 Abschlagsrechnung ist nichts mehr, was abgesetzt werden könnte, und eine
 stornierte Schlussrechnung setzt nichts mehr ab – ihre Abschläge sind wieder
@@ -136,6 +140,12 @@ def main() -> int:
                       file=sys.stderr)
             continue
         if nummer in abgesetzt_in:
+            if len(abgesetzt_in[nummer]) > 1:
+                # Der Generator lehnt dieselbe Nummer zweimal ab, aber nur
+                # innerhalb einer Datei (ADR-0001). Über Dateigrenzen sieht
+                # das nur, wer das Verzeichnis liest (#67).
+                print(f"Achtung: {nummer} wird mehrfach abgesetzt – in "
+                      f"{genannt(abgesetzt_in[nummer])}.", file=sys.stderr)
             continue
         if nummer in freigegeben_von:
             print(f"{nummer} war in {genannt(freigegeben_von[nummer], 'stornierten ')} "
