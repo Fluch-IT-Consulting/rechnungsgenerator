@@ -203,8 +203,15 @@ CV/Web-Auftritt des Autors), Validierung über veraPDF.
   wäre ein zweites Vokabular neben dem, das die Domäne schon hat, und zwänge
   beim Lesen zum Hin- und Herübersetzen – das Glossar gibt es genau deshalb.
   Die Ausnahme gilt eng: Alles ohne Fachbezug bleibt englisch, also `expected`
-  statt `erwartet`, `rows` statt `zeilen`, `message` statt `meldung`. Die Grenze
-  verläuft nicht an der Sprache, sondern daran, ob das Wort im Glossar steht.
+  statt `erwartet`, `rows` statt `zeilen`, `message` statt `meldung`.
+
+  Ein Wort im Glossar genügt dafür nicht – es muss auch **ohne eingebürgerte
+  englische Entsprechung** sein. `abschlag` hat keine: Wer `downPayment`
+  schreibt, hat nicht übersetzt, sondern eine zweite Deutung gewählt.
+  `Rechnungsnummer` dagegen heißt `invoiceNumber`, so wie EN 16931 sie führt
+  (BT-1), und so steht sie im Code seit jeher. Das Glossar zieht die Grenze der
+  Begriffe, nicht die der Bezeichner: Es sagt, dass es *Rechnungsnummer* heißt
+  und nicht *Belegnummer* – nicht, dass der Bezeichner deutsch sein muss.
 - Keine echten Firmen-/Kundendaten im Repo (Projekt wird ggf. öffentlich).
   Testdaten: fiktive Firma, Test-IBAN (DE89 3704 0044 …), erfundene USt-ID.
   Das gilt auch für **Beispiele in Dokumentation und Skills** – dort rutschen
