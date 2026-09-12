@@ -242,6 +242,12 @@ Das PDF nennt die Ursprungsrechnung oben rechts, trägt den Pflichtsatz, dass si
 vollständig aufgehoben ist, und lässt Fälligkeit und Bankverbindung weg – ein
 Storno fordert kein Geld, es kündigt eine Erstattung an.
 
+Eine stornierte **Abschlagsrechnung** ist damit auch aus dem Spiel: Sie taucht
+in `offene-abschlaege.py` nicht mehr als offen auf, und wird eine
+Schlussrechnung storniert, sind die darin abgesetzten Abschläge wieder offen.
+Das Skript sieht das, der Generator nicht – er liest beim Erzeugen eine einzige
+Datei.
+
 **Nur ganz, nicht teilweise.** Soll eine Rechnung bloß in einem Punkt berichtigt
 werden, ist das eine Rechnungskorrektur, und die gibt es hier nicht. Der übliche
 Weg ist: ganz stornieren und richtig neu stellen. Sprich es an, wenn das zu grob
