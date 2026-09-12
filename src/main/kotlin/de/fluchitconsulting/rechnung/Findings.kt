@@ -1,0 +1,114 @@
+package de.fluchitconsulting.rechnung
+
+/**
+ * Was bei der Prüfung einer Rechnung auffällt – ein Befund.
+ *
+ * Vorher warf der Calculator beim ersten Verstoß. Damit gehörten die
+ * Reihenfolge seiner Regeln und die vollständige Menge seiner Hinweise zu
+ * seiner Schnittstelle: Wer eine Regel prüfen wollte, brauchte eine Rechnung,
+ * die alle anderen besteht und keinen fremden Hinweis auslöst. Jetzt sammelt er
+ * und überlässt das Abbrechen dem Kommando.
+ */
+data class Finding(val rule: Rule, val subject: Subject, val message: String) {
+    val severity: Severity get() = rule.severity
+
+    /** Die Zeile, die ein Mensch zu sehen bekommt: Gegenstand, dann Meldung. */
+    fun describe(): String = subject.describe()?.let { "$it: $message" } ?: message
+}
+
+/**
+ * Wie ernst ein Befund ist.
+ *
+ * Beides in einer Liste statt in zweien: Zwei Listen derselben Gestalt werfen
+ * bei jedem neuen Fall die Frage auf, in welche er gehört.
+ */
+enum class Severity {
+    /** Die Rechnung entsteht nicht. */
+    ABORT,
+
+    /** Die Rechnung entsteht; der Hinweis betrifft die eigene Akte. */
+    HINT,
+}
+
+/**
+ * Worauf sich ein Befund bezieht. Als eigenes Feld und nicht im Meldungstext:
+ * Sonst stünde dieselbe Angabe zweimal da, und wer die Meldung weiterreicht
+ * (etwa `abschlaege` mit mehreren Dateien), klebte noch etwas davor.
+ */
+sealed interface Subject {
+    /** Der Vorspann der Zeile, oder `null` für die Rechnung als Ganzes. */
+    fun describe(): String?
+
+    /** Die Rechnung als Ganzes. */
+    data object WholeInvoice : Subject {
+        override fun describe(): String? = null
+    }
+
+    /** Eine Position, gezählt wie auf dem Papier: die erste ist Position 1. */
+    data class Item(val index: Int, val name: String) : Subject {
+        override fun describe(): String = "Position ${index + 1} ($name)"
+    }
+
+    /** Ein abgesetzter Abschlag, erkennbar an der Nummer seiner Rechnung. */
+    data class Prepayment(val invoiceNumber: String) : Subject {
+        override fun describe(): String = "Abschlag $invoiceNumber"
+    }
+}
+
+/**
+ * Die Regeln, die dieses Programm prüft – je eine Kennung.
+ *
+ * Deutsch benannt wie die Meldungen: Jede Regel ist ein Satz über die deutsche
+ * Rechnungsstellung, und die Hälfte der Wörter steht ohnehin im Glossar
+ * (`abschlag`, `vereinnahmt`, `restbetrag`). Ein englisches Vokabular daneben
+ * zwänge beim Lesen zum Übersetzen.
+ *
+ * Die Kennungen sind nicht nummeriert. Die zehn Nummern der Absetzung standen
+ * nur in Kommentaren und Testnamen und liefen dort schon auseinander.
+ */
+enum class Rule(val severity: Severity) {
+    // Positionen und Steuerkategorie
+    KEINE_POSITION(Severity.ABORT),
+    EINZELPREIS_NEGATIV(Severity.ABORT),
+    SATZ_MUSS_NULL_SEIN(Severity.ABORT),
+    REGELSATZ_MIT_NULL(Severity.ABORT),
+    BEFREIUNGSGRUND_UNZULAESSIG(Severity.ABORT),
+    BEFREIUNGSGRUND_FEHLT(Severity.ABORT),
+    BEFREIUNGSGRUENDE_UNEINHEITLICH(Severity.ABORT),
+    KUNDEN_UST_ID_FEHLT(Severity.ABORT),
+
+    // Zeiten
+    ZEITRAUM_VERDREHT(Severity.ABORT),
+    ZEITRAUM_NACH_RECHNUNGSDATUM(Severity.ABORT),
+    VEREINNAHMUNG_FALSCHE_ART(Severity.ABORT),
+    VEREINNAHMUNG_NACH_RECHNUNGSDATUM(Severity.ABORT),
+
+    // Absetzung der Abschläge
+    ABSCHLAEGE_FALSCHE_ART(Severity.ABORT),
+    ABSCHLAEGE_FEHLEN(Severity.ABORT),
+    ABSCHLAG_DOPPELT(Severity.ABORT),
+    ABSCHLAG_OHNE_VEREINNAHMUNG(Severity.ABORT),
+    ABSCHLAG_NACH_RECHNUNGSDATUM(Severity.ABORT),
+    ABSCHLAG_SPAETER_DATIERT(Severity.ABORT),
+    ABSCHLAG_OHNE_STEUERANTEILE(Severity.ABORT),
+    ABSCHLAG_PRUEFSUMME(Severity.ABORT),
+    ABSCHLAG_KOMBINATION_FEHLT(Severity.ABORT),
+    RESTBETRAG_NEGATIV(Severity.ABORT),
+
+    // Beträge und Fristen der Rechnung
+    GESAMTBETRAG_NEGATIV(Severity.ABORT),
+    ZAHLUNGSZIEL_NEGATIV(Severity.ABORT),
+
+    // Bestätigungsabfrage der USt-IdNr.
+    BESTAETIGUNGSABFRAGE_FEHLT(Severity.ABORT),
+    BESTAETIGUNGSABFRAGE_NACH_RECHNUNGSDATUM(Severity.ABORT),
+
+    // Hinweise: Die Rechnung entsteht trotzdem.
+    MENGE_NULL(Severity.HINT),
+    RECHNUNG_SPAET(Severity.HINT),
+    EU_LISTE_ALT(Severity.HINT),
+    KEIN_VIES_MOEGLICH(Severity.HINT),
+    ABFRAGE_EINFACH(Severity.HINT),
+    ABFRAGE_OHNE_NACHWEIS(Severity.HINT),
+    ABFRAGE_ALT(Severity.HINT),
+}
