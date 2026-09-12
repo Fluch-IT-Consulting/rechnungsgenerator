@@ -32,9 +32,9 @@ object InvoiceRenderer {
     // Ein Platzhalter der Vorlage: <<GROSSGESCHRIEBEN>>.
     private val PLACEHOLDER = Regex("<<[A-Z_]+>>")
 
-    fun render(calculated: CalculatedInvoice): String {
-        val invoice = calculated.invoice
-        val config = calculated.config
+    fun render(calculatedInvoice: CalculatedInvoice): String {
+        val invoice = calculatedInvoice.invoice
+        val config = calculatedInvoice.config
         val template = checkNotNull(javaClass.getResource(TEMPLATE_PATH)) { "Vorlage $TEMPLATE_PATH fehlt" }.readText()
 
         val values =
@@ -44,15 +44,15 @@ object InvoiceRenderer {
                 "KOPF_PERSON" to letterheadPerson(config),
                 "ABSENDER_KONTAKT" to senderContact(config),
                 "EMPFAENGER" to recipient(invoice, config),
-                "EMPFAENGER_RECHTS" to recipientSideBlock(calculated),
+                "EMPFAENGER_RECHTS" to recipientSideBlock(calculatedInvoice),
                 "DOKUMENTART" to invoice.type.documentName.escapeLatex(),
                 "RECHNUNGSNUMMER" to invoice.number.escapeLatex(),
                 "RECHNUNGSDATUM" to GermanFormat.date(invoice.issueDate),
-                "POSITIONEN" to lineItems(calculated),
-                "SUMMEN" to totalsBlock(calculated),
-                "ABSETZUNG" to deductionBlock(calculated),
+                "POSITIONEN" to lineItems(calculatedInvoice),
+                "SUMMEN" to totalsBlock(calculatedInvoice),
+                "ABSETZUNG" to deductionBlock(calculatedInvoice),
                 "ARTHINWEIS" to typeNote(invoice),
-                "STEUERHINWEISE" to taxNotes(calculated),
+                "STEUERHINWEISE" to taxNotes(calculatedInvoice),
                 "SCHLUSSSATZ" to (invoice.note ?: config.closingLine).escapeLatex(),
                 "BANKVERBINDUNG" to bankDetails(config),
                 "FUSSZEILE_OBEN" to footerCompanyLine(config),
@@ -112,12 +112,12 @@ object InvoiceRenderer {
      * Auch hier maskierte Werte: Ein `&` im Firmennamen zerlegte sonst die
      * Metadaten, und ohne gültige Metadaten gibt es kein PDF/A.
      */
-    fun renderMetadata(calculated: CalculatedInvoice): String {
-        val invoice = calculated.invoice
+    fun renderMetadata(calculatedInvoice: CalculatedInvoice): String {
+        val invoice = calculatedInvoice.invoice
         val document = invoice.type.documentName.escapeLatex() + " ".escapeLatex() + invoice.number.escapeLatex()
         return listOf(
             Latex.macro("Title", document),
-            Latex.macro("Author", calculated.config.companyName.escapeLatex()),
+            Latex.macro("Author", calculatedInvoice.config.companyName.escapeLatex()),
             Latex.macro("Subject", document + " vom ".escapeLatex() + GermanFormat.date(invoice.issueDate)),
             Latex.macro("Language", "de-DE".escapeLatex()),
         ).joinToLatex("\n").tex
@@ -194,9 +194,9 @@ object InvoiceRenderer {
      * frühere Block mit gesperrten Versalien hat oben rechts zu viel Unruhe
      * erzeugt. Das Rechnungsdatum steht jetzt im Titelbalken.
      */
-    private fun metadata(calculated: CalculatedInvoice): Latex =
+    private fun metadata(calculatedInvoice: CalculatedInvoice): Latex =
         buildList {
-            val invoice = calculated.invoice
+            val invoice = calculatedInvoice.invoice
             // Pflichtangabe nach §14 Abs. 4 Nr. 6 UStG. Wie der Zeitraum heißt,
             // hängt an der Rechnungsart – siehe InvoiceType.servicePeriodLabel.
             // \mbox: Im schmalen Block oben rechts bricht "Juni bis Oktober 2026"
@@ -215,7 +215,7 @@ object InvoiceRenderer {
             //
             // Ob es ein Zahlungsziel gibt, entscheidet der Calculator; hier wird
             // nur gesetzt, was dasteht.
-            calculated.dueDate?.let { add("Zahlbar ohne Abzug bis ".escapeLatex() + GermanFormat.date(it)) }
+            calculatedInvoice.dueDate?.let { add("Zahlbar ohne Abzug bis ".escapeLatex() + GermanFormat.date(it)) }
         }.joinToLatex(BR)
 
     // Die Zeilen werden mit \\ VERBUNDEN, nicht damit abgeschlossen: Ein
@@ -223,12 +223,12 @@ object InvoiceRenderer {
     //
     // 2.5mm statt 1.5mm: Sobald eine Position eine Zusatzzeile hat, verschmilzt
     // sie bei knappem Abstand optisch mit der nächsten Position.
-    private fun lineItems(calculated: CalculatedInvoice): Latex =
-        calculated.lines
+    private fun lineItems(calculatedInvoice: CalculatedInvoice): Latex =
+        calculatedInvoice.lines
             .map { line ->
                 val item = line.item
                 listOf(
-                    describeItem(item, calculated.invoice.type),
+                    describeItem(item, calculatedInvoice.invoice.type),
                     GermanFormat.quantity(item.quantity),
                     item.unit.label.escapeLatex(),
                     GermanFormat.priceWithCurrency(item.unitPrice),
@@ -268,17 +268,17 @@ object InvoiceRenderer {
      * "zzgl. 0 % USt. 0,00 €" – das sähe aus wie ein Rechenfehler oder eine
      * vergessene Zeile. Warum keine Steuer anfällt, sagt [taxNotes] darunter.
      */
-    private fun totalsBlock(calculated: CalculatedInvoice): Latex =
+    private fun totalsBlock(calculatedInvoice: CalculatedInvoice): Latex =
         buildList {
-            add("Nettobetrag".escapeLatex() to GermanFormat.amountWithCurrency(calculated.netTotal))
-            calculated.vatGroups.filterNot { it.amount.isZero() }.forEach { group ->
+            add("Nettobetrag".escapeLatex() to GermanFormat.amountWithCurrency(calculatedInvoice.netTotal))
+            calculatedInvoice.vatGroups.filterNot { it.amount.isZero() }.forEach { group ->
                 // Das Prozentzeichen ist maskiert, bevor es hier ankommt –
                 // GermanFormat.percent liefert ein fertiges Fragment.
                 val label = "zzgl. ".escapeLatex() + GermanFormat.percent(group.rate) + " USt.".escapeLatex()
                 add(label to GermanFormat.amountWithCurrency(group.amount))
             }
         }.map { (label, value) -> Latex.raw("  ") + label + Latex.raw(" & ") + value }
-            .joinToLatex(" $BR[1mm]\n") + summaryRow("Gesamtbetrag", calculated.grossTotal)
+            .joinToLatex(" $BR[1mm]\n") + summaryRow("Gesamtbetrag", calculatedInvoice.grossTotal)
 
     /**
      * Die Absetzung der vereinnahmten Abschläge – der Block unter dem
@@ -294,13 +294,13 @@ object InvoiceRenderer {
      * genügen, aber der Kunde soll sehen, welche seiner Zahlungen abgesetzt
      * wurde – und die Zeilen liegen ohnehin im Modell.
      */
-    private fun deductionBlock(calculated: CalculatedInvoice): Latex {
-        if (calculated.prepayments.isEmpty()) return Latex.EMPTY
+    private fun deductionBlock(calculatedInvoice: CalculatedInvoice): Latex {
+        if (calculatedInvoice.prepayments.isEmpty()) return Latex.EMPTY
 
         // 2.5mm wie bei den Positionen: Jede Zeile hat eine Zusatzzeile, und bei
         // knapperem Abstand verschmilzt sie optisch mit der nächsten.
         val rows =
-            calculated.prepayments
+            calculatedInvoice.prepayments
                 .map { abgesetzt ->
                     Latex.raw("  ") + describePrepayment(abgesetzt.prepayment) + Latex.raw(" & ") +
                         "\u2212".escapeLatex() + GermanFormat.amountWithCurrency(abgesetzt.gross)
@@ -310,7 +310,7 @@ object InvoiceRenderer {
         // nacktes "0,00 €" unter dem Strich sieht aus wie ein Fehler, nicht wie
         // ein ausgeglichener Betrag.
         val (closingRow, trailingNote) =
-            if (calculated.remainingAmount.isZero()) {
+            if (calculatedInvoice.remainingAmount.isZero()) {
                 Latex.EMPTY to
                     Latex.raw("\n\n") +
                     Latex.macro(
@@ -321,7 +321,7 @@ object InvoiceRenderer {
                         ).escapeLatex(),
                     )
             } else {
-                summaryRow("Restbetrag", calculated.remainingAmount) to Latex.EMPTY
+                summaryRow("Restbetrag", calculatedInvoice.remainingAmount) to Latex.EMPTY
             }
 
         return Latex.macro("absetzungskopf", "Abzüglich der berechneten und vereinnahmten Abschläge:".escapeLatex()) +
@@ -380,8 +380,8 @@ object InvoiceRenderer {
      * den Hinweis auf die Steuerschuldnerschaft des Leistungsempfängers
      * ausdrücklich auf der Rechnung.
      */
-    private fun taxNotes(calculated: CalculatedInvoice): Latex =
-        calculated.vatGroups
+    private fun taxNotes(calculatedInvoice: CalculatedInvoice): Latex =
+        calculatedInvoice.vatGroups
             .filter { it.amount.isZero() && it.exemptionReason != null }
             .map { group ->
                 "Auf ".escapeLatex() + GermanFormat.amountWithCurrency(group.base) +
@@ -424,13 +424,13 @@ object InvoiceRenderer {
      * "Geschäftsführung" statt "Geschäftsführer": Die Bezeichnung steht neben
      * einem Namen, dessen Geschlecht die Konfiguration nicht kennt.
      */
-    private fun recipientSideBlock(calculated: CalculatedInvoice): Latex =
+    private fun recipientSideBlock(calculatedInvoice: CalculatedInvoice): Latex =
         buildList {
-            val config = calculated.config
+            val config = calculatedInvoice.config
             config.managingDirector?.let {
                 add("Geschäftsführung".escapeLatex() + Latex.raw(BR) + it.escapeLatex())
             }
-            add(metadata(calculated))
+            add(metadata(calculatedInvoice))
         }.joinToLatex("$BR[3mm]")
 
     /** Erste Fußzeile: Firmierung, Sitz und die Angaben nach §35a GmbHG. */

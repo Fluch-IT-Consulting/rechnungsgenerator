@@ -42,8 +42,8 @@ class ItemRulesTest : FunSpec({
         // Mit dem Einzelpreis ist nur noch eine negative Menge übrig, die dahin
         // führt. Eine Rechnung über einen negativen Betrag wäre eine
         // Gutschrift, und die gibt es noch nicht.
-        val calculated = InvoiceCalculator.calculate(testInvoice(items = listOf(testItem(quantity = "-1"))), config)
-        val message = calculated.messageOf(Rule.GESAMTBETRAG_NEGATIV)
+        val calculatedInvoice = InvoiceCalculator.calculate(testInvoice(items = listOf(testItem(quantity = "-1"))), config)
+        val message = calculatedInvoice.messageOf(Rule.GESAMTBETRAG_NEGATIV)
 
         message shouldContain "Gesamtbetrag"
         message shouldContain "Gutschrift"
@@ -52,7 +52,7 @@ class ItemRulesTest : FunSpec({
         message shouldNotContain "Abschläge"
         // Und sie meldet sich auch nicht daneben: Seit alle Befunde erscheinen
         // (#49), fiele eine zweite, unsinnige Zeile sofort auf.
-        calculated.rules() shouldNotContain Rule.RESTBETRAG_NEGATIV
+        calculatedInvoice.rules() shouldNotContain Rule.RESTBETRAG_NEGATIV
     }
 
     test("eine negative Korrekturzeile bleibt zulässig, solange der Gesamtbetrag es ist") {

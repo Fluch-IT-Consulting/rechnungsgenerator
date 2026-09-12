@@ -479,13 +479,13 @@ object InvoiceCalculator {
      * Die Absetzung gegen die Rechnung selbst – die beiden Regeln, die die
      * Summen brauchen.
      */
-    private fun validateDeduction(calculated: CalculatedInvoice): List<Finding> =
+    private fun validateDeduction(calculatedInvoice: CalculatedInvoice): List<Finding> =
         buildList {
-            val prepayments = calculated.prepayments
+            val prepayments = calculatedInvoice.prepayments
             // Zwei Positionen mit 0 % können steuerlich Verschiedenes bedeuten,
             // deshalb muss die Kombination aus Kategorie und Satz passen – nicht
             // nur der Satz.
-            val present = calculated.vatGroups.map { it.category to it.rate }.toSet()
+            val present = calculatedInvoice.vatGroups.map { it.category to it.rate }.toSet()
             prepayments.forEach { abgesetzt ->
                 abgesetzt.prepayment.taxShares.forEach { anteil ->
                     if ((anteil.taxCategory to anteil.vatRate) !in present) {
@@ -510,13 +510,13 @@ object InvoiceCalculator {
             // fiel das nicht auf, weil der erste Wurf gewann – seit alle Befunde
             // erscheinen, stünde hier sonst "mehr Abschläge abgesetzt (0.00)"
             // unter einer Rechnung, die gar keine hat (#47).
-            if (prepayments.isNotEmpty() && calculated.remainingAmount.isNegative()) {
+            if (prepayments.isNotEmpty() && calculatedInvoice.remainingAmount.isNegative()) {
                 add(
                     Finding(
                         Rule.RESTBETRAG_NEGATIV,
                         Subject.WholeInvoice,
-                        "Der Restbetrag wäre ${calculated.remainingAmount}: Es sind mehr Abschläge abgesetzt " +
-                            "(${calculated.prepaymentTotal}) als die Schlussrechnung ausmacht (${calculated.grossTotal}). " +
+                        "Der Restbetrag wäre ${calculatedInvoice.remainingAmount}: Es sind mehr Abschläge abgesetzt " +
+                            "(${calculatedInvoice.prepaymentTotal}) als die Schlussrechnung ausmacht (${calculatedInvoice.grossTotal}). " +
                             "Eine Überzahlung gehört in eine Gutschrift, nicht in eine Rechnung.",
                     ),
                 )
