@@ -2,7 +2,6 @@ package de.fluchitconsulting.rechnung
 
 import de.fluchitconsulting.rechnung.values.InvoiceType
 import de.fluchitconsulting.rechnung.values.Money
-import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.string.shouldContain
@@ -31,25 +30,22 @@ class PrepaymentRulesTest : FunSpec({
     }
 
     test("vereinnahmt-am gehört nur auf eine Abschlagsrechnung") {
-        val exception =
-            shouldThrow<InvoiceValidationException> {
-                InvoiceCalculator.calculate(testInvoice(receivedOn = LocalDate.of(2026, 8, 10)), config)
-            }
+        val message =
+            InvoiceCalculator
+                .calculate(testInvoice(receivedOn = LocalDate.of(2026, 8, 10)), config)
+                .messageOf(Rule.VEREINNAHMUNG_FALSCHE_ART)
 
-        exception.message!! shouldContain "abschlagsrechnung"
-        exception.message!! shouldContain "Rechnung"
+        message shouldContain "abschlagsrechnung"
+        message shouldContain "Rechnung"
     }
 
     test("die Meldung nennt das Dokument, auf dem die Angabe steht") {
-        val exception =
-            shouldThrow<InvoiceValidationException> {
-                InvoiceCalculator.calculate(
-                    testInvoice(type = InvoiceType.FINAL, receivedOn = LocalDate.of(2026, 8, 10)),
-                    config,
-                )
-            }
+        val message =
+            InvoiceCalculator
+                .calculate(testInvoice(type = InvoiceType.FINAL, receivedOn = LocalDate.of(2026, 8, 10)), config)
+                .messageOf(Rule.VEREINNAHMUNG_FALSCHE_ART)
 
-        exception.message!! shouldContain "Schlussrechnung"
+        message shouldContain "Schlussrechnung"
     }
 
     test("eine Vereinnahmung nach dem Rechnungsdatum belegt für diese Rechnung nichts") {
@@ -62,8 +58,8 @@ class PrepaymentRulesTest : FunSpec({
                 receivedOn = LocalDate.of(2026, 8, 15),
             )
 
-        val exception = shouldThrow<InvoiceValidationException> { InvoiceCalculator.calculate(invoice, config) }
+        val message = InvoiceCalculator.calculate(invoice, config).messageOf(Rule.VEREINNAHMUNG_NACH_RECHNUNGSDATUM)
 
-        exception.message!! shouldContain "2026-08-15"
+        message shouldContain "2026-08-15"
     }
 })

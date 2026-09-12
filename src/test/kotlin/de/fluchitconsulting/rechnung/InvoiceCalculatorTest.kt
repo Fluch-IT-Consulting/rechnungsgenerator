@@ -1,7 +1,6 @@
 package de.fluchitconsulting.rechnung
 
 import de.fluchitconsulting.rechnung.values.Money
-import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.string.shouldContain
@@ -75,9 +74,9 @@ class InvoiceCalculatorTest : FunSpec({
         // 14. August (#47). Die Meldung nennt, woher der Wert kommt.
         test("ein negatives Zahlungsziel in der Rechnung wird abgelehnt") {
             val message =
-                shouldThrow<InvoiceValidationException> {
-                    InvoiceCalculator.calculate(testInvoice(paymentTermDaysOverride = -5), config)
-                }.message!!
+                InvoiceCalculator
+                    .calculate(testInvoice(paymentTermDaysOverride = -5), config)
+                    .messageOf(Rule.ZAHLUNGSZIEL_NEGATIV)
 
             message shouldContain "-5"
             message shouldContain "Rechnung"
@@ -85,9 +84,9 @@ class InvoiceCalculatorTest : FunSpec({
 
         test("ebenso eines aus den Stammdaten") {
             val message =
-                shouldThrow<InvoiceValidationException> {
-                    InvoiceCalculator.calculate(testInvoice(), testSellerConfig(paymentTermDays = -5))
-                }.message!!
+                InvoiceCalculator
+                    .calculate(testInvoice(), testSellerConfig(paymentTermDays = -5))
+                    .messageOf(Rule.ZAHLUNGSZIEL_NEGATIV)
 
             message shouldContain "-5"
             message shouldContain "Stammdaten"

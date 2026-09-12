@@ -86,16 +86,6 @@ data class CalculatedInvoice(
     val findings: List<Finding> = emptyList(),
 ) {
     /**
-     * Die Hinweise als fertige Zeilen – Brücke, bis die Kommandos die Befunde
-     * selbst auswerten (#49). Danach entfällt sie.
-     *
-     * Hinweise betreffen den Rechnungssteller, nicht den Kunden: Sie stehen
-     * nicht auf dem PDF, sondern nennen Nachweise für die eigene Akte und
-     * Angaben, die zwar zulässig, aber erklärungsbedürftig sind.
-     */
-    val hints: List<String> get() = findings.filter { it.severity == Severity.HINT }.map { it.describe() }
-
-    /**
      * Die vereinbarte Zahlungsfrist in Tagen: die der Rechnung, sonst die der
      * Stammdaten. Abgeleitet und nicht kopiert – als eigenes Feld wäre es
      * dieselbe Angabe ein zweites Mal, und die zweite kann abweichen.
@@ -203,15 +193,7 @@ object InvoiceCalculator {
         // die Summen aus.
         val ohneAbsetzung =
             CalculatedInvoice(invoice, config, lines, netTotal, vatGroups, grossTotal, prepayments, findings)
-        val calculated = ohneAbsetzung.copy(findings = findings + validateDeduction(ohneAbsetzung))
-
-        // Brücke bis zum letzten Schritt von #49: Solange die Kommandos die
-        // Befunde noch nicht selbst auswerten, bricht der Calculator weiter beim
-        // ersten Abbruch ab – mit derselben Meldung wie bisher.
-        calculated.findings
-            .firstOrNull { it.severity == Severity.ABORT }
-            ?.let { throw InvoiceValidationException(it.describe()) }
-        return calculated
+        return ohneAbsetzung.copy(findings = findings + validateDeduction(ohneAbsetzung))
     }
 
     /**
@@ -522,7 +504,13 @@ object InvoiceCalculator {
 
             // Eine Überzahlung ist kein Restbetrag, sondern ein anderes Dokument –
             // Gutschrift oder Storno, beides gibt es hier noch nicht.
-            if (calculated.remainingAmount.isNegative()) {
+            //
+            // Nur bei Abschlägen: Ohne sie ist ein negativer Restbetrag schlicht
+            // ein negativer Gesamtbetrag, und den meldet die Regel dafür. Vorher
+            // fiel das nicht auf, weil der erste Wurf gewann – seit alle Befunde
+            // erscheinen, stünde hier sonst "mehr Abschläge abgesetzt (0.00)"
+            // unter einer Rechnung, die gar keine hat (#47).
+            if (prepayments.isNotEmpty() && calculated.remainingAmount.isNegative()) {
                 add(
                     Finding(
                         Rule.RESTBETRAG_NEGATIV,

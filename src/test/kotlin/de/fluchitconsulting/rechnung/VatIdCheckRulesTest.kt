@@ -8,10 +8,10 @@ import de.fluchitconsulting.rechnung.values.CountryCode
 import de.fluchitconsulting.rechnung.values.EuMemberStates
 import de.fluchitconsulting.rechnung.values.TaxCategory
 import de.fluchitconsulting.rechnung.values.VatId
-import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.collections.shouldBeEmpty
-import io.kotest.matchers.shouldBe
+import io.kotest.matchers.collections.shouldContain
+import io.kotest.matchers.collections.shouldNotContain
 import io.kotest.matchers.string.shouldContain
 import java.time.LocalDate
 
@@ -50,15 +50,15 @@ class VatIdCheckRulesTest : FunSpec({
         )
 
     test("Reverse Charge in die EU ohne Nachweis wird abgelehnt") {
-        shouldThrow<InvoiceValidationException> {
-            InvoiceCalculator.calculate(rechnung("AT", TaxCategory.REVERSE_CHARGE), config)
-        }.message!! shouldContain "Bestätigungsabfrage"
+        InvoiceCalculator
+            .calculate(rechnung("AT", TaxCategory.REVERSE_CHARGE), config)
+            .messageOf(Rule.BESTAETIGUNGSABFRAGE_FEHLT) shouldContain "Bestätigungsabfrage"
     }
 
     test("Reverse Charge in die EU mit Nachweis geht durch") {
         val totals = InvoiceCalculator.calculate(rechnung("AT", TaxCategory.REVERSE_CHARGE, geprueft), config)
 
-        totals.hints.shouldBeEmpty()
+        totals.hints().shouldBeEmpty()
     }
 
     test("Reverse Charge ins Drittland verlangt keinen VIES-Nachweis") {
@@ -70,22 +70,21 @@ class VatIdCheckRulesTest : FunSpec({
                 config,
             )
 
-        totals.hints.single() shouldContain "Unternehmerbescheinigung"
+        totals.messageOf(Rule.KEIN_VIES_MOEGLICH) shouldContain "Unternehmerbescheinigung"
     }
 
     test("innergemeinschaftliche Lieferung verlangt den Nachweis auch im Drittland-Fall") {
         // §6a UStG kennt hier keinen Spielraum.
-        shouldThrow<InvoiceValidationException> {
-            InvoiceCalculator.calculate(rechnung("AT", TaxCategory.INTRA_COMMUNITY), config)
-        }
+        InvoiceCalculator.calculate(rechnung("AT", TaxCategory.INTRA_COMMUNITY), config).rules() shouldContain
+            Rule.BESTAETIGUNGSABFRAGE_FEHLT
     }
 
     test("eine Abfrage nach dem Rechnungsdatum belegt nichts") {
         val spaeter = geprueft.copy(date = LocalDate.of(2026, 12, 1))
 
-        shouldThrow<InvoiceValidationException> {
-            InvoiceCalculator.calculate(rechnung("AT", TaxCategory.REVERSE_CHARGE, spaeter), config)
-        }.message!! shouldContain "nach dem Rechnungsdatum"
+        InvoiceCalculator
+            .calculate(rechnung("AT", TaxCategory.REVERSE_CHARGE, spaeter), config)
+            .messageOf(Rule.BESTAETIGUNGSABFRAGE_NACH_RECHNUNGSDATUM) shouldContain "nach dem Rechnungsdatum"
     }
 
     test("die einfache Abfrage wird angenommen, aber angemerkt") {
@@ -93,7 +92,7 @@ class VatIdCheckRulesTest : FunSpec({
 
         val totals = InvoiceCalculator.calculate(rechnung("AT", TaxCategory.REVERSE_CHARGE, einfach), config)
 
-        totals.hints.single() shouldContain "Vertrauensschutz"
+        totals.messageOf(Rule.ABFRAGE_EINFACH) shouldContain "Vertrauensschutz"
     }
 
     test("eine Abfrage ohne Protokoll wird angemerkt") {
@@ -101,8 +100,7 @@ class VatIdCheckRulesTest : FunSpec({
 
         InvoiceCalculator
             .calculate(rechnung("AT", TaxCategory.REVERSE_CHARGE, ohneNachweis), config)
-            .hints
-            .single() shouldContain "kein Nachweis"
+            .messageOf(Rule.ABFRAGE_OHNE_NACHWEIS) shouldContain "kein Nachweis"
     }
 
     test("eine alte Abfrage wird angemerkt, aber nicht abgelehnt") {
@@ -110,15 +108,14 @@ class VatIdCheckRulesTest : FunSpec({
 
         val totals = InvoiceCalculator.calculate(rechnung("AT", TaxCategory.REVERSE_CHARGE, alt), config)
 
-        totals.hints.single() shouldContain "Monate alt"
+        totals.messageOf(Rule.ABFRAGE_ALT) shouldContain "Monate alt"
     }
 
     test("Griechenland zählt unter beiden Ländercodes zur EU") {
         // ISO 3166 kennt GR, die Umsatzsteuer-Systeme verwenden EL.
         listOf("GR", "EL").forEach { land ->
-            shouldThrow<InvoiceValidationException> {
-                InvoiceCalculator.calculate(rechnung(land, TaxCategory.REVERSE_CHARGE), config)
-            }
+            InvoiceCalculator.calculate(rechnung(land, TaxCategory.REVERSE_CHARGE), config).rules() shouldContain
+                Rule.BESTAETIGUNGSABFRAGE_FEHLT
         }
     }
 
@@ -132,11 +129,11 @@ class VatIdCheckRulesTest : FunSpec({
                 config,
             )
 
-        totals.hints.shouldBeEmpty()
+        totals.hints().shouldBeEmpty()
     }
 
     test("Regelsatz braucht überhaupt keine Abfrage") {
-        InvoiceCalculator.calculate(testInvoice(), config).hints.shouldBeEmpty()
+        InvoiceCalculator.calculate(testInvoice(), config).hints().shouldBeEmpty()
     }
 
     context("Alter der EU-Liste") {
@@ -149,13 +146,13 @@ class VatIdCheckRulesTest : FunSpec({
         test("frische Liste erzeugt keinen Hinweis auf ihr Alter") {
             val totals = InvoiceCalculator.calculate(rechnungAm(EuMemberStates.AS_OF.plusMonths(6)), config)
 
-            totals.hints.none { it.contains("Mitgliedstaaten ist") } shouldBe true
+            totals.rules() shouldNotContain Rule.EU_LISTE_ALT
         }
 
         test("ab zwölf Monaten wird zum Abgleich aufgefordert") {
             val totals = InvoiceCalculator.calculate(rechnungAm(EuMemberStates.AS_OF.plusMonths(13)), config)
 
-            totals.hints.any { it.contains("13 Monate alt") } shouldBe true
+            totals.messageOf(Rule.EU_LISTE_ALT) shouldContain "13 Monate alt"
         }
 
         test("bei einer Inlandsrechnung bleibt die Liste unerwähnt") {
@@ -173,7 +170,7 @@ class VatIdCheckRulesTest : FunSpec({
                     )
                 }
 
-            InvoiceCalculator.calculate(inland, config).hints.shouldBeEmpty()
+            InvoiceCalculator.calculate(inland, config).hints().shouldBeEmpty()
         }
     }
 })

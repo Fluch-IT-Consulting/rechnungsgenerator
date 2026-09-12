@@ -3,6 +3,7 @@ package de.fluchitconsulting.rechnung
 import de.fluchitconsulting.rechnung.values.InvoiceType
 import de.fluchitconsulting.rechnung.values.Money
 import io.kotest.core.spec.style.FunSpec
+import io.kotest.matchers.collections.shouldBeEmpty
 import io.kotest.matchers.shouldBe
 import java.io.File
 
@@ -54,11 +55,12 @@ class SkillBeispieleTest : FunSpec({
 
         val schlussrechnung = invoices.last()
         val totals = InvoiceCalculator.calculate(schlussrechnung, config)
+        totals.aborts().shouldBeEmpty()
         totals.grossTotal shouldBe Money("23800.00")
         totals.remainingAmount shouldBe Money("19040.00")
 
         // Und die beiden anderen wenigstens durchrechnen lassen: Auch eine
         // gültige Datei kann eine widersprüchliche Rechnung beschreiben.
-        invoices.dropLast(1).forEach { InvoiceCalculator.calculate(it, config) }
+        invoices.dropLast(1).forEach { InvoiceCalculator.calculate(it, config).aborts().shouldBeEmpty() }
     }
 })
