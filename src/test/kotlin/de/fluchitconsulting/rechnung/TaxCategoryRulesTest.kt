@@ -93,6 +93,16 @@ class TaxCategoryRulesTest : FunSpec({
         message shouldContain "angegeben ist 19%"
     }
 
+    test("ein Befreiungsgrund bei einer Kategorie ohne Befreiung wird abgelehnt") {
+        // S ist der Regelsatz. Ein Steuerbefreiungsgrund daneben heißt: Entweder
+        // stimmt die Kategorie nicht oder der Grund gehört nicht dorthin – so
+        // oder so soll es niemand auf dem PDF lesen.
+        val invoice = testInvoice(items = listOf(testItem(taxExemptionReason = "Steuerfrei nach §4 Nr. 21 UStG")))
+
+        InvoiceCalculator.calculate(invoice, config).messageOf(Rule.BEFREIUNGSGRUND_UNZULAESSIG) shouldContain
+            "keinen Steuerbefreiungsgrund"
+    }
+
     test("Regelsatz mit 0 % weist auf die vermutlich gemeinte Kategorie hin") {
         val invoice = testInvoice(items = listOf(testItem(vatRate = "0")))
 
