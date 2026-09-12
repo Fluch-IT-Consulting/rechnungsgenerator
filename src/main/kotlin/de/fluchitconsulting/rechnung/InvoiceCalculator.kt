@@ -194,6 +194,65 @@ object InvoiceCalculator {
     }
 
     /**
+     * Die Form der Rechnungsnummer (ADR-0005).
+     *
+     * Warum hier und nicht beim Einlesen: Ob eine Nummer gültig ist, hängt an
+     * zwei Dateien – der Rechnung und den Stammdaten. Ein Serialisierer sieht
+     * immer nur eine.
+     *
+     * Warum nicht auch die Nummern der abgesetzten Abschläge: Die stammen aus
+     * früheren Rechnungen, womöglich aus der Zeit vor einem Wechsel des
+     * Musters. Gegen das heutige Muster geprüft, hielte eine korrekte alte
+     * Nummer die Schlussrechnung auf.
+     *
+     * Die drei Regeln stehen in einer eigenen Funktion, weil eine die nächste
+     * erübrigt: Eine fehlende Nummer passt zu keinem Muster, und das zu melden
+     * hieße, denselben Fehler zweimal zu nennen. `return` statt eines
+     * Mechanismus zur Unterdrückung – dieselbe Wahl wie bei den Abschlägen.
+     */
+    private fun validateInvoiceNumber(invoice: Invoice, config: SellerConfig): List<Finding> {
+        val number = invoice.number
+
+        // Leer und Leerraum gelten unabhängig vom Muster, also auch ohne
+        // Eintrag in den Stammdaten: Aus der Nummer entsteht der Dateiname des
+        // PDF, und ein gequotetes ' R26-009' ergäbe still eine andere Datei.
+        if (number.isBlank()) {
+            return listOf(
+                Finding(
+                    Rule.RECHNUNGSNUMMER_FEHLT,
+                    Subject.WholeInvoice,
+                    "Die Rechnungsnummer fehlt – 'nummer' ist leer. Aus ihr entsteht auch der Dateiname des PDF.",
+                ),
+            )
+        }
+        if (number != number.trim()) {
+            return listOf(
+                Finding(
+                    Rule.RECHNUNGSNUMMER_MIT_LEERRAUM,
+                    Subject.WholeInvoice,
+                    "Die Rechnungsnummer '$number' beginnt oder endet mit Leerraum. Nur ein gequoteter " +
+                        "YAML-Wert kann ihn tragen; gemeint war vermutlich '${number.trim()}'.",
+                ),
+            )
+        }
+
+        // Ohne Muster in den Stammdaten wird die Form nicht geprüft: Welche
+        // Nummern gültig sind, weiß nur der Rechnungssteller.
+        val muster = config.invoiceNumberPattern ?: return emptyList()
+        if (!muster.matches(number)) {
+            return listOf(
+                Finding(
+                    Rule.RECHNUNGSNUMMER_PASST_NICHT,
+                    Subject.WholeInvoice,
+                    "Die Rechnungsnummer '$number' passt nicht zum Muster '$muster' aus den Stammdaten " +
+                        "('rechnungsnummer-muster').",
+                ),
+            )
+        }
+        return emptyList()
+    }
+
+    /**
      * Die Regeln, die EN 16931 an die Steuerkategorie knüpft. Sie hier zu prüfen
      * und nicht erst beim ZUGFeRD-Export hat einen praktischen Grund: Eine
      * Rechnung mit "AE" und 19 % ginge sonst als PDF hinaus und fiele erst dem
@@ -201,6 +260,8 @@ object InvoiceCalculator {
      */
     private fun validate(invoice: Invoice, config: SellerConfig): List<Finding> =
         buildList {
+            addAll(validateInvoiceNumber(invoice, config))
+
             // EN 16931 BR-16. Ohne Position entstünde eine Rechnung über 0,00 €.
             if (invoice.items.isEmpty()) {
                 add(

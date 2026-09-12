@@ -20,3 +20,6 @@ bank:
   bic: MUSTDEFFXXX
   institut: Musterbank Würzburg
 zahlungsziel-tage: 14
+# Welche Rechnungsnummern gültig sind, legt der Rechnungssteller fest – ohne
+# diesen Schlüssel wird die Form nicht geprüft (ADR-0005).
+rechnungsnummer-muster: 'R\d{2}-\d{3}'

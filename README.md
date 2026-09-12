@@ -91,6 +91,28 @@ Zulässig, aber verdächtig sind eine Position mit Menge 0 und eine Rechnung, di
 mehr als sechs Monate nach dem Ende der Leistung kommt (§14 Abs. 2 UStG). Dafür
 gibt es einen Hinweis nach dem Ergebnis; die Rechnung entsteht trotzdem.
 
+### Die Rechnungsnummer
+
+Sie darf nicht leer sein und keinen Leerraum am Rand tragen – aus ihr entsteht
+auch der Dateiname des PDF. Welche Nummern darüber hinaus gültig sind, weiß nur
+der Rechnungssteller: UStAE 14.5 Abs. 10 erlaubt Ziffern und Buchstaben und
+verlangt keine lückenlose Abfolge. Die Stammdaten dürfen deshalb ein Muster
+tragen, und ohne Eintrag wird die Form nicht geprüft:
+
+```yaml
+rechnungsnummer-muster: 'R\d{2}-\d{3}'    # optional
+```
+
+Der Ausdruck muss die **ganze** Nummer überdecken; Anker (`^` und `$`) sind
+erlaubt, aber überflüssig. Mehrere Nummernkreise (UStAE 14.5 Abs. 11) stehen als
+Alternative darin: `(R|G)\d{2}-\d{3}`. Passt eine Nummer nicht, bricht der Lauf
+ab – das Muster hat der Rechnungssteller selbst eingetragen.
+
+Die Nummern der in einer Schlussrechnung abgesetzten Abschläge bleiben
+ungeprüft: Sie stammen aus früheren Rechnungen, womöglich aus der Zeit vor einem
+Wechsel des Musters. Die Einmaligkeit einer Nummer (§14 Abs. 4 Satz 1 Nr. 4
+UStG) prüft der Generator nicht – beim Erzeugen sieht er eine einzige Datei.
+
 ### Rechnungsarten
 
 `art` sagt, worüber abgerechnet wird. Ohne Angabe ist es die gewöhnliche

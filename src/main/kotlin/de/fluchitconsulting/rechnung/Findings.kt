@@ -78,6 +78,11 @@ sealed interface Subject {
  * nur in Kommentaren und Testnamen und liefen dort schon auseinander.
  */
 enum class Rule(val severity: Severity) {
+    // Die Form der Rechnungsnummer (ADR-0005)
+    RECHNUNGSNUMMER_FEHLT(Severity.ABORT),
+    RECHNUNGSNUMMER_MIT_LEERRAUM(Severity.ABORT),
+    RECHNUNGSNUMMER_PASST_NICHT(Severity.ABORT),
+
     // Positionen und Steuerkategorie
     KEINE_POSITION(Severity.ABORT),
     EINZELPREIS_NEGATIV(Severity.ABORT),

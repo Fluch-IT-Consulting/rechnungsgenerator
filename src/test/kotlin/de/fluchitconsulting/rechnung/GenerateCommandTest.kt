@@ -35,6 +35,30 @@ class GenerateCommandTest : FunSpec({
     val rechnung = eingaben.resolve("rechnung.yaml").also { it.writeText(quelle("rechnung.yaml")) }
     val stammdaten = eingaben.resolve("stammdaten.yaml").also { it.writeText(quelle("stammdaten.yaml")) }
 
+    // Dieselben Stammdaten ohne das Muster der Rechnungsnummern. Für die Tests,
+    // in denen die Nummer erst weiter hinten auffallen soll.
+    val ohneMuster =
+        eingaben.resolve("stammdaten-ohne-muster.yaml").also {
+            it.writeText(
+                quelle("stammdaten.yaml")
+                    .lines()
+                    .filterNot { zeile ->
+                        zeile.startsWith("rechnungsnummer-muster")
+                    }.joinToString("\n"),
+            )
+        }
+
+    /** Erzeugt aus der Beispielrechnung eine mit anderer Nummer und lässt sie laufen. */
+    fun laufMitNummer(nummer: String, konfiguration: Path) {
+        val datei =
+            eingaben.resolve("nummer-$nummer.yaml".replace(Regex("[^A-Za-z0-9.-]"), "_")).also {
+                it.writeText(quelle("rechnung.yaml").replace("nummer: R26-042", "nummer: $nummer"))
+            }
+        val command = RechnungsgeneratorCommand(FakeTypesetter())
+        command.context { echoMessage = { _, _, _, _ -> } }
+        command.parse(arrayOf("erzeuge", datei.toString(), "-s", konfiguration.toString()))
+    }
+
     /** Führt das Kommando aus und sammelt, was es ausgegeben hätte. */
     fun lauf(typesetter: Typesetter, vararg args: String): List<String> {
         val ausgabe = mutableListOf<String>()
@@ -108,19 +132,21 @@ class GenerateCommandTest : FunSpec({
         // nicht umgehen kann. Bleibt nichts übrig, ist das ein Fehler in der
         // Rechnungsdatei – und wird als solcher gemeldet, nicht als Fehler der
         // Werkzeuge.
-        val ohneNummer =
-            eingaben.resolve("ohne-nummer.yaml").also {
-                it.writeText(quelle("rechnung.yaml").replace("nummer: R26-042", "nummer: \"///\""))
-            }
-
-        val fehler =
-            shouldThrow<CliktError> {
-                val command = RechnungsgeneratorCommand(FakeTypesetter())
-                command.context { echoMessage = { _, _, _, _ -> } }
-                command.parse(arrayOf("erzeuge", ohneNummer.toString(), "-s", stammdaten.toString()))
-            }
+        //
+        // Geprüft wird hier ohne Muster in den Stammdaten (ADR-0005): Mit einem
+        // hielte schon der Calculator die Nummer an, und diese letzte Schranke
+        // käme nie zum Zug. Sie bleibt trotzdem nötig – ein Muster ist optional.
+        val fehler = shouldThrow<CliktError> { laufMitNummer("\"///\"", ohneMuster) }
 
         fehler.message!! shouldContain "ergibt keinen Dateinamen"
+    }
+
+    test("mit Muster in den Stammdaten hält schon der Calculator die Nummer an") {
+        // Dieselbe Nummer, dieselbe Rechnung – nur die Stammdaten tragen ein
+        // Muster. Die Meldung nennt dann die Nummer und nicht den Dateinamen.
+        val fehler = shouldThrow<CliktError> { laufMitNummer("\"///\"", stammdaten) }
+
+        fehler.message!! shouldContain "passt nicht zum Muster"
     }
 
     test("die Hinweise für die eigene Akte stehen nach dem Ergebnis, nicht davor") {

@@ -11,6 +11,7 @@ import de.fluchitconsulting.rechnung.model.ServicePeriod
 import de.fluchitconsulting.rechnung.model.TaxShare
 import de.fluchitconsulting.rechnung.values.Bic
 import de.fluchitconsulting.rechnung.values.Iban
+import de.fluchitconsulting.rechnung.values.InvoiceNumberPattern
 import de.fluchitconsulting.rechnung.values.InvoiceType
 import de.fluchitconsulting.rechnung.values.Money
 import de.fluchitconsulting.rechnung.values.Percent
@@ -23,7 +24,7 @@ import java.time.LocalDate
 // Baukasten für Tests: Top-Level-Funktionen mit Default-Argumenten, sodass jeder
 // Test nur die Werte angibt, um die es ihm geht ("Object Mother"-Muster).
 
-fun testSellerConfig(paymentTermDays: Int = 14) =
+fun testSellerConfig(paymentTermDays: Int = 14, invoiceNumberPattern: InvoiceNumberPattern? = null) =
     SellerConfig(
         companyName = "Muster IT-Consulting",
         ownerName = "Dr. Erika Musterfrau",
@@ -38,6 +39,7 @@ fun testSellerConfig(paymentTermDays: Int = 14) =
                 bankName = "Musterbank",
             ),
         paymentTermDays = paymentTermDays,
+        invoiceNumberPattern = invoiceNumberPattern,
     )
 
 fun testItem(
@@ -80,6 +82,7 @@ fun testPrepayment(
 )
 
 fun testInvoice(
+    number: String = "R26-001",
     items: List<LineItem> = listOf(testItem()),
     paymentTermDaysOverride: Int? = null,
     customerVatId: VatId? = null,
@@ -87,7 +90,7 @@ fun testInvoice(
     receivedOn: LocalDate? = null,
     prepayments: List<Prepayment> = emptyList(),
 ) = Invoice(
-    number = "R26-001",
+    number = number,
     issueDate = LocalDate.of(2026, 8, 14),
     type = type,
     receivedOn = receivedOn,
