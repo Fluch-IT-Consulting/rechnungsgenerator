@@ -156,6 +156,22 @@ CV/Web-Auftritt des Autors), Validierung über veraPDF.
   Aufgabe: erst nachsehen, ob die Änderung gewollt ist, dann die Datei neu
   erzeugen – und das erzeugte PDF gegen das vorherige prüfen (`pdftoppm` und
   Prüfsumme genügen), denn Kommentar- und Leerzeilen im `.tex` ändern es nicht.
+- **Storno**: Eine falsche Rechnung wird nicht überschrieben, sondern
+  aufgehoben – `art: stornorechnung` mit eigener Nummer, dem Bezug auf die
+  Ursprungsrechnung unter `storniert` (EN 16931 BG-3, Pflicht) und den
+  Positionen der Ursprungsrechnung mit negativer Menge (ADR-0006). Code 384 und
+  nicht 381: Die KoSIT führt 381 für die kaufmännische Gutschrift **ohne**
+  Bezug, 384 für Korrektur und Storno mit Bezug, 389 für die Gutschrift im
+  Sinne des §14 Abs. 2 Satz 2 UStG. Negativ wird die Menge und nie der
+  Einzelpreis, den BR-27 verbietet – genau so war das Projekt schon gebaut, die
+  seit #47 offene Frage nach der negativen Menge ist damit beantwortet. Das
+  Vorzeichen des Gesamtbetrags gehört seither zur Rechnungsart: im Storno
+  Pflicht, überall sonst verboten. Fälligkeit und Bankverbindung entfallen, weil
+  ein Storno kein Geld fordert; dafür wurde der Bankblock zum Makro der Vorlage,
+  sonst bliebe die Überschrift ohne Konto stehen. Das Wort **Gutschrift** fällt
+  nicht: Umsatzsteuerlich ist das eine Rechnung des Leistungsempfängers. Nur
+  ganz, nicht teilweise – die Rechnungskorrektur ist ein eigenes Modell, weil
+  bei ihr das Vorzeichen kippen kann (#64).
 - **Absetzung**: Die Schlussrechnung trägt die vereinnahmten Abschläge unter
   `abschlaege` ausgeschrieben, mit `steueranteile` je Kombination aus Kategorie
   und Satz. Nachgeschlagen wird nichts (ADR-0001): Zwischen Abschlag und
