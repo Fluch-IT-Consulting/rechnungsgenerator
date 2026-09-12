@@ -1,15 +1,15 @@
 package de.fluchitconsulting.rechnung.render
 
 import de.fluchitconsulting.rechnung.InvoiceCalculator
-import de.fluchitconsulting.rechnung.InvoiceValidationException
+import de.fluchitconsulting.rechnung.Rule
 import de.fluchitconsulting.rechnung.YamlLoader
+import de.fluchitconsulting.rechnung.messageOf
 import de.fluchitconsulting.rechnung.model.TaxShare
 import de.fluchitconsulting.rechnung.testPrepayment
 import de.fluchitconsulting.rechnung.testSellerConfig
 import de.fluchitconsulting.rechnung.values.Money
 import de.fluchitconsulting.rechnung.values.Percent
 import de.fluchitconsulting.rechnung.values.TaxCategory
-import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.string.shouldContain
@@ -105,10 +105,12 @@ class PrepaymentBlockTest : FunSpec({
         val schlussrechnung =
             YamlLoader.parseInvoice(finalInvoiceWith(PrepaymentBlock.render(listOf(vereinnahmt, nichtVereinnahmt))))
 
-        val failure =
-            shouldThrow<InvoiceValidationException> { InvoiceCalculator.calculate(schlussrechnung, testSellerConfig()) }
+        val message =
+            InvoiceCalculator
+                .calculate(schlussrechnung, testSellerConfig())
+                .messageOf(Rule.ABSCHLAG_OHNE_VEREINNAHMUNG)
 
-        failure.message!! shouldContain "Abschlag R26-011: ohne 'vereinnahmt-am' keine Absetzung"
+        message shouldContain "Abschlag R26-011: ohne 'vereinnahmt-am' keine Absetzung"
     }
 
     test("eine Rechnungsnummer mit YAML-Sonderzeichen kommt unverändert zurück") {

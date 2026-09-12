@@ -83,12 +83,13 @@ fun prepaymentsOf(abschlagsrechnungen: List<Invoice>, config: SellerConfig): Lis
         // Die Nummer kommt davor, weil die Meldungen des Calculators nur
         // "Position 1 (…)" sagen – bei mehreren Abschlagsrechnungen bliebe
         // offen, in welcher.
-        val calculated =
-            try {
-                InvoiceCalculator.calculate(abschlagsrechnung, config)
-            } catch (e: InvoiceValidationException) {
-                throw InvoiceValidationException("${abschlagsrechnung.number}: ${e.message}")
-            }
+        val calculated = InvoiceCalculator.calculate(abschlagsrechnung, config)
+        val abbrueche = calculated.findings.filter { it.severity == Severity.ABORT }
+        if (abbrueche.isNotEmpty()) {
+            throw InvoiceValidationException(
+                abbrueche.joinToString("\n") { "${abschlagsrechnung.number}: ${it.describe()}" },
+            )
+        }
         prepaymentOf(calculated)
     }
 }

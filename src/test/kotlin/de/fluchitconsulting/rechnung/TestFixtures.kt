@@ -102,3 +102,19 @@ fun testInvoice(
     prepayments = prepayments,
     paymentTermDaysOverride = paymentTermDaysOverride,
 )
+
+// Wie die Regeltests prüfen, seit der Calculator sammelt statt zu werfen (#49):
+// nach der Kennung der eigenen Regel, nicht nach dem Wortlaut irgendeiner
+// Meldung. Andere Befunde stören den Test damit nicht mehr – vorher musste jede
+// Testrechnung alle übrigen Regeln bestehen und durfte keinen Hinweis auslösen.
+
+fun CalculatedInvoice.aborts(): List<Finding> = findings.filter { it.severity == Severity.ABORT }
+
+fun CalculatedInvoice.hints(): List<Finding> = findings.filter { it.severity == Severity.HINT }
+
+fun CalculatedInvoice.rules(): List<Rule> = findings.map { it.rule }
+
+/** Die Zeile zu einer Regel, so wie ein Mensch sie zu sehen bekommt. */
+fun CalculatedInvoice.messageOf(rule: Rule): String =
+    findings.firstOrNull { it.rule == rule }?.describe()
+        ?: error("Kein Befund zu $rule. Gefunden: ${rules()}")

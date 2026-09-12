@@ -4,7 +4,6 @@ import de.fluchitconsulting.rechnung.values.Money
 import de.fluchitconsulting.rechnung.values.TaxCategory
 import de.fluchitconsulting.rechnung.values.VatId
 import de.fluchitconsulting.rechnung.values.VatIdConfirmation
-import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.assertions.withClue
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
@@ -75,8 +74,8 @@ class TaxCategoryRulesTest : FunSpec({
         val invoice =
             testInvoice(items = listOf(testItem(vatRate = "0", taxCategory = TaxCategory.REVERSE_CHARGE)))
 
-        shouldThrow<InvoiceValidationException> { InvoiceCalculator.calculate(invoice, config) }
-            .message!! shouldContain "USt-IdNr. des Kunden"
+        InvoiceCalculator.calculate(invoice, config).messageOf(Rule.KUNDEN_UST_ID_FEHLT) shouldContain
+            "USt-IdNr. des Kunden"
     }
 
     test("eine steuerfreie Kategorie mit Steuersatz ist ein Widerspruch") {
@@ -85,7 +84,7 @@ class TaxCategoryRulesTest : FunSpec({
                 items = listOf(testItem(vatRate = "19", taxCategory = TaxCategory.EXEMPT, taxExemptionReason = "Grund")),
             )
 
-        val message = shouldThrow<InvoiceValidationException> { InvoiceCalculator.calculate(invoice, config) }.message!!
+        val message = InvoiceCalculator.calculate(invoice, config).messageOf(Rule.SATZ_MUSS_NULL_SEIN)
 
         message shouldContain "verlangt einen Steuersatz von 0"
         // Der Satz, der beanstandet wird, steht lesbar in der Meldung: "19%"
@@ -97,8 +96,7 @@ class TaxCategoryRulesTest : FunSpec({
     test("Regelsatz mit 0 % weist auf die vermutlich gemeinte Kategorie hin") {
         val invoice = testInvoice(items = listOf(testItem(vatRate = "0")))
 
-        shouldThrow<InvoiceValidationException> { InvoiceCalculator.calculate(invoice, config) }
-            .message!! shouldContain "vermutlich"
+        InvoiceCalculator.calculate(invoice, config).messageOf(Rule.REGELSATZ_MIT_NULL) shouldContain "vermutlich"
     }
 
     test("Steuerbefreiung ohne Grund wird abgelehnt, wenn die Kategorie keinen vorgibt") {
@@ -106,8 +104,8 @@ class TaxCategoryRulesTest : FunSpec({
         // vom Befreiungstatbestand ab und muss deshalb angegeben werden.
         val invoice = testInvoice(items = listOf(testItem(vatRate = "0", taxCategory = TaxCategory.EXEMPT)))
 
-        shouldThrow<InvoiceValidationException> { InvoiceCalculator.calculate(invoice, config) }
-            .message!! shouldContain "steuerbefreiungsgrund"
+        InvoiceCalculator.calculate(invoice, config).messageOf(Rule.BEFREIUNGSGRUND_FEHLT) shouldContain
+            "steuerbefreiungsgrund"
     }
 
     test("zwei verschiedene Gründe in derselben Kategorie gehen nicht") {
@@ -121,8 +119,8 @@ class TaxCategoryRulesTest : FunSpec({
                     ),
             )
 
-        shouldThrow<InvoiceValidationException> { InvoiceCalculator.calculate(invoice, config) }
-            .message!! shouldContain "zwei verschiedene"
+        InvoiceCalculator.calculate(invoice, config).messageOf(Rule.BEFREIUNGSGRUENDE_UNEINHEITLICH) shouldContain
+            "zwei verschiedene"
     }
 
     test("gleicher Satz, verschiedene Kategorien ergeben getrennte Gruppen") {
