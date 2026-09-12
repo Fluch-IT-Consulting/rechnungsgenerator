@@ -77,12 +77,6 @@ data class CalculatedInvoice(
     val netTotal: Money,
     val vatGroups: List<VatGroup>,
     val grossTotal: Money,
-    /**
-     * Hinweise für den Rechnungssteller – nicht für den Kunden, sie stehen
-     * nicht auf dem PDF. Sie betreffen Nachweise, die in die eigene Akte
-     * gehören, und Dinge, die zwar zulässig, aber erklärungsbedürftig sind.
-     */
-    val hints: List<String> = emptyList(),
     /** Die abgesetzten Abschläge, in der Reihenfolge der Rechnungsdatei. */
     val prepayments: List<DeductedPrepayment> = emptyList(),
     /**
@@ -91,6 +85,16 @@ data class CalculatedInvoice(
      */
     val findings: List<Finding> = emptyList(),
 ) {
+    /**
+     * Die Hinweise als fertige Zeilen – Brücke, bis die Kommandos die Befunde
+     * selbst auswerten (#49). Danach entfällt sie.
+     *
+     * Hinweise betreffen den Rechnungssteller, nicht den Kunden: Sie stehen
+     * nicht auf dem PDF, sondern nennen Nachweise für die eigene Akte und
+     * Angaben, die zwar zulässig, aber erklärungsbedürftig sind.
+     */
+    val hints: List<String> get() = findings.filter { it.severity == Severity.HINT }.map { it.describe() }
+
     /**
      * Die vereinbarte Zahlungsfrist in Tagen: die der Rechnung, sonst die der
      * Stammdaten. Abgeleitet und nicht kopiert – als eigenes Feld wäre es
@@ -129,7 +133,7 @@ object InvoiceCalculator {
         // Gesammelt statt geworfen (#49): Wer eine Regel prüft, soll nicht erst
         // eine Rechnung bauen müssen, die alle anderen besteht.
         val findings = validate(invoice, config).toMutableList()
-        val hints = collectHints(invoice, config)
+        findings += collectHints(invoice, config)
 
         // Erst pro Position runden, dann summieren – so stimmt die Summe mit dem
         // überein, was der Leser auf der Rechnung nachrechnen kann.
@@ -198,7 +202,7 @@ object InvoiceCalculator {
         // Die übrigen acht Regeln stehen in validatePrepayments und kommen ohne
         // die Summen aus.
         val ohneAbsetzung =
-            CalculatedInvoice(invoice, config, lines, netTotal, vatGroups, grossTotal, hints, prepayments, findings)
+            CalculatedInvoice(invoice, config, lines, netTotal, vatGroups, grossTotal, prepayments, findings)
         val calculated = ohneAbsetzung.copy(findings = findings + validateDeduction(ohneAbsetzung))
 
         // Brücke bis zum letzten Schritt von #49: Solange die Kommandos die
@@ -642,7 +646,7 @@ object InvoiceCalculator {
         invoice.customer.address.countryCode != config.address.countryCode
 
     /** Hinweise, die den Lauf nicht abbrechen, aber in die eigene Akte gehören. */
-    private fun collectHints(invoice: Invoice, config: SellerConfig): List<String> =
+    private fun collectHints(invoice: Invoice, config: SellerConfig): List<Finding> =
         buildList {
             val kunde = invoice.customer
             val kategorien = invoice.items.map { it.taxCategory }.toSet()
@@ -652,8 +656,11 @@ object InvoiceCalculator {
             invoice.items.forEachIndexed { index, item ->
                 if (item.quantity.signum() == 0) {
                     add(
-                        "Position ${index + 1} (${item.name}) hat die Menge 0 und steht mit 0,00 € auf der " +
-                            "Rechnung. Ist das gewollt?",
+                        Finding(
+                            Rule.MENGE_NULL,
+                            Subject.Item(index, item.name),
+                            "Menge 0 – die Position steht mit 0,00 € auf der Rechnung. Ist das gewollt?",
+                        ),
                     )
                 }
             }
@@ -666,9 +673,13 @@ object InvoiceCalculator {
             val serviceEnd = invoice.servicePeriod.end
             if (!invoice.type.servicePeriodIsForecast && invoice.issueDate.isAfter(serviceEnd.plusMonths(6))) {
                 add(
-                    "Die Rechnung vom ${invoice.issueDate} kommt mehr als sechs Monate nach dem Ende der " +
-                        "Leistung am $serviceEnd. §14 Abs. 2 UStG verlangt sie innerhalb von sechs Monaten – " +
-                        "ist das Rechnungsdatum richtig?",
+                    Finding(
+                        Rule.RECHNUNG_SPAET,
+                        Subject.WholeInvoice,
+                        "Die Rechnung vom ${invoice.issueDate} kommt mehr als sechs Monate nach dem Ende der " +
+                            "Leistung am $serviceEnd. §14 Abs. 2 UStG verlangt sie innerhalb von sechs Monaten – " +
+                            "ist das Rechnungsdatum richtig?",
+                    ),
                 )
             }
 
@@ -681,10 +692,14 @@ object InvoiceCalculator {
                 val listenAlter = ChronoUnit.MONTHS.between(EuMemberStates.AS_OF, invoice.issueDate)
                 if (listenAlter >= 12) {
                     add(
-                        "Die hinterlegte Liste der EU-Mitgliedstaaten ist $listenAlter Monate alt " +
-                            "(zuletzt geprüft am ${EuMemberStates.AS_OF}). Sie entscheidet mit, ob für " +
-                            "${kunde.address.countryCode} ein Nachweis verlangt wird – bitte gegen die " +
-                            "amtliche Aufstellung abgleichen und EuMemberStates.AS_OF nachziehen.",
+                        Finding(
+                            Rule.EU_LISTE_ALT,
+                            Subject.WholeInvoice,
+                            "Die hinterlegte Liste der EU-Mitgliedstaaten ist $listenAlter Monate alt " +
+                                "(zuletzt geprüft am ${EuMemberStates.AS_OF}). Sie entscheidet mit, ob für " +
+                                "${kunde.address.countryCode} ein Nachweis verlangt wird – bitte gegen die " +
+                                "amtliche Aufstellung abgleichen und EuMemberStates.AS_OF nachziehen.",
+                        ),
                     )
                 }
             }
@@ -696,30 +711,46 @@ object InvoiceCalculator {
             val nurInEu = kategorien.any { it.vatIdConfirmation == VatIdConfirmation.IN_EU }
             if (nurInEu && ausland && !EuMemberStates.contains(kunde.address.countryCode)) {
                 add(
-                    "${kunde.address.countryCode} ist kein EU-Mitgliedstaat – eine VIES-Abfrage gibt es dafür " +
-                        "nicht. Für die Akte braucht es einen anderen Nachweis der Unternehmereigenschaft, " +
-                        "etwa eine Unternehmerbescheinigung.",
+                    Finding(
+                        Rule.KEIN_VIES_MOEGLICH,
+                        Subject.WholeInvoice,
+                        "${kunde.address.countryCode} ist kein EU-Mitgliedstaat – eine VIES-Abfrage gibt es dafür " +
+                            "nicht. Für die Akte braucht es einen anderen Nachweis der Unternehmereigenschaft, " +
+                            "etwa eine Unternehmerbescheinigung.",
+                    ),
                 )
             }
             kunde.vatIdCheck?.let { pruefung ->
                 if (pruefung.method == CheckMethod.SIMPLE) {
                     add(
-                        "Die Abfrage vom ${pruefung.date} war einfach, nicht qualifiziert. Nur die " +
-                            "qualifizierte Abfrage beim BZSt gleicht Name und Anschrift ab und verschafft " +
-                            "Vertrauensschutz.",
+                        Finding(
+                            Rule.ABFRAGE_EINFACH,
+                            Subject.WholeInvoice,
+                            "Die Abfrage vom ${pruefung.date} war einfach, nicht qualifiziert. Nur die " +
+                                "qualifizierte Abfrage beim BZSt gleicht Name und Anschrift ab und verschafft " +
+                                "Vertrauensschutz.",
+                        ),
                     )
                 }
                 if (pruefung.reference == null) {
                     add(
-                        "Zur Abfrage vom ${pruefung.date} ist kein Nachweis vermerkt – " +
-                            "ohne Protokoll nützt sie im Zweifel wenig.",
+                        Finding(
+                            Rule.ABFRAGE_OHNE_NACHWEIS,
+                            Subject.WholeInvoice,
+                            "Zur Abfrage vom ${pruefung.date} ist kein Nachweis vermerkt – " +
+                                "ohne Protokoll nützt sie im Zweifel wenig.",
+                        ),
                     )
                 }
                 val alter = ChronoUnit.MONTHS.between(pruefung.date, invoice.issueDate)
                 if (alter >= 12) {
                     add(
-                        "Die Bestätigungsabfrage ist $alter Monate alt. Bei laufender Geschäftsbeziehung " +
-                            "wird üblicherweise regelmäßig erneut geprüft.",
+                        Finding(
+                            Rule.ABFRAGE_ALT,
+                            Subject.WholeInvoice,
+                            "Die Bestätigungsabfrage ist $alter Monate alt. Bei laufender Geschäftsbeziehung " +
+                                "wird üblicherweise regelmäßig erneut geprüft.",
+                        ),
                     )
                 }
             }
