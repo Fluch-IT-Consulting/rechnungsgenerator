@@ -124,6 +124,7 @@ Rechnung, und bestehende Dateien bleiben unverändert gültig.
 | `abschlagsrechnung` | über einen Teil des Entgelts, bevor geleistet wurde | Zeitraum gilt als voraussichtlich, optional `vereinnahmt-am` |
 | `schlussrechnung` | über die Gesamtleistung | setzt unter `abschlaege` die vereinnahmten Abschläge ab |
 | `teilrechnung` | über eine abgeschlossene Teilleistung | wie eine Rechnung; eigener Code fürs spätere ZUGFeRD |
+| `stornorechnung` | hebt eine ausgestellte Rechnung auf | nennt sie unter `storniert`, Positionen mit negativer Menge |
 
 Der Unterschied ist nicht kosmetisch: Wer einen Abschlag wie eine gewöhnliche
 Rechnung abrechnet und später noch einmal die Gesamtleistung, weist die
@@ -174,6 +175,36 @@ ab, wenn
 
 Jede Meldung nennt den betroffenen Abschlag und was zu tun ist.
 
+### Das Storno
+
+Eine falsche Rechnung wird nicht überschrieben, sondern aufgehoben – mit einer
+eigenen Nummer, dem Bezug auf die Ursprungsrechnung und denselben Positionen mit
+negativer Menge:
+
+```yaml
+art: stornorechnung
+nummer: R26-043
+storniert:
+  rechnungsnummer: R26-042
+  rechnungsdatum: 2026-08-14
+positionen:
+  - bezeichnung: IT-Beratungsleistungen
+    menge: -86.5                    # negativ wird die Menge, nie der Einzelpreis
+    einheit: Std.
+    einzelpreis: 95.00
+```
+
+Negativ wird die Menge, weil EN 16931 den negativen Einzelpreis verbietet
+(BR-27): Er ließe offen, ob Gutschrift, Rabatt oder Erfassungsfehler gemeint
+ist. Der Code lautet 384 und nicht 381 – die KoSIT führt 381 für die
+kaufmännische Gutschrift ohne Bezug, 384 für Korrektur und Storno mit Bezug auf
+die Ursprungsrechnung (ADR-0006).
+
+Das PDF nennt die Ursprungsrechnung oben rechts und lässt Fälligkeit und
+Bankverbindung weg: Ein Storno fordert kein Geld, es kündigt eine Erstattung an.
+Eine Rechnung nur *teilweise* zu berichtigen, geht nicht – der Weg ist, ganz zu
+stornieren und richtig neu zu stellen.
+
 ## Entwicklung
 
 ```
@@ -188,7 +219,7 @@ ist der Build rot.
 
 ## Stand
 
-Layout und Toolchain stehen, ebenso Reverse Charge (§13b UStG) und die
-Abschlags- und Schlussrechnung. Offen sind Entgeltminderungen (Skonto),
-Gutschrift und Storno – und damit der Fall, dass zu viel gezahlt wurde – sowie
-später ZUGFeRD.
+Layout und Toolchain stehen, ebenso Reverse Charge (§13b UStG), die Abschlags-
+und Schlussrechnung und das Storno. Offen sind Entgeltminderungen (Skonto), die
+Rechnungskorrektur – also das Berichtigen einzelner Positionen, statt ganz zu
+stornieren – und später ZUGFeRD.

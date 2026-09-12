@@ -35,7 +35,7 @@ class SkillBeispieleTest : FunSpec({
         val config = YamlLoader.parseSellerConfig(File("src/test/resources/stammdaten.yaml").readText())
         // Die Schlussrechnung steht in einer eigenen Datei des Skills. In der
         // Reihenfolge SKILL.md, dann schlussrechnung.md ergeben die Beispiele
-        // Rechnung, Abschlagsrechnung, Schlussrechnung.
+        // Rechnung, Abschlagsrechnung, Stornorechnung, Schlussrechnung.
         val skill =
             listOf("SKILL.md", "schlussrechnung.md")
                 .joinToString("\n") { File(".claude/skills/rechnung/$it").readText() }
@@ -51,7 +51,7 @@ class SkillBeispieleTest : FunSpec({
         // Die Anzahl mitprüfen: Sonst wäre der Test auch dann grün, wenn das
         // Suchmuster nichts mehr findet.
         invoices.map { it.type } shouldBe
-            listOf(InvoiceType.INVOICE, InvoiceType.PREPAYMENT, InvoiceType.FINAL)
+            listOf(InvoiceType.INVOICE, InvoiceType.PREPAYMENT, InvoiceType.CANCELLATION, InvoiceType.FINAL)
 
         val schlussrechnung = invoices.last()
         val totals = InvoiceCalculator.calculate(schlussrechnung, config)

@@ -207,6 +207,46 @@ Rechnungsdatum – dann ist der Betrag für diese Rechnung nicht vereinnahmt.
 Abschläge: Ablauf, Format und Abbruchregeln stehen in
 [`schlussrechnung.md`](schlussrechnung.md).
 
+## Stornorechnung
+
+Eine falsche Rechnung wird nicht überschrieben, sondern aufgehoben: `art:
+stornorechnung` mit einer **eigenen** Nummer aus derselben Reihe, dem Bezug auf
+die Ursprungsrechnung und denselben Positionen mit **negativer Menge**.
+
+```yaml
+nummer: R26-043
+art: stornorechnung
+datum: 2026-08-21
+storniert:                          # Pflicht: welche Rechnung aufgehoben wird
+  rechnungsnummer: R26-042
+  rechnungsdatum: 2026-08-14
+leistungszeitraum:                  # derselbe wie auf der Ursprungsrechnung
+  von: 2026-07-01
+  bis: 2026-07-31
+kunde: …
+positionen:
+  - bezeichnung: IT-Beratungsleistungen
+    beschreibung: Rahmenvertrag vom 01.02.2026
+    menge: -86.5                    # negativ wird die Menge, nie der Einzelpreis
+    einheit: Std.
+    einzelpreis: 95.00
+```
+
+Übernimm die Positionen der Ursprungsrechnung unverändert und setze nur vor die
+Menge ein Minus. Der Einzelpreis bleibt positiv: EN 16931 verbietet den
+negativen Einzelpreis (BR-27), weil er offenließe, ob Gutschrift, Rabatt oder
+Erfassungsfehler gemeint ist. Ein Storno über einen positiven Gesamtbetrag
+bricht ab.
+
+Das PDF nennt die Ursprungsrechnung oben rechts, trägt den Pflichtsatz, dass sie
+vollständig aufgehoben ist, und lässt Fälligkeit und Bankverbindung weg – ein
+Storno fordert kein Geld, es kündigt eine Erstattung an.
+
+**Nur ganz, nicht teilweise.** Soll eine Rechnung bloß in einem Punkt berichtigt
+werden, ist das eine Rechnungskorrektur, und die gibt es hier nicht. Der übliche
+Weg ist: ganz stornieren und richtig neu stellen. Sprich es an, wenn das zu grob
+erscheint.
+
 ## Die drei Textfelder einer Position
 
 Sie bilden ab, was EN 16931 unterscheidet – und zwar danach, *worüber* der Text
@@ -285,9 +325,12 @@ Hinweis weiter.
 Sprich es an, wenn einer dieser Fälle auftaucht, statt etwas Falsches zu bauen:
 
 - **Skonto und andere Entgeltminderungen**: kein Feld vorhanden.
-- **Gutschrift und Storno**: fehlen – und damit der Fall, dass ein Kunde zu viel
-  gezahlt hat. Ein negativer Restbetrag bricht ab, statt eine Erstattung
-  auszuweisen.
+- **Rechnungskorrektur**: Eine Rechnung teilweise berichtigen, statt sie ganz
+  zu stornieren, geht nicht. Das Storno gibt es (siehe oben), die Korrektur
+  nicht.
+- **Überzahlung einer Schlussrechnung**: Ein negativer Restbetrag bricht ab,
+  statt eine Erstattung auszuweisen. Zurückgezahlt wird außerhalb des
+  Generators, oder der zu hohe Abschlag wird storniert.
 - **Teilvereinnahmung**: Kam auf einen Abschlag nur ein Teil des Geldes, stimmen
   die Steueranteile im Block des Generators nicht; er gilt nur für den vollen
   Betrag.

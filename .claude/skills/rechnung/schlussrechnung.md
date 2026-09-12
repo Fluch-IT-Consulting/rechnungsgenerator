@@ -126,6 +126,6 @@ einmal, nicht nur den ersten:
 | `ust` passt nicht zu `netto × ust-satz` | Prüfsumme gegen den Zahlendreher beim Abschreiben |
 | Kategorie und Satz kommen in der Rechnung nicht vor | Entweder war der Abschlag falsch oder die Schlussrechnung ist es |
 | Dieselbe `rechnungsnummer` zweimal | Kopierfehler |
-| Restbetrag negativ | Eine Überzahlung ist eine Gutschrift, keine Rechnung |
+| Restbetrag negativ | Eine Überzahlung gehört nicht in eine Rechnung – sie wird zurückgezahlt oder der zu hohe Abschlag storniert |
 | Leere `steueranteile` | Ein Abschlag ohne Netto und Steuer lässt sich nicht absetzen |
 | `rechnungsdatum` eines Abschlags nach dem Datum der Schlussrechnung | Ein Abschlag geht der Schlussrechnung voraus |
