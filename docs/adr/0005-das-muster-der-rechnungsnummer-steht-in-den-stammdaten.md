@@ -81,7 +81,11 @@ Der Stand des Gesprächs vor dieser Entscheidung steht in
   Rechnung; eine alte Rechnung neu zu erzeugen, scheitert nach einem Wechsel.
   Für die Anschrift gilt das schon heute, dort ändert sich aber nur das PDF.
 - **`naechste-nummer.py` kennt sein Schema weiter selbst.** Zwei Stellen, die
-  dasselbe wissen – aufgehoben wird das erst, wenn das Skript die Stammdaten
-  liest. Bis dahin fängt der Generator, was das Skript falsch vergibt.
+  dasselbe wissen. Nachgetragen mit #61: Auflösen lässt sich das nicht – ein
+  regulärer Ausdruck prüft, er zählt nicht, und benannte Gruppen als Ausweg
+  scheiden aus, weil Java und Python sie unvereinbar schreiben (`(?<jahr>…)`
+  gegen `(?P<jahr>…)`, nachgemessen am 12.09.2026). Das Skript liest das Muster
+  seither trotzdem und prüft damit die Nummer, die es vergeben will. Die
+  Doppelung bleibt, kann aber nicht mehr still auseinanderlaufen.
 
 Umgesetzt in #54.

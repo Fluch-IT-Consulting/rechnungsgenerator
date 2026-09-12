@@ -47,7 +47,8 @@ die Datei kommen. Die Schritte hier gelten trotzdem.
 **1. Nummer ermitteln.** Nicht selbst zählen, sondern das Skript benutzen:
 
 ```
-scripts/naechste-nummer.py "$RECHNUNGEN_DIR/Outgoing"
+scripts/naechste-nummer.py "$RECHNUNGEN_DIR/Outgoing" \
+  --stammdaten "$RECHNUNGEN_DIR/stammdaten.yaml"
 ```
 
 Es durchsucht auch die Jahresunterordner, damit eine versehentlich einsortierte
@@ -55,10 +56,17 @@ Rechnung keine doppelte Nummer verursacht. Abschlags- und Schlussrechnungen
 zählen in derselben Reihe wie alle anderen – ein zweiter Nummernkreis
 verdoppelte nur die Gelegenheiten für Lücken und Dubletten.
 
-Das Schema `R{JJ}-{NNN}` steht an zwei Stellen: im Skript, das die Nummer
-vergibt, und als `rechnungsnummer-muster` in den Stammdaten, gegen das der
-Generator sie prüft (ADR-0005). Wer es ändert, ändert beide – sonst lehnt der
-Generator ab, was das Skript gerade vergeben hat.
+Steht das Rechnungsdatum schon fest und ist es nicht heute – etwa weil die
+Rechnung noch ins alte Jahr gehört –, gib es mit: `--rechnungsdatum 2025-12-31`.
+Die Nummer gehört in den Nummernkreis des Jahres, in dem die Rechnung datiert
+ist, und ohne Angabe rechnet das Skript mit heute.
+
+Das Schema `R{JJ}-{NNN}` steckt weiter im Skript, und das lässt sich nicht
+auflösen: Ein regulärer Ausdruck prüft, er zählt nicht – er sagt nicht, welcher
+Teil einer Nummer der Zähler ist. `--stammdaten` prüft aber die Nummer, die das
+Skript ausgeben will, gegen `rechnungsnummer-muster` (ADR-0005). Wer das Muster
+wechselt und das Skript vergisst, bekommt hier einen Abbruch – statt später eine
+Rechnung, die der Generator ablehnt, wenn die Nummer schon in Dateinamen steht.
 
 **2. Angaben sammeln.** Nötig sind Kunde mit Anschrift, Leistungszeitraum und
 die Positionen. Erfinde nichts davon – eine falsche Zahl auf einer Rechnung ist
