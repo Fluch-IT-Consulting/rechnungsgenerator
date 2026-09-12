@@ -3,6 +3,7 @@ package de.fluchitconsulting.rechnung
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.string.shouldContain
+import io.kotest.matchers.string.shouldNotContain
 import kotlin.io.path.createTempDirectory
 import kotlin.io.path.writeText
 
@@ -27,7 +28,41 @@ class MainTest : FunSpec({
 
         result.exitCode shouldBe 1
         result.out shouldBe ""
-        result.err shouldContain "Die Eingabedateien konnten nicht gelesen werden"
+        result.err shouldContain kaputt.toString()
+        result.err shouldContain "gibtsnicht"
+    }
+
+    test("bei zwei Eingabedateien nennt die Meldung die schuldige") {
+        // erzeuge liest Rechnung und Stammdaten. Vorher hieß es nur "Die
+        // Eingabedateien konnten nicht gelesen werden", und man durfte raten.
+        val kaputteStammdaten =
+            eingaben.resolve("stammdaten-kaputt.yaml").also { it.writeText("firma: Muster\ngibtsnicht: 1\n") }
+
+        val result = runCli("erzeuge", rechnung, "-s", kaputteStammdaten.toString())
+
+        result.exitCode shouldBe 1
+        result.out shouldBe ""
+        result.err shouldContain kaputteStammdaten.toString()
+        result.err shouldNotContain rechnung
+    }
+
+    test("eine unlesbare Datei spricht vom Lesen, nicht vom Schreiben") {
+        // Der IOException-Zweig war für ein nicht beschreibbares Ziel gedacht
+        // und fing den Lesefehler gleich mit. (Als root ist auch chmod 000
+        // lesbar, dieser Test schlüge dort fehl.)
+        val unlesbar =
+            eingaben.resolve("unlesbar.yaml").also {
+                it.writeText("nummer: R26-001\n")
+                it.toFile().setReadable(false)
+            }
+
+        val result = runCli("erzeuge", unlesbar.toString(), "-s", stammdaten)
+
+        result.exitCode shouldBe 1
+        result.out shouldBe ""
+        result.err shouldContain unlesbar.toString()
+        result.err shouldContain "gelesen"
+        result.err shouldNotContain "geschrieben"
     }
 
     test("das Ergebnis steht auf stdout, stderr bleibt leer") {

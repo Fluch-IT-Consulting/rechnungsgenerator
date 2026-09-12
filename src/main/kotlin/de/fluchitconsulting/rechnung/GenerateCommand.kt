@@ -13,7 +13,6 @@ import de.fluchitconsulting.rechnung.render.InvoiceRenderer
 import de.fluchitconsulting.rechnung.toolchain.LuaLatexTypesetter
 import de.fluchitconsulting.rechnung.toolchain.ToolchainException
 import de.fluchitconsulting.rechnung.toolchain.Typesetter
-import kotlinx.serialization.SerializationException
 import java.io.IOException
 import java.nio.file.Path
 import kotlin.io.path.copyTo
@@ -55,12 +54,14 @@ class GenerateCommand(private val typesetter: Typesetter = LuaLatexTypesetter) :
             throw CliktError(e.message)
         } catch (e: InvoiceValidationException) {
             throw CliktError(e.message)
-        } catch (e: SerializationException) {
-            throw CliktError("Die Eingabedateien konnten nicht gelesen werden:\n${e.message}")
+        } catch (e: InputFileException) {
+            throw CliktError(e.message)
         } catch (e: IOException) {
             // Etwa ein Zielpfad, der nicht beschreibbar ist. Ohne diesen Zweig
             // beendet sich das Programm mit einem Stacktrace, was wie ein
-            // Programmfehler aussieht statt wie ein falsches Argument.
+            // Programmfehler aussieht statt wie ein falsches Argument. Das
+            // Lesen der Eingabedateien ist hier nicht mehr dabei: Es meldet
+            // sich selbst, mit Datei und Grund (#52).
             throw CliktError("Die Datei konnte nicht geschrieben werden: ${e.message}")
         }
     }

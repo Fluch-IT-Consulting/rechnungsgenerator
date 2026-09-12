@@ -17,6 +17,15 @@ CV/Web-Auftritt des Autors), Validierung über veraPDF.
 
 - **Eingabe**: YAML (kaml/kotlinx.serialization). Zwei Dateien: Stammdaten-Config
   (auf jeder Rechnung gleich) + rechnungsspezifische Datei.
+- **Eingaben lesen**: `YamlLoader` übersetzt die Fehler des Lesens selbst und
+  nennt dabei immer die Datei – unlesbar, kein gültiges YAML, ein Wert, der
+  seine Prüfung nicht besteht. Der Dateiname gehört dorthin, wo gelesen wird:
+  kaml nennt nur den falschen Schlüssel, und `erzeuge` liest zwei Dateien.
+  Vorher übersetzte jedes Kommando für sich, und die Fassungen liefen
+  auseinander: `erzeuge` meldete einen Lesefehler als "Die Datei konnte nicht
+  geschrieben werden", weil sein IOException-Zweig dem Ziel galt und das Lesen
+  mitfing; `abschlaege` fing ihn gar nicht, und weil `Main` nur `CliktError`
+  fängt, endete der Aufruf im Stacktrace.
 - **Geldwerte**: ausschließlich `BigDecimal`, niemals Float/Double. Zwei
   gleichrangige Value Objects, die die Grenze der EN 16931 abbilden:
   - `Price` – exakt, rundet nie. Für Einzelpreise (BT-146), wo die Norm beliebig
