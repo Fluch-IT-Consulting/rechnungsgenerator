@@ -248,6 +248,11 @@ CV/Web-Auftritt des Autors), Validierung über veraPDF.
 
 - macOS, TeX Live lokal (`lualatex` in /Library/TeX/texbin), veraPDF via
   Homebrew (`verapdf`), JDK 25 lokal; Build zielt per Toolchain auf JDK 21.
+- Die Skripte des `rechnung`-Skills laufen mit `python3`; PyYAML
+  (`pip3 install pyyaml`) braucht `offene-abschlaege.py` immer und
+  `naechste-nummer.py` für `--stammdaten`. Seit #61 hängt auch der Build daran:
+  `NaechsteNummerSkriptTest` ruft das Skript wirklich auf, statt seine Regel
+  nachzubauen.
 
 ## Agent skills
 
