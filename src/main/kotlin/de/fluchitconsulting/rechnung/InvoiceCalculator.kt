@@ -97,11 +97,12 @@ data class CalculatedInvoice(
     val remainingAmount: Money get() = grossTotal - prepaymentTotal
 
     /**
-     * Bis wann zu zahlen ist – oder `null`, wenn nichts mehr zu zahlen ist.
+     * Bis wann zu zahlen ist – oder `null`, wenn nichts zu zahlen ist.
      *
-     * Das ist der Fall bei einer Schlussrechnung, deren Abschläge den Betrag
-     * decken: Sie sagt unten "es verbleibt kein Restbetrag", und ein
-     * Zahlungsziel daneben wäre die zweite, andere Aussage desselben Blattes.
+     * Zwei Fälle: eine Schlussrechnung, deren Abschläge den Betrag decken – sie
+     * sagt unten "es verbleibt kein Restbetrag", und ein Zahlungsziel daneben
+     * wäre die zweite, andere Aussage desselben Blattes –, und die
+     * Stornorechnung, die überhaupt nicht zur Zahlung auffordert (ADR-0006).
      * Die Entscheidung fällt hier und nicht im Renderer – der setzt, was
      * dasteht, und entscheidet nicht, was dastehen soll.
      *
@@ -112,7 +113,11 @@ data class CalculatedInvoice(
      * *und* Restbetrag null nicht mehr baubar – nicht bloß ungebaut.
      */
     val dueDate: LocalDate? get() =
-        if (remainingAmount.isZero()) null else invoice.issueDate.plusDays(paymentTermDays.toLong())
+        if (remainingAmount.isZero() || invoice.type == InvoiceType.CANCELLATION) {
+            null
+        } else {
+            invoice.issueDate.plusDays(paymentTermDays.toLong())
+        }
 }
 
 object InvoiceCalculator {
@@ -150,16 +155,27 @@ object InvoiceCalculator {
 
         val grossTotal = netTotal + vatGroups.sumOf { it.amount }
 
-        // Eine Rechnung über einen negativen Betrag wäre eine Gutschrift (#47).
-        // Bis dahin schlug hier erst Regel 8 der Absetzung zu, mit einer
-        // Meldung über Abschläge, die eine gewöhnliche Rechnung gar nicht hat.
-        if (grossTotal.isNegative()) {
+        // Das Vorzeichen des Gesamtbetrags gehört zur Rechnungsart (ADR-0006):
+        // Ein Storno ist negativ, jedes andere Dokument nicht. Vor #47 schlug
+        // hier erst Regel 8 der Absetzung zu, mit einer Meldung über Abschläge,
+        // die eine gewöhnliche Rechnung gar nicht hat.
+        if (invoice.type == InvoiceType.CANCELLATION) {
+            if (!grossTotal.isNegative()) {
+                findings +=
+                    Finding(
+                        Rule.STORNO_NICHT_NEGATIV,
+                        Subject.WholeInvoice,
+                        "Der Gesamtbetrag wäre $grossTotal. Eine Stornorechnung hebt eine Rechnung auf; ihre " +
+                            "Positionen tragen deshalb die Mengen der Ursprungsrechnung mit negativem Vorzeichen.",
+                    )
+            }
+        } else if (grossTotal.isNegative()) {
             findings +=
                 Finding(
                     Rule.GESAMTBETRAG_NEGATIV,
                     Subject.WholeInvoice,
-                    "Der Gesamtbetrag wäre $grossTotal. Eine Rechnung über einen negativen Betrag ist eine " +
-                        "Gutschrift, und die gibt es hier noch nicht.",
+                    "Der Gesamtbetrag wäre $grossTotal. Ein negativer Betrag gehört in eine Stornorechnung " +
+                        "(art: stornorechnung), nicht in eine ${invoice.type.documentName}.",
                 )
         }
 
@@ -192,6 +208,69 @@ object InvoiceCalculator {
             CalculatedInvoice(invoice, config, lines, netTotal, vatGroups, grossTotal, prepayments, findings)
         return ohneAbsetzung.copy(findings = findings + validateDeduction(ohneAbsetzung))
     }
+
+    /**
+     * Das Storno und sein Bezug auf die Ursprungsrechnung (ADR-0006).
+     *
+     * Der Bezug ist im Modell optional, fachlich aber Pflicht – geprüft wird er
+     * hier, damit die Meldung von der Rechnungsart spricht statt von einem
+     * fehlenden YAML-Schlüssel. In beide Richtungen: Ein Bezug ohne Storno ist
+     * genauso falsch wie ein Storno ohne Bezug, so wie 'vereinnahmt-am' nur auf
+     * eine Abschlagsrechnung gehört.
+     *
+     * Das Vorzeichen des Gesamtbetrags steht nicht hier, sondern bei den
+     * Summen: Es braucht sie.
+     */
+    private fun validateCancellation(invoice: Invoice): List<Finding> =
+        buildList {
+            val storniert = invoice.cancelled
+            if (invoice.type == InvoiceType.CANCELLATION && storniert == null) {
+                add(
+                    Finding(
+                        Rule.STORNO_OHNE_BEZUG,
+                        Subject.WholeInvoice,
+                        "Eine Stornorechnung nennt die Rechnung, die sie aufhebt – 'storniert' fehlt. " +
+                            "Ohne Nummer und Datum der Ursprungsrechnung ist sie wertlos (EN 16931 BG-3).",
+                    ),
+                )
+            }
+            if (invoice.type != InvoiceType.CANCELLATION && storniert != null) {
+                add(
+                    Finding(
+                        Rule.BEZUG_OHNE_STORNO,
+                        Subject.WholeInvoice,
+                        "'storniert' gehört nur auf eine Stornorechnung (art: stornorechnung); " +
+                            "dieses Dokument ist eine ${invoice.type.documentName}.",
+                    ),
+                )
+            }
+            // Die beiden folgenden Regeln prüfen den Bezug selbst; ohne ihn
+            // haben sie nichts zu prüfen.
+            if (storniert == null) return@buildList
+
+            // Verglichen wird zeichengenau, wie bei den Abschlägen (#53): Über
+            // die Schreibweise fremder Nummern weiß dieses Programm nichts.
+            if (storniert.invoiceNumber == invoice.number) {
+                add(
+                    Finding(
+                        Rule.STORNO_AUF_SICH_SELBST,
+                        Subject.WholeInvoice,
+                        "Die Stornorechnung nennt ihre eigene Nummer '${invoice.number}' als Ursprungsrechnung. " +
+                            "Ein Storno bekommt eine eigene Nummer aus derselben Reihe.",
+                    ),
+                )
+            }
+            if (storniert.issueDate.isAfter(invoice.issueDate)) {
+                add(
+                    Finding(
+                        Rule.URSPRUNGSRECHNUNG_SPAETER_DATIERT,
+                        Subject.WholeInvoice,
+                        "Die Ursprungsrechnung ist auf ${storniert.issueDate} datiert, nach dem Rechnungsdatum " +
+                            "${invoice.issueDate} dieses Stornos. Aufheben lässt sich nur, was es schon gibt.",
+                    ),
+                )
+            }
+        }
 
     /**
      * Die Form der Rechnungsnummer (ADR-0005).
@@ -261,6 +340,7 @@ object InvoiceCalculator {
     private fun validate(invoice: Invoice, config: SellerConfig): List<Finding> =
         buildList {
             addAll(validateInvoiceNumber(invoice, config))
+            addAll(validateCancellation(invoice))
 
             // EN 16931 BR-16. Ohne Position entstünde eine Rechnung über 0,00 €.
             if (invoice.items.isEmpty()) {
@@ -560,8 +640,10 @@ object InvoiceCalculator {
                 }
             }
 
-            // Eine Überzahlung ist kein Restbetrag, sondern ein anderes Dokument –
-            // Gutschrift oder Storno, beides gibt es hier noch nicht.
+            // Eine Überzahlung ist kein Restbetrag: Zurückgezahlt wird außerhalb
+            // dieses Programms, oder der zu hohe Abschlag wird storniert. Ein
+            // Storno der Schlussrechnung wäre es gerade nicht – die ist ja
+            // richtig.
             //
             // Nur bei Abschlägen: Ohne sie ist ein negativer Restbetrag schlicht
             // ein negativer Gesamtbetrag, und den meldet die Regel dafür. Vorher
@@ -575,7 +657,8 @@ object InvoiceCalculator {
                         Subject.WholeInvoice,
                         "Der Restbetrag wäre ${calculatedInvoice.remainingAmount}: Es sind mehr Abschläge abgesetzt " +
                             "(${calculatedInvoice.prepaymentTotal}) als die Schlussrechnung ausmacht (${calculatedInvoice.grossTotal}). " +
-                            "Eine Überzahlung gehört in eine Gutschrift, nicht in eine Rechnung.",
+                            "Eine Überzahlung gehört nicht in eine Rechnung: Sie wird zurückgezahlt, oder der " +
+                            "zu hohe Abschlag wird storniert.",
                     ),
                 )
             }

@@ -2,6 +2,7 @@ package de.fluchitconsulting.rechnung
 
 import de.fluchitconsulting.rechnung.model.Address
 import de.fluchitconsulting.rechnung.model.BankDetails
+import de.fluchitconsulting.rechnung.model.CancelledInvoice
 import de.fluchitconsulting.rechnung.model.Customer
 import de.fluchitconsulting.rechnung.model.Invoice
 import de.fluchitconsulting.rechnung.model.LineItem
@@ -81,6 +82,11 @@ fun testPrepayment(
             ),
 )
 
+fun testCancelled(
+    invoiceNumber: String = "R26-042",
+    issueDate: LocalDate = LocalDate.of(2026, 7, 15),
+) = CancelledInvoice(invoiceNumber = invoiceNumber, issueDate = issueDate)
+
 fun testInvoice(
     number: String = "R26-001",
     items: List<LineItem> = listOf(testItem()),
@@ -89,6 +95,7 @@ fun testInvoice(
     type: InvoiceType = InvoiceType.INVOICE,
     receivedOn: LocalDate? = null,
     prepayments: List<Prepayment> = emptyList(),
+    cancelled: CancelledInvoice? = null,
 ) = Invoice(
     number = number,
     issueDate = LocalDate.of(2026, 8, 14),
@@ -103,6 +110,7 @@ fun testInvoice(
         ),
     items = items,
     prepayments = prepayments,
+    cancelled = cancelled,
     paymentTermDaysOverride = paymentTermDaysOverride,
 )
 

@@ -112,7 +112,7 @@ class FinalInvoiceRulesTest : FunSpec({
 
         test("8. ein negativer Restbetrag") {
             // Mehr abgesetzt als berechnet: Das ist keine Rechnung mehr,
-            // sondern ein Fall für eine Gutschrift.
+            // sondern ein Fall für eine Rückzahlung.
             val tooLarge = testPrepayment(net = "30000.00", vat = "5700.00")
 
             val message = messageFor(schlussrechnung(tooLarge), Rule.RESTBETRAG_NEGATIV)
