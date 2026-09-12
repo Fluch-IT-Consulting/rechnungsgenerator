@@ -93,6 +93,13 @@ enum class Rule(val severity: Severity) {
     BEFREIUNGSGRUENDE_UNEINHEITLICH(Severity.ABORT),
     KUNDEN_UST_ID_FEHLT(Severity.ABORT),
 
+    // Das Storno und seine Ursprungsrechnung (ADR-0006)
+    STORNO_OHNE_BEZUG(Severity.ABORT),
+    BEZUG_OHNE_STORNO(Severity.ABORT),
+    STORNO_AUF_SICH_SELBST(Severity.ABORT),
+    URSPRUNGSRECHNUNG_SPAETER_DATIERT(Severity.ABORT),
+    STORNO_NICHT_NEGATIV(Severity.ABORT),
+
     // Zeiten
     ZEITRAUM_VERDREHT(Severity.ABORT),
     ZEITRAUM_NACH_RECHNUNGSDATUM(Severity.ABORT),

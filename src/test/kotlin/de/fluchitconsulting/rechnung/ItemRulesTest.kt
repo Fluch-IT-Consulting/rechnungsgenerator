@@ -40,13 +40,13 @@ class ItemRulesTest : FunSpec({
 
     test("ein negativer Gesamtbetrag wird abgelehnt") {
         // Mit dem Einzelpreis ist nur noch eine negative Menge übrig, die dahin
-        // führt. Eine Rechnung über einen negativen Betrag wäre eine
-        // Gutschrift, und die gibt es noch nicht.
+        // führt. Ein negativer Betrag gehört seit ADR-0006 in eine
+        // Stornorechnung – auf jeder anderen Art bleibt er ein Abbruch.
         val calculatedInvoice = InvoiceCalculator.calculate(testInvoice(items = listOf(testItem(quantity = "-1"))), config)
         val message = calculatedInvoice.messageOf(Rule.GESAMTBETRAG_NEGATIV)
 
         message shouldContain "Gesamtbetrag"
-        message shouldContain "Gutschrift"
+        message shouldContain "Stornorechnung"
         // Bis #47 schlug hier Regel 8 der Absetzung zu. Ihre Meldung spricht von
         // abgesetzten Abschlägen – bei einer Rechnung, die gar keine hat.
         message shouldNotContain "Abschläge"
@@ -56,8 +56,11 @@ class ItemRulesTest : FunSpec({
     }
 
     test("eine negative Korrekturzeile bleibt zulässig, solange der Gesamtbetrag es ist") {
-        // Negative Mengen sind in #47 bewusst ausgeklammert: Die Norm erlaubt
-        // sie, und ob das Projekt sie will, hängt an Gutschrift und Storno.
+        // Negative Mengen waren in #47 offengelassen, mit dem Vermerk, die Frage
+        // hänge an Gutschrift und Storno. ADR-0006 hat sie beantwortet: Die
+        // negative Menge ist der von EN 16931 vorgesehene Weg zu einem
+        // negativen Betrag, weil BR-27 den negativen Einzelpreis verbietet.
+        // Einzeln bleibt sie damit zulässig, solange die Summe stimmt.
         val invoice =
             testInvoice(items = listOf(testItem(unitPrice = "100.00"), testItem(quantity = "-1", unitPrice = "30.00")))
 

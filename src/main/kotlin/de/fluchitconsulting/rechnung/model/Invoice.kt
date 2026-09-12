@@ -33,7 +33,28 @@ data class Invoice(
     // Die vereinnahmten Abschläge, die diese Schlussrechnung absetzt. Nur dort;
     // sobald abgesetzt wird, *ist* das Dokument eine Schlussrechnung.
     @SerialName("abschlaege") val prepayments: List<Prepayment> = emptyList(),
+    // Die Ursprungsrechnung, die eine Stornorechnung aufhebt. Nur dort, und
+    // dort Pflicht – ein Storno ohne Angabe, was es storniert, ist wertlos.
+    // Geprüft wird beides im Calculator, nicht hier: Ein Pflichtfeld je nach
+    // Rechnungsart kennt kotlinx.serialization nicht, und die Meldung soll von
+    // der Rechnungsart sprechen statt von einem fehlenden YAML-Schlüssel.
+    @SerialName("storniert") val cancelled: CancelledInvoice? = null,
     @SerialName("bemerkung") val note: String? = null,
+)
+
+/**
+ * Der Bezug einer Stornorechnung auf ihre Ursprungsrechnung – EN 16931 BG-3
+ * mit BT-25 (Nummer) und BT-26 (Datum).
+ *
+ * Die Felder heißen wie beim abgesetzten Abschlag: Es sind dieselben zwei
+ * Angaben über dieselbe Sache, eine fremde Rechnung. Nachgeschlagen wird auch
+ * hier nichts (ADR-0001) – die Nummer steht in der Datei, nicht in einem
+ * Verzeichnis.
+ */
+@Serializable
+data class CancelledInvoice(
+    @SerialName("rechnungsnummer") val invoiceNumber: String,
+    @SerialName("rechnungsdatum") val issueDate: IsoDate,
 )
 
 /**

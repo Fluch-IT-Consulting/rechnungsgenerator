@@ -6,7 +6,7 @@ import kotlinx.serialization.Serializable
 /**
  * Die Rechnungsart – EN 16931 BT-3, Codeliste UNTDID 1001.
  *
- * Sie trennt die vier Dokumente, die dieses Programm kennt (die Begriffe stehen
+ * Sie trennt die fünf Dokumente, die dieses Programm kennt (die Begriffe stehen
  * in `CONTEXT.md`). Der Unterschied ist keine Formsache: Wer einen Abschlag wie
  * eine gewöhnliche Rechnung abrechnet und später noch einmal die Gesamtleistung,
  * weist die Umsatzsteuer zweimal aus und schuldet sie nach §14c Abs. 1 UStG
@@ -64,6 +64,21 @@ enum class InvoiceType(
     // Kopf des Rechnungsstellers: Nicht die Höhe trennt beide, sondern ob die
     // Leistung erbracht ist.
     PARTIAL("teilrechnung", "326"),
+
+    // 384 ("Corrected invoice") und nicht 381: Die KoSIT führt 384 für Korrektur
+    // und Storno mit Bezug auf die Ursprungsrechnung, 381 für die kaufmännische
+    // Gutschrift ohne Bezug und 389 für die Gutschrift im Sinne des §14 Abs. 2
+    // Satz 2 UStG (ADR-0006). Der Pflichtsatz nennt Nummer und Datum der
+    // Ursprungsrechnung nicht: Sie stehen als eigene Angabe auf dem Blatt, weil
+    // EN 16931 sie als Struktur führt (BG-3) und nicht als Prosa. Er sagt auch
+    // nicht, *wo* sie stehen – das entscheidet die Vorlage.
+    CANCELLATION(
+        "stornorechnung",
+        "384",
+        mandatoryNote =
+            "Diese Stornorechnung hebt die genannte Ursprungsrechnung vollständig auf. " +
+                "Ein bereits gezahlter Betrag wird erstattet.",
+    ),
     ;
 
     /** Die Beschriftung des Zeitraums der ganzen Rechnung. */
