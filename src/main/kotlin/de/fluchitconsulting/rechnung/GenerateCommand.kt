@@ -75,18 +75,18 @@ class GenerateCommand(private val typesetter: Typesetter = LuaLatexTypesetter) :
 
         val workDir = createTempDirectory("rechnungsgenerator")
         try {
-            val calculated = InvoiceCalculator.calculate(invoice, config)
+            val calculatedInvoice = InvoiceCalculator.calculate(invoice, config)
             // Alle Abbrüche auf einmal: Wer fünf Fehler in der Datei hat, soll
             // nicht fünfmal starten müssen, um sie zu finden (#49).
-            val abbrueche = calculated.findings.filter { it.severity == Severity.ABORT }
+            val abbrueche = calculatedInvoice.findings.filter { it.severity == Severity.ABORT }
             if (abbrueche.isNotEmpty()) throw CliktError(abbrueche.joinToString("\n") { it.describe() })
 
             val gesetzt =
                 typesetter.typeset(
                     workingDir = workDir,
                     jobName = jobNameFor(invoice),
-                    texSource = InvoiceRenderer.render(calculated),
-                    xmpMetadata = InvoiceRenderer.renderMetadata(calculated),
+                    texSource = InvoiceRenderer.render(calculatedInvoice),
+                    xmpMetadata = InvoiceRenderer.renderMetadata(calculatedInvoice),
                 )
             val target = outputFile ?: Path.of(gesetzt.pdf.name)
             gesetzt.pdf.copyTo(target, overwrite = true)
@@ -95,7 +95,7 @@ class GenerateCommand(private val typesetter: Typesetter = LuaLatexTypesetter) :
             echo(gesetzt.validation.describe())
             // Hinweise nach dem Ergebnis, damit sie nicht wie ein Fehler wirken –
             // die Rechnung ist ja entstanden. Sie betreffen die eigene Ablage.
-            calculated.findings
+            calculatedInvoice.findings
                 .filter { it.severity == Severity.HINT }
                 .forEach { echo("Hinweis: ${it.describe()}") }
             if (keepWorkFiles) echo("Arbeitsdateien: $workDir")
