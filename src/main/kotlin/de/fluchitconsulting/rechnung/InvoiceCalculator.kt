@@ -16,8 +16,8 @@ import de.fluchitconsulting.rechnung.values.sumOf
 import java.time.LocalDate
 import java.time.temporal.ChronoUnit
 
-// Alle abgeleiteten Werte einer Rechnung. Wird aus Invoice + SellerConfig
-// berechnet und ist danach unveränderlich – das Template bekommt nur noch dies.
+// Eine Rechnung samt allem, was sich aus ihr und den Stammdaten ausrechnet.
+// Unveränderlich; der Renderer bekommt nur noch dies.
 
 /** Wird geworfen, wenn die Rechnung in sich nicht stimmig ist. */
 class InvoiceValidationException(message: String) : Exception(message)
@@ -60,15 +60,23 @@ data class DeductedPrepayment(
     val gross: Money,
 )
 
-data class InvoiceTotals(
+/**
+ * Eine Rechnung, wie sie sich mit ihren Stammdaten ausrechnet: die Eingaben und
+ * alles Abgeleitete in einem Wert.
+ *
+ * Vorher reisten Rechnung und Summen als Paar, das nichts zusammenhielt. Jeder
+ * Verbraucher nahm beide entgegen und verließ sich darauf, dass sie zueinander
+ * gehören; zwei Eingaben standen sicherheitshalber noch einmal in den Summen.
+ * Jetzt ist ein Paar aus einer Rechnung und den Summen einer anderen nicht mehr
+ * baubar – nicht bloß ungebaut, derselbe Zug wie beim Zahlungsziel.
+ */
+data class CalculatedInvoice(
+    val invoice: Invoice,
+    val config: SellerConfig,
     val lines: List<CalculatedLine>,
     val netTotal: Money,
     val vatGroups: List<VatGroup>,
     val grossTotal: Money,
-    /** Das Datum der Rechnung – Ausgangspunkt für die Frist. */
-    val issueDate: LocalDate,
-    /** Die vereinbarte Zahlungsfrist in Tagen, aus den Stammdaten oder der Rechnung. */
-    val paymentTermDays: Int,
     /**
      * Hinweise für den Rechnungssteller – nicht für den Kunden, sie stehen
      * nicht auf dem PDF. Sie betreffen Nachweise, die in die eigene Akte
@@ -78,6 +86,13 @@ data class InvoiceTotals(
     /** Die abgesetzten Abschläge, in der Reihenfolge der Rechnungsdatei. */
     val prepayments: List<DeductedPrepayment> = emptyList(),
 ) {
+    /**
+     * Die vereinbarte Zahlungsfrist in Tagen: die der Rechnung, sonst die der
+     * Stammdaten. Abgeleitet und nicht kopiert – als eigenes Feld wäre es
+     * dieselbe Angabe ein zweites Mal, und die zweite kann abweichen.
+     */
+    val paymentTermDays: Int get() = invoice.paymentTermDaysOverride ?: config.paymentTermDays
+
     // Abgeleitet statt gespeichert: Zwei Felder, die dasselbe sagen wie die
     // Liste, könnten von ihr abweichen.
     val prepaymentTotal: Money get() = prepayments.sumOf { it.gross }
@@ -101,11 +116,11 @@ data class InvoiceTotals(
      * *und* Restbetrag null nicht mehr baubar – nicht bloß ungebaut.
      */
     val dueDate: LocalDate? get() =
-        if (remainingAmount.isZero()) null else issueDate.plusDays(paymentTermDays.toLong())
+        if (remainingAmount.isZero()) null else invoice.issueDate.plusDays(paymentTermDays.toLong())
 }
 
 object InvoiceCalculator {
-    fun calculate(invoice: Invoice, config: SellerConfig): InvoiceTotals {
+    fun calculate(invoice: Invoice, config: SellerConfig): CalculatedInvoice {
         validate(invoice, config)
         val hints = collectHints(invoice, config)
 
@@ -164,14 +179,13 @@ object InvoiceCalculator {
                     "Rechnungsdatum. Bitte 'zahlungsziel-tage' prüfen; 0 heißt sofort.",
             )
         }
-        val totals =
-            InvoiceTotals(lines, netTotal, vatGroups, grossTotal, invoice.issueDate, termDays, hints, prepayments)
+        val calculated = CalculatedInvoice(invoice, config, lines, netTotal, vatGroups, grossTotal, hints, prepayments)
 
         // Die übrigen acht Regeln stehen in validatePrepayments, das validate()
         // aufruft: Sie kommen ohne die Summen aus und sollen zuschlagen, bevor
         // überhaupt gerechnet wird.
-        validateDeduction(totals)
-        return totals
+        validateDeduction(calculated)
+        return calculated
     }
 
     /**
@@ -374,12 +388,12 @@ object InvoiceCalculator {
      * Die Absetzung gegen die Rechnung selbst – die beiden Regeln, die die
      * Summen brauchen.
      */
-    private fun validateDeduction(totals: InvoiceTotals) {
-        val prepayments = totals.prepayments
+    private fun validateDeduction(calculated: CalculatedInvoice) {
+        val prepayments = calculated.prepayments
         // Regel 6: Zwei Positionen mit 0 % können steuerlich Verschiedenes
         // bedeuten, deshalb muss die Kombination aus Kategorie und Satz passen –
         // nicht nur der Satz.
-        val present = totals.vatGroups.map { it.category to it.rate }.toSet()
+        val present = calculated.vatGroups.map { it.category to it.rate }.toSet()
         prepayments.forEach { abgesetzt ->
             abgesetzt.prepayment.taxShares.forEach { anteil ->
                 if ((anteil.taxCategory to anteil.vatRate) !in present) {
@@ -394,10 +408,10 @@ object InvoiceCalculator {
 
         // Regel 8: Eine Überzahlung ist kein Restbetrag, sondern ein anderes
         // Dokument – Gutschrift oder Storno, beides gibt es hier noch nicht.
-        if (totals.remainingAmount.isNegative()) {
+        if (calculated.remainingAmount.isNegative()) {
             throw InvoiceValidationException(
-                "Der Restbetrag wäre ${totals.remainingAmount}: Es sind mehr Abschläge abgesetzt " +
-                    "(${totals.prepaymentTotal}) als die Schlussrechnung ausmacht (${totals.grossTotal}). " +
+                "Der Restbetrag wäre ${calculated.remainingAmount}: Es sind mehr Abschläge abgesetzt " +
+                    "(${calculated.prepaymentTotal}) als die Schlussrechnung ausmacht (${calculated.grossTotal}). " +
                     "Eine Überzahlung gehört in eine Gutschrift, nicht in eine Rechnung.",
             )
         }

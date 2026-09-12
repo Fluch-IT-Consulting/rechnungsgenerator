@@ -22,7 +22,8 @@ import de.fluchitconsulting.rechnung.values.InvoiceType
  * hält es eine Vereinnahmung vor der Rechnungsstellung fest, dieselbe Tatsache
  * wie im Abschlag.
  */
-fun prepaymentOf(invoice: Invoice, totals: InvoiceTotals): Prepayment {
+fun prepaymentOf(calculated: CalculatedInvoice): Prepayment {
+    val invoice = calculated.invoice
     // Keine Regel der Schlussrechnung kennt die Art des Dokuments, aus dem ein
     // Abschlag stammt – eine gewöhnliche Rechnung ginge dort klaglos durch.
     if (invoice.type != InvoiceType.PREPAYMENT) {
@@ -35,7 +36,7 @@ fun prepaymentOf(invoice: Invoice, totals: InvoiceTotals): Prepayment {
         invoiceNumber = invoice.number,
         issueDate = invoice.issueDate,
         receivedOn = invoice.receivedOn,
-        taxShares = totals.vatGroups.map { TaxShare(it.category, it.rate, net = it.base, vat = it.amount) },
+        taxShares = calculated.vatGroups.map { TaxShare(it.category, it.rate, net = it.base, vat = it.amount) },
     )
 }
 
@@ -82,12 +83,12 @@ fun prepaymentsOf(abschlagsrechnungen: List<Invoice>, config: SellerConfig): Lis
         // Die Nummer kommt davor, weil die Meldungen des Calculators nur
         // "Position 1 (…)" sagen – bei mehreren Abschlagsrechnungen bliebe
         // offen, in welcher.
-        val totals =
+        val calculated =
             try {
                 InvoiceCalculator.calculate(abschlagsrechnung, config)
             } catch (e: InvoiceValidationException) {
                 throw InvoiceValidationException("${abschlagsrechnung.number}: ${e.message}")
             }
-        prepaymentOf(abschlagsrechnung, totals)
+        prepaymentOf(calculated)
     }
 }

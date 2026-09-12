@@ -35,7 +35,7 @@ class InvoiceRendererTest : FunSpec({
 
     fun renderMit(vararg items: de.fluchitconsulting.rechnung.model.LineItem): String {
         val invoice = testInvoice(items = items.toList())
-        return InvoiceRenderer.render(invoice, config, InvoiceCalculator.calculate(invoice, config))
+        return InvoiceRenderer.render(InvoiceCalculator.calculate(invoice, config))
     }
 
     test("eine Position ohne Zusatzangaben bleibt einzeilig") {
@@ -93,7 +93,7 @@ class InvoiceRendererTest : FunSpec({
         val seller = YamlLoader.parseSellerConfig(resource("stammdaten.yaml"))
         val invoice = YamlLoader.parseInvoice(resource("rechnung.yaml"))
 
-        InvoiceRenderer.render(invoice, seller, InvoiceCalculator.calculate(invoice, seller)) shouldBe
+        InvoiceRenderer.render(InvoiceCalculator.calculate(invoice, seller)) shouldBe
             resource("rechnung-erwartet.tex")
     }
 
@@ -109,7 +109,7 @@ class InvoiceRendererTest : FunSpec({
             val invoice = YamlLoader.parseInvoice(resource("$name.yaml"))
 
             withClue(name) {
-                InvoiceRenderer.render(invoice, seller, InvoiceCalculator.calculate(invoice, seller)) shouldBe
+                InvoiceRenderer.render(InvoiceCalculator.calculate(invoice, seller)) shouldBe
                     resource("$name-erwartet.tex")
             }
         }
@@ -164,7 +164,7 @@ class InvoiceRendererTest : FunSpec({
                         ),
                 )
             val stammdaten = config.copy(address = config.address.copy(countryCode = CountryCode(stellerland)))
-            val tex = InvoiceRenderer.render(invoice, stammdaten, InvoiceCalculator.calculate(invoice, stammdaten))
+            val tex = InvoiceRenderer.render(InvoiceCalculator.calculate(invoice, stammdaten))
             return tex.lines().first { it.contains("Nürnberg") }.trim()
         }
 
@@ -201,7 +201,7 @@ class InvoiceRendererTest : FunSpec({
     context("Abschlagsrechnung") {
         fun abschlag(receivedOn: LocalDate? = null): String {
             val invoice = testInvoice(type = InvoiceType.PREPAYMENT, receivedOn = receivedOn)
-            return InvoiceRenderer.render(invoice, config, InvoiceCalculator.calculate(invoice, config))
+            return InvoiceRenderer.render(InvoiceCalculator.calculate(invoice, config))
         }
 
         test("der Balken nennt die Rechnungsart") {
@@ -212,7 +212,7 @@ class InvoiceRendererTest : FunSpec({
             val invoice = YamlLoader.parseInvoice(resource("abschlagsrechnung.yaml"))
             val seller = YamlLoader.parseSellerConfig(resource("stammdaten.yaml"))
 
-            InvoiceRenderer.render(invoice, seller, InvoiceCalculator.calculate(invoice, seller)) shouldContain
+            InvoiceRenderer.render(InvoiceCalculator.calculate(invoice, seller)) shouldContain
                 "Voraussichtlicher Leistungszeitraum: \\mbox{Juni bis Oktober 2026}"
         }
 
@@ -243,7 +243,7 @@ class InvoiceRendererTest : FunSpec({
                 )
             val invoice = testInvoice(type = InvoiceType.PREPAYMENT, items = listOf(item))
 
-            InvoiceRenderer.render(invoice, config, InvoiceCalculator.calculate(invoice, config)) shouldContain
+            InvoiceRenderer.render(InvoiceCalculator.calculate(invoice, config)) shouldContain
                 "Voraussichtlicher Zeitraum: September 2026"
         }
 
@@ -257,7 +257,7 @@ class InvoiceRendererTest : FunSpec({
         test("die Metadaten des PDF tragen dieselbe Bezeichnung") {
             val invoice = testInvoice(type = InvoiceType.PREPAYMENT)
 
-            val xmp = InvoiceRenderer.renderMetadata(invoice, config)
+            val xmp = InvoiceRenderer.renderMetadata(InvoiceCalculator.calculate(invoice, config))
 
             xmp shouldContain "\\Title{Abschlagsrechnung R26-001}"
             xmp shouldContain "\\Subject{Abschlagsrechnung R26-001 vom 14. August 2026}"
@@ -266,7 +266,7 @@ class InvoiceRendererTest : FunSpec({
     context("Schlussrechnung") {
         fun schlussrechnung(items: List<LineItem>, vararg prepayments: Prepayment): String {
             val invoice = testInvoice(type = InvoiceType.FINAL, items = items, prepayments = prepayments.toList())
-            return InvoiceRenderer.render(invoice, config, InvoiceCalculator.calculate(invoice, config))
+            return InvoiceRenderer.render(InvoiceCalculator.calculate(invoice, config))
         }
 
         val gesamtleistung = listOf(testItem(quantity = "1", unitPrice = "20000.00"))

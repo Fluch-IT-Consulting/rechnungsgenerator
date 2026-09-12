@@ -75,13 +75,13 @@ class GenerateCommand(private val typesetter: Typesetter = LuaLatexTypesetter) :
 
         val workDir = createTempDirectory("rechnungsgenerator")
         try {
-            val totals = InvoiceCalculator.calculate(invoice, config)
+            val calculated = InvoiceCalculator.calculate(invoice, config)
             val gesetzt =
                 typesetter.typeset(
                     workingDir = workDir,
                     jobName = jobNameFor(invoice),
-                    texSource = InvoiceRenderer.render(invoice, config, totals),
-                    xmpMetadata = InvoiceRenderer.renderMetadata(invoice, config),
+                    texSource = InvoiceRenderer.render(calculated),
+                    xmpMetadata = InvoiceRenderer.renderMetadata(calculated),
                 )
             val target = outputFile ?: Path.of(gesetzt.pdf.name)
             gesetzt.pdf.copyTo(target, overwrite = true)
@@ -90,7 +90,7 @@ class GenerateCommand(private val typesetter: Typesetter = LuaLatexTypesetter) :
             echo(gesetzt.validation.describe())
             // Hinweise nach dem Ergebnis, damit sie nicht wie ein Fehler wirken –
             // die Rechnung ist ja entstanden. Sie betreffen die eigene Ablage.
-            totals.hints.forEach { echo("Hinweis: $it") }
+            calculated.hints.forEach { echo("Hinweis: $it") }
             if (keepWorkFiles) echo("Arbeitsdateien: $workDir")
             // Ein ungültiges PDF/A ist kein Erfolg: Exitcode 1, damit ein Skript
             // ringsherum es merkt.
