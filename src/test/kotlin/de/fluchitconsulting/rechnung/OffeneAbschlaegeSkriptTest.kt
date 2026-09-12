@@ -157,7 +157,28 @@ class OffeneAbschlaegeSkriptTest : FunSpec({
                 "r016.yaml" to schlussrechnung("R26-016", "R26-009"),
             )
 
-        lauf(verzeichnis).ausgabe shouldBe ""
+        val ergebnis = lauf(verzeichnis)
+
+        ergebnis.ausgabe shouldBe ""
+        // Und es ist auch keine doppelte Absetzung: Die stornierte setzt nichts ab.
+        ergebnis.fehler shouldNotContain "Achtung"
+    }
+
+    test("zwei gültige Schlussrechnungen über denselben Abschlag werden gemeldet") {
+        // #67: Der Generator lehnt dieselbe Nummer zweimal ab, aber nur
+        // innerhalb einer Datei. Hier zahlte der Kunde einmal zu wenig.
+        val verzeichnis =
+            ablage(
+                "r009.yaml" to abschlagsrechnung("R26-009", "2026-06-15"),
+                "r014.yaml" to schlussrechnung("R26-014", "R26-009"),
+                "r018.yaml" to schlussrechnung("R26-018", "R26-009"),
+            )
+
+        val ergebnis = lauf(verzeichnis)
+
+        ergebnis.ausgabe shouldBe ""
+        ergebnis.fehler shouldContain
+            "Achtung: R26-009 wird mehrfach abgesetzt – in den Schlussrechnungen R26-014, R26-018."
     }
 
     test("ein stornierter Abschlag in einer gültigen Schlussrechnung wird gemeldet") {
