@@ -55,6 +55,11 @@ Rechnung keine doppelte Nummer verursacht. Abschlags- und Schlussrechnungen
 zählen in derselben Reihe wie alle anderen – ein zweiter Nummernkreis
 verdoppelte nur die Gelegenheiten für Lücken und Dubletten.
 
+Das Schema `R{JJ}-{NNN}` steht an zwei Stellen: im Skript, das die Nummer
+vergibt, und als `rechnungsnummer-muster` in den Stammdaten, gegen das der
+Generator sie prüft (ADR-0005). Wer es ändert, ändert beide – sonst lehnt der
+Generator ab, was das Skript gerade vergeben hat.
+
 **2. Angaben sammeln.** Nötig sind Kunde mit Anschrift, Leistungszeitraum und
 die Positionen. Erfinde nichts davon – eine falsche Zahl auf einer Rechnung ist
 teurer als eine Rückfrage.

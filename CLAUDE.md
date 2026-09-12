@@ -94,6 +94,18 @@ CV/Web-Auftritt des Autors), Validierung über veraPDF.
   `formatted()` wieder gruppiert. Grund: Diese Werte tippt man einmal und
   schaut sie nie wieder an; ein Zahlendreher in der IBAN fällt sonst erst auf,
   wenn das Geld nicht ankommt.
+- **Rechnungsnummer**: Geprüft wird nur ihre Form – welche gilt, steht als
+  regulärer Ausdruck in den Stammdaten (`rechnungsnummer-muster`), und ohne
+  Eintrag wird gar nicht geprüft (ADR-0005). `R26-009` ist ein Format unter
+  vielen; UStAE 14.5 Abs. 10 erlaubt Ziffern und Buchstaben und verlangt keine
+  lückenlose Abfolge. Die Einmaligkeit (§14 Abs. 4 Satz 1 Nr. 4 UStG) prüft der
+  Generator nicht – beim Erzeugen sieht er eine einzige Datei (ADR-0001). Die
+  Prüfung sitzt deshalb im `InvoiceCalculator` und nicht im Serialisierer: Ob
+  eine Nummer gültig ist, hängt an zwei Dateien, und der sieht beim Einlesen
+  immer nur eine. Leere Nummer und Leerraum am Rand brechen unabhängig vom
+  Muster ab, weil aus der Nummer auch der Dateiname entsteht. Die Nummern der
+  abgesetzten Abschläge bleiben ungeprüft: Sie stammen aus früheren Rechnungen,
+  womöglich aus der Zeit vor einem Wechsel des Musters.
 - **Steuerkategorie**: `TaxCategory` (BT-151, Codeliste UNCL 5305) pro Position,
   Vorgabe S. Der Satz allein genügt nicht – ohne Kategorie lässt sich "0 %"
   nicht von "steuerbefreit" und nicht von "Steuerschuldnerschaft des

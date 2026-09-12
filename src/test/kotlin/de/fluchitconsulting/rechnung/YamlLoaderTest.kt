@@ -23,6 +23,9 @@ class YamlLoaderTest : FunSpec({
         config.vatId.value shouldBe "DE123456788"
         config.address.postalCode shouldBe "97070"
         config.paymentTermDays shouldBe 14
+        // Das Muster der Rechnungsnummern (ADR-0005): geprüft wird die Nummer
+        // erst im Calculator, gelesen wird sie hier.
+        checkNotNull(config.invoiceNumberPattern).matches("R26-042") shouldBe true
     }
 
     test("liest die Rechnung und rechnet End-to-End") {
@@ -120,6 +123,18 @@ class YamlLoaderTest : FunSpec({
 
         failure.message!! shouldContain datei.toString()
         failure.message!! shouldContain "Prüfsumme"
+    }
+
+    test("ein Muster, das kein regulärer Ausdruck ist, nennt die Datei") {
+        // Der Tippfehler {2-3} statt {2,3} fällt beim Laden auf, nicht erst bei
+        // der ersten Rechnung, die daran scheitert.
+        val datei = createTempDirectory("loader-test").resolve("stammdaten.yaml")
+        datei.writeText(resource("stammdaten.yaml").replace("R\\d{2}-\\d{3}", "R\\d{2-3}"))
+
+        val failure = shouldThrow<InputFileException> { YamlLoader.loadSellerConfig(datei) }
+
+        failure.message!! shouldContain datei.toString()
+        failure.message!! shouldContain "Kein gültiger regulärer Ausdruck"
     }
 
     test("ein YAML-Fehler nennt die Datei") {

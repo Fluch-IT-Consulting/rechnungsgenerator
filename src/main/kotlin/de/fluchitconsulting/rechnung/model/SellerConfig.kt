@@ -3,6 +3,7 @@ package de.fluchitconsulting.rechnung.model
 import de.fluchitconsulting.rechnung.values.Bic
 import de.fluchitconsulting.rechnung.values.CountryCode
 import de.fluchitconsulting.rechnung.values.Iban
+import de.fluchitconsulting.rechnung.values.InvoiceNumberPattern
 import de.fluchitconsulting.rechnung.values.TaxNumber
 import de.fluchitconsulting.rechnung.values.VatId
 import kotlinx.serialization.SerialName
@@ -24,6 +25,9 @@ data class SellerConfig(
     // Pflicht für EN 16931 (BT-31) und §14 UStG bei B2B: die USt-IdNr.
     @SerialName("umsatzsteuer-id") val vatId: VatId,
     @SerialName("bank") val bank: BankDetails,
+    // Welche Rechnungsnummern gültig sind, weiß nur der Rechnungssteller
+    // (ADR-0005). Ohne Eintrag wird die Form nicht geprüft.
+    @SerialName("rechnungsnummer-muster") val invoiceNumberPattern: InvoiceNumberPattern? = null,
     @SerialName("zahlungsziel-tage") val paymentTermDays: Int = 14,
     // Handelsregister-Angaben: für Kapitalgesellschaften (UG, GmbH) nach §35a GmbHG
     // Pflicht auf Geschäftsbriefen, für Einzelunternehmer gegenstandslos – deshalb optional.
