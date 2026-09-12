@@ -113,7 +113,7 @@ data class CalculatedInvoice(
      * *und* Restbetrag null nicht mehr baubar – nicht bloß ungebaut.
      */
     val dueDate: LocalDate? get() =
-        if (remainingAmount.isZero() || invoice.type == InvoiceType.CANCELLATION) {
+        if (remainingAmount.isZero() || !invoice.type.chargesForService) {
             null
         } else {
             invoice.issueDate.plusDays(paymentTermDays.toLong())
@@ -799,8 +799,14 @@ object InvoiceCalculator {
             // nicht mit heute: So ergibt dieselbe Datei jederzeit dieselben
             // Hinweise, auch wenn sie ein Jahr später noch einmal erzeugt wird. Bei
             // der Abschlagsrechnung schweigt er, denn ihr Zeitraum ist eine Prognose.
+            // Beim Storno auch: Die Frist gilt dem Ausstellen einer Rechnung, nicht
+            // dem Aufheben – sonst forderte der Hinweis, ein richtiges Datum zu
+            // ändern (siehe InvoiceType.chargesForService).
             val serviceEnd = invoice.servicePeriod.end
-            if (!invoice.type.servicePeriodIsForecast && invoice.issueDate.isAfter(serviceEnd.plusMonths(6))) {
+            if (invoice.type.chargesForService &&
+                !invoice.type.servicePeriodIsForecast &&
+                invoice.issueDate.isAfter(serviceEnd.plusMonths(6))
+            ) {
                 add(
                     Finding(
                         Rule.RECHNUNG_SPAET,
@@ -871,8 +877,12 @@ object InvoiceCalculator {
                         ),
                     )
                 }
+                // Nur, wo eine Leistung abgerechnet wird: Das Storno wiederholt die
+                // Abfrage der Ursprungsrechnung, und zu der musste sie passen. Eine
+                // frische Abfrage für ein Dokument zu verlangen, das den Umsatz
+                // zurücknimmt, hieße Arbeit ohne Zweck.
                 val alter = ChronoUnit.MONTHS.between(pruefung.date, invoice.issueDate)
-                if (alter >= 12) {
+                if (invoice.type.chargesForService && alter >= 12) {
                     add(
                         Finding(
                             Rule.ABFRAGE_ALT,

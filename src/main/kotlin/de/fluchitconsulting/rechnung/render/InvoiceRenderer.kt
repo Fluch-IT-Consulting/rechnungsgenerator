@@ -463,7 +463,7 @@ object InvoiceRenderer {
      * Überschrift ohne Inhalt stehen bleibt.
      */
     private fun bankDetails(type: InvoiceType, config: SellerConfig): Latex {
-        if (type == InvoiceType.CANCELLATION) return Latex.EMPTY
+        if (!type.chargesForService) return Latex.EMPTY
         return Latex.macro(TemplateMacro.BANKBLOCK, listOf(bankLines(config)))
     }
 
