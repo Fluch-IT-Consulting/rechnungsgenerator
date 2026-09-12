@@ -1,9 +1,17 @@
 package de.fluchitconsulting.rechnung
 
+import de.fluchitconsulting.rechnung.model.Address
 import de.fluchitconsulting.rechnung.model.CancelledInvoice
+import de.fluchitconsulting.rechnung.model.CheckMethod
+import de.fluchitconsulting.rechnung.model.Customer
 import de.fluchitconsulting.rechnung.model.Invoice
+import de.fluchitconsulting.rechnung.model.ServicePeriod
+import de.fluchitconsulting.rechnung.model.VatIdCheck
+import de.fluchitconsulting.rechnung.values.CountryCode
 import de.fluchitconsulting.rechnung.values.InvoiceType
 import de.fluchitconsulting.rechnung.values.Money
+import de.fluchitconsulting.rechnung.values.TaxCategory
+import de.fluchitconsulting.rechnung.values.VatId
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.collections.shouldBeEmpty
 import io.kotest.matchers.collections.shouldContain
@@ -96,6 +104,54 @@ class CancellationRulesTest : FunSpec({
     test("ein Storno hat keine Fälligkeit") {
         // Es fordert nicht zur Zahlung auf, sondern kündigt eine Erstattung an.
         InvoiceCalculator.calculate(storno(), config).dueDate shouldBe null
+    }
+
+    context("was ein Storno nicht abrechnet, mahnt es auch nicht an") {
+        // Beide Hinweise hängen am Rechnungsdatum und meldeten sich deshalb auch
+        // auf einem Storno, das Monate nach der Ursprungsrechnung entsteht –
+        // genau der Normalfall. Sie forderten damit, ein richtiges Datum zu
+        // ändern und eine gegenstandslose Abfrage zu wiederholen.
+
+        test("die Sechs-Monats-Frist des §14 Abs. 2 UStG gilt dem Ausstellen, nicht dem Aufheben") {
+            // Leistung endete im Januar, der Fehler fällt im September auf.
+            val spaetesStorno =
+                storno().copy(
+                    issueDate = LocalDate.of(2026, 9, 12),
+                    servicePeriod = ServicePeriod(LocalDate.of(2026, 1, 1), LocalDate.of(2026, 1, 31)),
+                )
+
+            InvoiceCalculator.calculate(spaetesStorno, config).rules() shouldNotContain Rule.RECHNUNG_SPAET
+        }
+
+        test("eine alternde Bestätigungsabfrage wird im Storno nicht gerügt") {
+            // Das Storno wiederholt die Abfrage der Ursprungsrechnung; zu der
+            // musste sie passen, nicht zum Storno.
+            val alteAbfrage =
+                storno(quantity = "-10").copy(
+                    issueDate = LocalDate.of(2026, 9, 12),
+                    items = listOf(testItem(quantity = "-10", vatRate = "0", taxCategory = TaxCategory.REVERSE_CHARGE)),
+                    customer =
+                        Customer(
+                            name = "Voorbeeld Software B.V.",
+                            address =
+                                Address(
+                                    street = "Keizersgracht 1",
+                                    postalCode = "1015",
+                                    city = "Amsterdam",
+                                    countryCode = CountryCode("NL"),
+                                ),
+                            vatId = VatId("NL123456789B01"),
+                            vatIdCheck =
+                                VatIdCheck(
+                                    date = LocalDate.of(2025, 6, 1),
+                                    method = CheckMethod.QUALIFIED,
+                                    reference = "BZSt-Protokoll 2025-06-01",
+                                ),
+                        ),
+                )
+
+            InvoiceCalculator.calculate(alteAbfrage, config).rules() shouldNotContain Rule.ABFRAGE_ALT
+        }
     }
 
     test("Abschläge gehören auch nicht in ein Storno") {

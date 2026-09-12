@@ -82,6 +82,16 @@ Repo stand das Wort an acht Stellen in der falschen Bedeutung.
 - **Kein Zahlungsziel, also auch keine Fälligkeit.** `dueDate` liefert `null` –
   derselbe Zug wie beim Restbetrag null (ADR-0002): Das Blatt soll nicht zwei
   verschiedene Aussagen tragen.
+- **"Rechnet ab und fordert zur Zahlung auf" ist eine eigene Tatsache**
+  (`InvoiceType.chargesForService`), nicht viermal die Frage "ist es ein
+  Storno?". Daran hängen Zahlungsziel, Bankverbindung, die Sechs-Monats-Frist
+  des §14 Abs. 2 UStG und das Alter der Bestätigungsabfrage. Die beiden
+  Hinweise meldeten sich zunächst auch auf einem Storno: Sie fragen nach dem
+  Rechnungsdatum, und das liegt bei einem Storno naturgemäß Monate nach der
+  Leistung – sie forderten also, ein richtiges Datum zu ändern und eine
+  gegenstandslose Abfrage zu wiederholen. Das Vorzeichen des Gesamtbetrags
+  fragt weiter nach der Rechnungsart selbst: Dort ist es wirklich das Storno,
+  das gemeint ist, und keine abgeleitete Eigenschaft.
 - **`RESTBETRAG_NEGATIV` bleibt ein Abbruch.** Eine Überzahlung der
   Schlussrechnung ist kein Storno; geändert wird nur der Wortlaut, der heute
   auf ein Dokument verweist, das es nicht gab.

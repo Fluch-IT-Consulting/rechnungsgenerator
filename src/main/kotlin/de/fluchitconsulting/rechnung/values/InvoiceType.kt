@@ -30,6 +30,21 @@ enum class InvoiceType(
      */
     val servicePeriodIsForecast: Boolean = false,
     /**
+     * Rechnet dieses Dokument eine Leistung ab und fordert zur Zahlung auf?
+     *
+     * So steht die Rechnung im Glossar, und das Storno tut beides nicht: Es
+     * nimmt eine Abrechnung zurück und kündigt eine Erstattung an. Aus dieser
+     * einen Tatsache folgen vier Dinge – kein Zahlungsziel, keine
+     * Bankverbindung, keine Sechs-Monats-Frist des §14 Abs. 2 UStG (die gilt
+     * dem Ausstellen einer Rechnung, nicht dem Aufheben) und kein Hinweis auf
+     * eine alternde Bestätigungsabfrage (die musste zur Ursprungsrechnung
+     * passen, nicht zum Storno).
+     *
+     * Nicht dasselbe wie "ist ein Storno": Das Vorzeichen des Gesamtbetrags
+     * hängt an der Rechnungsart selbst und fragt deshalb nach ihr.
+     */
+    val chargesForService: Boolean = true,
+    /**
      * Ein Satz, der auf diesem Dokument stehen muss, damit es als das erkennbar
      * ist, was es ist. Hier steht der Wortlaut, nicht seine Gestalt: Wo er auf
      * der Seite landet, entscheidet die Vorlage.
@@ -75,6 +90,7 @@ enum class InvoiceType(
     CANCELLATION(
         "stornorechnung",
         "384",
+        chargesForService = false,
         mandatoryNote =
             "Diese Stornorechnung hebt die genannte Ursprungsrechnung vollständig auf. " +
                 "Ein bereits gezahlter Betrag wird erstattet.",
