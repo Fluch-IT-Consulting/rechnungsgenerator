@@ -26,6 +26,14 @@ heißt meist, dass der Name abweicht; eine übersprungene Datei kann genau die
 gesuchte sein. Fertig, wenn die Liste steht – oder feststeht, dass nichts offen
 ist. Dann ist es keine Schlussrechnung, sondern eine Rechnung (`art: rechnung`).
 
+Nach Stornos musst du nicht selbst suchen, das Skript wertet sie aus: Eine
+stornierte Abschlagsrechnung steht nicht in der Liste, und die Abschläge einer
+stornierten Schlussrechnung stehen wieder darin. Beides vermerkt es auf stderr,
+und beides gibst du weiter – ein Abschlag, der fehlt oder unerwartet auftaucht,
+gehört erklärt. Eine Zeile, die mit **Achtung** beginnt, hältst du an: Da setzt
+eine gültige Schlussrechnung einen stornierten Abschlag ab, und das ist ein
+Fall für den Nutzer, nicht für die neue Rechnung.
+
 **2. Vorlegen und fragen, welche abgesetzt werden.** Die Beträge liefert der
 Generator: Lass ihn über alle gefundenen Dateien laufen (Aufruf wie in
 Schritt 3, ohne `>>`) und lege je Abschlag Nummer, Datum, Netto und

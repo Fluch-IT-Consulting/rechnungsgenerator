@@ -205,6 +205,12 @@ Bankverbindung weg: Ein Storno fordert kein Geld, es kündigt eine Erstattung an
 Eine Rechnung nur *teilweise* zu berichtigen, geht nicht – der Weg ist, ganz zu
 stornieren und richtig neu zu stellen.
 
+Ein Storno wirkt über seine eigene Datei hinaus, aber nur dort, wo jemand das
+Ablageverzeichnis liest: `offene-abschlaege.py` nimmt eine stornierte
+Abschlagsrechnung aus der Liste der offenen und gibt die Abschläge einer
+stornierten Schlussrechnung wieder frei. Der Generator kann das nicht sehen –
+er liest beim Erzeugen eine einzige Datei.
+
 ## Entwicklung
 
 ```

@@ -171,7 +171,14 @@ CV/Web-Auftritt des Autors), Validierung über veraPDF.
   sonst bliebe die Überschrift ohne Konto stehen. Das Wort **Gutschrift** fällt
   nicht: Umsatzsteuerlich ist das eine Rechnung des Leistungsempfängers. Nur
   ganz, nicht teilweise – die Rechnungskorrektur ist ein eigenes Modell, weil
-  bei ihr das Vorzeichen kippen kann (#64).
+  bei ihr das Vorzeichen kippen kann (#64). Über die eigene Datei hinaus wirkt
+  ein Storno nur dort, wo jemand das Ablageverzeichnis liest, also im Skript
+  `offene-abschlaege.py` (#66): Eine stornierte Abschlagsrechnung ist nicht
+  offen, und die Abschläge einer stornierten Schlussrechnung sind es wieder.
+  Beide Richtungen kosten Geld – die eine setzt Zurückgezahltes ab, die andere
+  lässt zweimal zahlen –, deshalb bleibt keine still: Jede vermerkt das Skript
+  auf stderr, auch den Fall, der weder offen noch in Ordnung ist (ein
+  stornierter Abschlag, den eine gültige Schlussrechnung absetzt).
 - **Absetzung**: Die Schlussrechnung trägt die vereinnahmten Abschläge unter
   `abschlaege` ausgeschrieben, mit `steueranteile` je Kombination aus Kategorie
   und Satz. Nachgeschlagen wird nichts (ADR-0001): Zwischen Abschlag und
