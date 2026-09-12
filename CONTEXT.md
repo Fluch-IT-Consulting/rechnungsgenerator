@@ -32,6 +32,22 @@ abgesetzt und braucht keine Schlussrechnung – der Unterschied zur
 Abschlagsrechnung ist nicht die Höhe, sondern ob die Leistung erbracht ist.
 _Vermeiden_: Zwischenrechnung, Abschlagsrechnung (für diesen Fall)
 
+**Stornorechnung**:
+Das Dokument, das eine bereits ausgestellte Rechnung vollständig aufhebt. Es
+nennt die Ursprungsrechnung, wiederholt deren Positionen mit negativer Menge und
+fordert nicht zur Zahlung auf.
+_Vermeiden_: Gutschrift, Rechnungskorrektur, Stornobeleg, Negativrechnung
+
+„Gutschrift" ist hier besonders heikel: Umsatzsteuerlich ist das eine Rechnung,
+die der **Leistungsempfänger** ausstellt (§14 Abs. 2 Satz 2 UStG), also etwas
+ganz anderes. „Rechnungskorrektur" wiederum ist das Dokument, das einzelne
+Angaben ändert, statt alles aufzuheben – dieses Projekt kennt es nicht.
+
+**Ursprungsrechnung**:
+Die Rechnung, auf die sich eine Stornorechnung bezieht. Genannt wird sie mit
+Nummer und Datum (EN 16931 BG-3, BT-25 und BT-26).
+_Vermeiden_: Originalrechnung, vorausgegangene Rechnung, Ausgangsrechnung
+
 **Stammdaten**:
 Die Angaben des Rechnungsstellers, die auf jeder Rechnung gleich sind.
 _Vermeiden_: Konfiguration, Absenderdaten, Profil
