@@ -53,6 +53,17 @@ sealed interface Subject {
     data class Prepayment(val invoiceNumber: String) : Subject {
         override fun describe(): String = "Abschlag $invoiceNumber"
     }
+
+    /**
+     * Ein Befund aus einer anderen Rechnungsdatei – `abschlaege` liest mehrere
+     * auf einmal, und "Position 1 (…)" allein sagt dann nicht, in welcher.
+     *
+     * Die Herkunft legt sich um den ursprünglichen Gegenstand, statt ihn zu
+     * ersetzen: Beides zusammen ergibt "R26-002, Position 1 (Beratung)".
+     */
+    data class FromInvoice(val invoiceNumber: String, val inner: Subject) : Subject {
+        override fun describe(): String = inner.describe()?.let { "$invoiceNumber, $it" } ?: invoiceNumber
+    }
 }
 
 /**
@@ -102,6 +113,11 @@ enum class Rule(val severity: Severity) {
     // Bestätigungsabfrage der USt-IdNr.
     BESTAETIGUNGSABFRAGE_FEHLT(Severity.ABORT),
     BESTAETIGUNGSABFRAGE_NACH_RECHNUNGSDATUM(Severity.ABORT),
+
+    // Beim Zusammentragen der Abschläge (`rechnungsgenerator abschlaege`)
+    ABSCHLAGSRECHNUNGEN_VERSCHIEDENE_KUNDEN(Severity.ABORT),
+    ABSCHLAGSRECHNUNG_DOPPELT(Severity.ABORT),
+    KEINE_ABSCHLAGSRECHNUNG(Severity.ABORT),
 
     // Hinweise: Die Rechnung entsteht trotzdem.
     MENGE_NULL(Severity.HINT),

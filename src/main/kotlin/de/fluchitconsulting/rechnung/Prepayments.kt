@@ -11,6 +11,15 @@ import de.fluchitconsulting.rechnung.values.InvoiceType
 // und ohne Ausgabe, damit sich jede Regel hier ohne beides prüfen lässt.
 
 /**
+ * Was beim Zusammentragen herauskommt: die Abschläge und was dabei auffiel.
+ *
+ * Beides zusammen, weil das Kommando beides braucht – die Abschläge, um den
+ * Block zu schreiben, und die Befunde, um es zu lassen (ADR-0003: alles oder
+ * nichts).
+ */
+data class CollectedPrepayments(val prepayments: List<Prepayment>, val findings: List<Finding>)
+
+/**
  * Aus einer berechneten Abschlagsrechnung wird der Abschlag, den eine
  * Schlussrechnung absetzt.
  *
@@ -21,17 +30,12 @@ import de.fluchitconsulting.rechnung.values.InvoiceType
  * `vereinnahmt-am` wird übernommen, wenn die Abschlagsrechnung es trägt: Dort
  * hält es eine Vereinnahmung vor der Rechnungsstellung fest, dieselbe Tatsache
  * wie im Abschlag.
+ *
+ * Reines Übertragen: Ob das Dokument überhaupt eine Abschlagsrechnung ist,
+ * prüft [prepaymentsOf] – dort, wo auch die übrigen Regeln der Auswahl stehen.
  */
 fun prepaymentOf(calculatedInvoice: CalculatedInvoice): Prepayment {
     val invoice = calculatedInvoice.invoice
-    // Keine Regel der Schlussrechnung kennt die Art des Dokuments, aus dem ein
-    // Abschlag stammt – eine gewöhnliche Rechnung ginge dort klaglos durch.
-    if (invoice.type != InvoiceType.PREPAYMENT) {
-        throw InvoiceValidationException(
-            "${invoice.number} ist eine ${invoice.type.documentName}, keine Abschlagsrechnung. " +
-                "Abgesetzt werden nur Abschläge.",
-        )
-    }
     return Prepayment(
         invoiceNumber = invoice.number,
         issueDate = invoice.issueDate,
@@ -44,14 +48,16 @@ fun prepaymentOf(calculatedInvoice: CalculatedInvoice): Prepayment {
  * Die Abschläge aus mehreren Abschlagsrechnungen, in der übergebenen Reihenfolge.
  *
  * Geprüft wird hier, was die Schlussrechnung später nicht mehr sehen kann: dass
- * alle Abschlagsrechnungen an denselben Kunden gingen und keine doppelt dabei
- * ist. Beides vor dem Rechnen, damit ein Fehler in der Auswahl als solcher
- * gemeldet wird und nicht als Folgefehler einer einzelnen Datei.
+ * alle Abschlagsrechnungen an denselben Kunden gingen, dass keine doppelt dabei
+ * ist und dass jede wirklich eine Abschlagsrechnung ist.
  *
- * Die Hinweise des Calculators fallen weg: Sie galten der Abschlagsrechnung,
- * als sie entstand, nicht der Schlussrechnung von heute.
+ * Die Hinweise der einzelnen Rechnungen fallen weg: Sie galten der
+ * Abschlagsrechnung, als sie entstand, nicht der Schlussrechnung von heute.
+ * Ihre Abbrüche kommen mit, mit der Herkunft davor.
  */
-fun prepaymentsOf(abschlagsrechnungen: List<Invoice>, config: SellerConfig): List<Prepayment> {
+fun prepaymentsOf(abschlagsrechnungen: List<Invoice>, config: SellerConfig): CollectedPrepayments {
+    val findings = mutableListOf<Finding>()
+
     // groupBy bildet eine Map vom Kundennamen auf die Abschlagsrechnungen an
     // diesen Kunden; mehr als ein Schlüssel heißt: mehr als ein Kunde.
     val byCustomer = abschlagsrechnungen.groupBy { it.customer.name }
@@ -60,36 +66,53 @@ fun prepaymentsOf(abschlagsrechnungen: List<Invoice>, config: SellerConfig): Lis
             byCustomer.entries.joinToString(", ") { (name, invoices) ->
                 "$name (${invoices.joinToString(", ") { it.number }})"
             }
-        throw InvoiceValidationException(
-            "Die Abschlagsrechnungen gingen an verschiedene Kunden: $customers. " +
-                "Eine Schlussrechnung setzt nur Abschläge desselben Kunden ab.",
-        )
+        findings +=
+            Finding(
+                Rule.ABSCHLAGSRECHNUNGEN_VERSCHIEDENE_KUNDEN,
+                Subject.WholeInvoice,
+                "Die Abschlagsrechnungen gingen an verschiedene Kunden: $customers. " +
+                    "Eine Schlussrechnung setzt nur Abschläge desselben Kunden ab.",
+            )
     }
 
-    // Exakt verglichen wie Regel 7 der Schlussrechnung (#53).
+    // Exakt verglichen wie die Regel der Schlussrechnung (#53).
     abschlagsrechnungen
         .groupBy { it.number }
         .values
         .firstOrNull { it.size > 1 }
         ?.let { duplicates ->
-            throw InvoiceValidationException(
-                "Die Abschlagsrechnung ${duplicates.first().number} ist zweimal angegeben.",
-            )
+            findings +=
+                Finding(
+                    Rule.ABSCHLAGSRECHNUNG_DOPPELT,
+                    Subject.FromInvoice(duplicates.first().number, Subject.WholeInvoice),
+                    "ist zweimal angegeben.",
+                )
         }
 
-    return abschlagsrechnungen.map { abschlagsrechnung ->
-        // `try` ist in Kotlin ein Ausdruck: Sein Wert ist der des letzten
-        // Ausdrucks im Block, hier also das Ergebnis des Calculators.
-        // Die Nummer kommt davor, weil die Meldungen des Calculators nur
-        // "Position 1 (…)" sagen – bei mehreren Abschlagsrechnungen bliebe
-        // offen, in welcher.
-        val calculatedInvoice = InvoiceCalculator.calculate(abschlagsrechnung, config)
-        val abbrueche = calculatedInvoice.findings.filter { it.severity == Severity.ABORT }
-        if (abbrueche.isNotEmpty()) {
-            throw InvoiceValidationException(
-                abbrueche.joinToString("\n") { "${abschlagsrechnung.number}: ${it.describe()}" },
-            )
+    val abschlaege =
+        abschlagsrechnungen.map { abschlagsrechnung ->
+            val calculatedInvoice = InvoiceCalculator.calculate(abschlagsrechnung, config)
+
+            // Keine Regel der Schlussrechnung kennt die Art des Dokuments, aus dem
+            // ein Abschlag stammt – eine gewöhnliche Rechnung ginge dort klaglos
+            // durch.
+            if (abschlagsrechnung.type != InvoiceType.PREPAYMENT) {
+                findings +=
+                    Finding(
+                        Rule.KEINE_ABSCHLAGSRECHNUNG,
+                        Subject.FromInvoice(abschlagsrechnung.number, Subject.WholeInvoice),
+                        "ist eine ${abschlagsrechnung.type.documentName}, keine Abschlagsrechnung. " +
+                            "Abgesetzt werden nur Abschläge.",
+                    )
+            }
+
+            findings +=
+                calculatedInvoice.findings
+                    .filter { it.severity == Severity.ABORT }
+                    .map { it.copy(subject = Subject.FromInvoice(abschlagsrechnung.number, it.subject)) }
+
+            prepaymentOf(calculatedInvoice)
         }
-        prepaymentOf(calculatedInvoice)
-    }
+
+    return CollectedPrepayments(abschlaege, findings)
 }

@@ -40,7 +40,11 @@ class PrepaymentsCommand : CoreCliktCommand(name = "abschlaege") {
             // kaml sagt nur, welcher Schlüssel falsch ist, nicht wo. Den
             // Dateinamen setzt das Lesen selbst davor (#52).
             val abschlagsrechnungen = invoiceFiles.map { YamlLoader.loadInvoice(it) }
-            val abschlaege = prepaymentsOf(abschlagsrechnungen, config)
+            val (abschlaege, findings) = prepaymentsOf(abschlagsrechnungen, config)
+            // Alles oder nichts (ADR-0003), und dann alle Gründe auf einmal: Wer
+            // fünf Dateien übergibt, soll nicht fünfmal starten müssen.
+            val abbrueche = findings.filter { it.severity == Severity.ABORT }
+            if (abbrueche.isNotEmpty()) throw CliktError(abbrueche.joinToString("\n") { it.describe() })
             // zip legt zwei Listen paarweise nebeneinander: die n-te Datei zum
             // n-ten Abschlag. Die Reihenfolge ist dieselbe, prepaymentsOf behält sie.
             val entries = invoiceFiles.zip(abschlaege) { file, abschlag -> PrepaymentBlock.Entry(file.name, abschlag) }
@@ -49,8 +53,6 @@ class PrepaymentsCommand : CoreCliktCommand(name = "abschlaege") {
             // noch scheitern, und dann soll auf stdout gar nichts stehen. Ein
             // halber Block fiele keiner Regel der Schlussrechnung auf.
             echo(PrepaymentBlock.render(entries))
-        } catch (e: InvoiceValidationException) {
-            throw CliktError(e.message)
         } catch (e: InputFileException) {
             throw CliktError(e.message)
         }
