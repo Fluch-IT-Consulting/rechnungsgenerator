@@ -94,6 +94,13 @@
 %% Tabelle darunter – sonst klebt die erste Rechnung an der Ankündigung.
 \newcommand{\absetzungskopf}[1]{\par\vspace{6mm}\noindent #1\par\vspace{1.5mm}}
 
+%% Die Bankverbindung mitsamt ihrer Überschrift. Als Makro und nicht als fester
+%% Text, weil sie nur auf Dokumenten steht, die zur Zahlung auffordern: Eine
+%% Stornorechnung kündigt eine Erstattung an, und eine Überschrift ohne Konto
+%% darunter wäre schlimmer als keine. Der Abstand darüber gehört deshalb ins
+%% Makro, wie bei \hinweisabsatz.
+\newcommand{\bankblock}[1]{\vspace{9mm}\noindent{\bfseries Bankverbindung}\\[1.5mm]#1}
+
 %% Die Tabelle der abgesetzten Abschläge: links die Rechnung, rechts der Betrag.
 %% Dieselbe Spaltenaufteilung wie beim Summenblock, nur über die volle Breite –
 %% die Zeilen tragen Nummer und zwei Daten und passen nicht in 0,55.
@@ -220,13 +227,11 @@ Ich bedanke mich für das Vertrauen und die angenehme Zusammenarbeit.
 Mit freundlichen Grüßen\\[7mm]
 Dr. Erika Musterfrau
 
-\vspace{9mm}
-
 %% ---------------------------------------------------------- Bankverbindung
 %% Im Textfluss, linksbündig, mit schlichter Beschriftung – wie auf der
-%% bisherigen Rechnung. Kein Kasten, keine Linie, keine Versalien.
-{\bfseries Bankverbindung}\\[1.5mm]
-Kontoinhaber: Muster IT-Consulting UG (haftungsbeschränkt)\\Institut: Musterbank Würzburg\\IBAN: DE89 3704 0044 0532 0130 00\\BIC: MUSTDEFFXXX
+%% bisherigen Rechnung. Kein Kasten, keine Linie, keine Versalien. Ob sie
+%% dasteht, entscheidet der Renderer (siehe \bankblock oben).
+\bankblock{Kontoinhaber: Muster IT-Consulting UG (haftungsbeschränkt)\\Institut: Musterbank Würzburg\\IBAN: DE89 3704 0044 0532 0130 00\\BIC: MUSTDEFFXXX}
 
 \vfill
 
