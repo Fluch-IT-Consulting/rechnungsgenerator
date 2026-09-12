@@ -6,7 +6,10 @@ import de.fluchitconsulting.rechnung.values.Price
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import io.kotest.matchers.string.shouldContain
 import java.time.LocalDate
+import kotlin.io.path.createTempDirectory
+import kotlin.io.path.writeText
 
 // Testressourcen liegen in src/test/resources und landen im Classpath.
 private fun resource(name: String): String = checkNotNull(YamlLoaderTest::class.java.getResource("/$name")).readText()
@@ -91,5 +94,41 @@ class YamlLoaderTest : FunSpec({
         totals.grossTotal shouldBe Money("23800.00")
         totals.prepaymentTotal shouldBe Money("9520.00")
         totals.remainingAmount shouldBe Money("14280.00")
+    }
+
+    test("eine unlesbare Datei nennt die Datei und den Grund") {
+        // Clikt prüft mit mustExist nur, dass es die Datei gibt. Ob sie lesbar
+        // ist, zeigt sich erst hier. (Als root ist auch chmod 000 lesbar,
+        // dieser Test schlüge dort fehl.)
+        val unlesbar = createTempDirectory("loader-test").resolve("unlesbar.yaml")
+        unlesbar.writeText(resource("rechnung.yaml"))
+        unlesbar.toFile().setReadable(false)
+
+        val failure = shouldThrow<InputFileException> { YamlLoader.loadInvoice(unlesbar) }
+
+        failure.message!! shouldContain unlesbar.toString()
+        failure.message!! shouldContain "keine Leseberechtigung"
+    }
+
+    test("ein Wert, der seine Prüfung nicht besteht, nennt die Datei") {
+        // Die Meldung des Wertobjekts nennt die IBAN, aber nicht, in welcher
+        // Datei sie steht – bei zwei Eingabedateien ist das die halbe Auskunft.
+        val datei = createTempDirectory("loader-test").resolve("stammdaten.yaml")
+        datei.writeText(resource("stammdaten.yaml").replace("0532 0130 00", "0532 0130 01"))
+
+        val failure = shouldThrow<InputFileException> { YamlLoader.loadSellerConfig(datei) }
+
+        failure.message!! shouldContain datei.toString()
+        failure.message!! shouldContain "Prüfsumme"
+    }
+
+    test("ein YAML-Fehler nennt die Datei") {
+        val datei = createTempDirectory("loader-test").resolve("kaputt.yaml")
+        datei.writeText("nummer: R26-001\ngibtsnicht: 1\n")
+
+        val failure = shouldThrow<InputFileException> { YamlLoader.loadInvoice(datei) }
+
+        failure.message!! shouldContain datei.toString()
+        failure.message!! shouldContain "gibtsnicht"
     }
 })

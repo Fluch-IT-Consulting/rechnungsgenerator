@@ -9,7 +9,6 @@ import com.github.ajalt.clikt.parameters.options.default
 import com.github.ajalt.clikt.parameters.options.option
 import com.github.ajalt.clikt.parameters.types.path
 import de.fluchitconsulting.rechnung.render.PrepaymentBlock
-import kotlinx.serialization.SerializationException
 import java.nio.file.Path
 import kotlin.io.path.name
 
@@ -37,16 +36,10 @@ class PrepaymentsCommand : CoreCliktCommand(name = "abschlaege") {
     override fun run() {
         try {
             val config = YamlLoader.loadSellerConfig(configFile)
-            // Einzeln geladen, damit ein YAML-Fehler seine Datei nennt: kaml sagt
-            // nur, welcher Schlüssel falsch ist, nicht wo.
-            val abschlagsrechnungen =
-                invoiceFiles.map { file ->
-                    try {
-                        YamlLoader.loadInvoice(file)
-                    } catch (e: SerializationException) {
-                        throw CliktError("Die Datei $file konnte nicht gelesen werden:\n${e.message}")
-                    }
-                }
+            // Einzeln geladen, weil jede Datei ihre eigene Meldung verdient:
+            // kaml sagt nur, welcher Schlüssel falsch ist, nicht wo. Den
+            // Dateinamen setzt das Lesen selbst davor (#52).
+            val abschlagsrechnungen = invoiceFiles.map { YamlLoader.loadInvoice(it) }
             val abschlaege = prepaymentsOf(abschlagsrechnungen, config)
             // zip legt zwei Listen paarweise nebeneinander: die n-te Datei zum
             // n-ten Abschlag. Die Reihenfolge ist dieselbe, prepaymentsOf behält sie.
@@ -58,8 +51,8 @@ class PrepaymentsCommand : CoreCliktCommand(name = "abschlaege") {
             echo(PrepaymentBlock.render(entries))
         } catch (e: InvoiceValidationException) {
             throw CliktError(e.message)
-        } catch (e: SerializationException) {
-            throw CliktError("Die Eingabedateien konnten nicht gelesen werden:\n${e.message}")
+        } catch (e: InputFileException) {
+            throw CliktError(e.message)
         }
     }
 }
