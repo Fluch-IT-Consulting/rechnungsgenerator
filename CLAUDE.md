@@ -221,8 +221,11 @@ CV/Web-Auftritt des Autors), Validierung über veraPDF.
   Im PDF steht die Absetzung unter dem Gesamtbetrag und nie als Position
   (ADR-0002): Eine negative Position senkte die Bemessungsgrundlage und damit
   die ausgewiesene Umsatzsteuer, die aber in voller Höhe geschuldet wird.
-  Restbetrag null bekommt einen Satz statt einer Zahl, und dann entfällt auch
-  das Zahlungsziel – sonst stünden zwei verschiedene Aussagen auf einem Blatt.
+  Restbetrag null bekommt einen Satz statt einer Zahl, und dann entfallen auch
+  Zahlungsziel und Bankverbindung – sonst stünden zwei verschiedene Aussagen auf
+  einem Blatt. Beide folgen aus `requestsPayment`, das neben der Rechnungsart
+  den Restbetrag kennt: Eine voll abgesetzte Schlussrechnung rechnet ab, ohne
+  Geld zu fordern (#94).
   `prepaymentTotal`, `remainingAmount` und das Zahlungsziel sind abgeleitet,
   nicht gespeichert: `calculate` liefert eine `CalculatedInvoice`, die Rechnung,
   Stammdaten und Ergebnis zusammen trägt – ein Paar aus einer Rechnung und den

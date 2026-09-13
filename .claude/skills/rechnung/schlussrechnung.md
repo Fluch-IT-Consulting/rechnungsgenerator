@@ -89,7 +89,8 @@ Zahl, die der Kunde überweist. Alles liest du aus dem PDF (`pdftotext -layout`)
 und nennst es so, wie es dort steht: die Abschläge einzeln oder als „drei
 Abschläge zu je 4.760,00 €“. Eine Summenzeile der Abschläge führt das PDF
 nicht. Deckt die Absetzung den Gesamtbetrag ganz, steht dort statt eines
-Restbetrags ein Satz, und das Zahlungsziel entfällt.
+Restbetrags ein Satz, und Zahlungsziel und Bankverbindung entfallen (die IBAN in
+der Fußzeile bleibt).
 
 **Ein Abschlag, der nur als PDF vorliegt**: Nennt der Nutzer einen Abschlag, den
 das Skript nicht findet – etwa aus dem Altverfahren –, kann der Generator ihn

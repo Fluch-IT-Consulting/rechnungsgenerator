@@ -163,7 +163,8 @@ Verwendung) bereitet ihn aus den Abschlagsrechnungen vor.
 
 Im PDF stehen die Abschläge einzeln unter dem Gesamtbetrag, mit Netto und
 Steuer getrennt, darunter der Restbetrag. Ist er null, steht dort ein Satz
-statt einer Zahl.
+statt einer Zahl, und Zahlungsziel und Bankverbindung entfallen – wer nichts zu
+zahlen hat, bekommt kein Konto genannt. Die IBAN in der Fußzeile bleibt.
 
 Abgeschriebene Zahlen übernimmt der Generator nicht stillschweigend. Er bricht
 ab, wenn
