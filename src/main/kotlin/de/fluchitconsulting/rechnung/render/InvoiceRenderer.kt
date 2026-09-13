@@ -30,7 +30,9 @@ object InvoiceRenderer {
     private const val BR = "\\\\"
 
     // Ein Platzhalter der Vorlage: <<GROSSGESCHRIEBEN>>.
-    private val PLACEHOLDER = Regex("<<[A-Z_]+>>")
+    // Die Klammer um den Namen ist eine Gruppe: groupValues[1] liefert den
+    // Schlüssel ohne die spitzen Klammern.
+    private val PLACEHOLDER = Regex("<<([A-Z_]+)>>")
 
     // Eine Makro-Definition der Vorlage: \newcommand{\name}[stelligkeit].
     private val NEWCOMMAND = Regex("""\\newcommand\{\\([a-zA-Z]+)}(?:\[(\d+)])?""")
@@ -100,9 +102,12 @@ object InvoiceRenderer {
      * Setzt die Werte in die Vorlage – und prüft, dass beide Seiten
      * zusammenpassen.
      *
-     * Hier – und nur hier – wird aus Fragmenten wieder Text. `fold` statt einer
-     * Schleife mit `var`: Jeder Schritt ersetzt einen Platzhalter und gibt den
-     * neuen Text zurück.
+     * Hier – und nur hier – wird aus Fragmenten wieder Text. Ersetzt wird in
+     * einem Durchgang über die Vorlage: Die Werte stammen aus den Eingabedaten,
+     * und ein Kundenname mit `<<POSITIONEN>>` darin ist Inhalt. Nacheinander
+     * ersetzt, fände der nächste Schritt ihn im schon eingesetzten Text wieder.
+     * Die Variante von `Regex.replace` mit Lambda setzt dessen Ergebnis
+     * wörtlich ein; `\` und `$1` sind dort keine Rückverweise.
      *
      * Die zwei Prüfungen drumherum fangen einen Fehler ab, den sonst niemand
      * bemerkt. Verschreibt sich jemand bei einem Schlüssel, oder bekommt die
@@ -125,12 +130,13 @@ object InvoiceRenderer {
             }
         }
 
-        val text = values.entries.fold(template) { text, (key, value) -> text.replace("<<$key>>", value.tex) }
-
-        PLACEHOLDER.find(text)?.let {
+        // Geprüft wird die Vorlage, nicht das Ergebnis: Im Ergebnis kann ein
+        // Platzhalter als Inhalt stehen.
+        PLACEHOLDER.findAll(template).firstOrNull { it.groupValues[1] !in values }?.let {
             error("Die Vorlage enthält ${it.value}, aber der Renderer liefert dafür keinen Wert.")
         }
-        return text
+
+        return PLACEHOLDER.replace(template) { values.getValue(it.groupValues[1]).tex }
     }
 
     /**

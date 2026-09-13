@@ -154,6 +154,28 @@ class InvoiceRendererTest : FunSpec({
             InvoiceRenderer.fillIn("<<A>> und <<B>>", mapOf("A" to "eins".escapeLatex(), "B" to "zwei".escapeLatex())) shouldBe
                 "eins und zwei"
         }
+
+        // Die Werte stammen aus den Eingabedaten, und ein Kundenname darf
+        // spitze Klammern enthalten. Eingesetzter Text ist Inhalt, nicht Vorlage.
+        test("ein Wert, der wie ein späterer Platzhalter aussieht, bleibt stehen") {
+            InvoiceRenderer.fillIn(
+                "<<A>> und <<B>>",
+                mapOf("A" to "Kunde <<B>>".escapeLatex(), "B" to "zwei".escapeLatex()),
+            ) shouldBe "Kunde <<B>> und zwei"
+        }
+
+        test("ein Wert, der wie ein früherer Platzhalter aussieht, gilt nicht als Lücke der Vorlage") {
+            InvoiceRenderer.fillIn(
+                "<<A>> und <<B>>",
+                mapOf("A" to "eins".escapeLatex(), "B" to "Kunde <<A>>".escapeLatex()),
+            ) shouldBe "eins und Kunde <<A>>"
+        }
+
+        test("Backslash und Dollar im Wert werden wörtlich eingesetzt") {
+            // Beim Ersetzen per regulärem Ausdruck deuten manche Schnittstellen
+            // "\" und "$1" im Ersatztext als Rückverweis – LaTeX besteht aus beidem.
+            InvoiceRenderer.fillIn("<<A>>", mapOf("A" to Latex.raw("\\textbf{\$1}"))) shouldBe "\\textbf{\$1}"
+        }
     }
 
     context("Das Land in der Anschrift") {
