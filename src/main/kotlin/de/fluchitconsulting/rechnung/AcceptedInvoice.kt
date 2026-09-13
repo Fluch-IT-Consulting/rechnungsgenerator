@@ -29,13 +29,24 @@ class AcceptedInvoice private constructor(val calculated: CalculatedInvoice, val
     companion object {
         /**
          * Angenommen wird nur, was keinen Abbruch hat **und** dessen Rechnungsart
-         * sich bauen lässt. Beides fällt zusammen – die Regeln, ohne die kein
-         * Typ entsteht, sind Abbrüche –, aber verlassen muss sich diese Stelle
-         * darauf nicht: Ohne gebaute Rechnungsart gibt es keine [AcceptedInvoice].
+         * sich bauen lässt. Ohne gebaute Rechnungsart gibt es keine
+         * [AcceptedInvoice], das hält der Typ.
+         *
+         * Dass die Ablehnung dann auch einen Grund nennt, hängt an zwei Dingen:
+         * [findings][CalculatedInvoice.findings] enthält die Befunde desselben
+         * Baus, den diese Stelle liest ([CalculatedInvoice.kindResult], #93) –
+         * und jeder dieser Befunde ist ein Abbruch. Das Zweite verlangt ein Test
+         * in `InvoiceKindRulesTest`.
+         *
+         * Einen Einstieg, der gleich aus Rechnung und Stammdaten ein [Checked]
+         * macht, gibt es bewusst nicht. Aufgerufen wird die Folge aus
+         * `InvoiceCalculator.calculate` und [check] nur zweimal, und die
+         * Regeltests brauchen `calculate` ohnehin einzeln: Sie rechnen gerade
+         * Rechnungen mit Abbruch und lesen deren Befunde (ADR-0004).
          */
         fun check(calculated: CalculatedInvoice): Checked {
             val aborts = calculated.findings.filter { it.severity == Severity.ABORT }
-            return when (val built = InvoiceKindRules.build(calculated)) {
+            return when (val built = calculated.kindResult) {
                 is InvoiceKindRules.Result.Built ->
                     if (aborts.isEmpty()) Checked.Accepted(AcceptedInvoice(calculated, built.kind)) else Checked.Rejected(aborts)
                 is InvoiceKindRules.Result.NotBuilt -> Checked.Rejected(aborts)
