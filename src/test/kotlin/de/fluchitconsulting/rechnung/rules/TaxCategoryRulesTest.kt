@@ -1,5 +1,12 @@
-package de.fluchitconsulting.rechnung
+package de.fluchitconsulting.rechnung.rules
 
+import de.fluchitconsulting.rechnung.InvoiceCalculator
+import de.fluchitconsulting.rechnung.Rule
+import de.fluchitconsulting.rechnung.messageOf
+import de.fluchitconsulting.rechnung.rules
+import de.fluchitconsulting.rechnung.testInvoice
+import de.fluchitconsulting.rechnung.testItem
+import de.fluchitconsulting.rechnung.testSellerConfig
 import de.fluchitconsulting.rechnung.values.Money
 import de.fluchitconsulting.rechnung.values.TaxCategory
 import de.fluchitconsulting.rechnung.values.VatId

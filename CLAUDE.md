@@ -231,6 +231,11 @@ CV/Web-Auftritt des Autors), Validierung über veraPDF.
   Position, Abschlag) und die Meldung; den Gegenstand nennt die Meldung nicht
   selbst, das tut die Ausgabe. Abgebrochen wird im Kommando – und dann stehen
   alle Gründe auf einmal da, statt dass fünf Fehler fünf Läufe brauchen.
+  `calculate` rechnet nur. Geprüft wird in Regelgruppen im Paket `rules`, je
+  eine Datei neben ihrem gleichnamigen Test, jede gegen das fertig gerechnete
+  Ergebnis; `findings` leitet sich daraus ab wie `dueDate` (#71). Vorher
+  standen Regeln zwischen den Rechenschritten, und weil zwei die Summen
+  brauchten, entstand das Ergebnis zweimal.
   Die Kennungen sind deutsch benannt wie die Regeln und **nicht** nummeriert:
   Die Nummern standen nur in Kommentaren und Testnamen und liefen dort
   auseinander. Tests prüfen die Kennung statt des Wortlauts und brauchen dafür

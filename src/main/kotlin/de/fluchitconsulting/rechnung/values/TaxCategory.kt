@@ -34,7 +34,7 @@ enum class VatIdConfirmation {
      * decken nur EU-Mitgliedstaaten ab. Für die Schweiz oder das Vereinigte
      * Königreich gibt es dort nichts abzufragen; einen Nachweis zu verlangen,
      * den es nicht geben kann, wäre keine Strenge, sondern ein Fehler.
-     * Stattdessen ein Hinweis – siehe `InvoiceCalculator.collectHints`.
+     * Stattdessen ein Hinweis – siehe `VatIdCheckRules`, KEIN_VIES_MOEGLICH.
      */
     IN_EU,
 

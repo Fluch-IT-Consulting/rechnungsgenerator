@@ -1,7 +1,16 @@
-package de.fluchitconsulting.rechnung
+package de.fluchitconsulting.rechnung.rules
 
+import de.fluchitconsulting.rechnung.InvoiceCalculator
+import de.fluchitconsulting.rechnung.Rule
+import de.fluchitconsulting.rechnung.aborts
+import de.fluchitconsulting.rechnung.messageOf
 import de.fluchitconsulting.rechnung.model.Invoice
 import de.fluchitconsulting.rechnung.model.ServicePeriod
+import de.fluchitconsulting.rechnung.rules
+import de.fluchitconsulting.rechnung.testInvoice
+import de.fluchitconsulting.rechnung.testItem
+import de.fluchitconsulting.rechnung.testPrepayment
+import de.fluchitconsulting.rechnung.testSellerConfig
 import de.fluchitconsulting.rechnung.values.InvoiceType
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.collections.shouldBeEmpty
