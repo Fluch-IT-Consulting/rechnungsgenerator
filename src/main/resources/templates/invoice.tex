@@ -83,13 +83,29 @@
 %% \rubrik statt \label, das ist in LaTeX vergeben.
 \newlength{\balkenhoehe}
 
-%% Abstände als benannte Längen (#51): Der Renderer schreibt nur noch den Namen,
-%% der Wert steht hier. Vorher standen die Millimeter in Kotlin – wer das
-%% Satzbild ändern wollte, musste zwei Dateien anfassen und beide treffen.
+%% Abstände als benannte Längen (#51): Vorher standen die Millimeter in Kotlin –
+%% wer das Satzbild ändern wollte, musste zwei Dateien anfassen und beide treffen.
+%%
+%% 2.5mm zwischen Positionen statt 1.5mm: Sobald eine Position eine Zusatzzeile
+%% hat, verschmilzt sie bei knappem Abstand optisch mit der nächsten. Dasselbe
+%% gilt für die abgesetzten Abschläge, die immer eine Zusatzzeile haben.
 \newlength{\positionsabstand}\setlength{\positionsabstand}{2.5mm}
 \newlength{\summenabstand}\setlength{\summenabstand}{1mm}
 \newlength{\blockabstand}\setlength{\blockabstand}{3mm}
 \newlength{\ustidabstand}\setlength{\ustidabstand}{2mm}
+
+%% Die Zeilenwechsel, die diese Abstände tragen (#76). Der Renderer ruft nur das
+%% Makro auf und kennt die Länge nicht. Vorher schrieb er \\[\positionsabstand]
+%% selbst, und ein vertippter Längenname fiel erst LuaLaTeX auf – ein Makro prüft
+%% das Setzen, eine Länge nicht.
+\newcommand{\positionstrenner}{\\[\positionsabstand]}
+\newcommand{\summentrenner}{\\[\summenabstand]}
+\newcommand{\blocktrenner}{\\[\blockabstand]}
+\newcommand{\ustidtrenner}{\\[\ustidabstand]}
+
+%% Diese Angabe bricht nicht um. Im schmalen Block oben rechts bräche
+%% "Juni bis Oktober 2026" sonst hinter dem "bis" und läse sich wie zwei Angaben.
+\newcommand{\zusammen}[1]{\mbox{#1}}
 
 \newcommand{\rubrik}[1]{{\footnotesize\color{gedaempft}\addfontfeature{LetterSpace=14}\MakeUppercase{#1}}}
 

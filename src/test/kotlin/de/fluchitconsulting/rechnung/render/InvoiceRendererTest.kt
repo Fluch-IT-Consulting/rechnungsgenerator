@@ -240,7 +240,7 @@ class InvoiceRendererTest : FunSpec({
             val seller = YamlLoader.parseSellerConfig(resource("stammdaten.yaml"))
 
             InvoiceRenderer.render(InvoiceCalculator.calculate(invoice, seller)) shouldContain
-                "Voraussichtlicher Leistungszeitraum: \\mbox{Juni bis Oktober 2026}"
+                "Voraussichtlicher Leistungszeitraum: \\zusammen{Juni bis Oktober 2026}"
         }
 
         test("der Zeitraum ist der voraussichtliche") {
@@ -248,7 +248,7 @@ class InvoiceRendererTest : FunSpec({
             // eine Prognose. Als "Leistungszeitraum" beschriftet, behauptete er,
             // die Leistung sei erbracht.
             abschlag() shouldContain "Voraussichtlicher Leistungszeitraum:"
-            renderMit(testItem()) shouldContain "Leistungszeitraum: \\mbox{Juli 2026}"
+            renderMit(testItem()) shouldContain "Leistungszeitraum: \\zusammen{Juli 2026}"
             renderMit(testItem()) shouldNotContain "Voraussichtlich"
         }
 

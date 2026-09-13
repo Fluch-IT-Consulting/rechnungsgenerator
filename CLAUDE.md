@@ -51,8 +51,11 @@ CV/Web-Auftritt des Autors), Validierung über veraPDF.
   Build.
 - **Satz nur in der Vorlage**: Abstände, Schriftgrad, Farbe und Linien stehen in
   `invoice.tex`. Der Renderer liefert Inhalt und Makroaufrufe und entscheidet
-  weiter, *ob* etwas dasteht. Die Millimeter sind benannte Längen
-  (`\positionsabstand`), die Tabellenzeilen sind Makros (`\positionszeile` mit
+  weiter, *ob* etwas dasteht. Die Millimeter sind benannte Längen, die
+  Zeilenwechsel mit Abstand Makros (`\positionstrenner`), ebenso das
+  Zusammenhalten einer Angabe (`\zusammen`): Der Renderer schreibt weder einen
+  Längennamen noch ein Makro von LaTeX selbst (#76). Die Tabellenzeilen sind
+  Makros (`\positionszeile` mit
   fünf Argumenten) – damit steht die Spaltenzahl nur an einer Stelle, statt in
   Vorlage und Kotlin getrennt getroffen zu werden. Welche Makros der Renderer
   aufruft, zählt das Enum `TemplateMacro` auf; beim Setzen wird geprüft, dass die

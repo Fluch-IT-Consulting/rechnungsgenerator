@@ -156,12 +156,26 @@ object InvoiceRenderer {
         val invoice = calculatedInvoice.invoice
         val document = invoice.type.documentName.escapeLatex() + " ".escapeLatex() + invoice.number.escapeLatex()
         return listOf(
-            Latex.macro("Title", document),
-            Latex.macro("Author", calculatedInvoice.config.companyName.escapeLatex()),
-            Latex.macro("Subject", document + " vom ".escapeLatex() + GermanFormat.date(invoice.issueDate)),
-            Latex.macro("Language", "de-DE".escapeLatex()),
+            xmpField("Title", document),
+            xmpField("Author", calculatedInvoice.config.companyName.escapeLatex()),
+            xmpField("Subject", document + " vom ".escapeLatex() + GermanFormat.date(invoice.issueDate)),
+            xmpField("Language", "de-DE".escapeLatex()),
         ).joinToLatex("\n").tex
     }
+
+    /**
+     * Ein Feld der .xmpdata-Datei: `\Title{…}`. Kein [TemplateMacro]: Diese
+     * Felder definiert pdfx und nicht die Vorlage, die Prüfung fände sie dort
+     * nicht. Deshalb privat und nur hier – bis #76 war das `Latex.macro` mit
+     * einem Namen als Zeichenkette, und darüber lief auch `\mbox`.
+     */
+    private fun xmpField(name: String, content: Latex): Latex = Latex.raw("\\$name{") + content + Latex.raw("}")
+
+    /**
+     * Ein Trenner zwischen Tabellenzeilen, mit Leerzeichen davor und
+     * Zeilenumbruch danach – beides nur, damit das erzeugte .tex lesbar bleibt.
+     */
+    private fun rowSeparator(macro: TemplateMacro): Latex = Latex.raw(" ") + Latex.macro(macro) + Latex.raw("\n")
 
     /**
      * Der Kontaktblock im Briefkopf: Anschrift, Telefon, E-Mail. Die Webseite
@@ -187,11 +201,12 @@ object InvoiceRenderer {
         // Ausstellers steht im Fuß, die des Empfängers hier.
         //
         // Der Abstand wird angehängt, nicht in die Liste gelegt: joinToLatex
-        // setzt selbst ein \\ zwischen die Einträge, und \\ direkt gefolgt von
-        // \\[2mm] ist in LaTeX ein Fehler ("There's no line here to end").
+        // setzt selbst ein \\ zwischen die Einträge, und \\ direkt gefolgt vom
+        // \\ in \ustidtrenner ist in LaTeX ein Fehler ("There's no line here
+        // to end").
         val ustId =
             invoice.customer.vatId
-                ?.let { Latex.raw("$BR[\\ustidabstand]") + "USt-IdNr. ".escapeLatex() + it.formatted().escapeLatex() }
+                ?.let { Latex.macro(TemplateMacro.USTIDTRENNER) + "USt-IdNr. ".escapeLatex() + it.formatted().escapeLatex() }
                 ?: Latex.EMPTY
         return anschrift + ustId
     }
@@ -246,19 +261,20 @@ object InvoiceRenderer {
             invoice.cancelled?.let { storniert ->
                 val bezug =
                     Latex.macro(
-                        "mbox",
-                        storniert.invoiceNumber.escapeLatex() + " vom ".escapeLatex() +
-                            GermanFormat.date(storniert.issueDate),
+                        TemplateMacro.ZUSAMMEN,
+                        listOf(
+                            storniert.invoiceNumber.escapeLatex() + " vom ".escapeLatex() +
+                                GermanFormat.date(storniert.issueDate),
+                        ),
                     )
                 add("Ursprungsrechnung: ".escapeLatex() + bezug)
             }
             // Pflichtangabe nach §14 Abs. 4 Nr. 6 UStG. Wie der Zeitraum heißt,
             // hängt an der Rechnungsart – siehe InvoiceType.servicePeriodLabel.
-            // \mbox: Im schmalen Block oben rechts bricht "Juni bis Oktober 2026"
-            // sonst hinter dem "bis" um und liest sich wie zwei Angaben. Die
-            // Zeile darf stattdessen hinter dem Doppelpunkt umbrechen – der
-            // Zeitraum selbst bleibt zusammen. Beim Bezug gilt dasselbe.
-            val zeitraum = Latex.macro("mbox", servicePeriod(invoice.servicePeriod, invoice.type))
+            // \zusammen: Die Zeile darf hinter dem Doppelpunkt umbrechen, der
+            // Zeitraum selbst nicht – warum, steht in der Vorlage. Beim Bezug
+            // gilt dasselbe.
+            val zeitraum = Latex.macro(TemplateMacro.ZUSAMMEN, listOf(servicePeriod(invoice.servicePeriod, invoice.type)))
             add("${invoice.type.servicePeriodLabel}: ".escapeLatex() + zeitraum)
             // BT-7: Steht der Zeitpunkt der Vereinnahmung fest, gehört er zu
             // den Pflichtangaben – deshalb hier und nicht in den Fließtext.
@@ -273,11 +289,9 @@ object InvoiceRenderer {
             calculatedInvoice.dueDate?.let { add("Zahlbar ohne Abzug bis ".escapeLatex() + GermanFormat.date(it)) }
         }.joinToLatex(BR)
 
-    // Die Zeilen werden mit \\ VERBUNDEN, nicht damit abgeschlossen: Ein
-    // Umbruch hinter der letzten Zeile erzeugt in LaTeX eine leere Extrazeile.
-    //
-    // 2.5mm statt 1.5mm: Sobald eine Position eine Zusatzzeile hat, verschmilzt
-    // sie bei knappem Abstand optisch mit der nächsten Position.
+    // Die Zeilen werden mit \positionstrenner VERBUNDEN, nicht damit
+    // abgeschlossen: Ein Umbruch hinter der letzten Zeile erzeugt in LaTeX eine
+    // leere Extrazeile.
     private fun lineItems(calculatedInvoice: CalculatedInvoice): Latex =
         calculatedInvoice.lines
             .map { line ->
@@ -292,7 +306,7 @@ object InvoiceRenderer {
                         GermanFormat.amountWithCurrency(line.net),
                     ),
                 )
-            }.joinToLatex(" $BR[\\positionsabstand]\n")
+            }.joinToLatex(rowSeparator(TemplateMacro.POSITIONSTRENNER))
 
     /**
      * Die Beschreibungsspalte einer Position: Bezeichnung, darunter – falls
@@ -335,7 +349,7 @@ object InvoiceRenderer {
                 add(label to GermanFormat.amountWithCurrency(group.amount))
             }
         }.map { (label, value) -> Latex.raw("  ") + Latex.macro(TemplateMacro.SUMMENZEILE, listOf(label, value)) }
-            .joinToLatex(" $BR[\\summenabstand]\n") + summaryRow("Gesamtbetrag", calculatedInvoice.grossTotal)
+            .joinToLatex(rowSeparator(TemplateMacro.SUMMENTRENNER)) + summaryRow("Gesamtbetrag", calculatedInvoice.grossTotal)
 
     /**
      * Die Absetzung der vereinnahmten Abschläge – der Block unter dem
@@ -354,8 +368,12 @@ object InvoiceRenderer {
     private fun deductionBlock(calculatedInvoice: CalculatedInvoice): Latex {
         if (calculatedInvoice.prepayments.isEmpty()) return Latex.EMPTY
 
-        // 2.5mm wie bei den Positionen: Jede Zeile hat eine Zusatzzeile, und bei
-        // knapperem Abstand verschmilzt sie optisch mit der nächsten.
+        // Derselbe Trenner wie bei den Positionen: Jede Zeile hat eine
+        // Zusatzzeile, genau wie eine Position mit Beschreibung.
+        //
+        // Das Minus davor schreibt der Renderer und nicht die Vorlage: Es ist
+        // das Vorzeichen des abgesetzten Betrags und damit Inhalt, so wie das
+        // €-Zeichen zum Betrag gehört (#76).
         val rows =
             calculatedInvoice.prepayments
                 .map { abgesetzt ->
@@ -367,15 +385,15 @@ object InvoiceRenderer {
                                 "\u2212".escapeLatex() + GermanFormat.amountWithCurrency(abgesetzt.gross),
                             ),
                         )
-                }.joinToLatex(" $BR[\\positionsabstand]\n")
+                }.joinToLatex(rowSeparator(TemplateMacro.POSITIONSTRENNER))
 
         // Ein Restbetrag von null bekommt einen Satz statt einer Zahl: Ein
         // nacktes "0,00 €" unter dem Strich sieht aus wie ein Fehler, nicht wie
         // ein ausgeglichener Betrag.
         val (closingRow, trailingNote) =
             if (calculatedInvoice.remainingAmount.isZero()) {
+                // Kein Absatzwechsel davor: \hinweisabsatz beginnt selbst mit \par.
                 Latex.EMPTY to
-                    Latex.raw("\n\n") +
                     Latex.macro(
                         TemplateMacro.HINWEISABSATZ,
                         listOf(
@@ -516,7 +534,7 @@ object InvoiceRenderer {
                 add("Geschäftsführung".escapeLatex() + Latex.raw(BR) + it.escapeLatex())
             }
             add(metadata(calculatedInvoice))
-        }.joinToLatex("$BR[\\blockabstand]")
+        }.joinToLatex(Latex.macro(TemplateMacro.BLOCKTRENNER))
 
     /** Erste Fußzeile: Firmierung, Sitz und die Angaben nach §35a GmbHG. */
     private fun footerCompanyLine(config: SellerConfig): Latex =

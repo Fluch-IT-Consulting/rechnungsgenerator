@@ -38,4 +38,11 @@ class LatexTest : FunSpec({
     test("normaler Text bleibt unverändert") {
         "IT-Beratung gemäß Rahmenvertrag".escapeLatex().tex shouldBe "IT-Beratung gemäß Rahmenvertrag"
     }
+
+    test("ein Makro ohne Argument endet mit {}, damit der folgende Text nicht zum Namen wird") {
+        // Ohne {} stünde hier \ustidtrennerUSt-IdNr. – ein unbekanntes Makro,
+        // das erst LuaLaTeX bemerkte (#76).
+        (Latex.macro(TemplateMacro.USTIDTRENNER) + "USt-IdNr.".escapeLatex()).tex shouldBe
+            "\\ustidtrenner{}USt-IdNr."
+    }
 })
