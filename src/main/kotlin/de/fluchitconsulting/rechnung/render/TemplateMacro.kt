@@ -21,7 +21,6 @@ enum class TemplateMacro(val macroName: String, val arity: Int) {
     BLOCKTRENNER("blocktrenner", 0),
     USTIDTRENNER("ustidtrenner", 0),
     ZUSAMMEN("zusammen", 1),
-    RUBRIK("rubrik", 1),
     HINWEISABSATZ("hinweisabsatz", 1),
     ABSETZUNGSKOPF("absetzungskopf", 1),
     ABSETZUNGSTABELLE("absetzungstabelle", 1),
