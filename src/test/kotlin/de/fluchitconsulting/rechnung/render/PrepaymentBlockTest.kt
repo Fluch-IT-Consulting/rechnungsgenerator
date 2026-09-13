@@ -101,7 +101,7 @@ class PrepaymentBlockTest : FunSpec({
         parsed.prepayments[1].receivedOn shouldBe null
     }
 
-    test("ein leeres vereinnahmt-am lässt Regel 3 mit ihrer Begründung zuschlagen") {
+    test("ein leeres vereinnahmt-am wird als fehlende Vereinnahmung gemeldet, mit Begründung") {
         val schlussrechnung =
             YamlLoader.parseInvoice(finalInvoiceWith(PrepaymentBlock.render(listOf(vereinnahmt, nichtVereinnahmt))))
 

@@ -34,7 +34,7 @@ except ImportError:
 
 
 def als_text(nummer) -> str:
-    # Exakt verglichen wie Regel 7 der Schlussrechnung (#53). str(), weil YAML
+    # Exakt verglichen wie ABSCHLAG_DOPPELT im Generator (#53). str(), weil YAML
     # eine Nummer wie 123 als Zahl liest, der Generator aber als Text.
     return str(nummer)
 

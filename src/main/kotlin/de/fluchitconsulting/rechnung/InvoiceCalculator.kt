@@ -157,7 +157,7 @@ object InvoiceCalculator {
 
         // Das Vorzeichen des Gesamtbetrags gehört zur Rechnungsart (ADR-0006):
         // Ein Storno ist negativ, jedes andere Dokument nicht. Vor #47 schlug
-        // hier erst Regel 8 der Absetzung zu, mit einer Meldung über Abschläge,
+        // hier erst RESTBETRAG_NEGATIV zu, mit einer Meldung über Abschläge,
         // die eine gewöhnliche Rechnung gar nicht hat.
         if (invoice.type == InvoiceType.CANCELLATION) {
             if (!grossTotal.isNegative()) {
