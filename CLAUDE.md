@@ -160,6 +160,13 @@ CV/Web-Auftritt des Autors), Validierung über veraPDF.
   Abschlagsrechnung ist der Zeitraum eine Prognose, und auf den Tag genau
   genannt behauptete er eine Genauigkeit, die er nicht hat.
 
+  Diese Eigenschaft, `chargesForService` und `mandatoryNote` haben **keine**
+  Vorgabewerte: Jeder Eintrag nennt sie ausdrücklich, damit eine neue Art
+  (#64) nicht still die Antworten der gewöhnlichen Rechnung erbt – samt
+  Zahlungsziel und Bankverbindung. Das hält die Zusage aus ADR-0008 an der
+  Stelle, an der die Art entsteht. Das flache Modell hinter
+  `AcceptedInvoice.calculated` bleibt dafür bewusst lesbar (ADR-0009).
+
   Dazu gehört ein Sicherungsnetz: `src/test/resources/rechnung-erwartet.tex` ist
   das erwartete LaTeX der Beispielrechnung, zeichengleich verglichen. Der Satz
   einer gewöhnlichen Rechnung soll sich nicht nebenbei ändern, während die

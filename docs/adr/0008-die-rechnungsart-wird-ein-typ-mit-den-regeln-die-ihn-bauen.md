@@ -76,7 +76,7 @@ wenn es keinen Abbruch gibt **und** der Typ gebaut ist.
 - **Ein Rest an Disziplin bleibt.** Über `acceptedInvoice.calculated.invoice`
   sind die flachen, optionalen Felder weiter erreichbar. Wer dort statt in
   `kind` fragt, hat wieder ein optionales Feld in der Hand. Das zu schließen,
-  ist ein eigenes Issue.
+  ist ein eigenes Issue. (Nicht geschlossen, siehe ADR-0009.)
 - **#70 ist damit erledigt**, auch wenn anders als dort angenommen keine Regel
   wegfällt.
 
