@@ -38,15 +38,19 @@ enum class InvoiceType(
      */
     val servicePeriodIsForecast: Boolean,
     /**
-     * Rechnet dieses Dokument eine Leistung ab und fordert zur Zahlung auf?
+     * Rechnet dieses Dokument eine Leistung ab?
      *
-     * So steht die Rechnung im Glossar, und das Storno tut beides nicht: Es
-     * nimmt eine Abrechnung zurück und kündigt eine Erstattung an. Aus dieser
-     * einen Tatsache folgen vier Dinge – kein Zahlungsziel, keine
-     * Bankverbindung, keine Sechs-Monats-Frist des §14 Abs. 2 UStG (die gilt
-     * dem Ausstellen einer Rechnung, nicht dem Aufheben) und kein Hinweis auf
-     * eine alternde Bestätigungsabfrage (die musste zur Ursprungsrechnung
-     * passen, nicht zum Storno).
+     * So steht die Rechnung im Glossar, und das Storno tut es nicht: Es nimmt
+     * eine Abrechnung zurück und kündigt eine Erstattung an. Daraus folgen die
+     * Sechs-Monats-Frist des §14 Abs. 2 UStG (die gilt dem Ausstellen einer
+     * Rechnung, nicht dem Aufheben) und der Hinweis auf eine alternde
+     * Bestätigungsabfrage (die musste zur Ursprungsrechnung passen, nicht zum
+     * Storno).
+     *
+     * Ob das Dokument auch zur Zahlung auffordert – mit Zahlungsziel und
+     * Bankverbindung –, sagt erst `CalculatedInvoice.requestsPayment`: Dafür
+     * zählt zusätzlich der Restbetrag, und eine voll abgesetzte Schlussrechnung
+     * rechnet ab, ohne Geld zu fordern (#94).
      *
      * Nicht dasselbe wie "ist ein Storno": Das Vorzeichen des Gesamtbetrags
      * hängt an der Rechnungsart selbst und fragt deshalb nach ihr.

@@ -332,10 +332,13 @@ class InvoiceRendererTest : FunSpec({
             tex shouldContain "\u22124.760,00~€"
         }
 
-        test("der Restbetrag steht unter dem Strich") {
+        test("der Restbetrag steht unter dem Strich, und darunter die Bankverbindung") {
             val tex = schlussrechnung(gesamtleistung, testPrepayment())
 
             tex shouldContain "\\abschlusszeile{Restbetrag}{19.040,00~€}"
+            // Der Aufruf und nicht bloß der Name: Die Vorlage definiert
+            // \bankblock, das Wort steht also in jedem erzeugten .tex.
+            tex shouldContain "\\bankblock{Kontoinhaber"
         }
 
         test("ein Restbetrag von null bekommt einen Satz statt einer Zahl") {
@@ -343,13 +346,19 @@ class InvoiceRendererTest : FunSpec({
             val tex = schlussrechnung(listOf(testItem(quantity = "1", unitPrice = "4000.00")), testPrepayment())
 
             tex shouldContain "es verbleibt kein Restbetrag"
+            // Keine Abschlusszeile mit Betrag. Bis #94 stand hier
+            // "\textbf{Restbetrag}" – das schreibt der Renderer seit #76 nirgends,
+            // die Zeile bestand also immer.
+            tex shouldNotContain "\\abschlusszeile{Restbetrag}"
             // Die Gegenprobe steht bei den Angaben oben rechts: Eine
             // gewöhnliche Rechnung nennt sehr wohl ein Zahlungsziel.
             renderMit(testItem()) shouldContain "Zahlbar ohne Abzug bis"
-            tex shouldNotContain "\\textbf{Restbetrag}"
             // Und kein Zahlungsziel daneben: Das wäre die zweite, andere
             // Aussage desselben Blattes.
             tex shouldNotContain "Zahlbar ohne Abzug"
+            // Ebenso wenig ein Konto: Wer nichts zu zahlen hat, bekommt keines
+            // genannt (#94). Die IBAN in der Fußzeile bleibt.
+            tex shouldNotContain "\\bankblock{"
         }
 
         test("eine gewöhnliche Rechnung bekommt keine Absetzung") {

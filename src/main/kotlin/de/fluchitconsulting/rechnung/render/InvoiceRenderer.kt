@@ -66,7 +66,7 @@ object InvoiceRenderer {
                 "ARTHINWEIS" to typeNote(invoice),
                 "STEUERHINWEISE" to taxNotes(calculatedInvoice),
                 "SCHLUSSSATZ" to (invoice.note ?: config.closingLine).escapeLatex(),
-                "BANKVERBINDUNG" to bankDetails(invoice.type, config),
+                "BANKVERBINDUNG" to bankDetails(calculatedInvoice),
                 "FUSSZEILE_OBEN" to footerCompanyLine(config),
                 "FUSSZEILE_UNTEN" to footerTaxAndBankLine(config),
             )
@@ -501,16 +501,21 @@ object InvoiceRenderer {
             }.joinToLatex(BR)
 
     /**
-     * Die Bankverbindung – auf jedem Dokument außer der Stornorechnung.
+     * Die Bankverbindung – nur auf einem Dokument, das zur Zahlung auffordert.
      *
-     * Sie fordert kein Geld, sie kündigt eine Erstattung an; ein Konto darunter
-     * läse sich wie eine Zahlungsaufforderung. Überschrift und Abstand stecken
-     * im Makro der Vorlage, damit hier das Ganze wegfallen kann und nicht eine
-     * Überschrift ohne Inhalt stehen bleibt.
+     * Ob es das tut, sagt [CalculatedInvoice.requestsPayment], dieselbe Stelle,
+     * aus der das Zahlungsziel folgt. Nicht auf der Stornorechnung: Sie fordert
+     * kein Geld, sie kündigt eine Erstattung an, und ein Konto darunter läse
+     * sich wie eine Zahlungsaufforderung. Und nicht auf einer Schlussrechnung,
+     * deren Abschläge den Betrag decken (#94) – aus demselben Grund. Die IBAN in
+     * der Fußzeile bleibt auf beiden stehen.
+     *
+     * Überschrift und Abstand stecken im Makro der Vorlage, damit hier das Ganze
+     * wegfallen kann und nicht eine Überschrift ohne Inhalt stehen bleibt.
      */
-    private fun bankDetails(type: InvoiceType, config: SellerConfig): Latex {
-        if (!type.chargesForService) return Latex.EMPTY
-        return Latex.macro(TemplateMacro.BANKBLOCK, listOf(bankLines(config)))
+    private fun bankDetails(calculatedInvoice: CalculatedInvoice): Latex {
+        if (!calculatedInvoice.requestsPayment) return Latex.EMPTY
+        return Latex.macro(TemplateMacro.BANKBLOCK, listOf(bankLines(calculatedInvoice.config)))
     }
 
     private fun bankLines(config: SellerConfig): Latex =

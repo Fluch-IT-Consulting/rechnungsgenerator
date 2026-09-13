@@ -88,14 +88,25 @@ data class CalculatedInvoice(
     val remainingAmount: Money get() = grossTotal - prepaymentTotal
 
     /**
-     * Bis wann zu zahlen ist – oder `null`, wenn nichts zu zahlen ist.
+     * Fordert dieses Dokument zur Zahlung auf?
      *
-     * Zwei Fälle: eine Schlussrechnung, deren Abschläge den Betrag decken – sie
-     * sagt unten "es verbleibt kein Restbetrag", und ein Zahlungsziel daneben
-     * wäre die zweite, andere Aussage desselben Blattes –, und die
-     * Stornorechnung, die überhaupt nicht zur Zahlung auffordert (ADR-0006).
-     * Die Entscheidung fällt hier und nicht im Renderer – der setzt, was
-     * dasteht, und entscheidet nicht, was dastehen soll.
+     * Nicht dasselbe wie [InvoiceType.chargesForService]: Eine Schlussrechnung,
+     * deren Abschläge den Betrag decken, rechnet die Leistung ab – sie *ist* die
+     * Rechnung darüber –, fordert aber kein Geld mehr. Die Stornorechnung tut
+     * beides nicht (ADR-0006).
+     *
+     * Aus dieser einen Aussage folgen Zahlungsziel und Bankverbindung. Vorher
+     * fragte jedes für sich, und unter "es verbleibt kein Restbetrag" stand ein
+     * Konto (#94). Die Entscheidung fällt hier und nicht im Renderer – der setzt,
+     * was dasteht, und entscheidet nicht, was dastehen soll.
+     */
+    val requestsPayment: Boolean get() = invoice.type.chargesForService && !remainingAmount.isZero()
+
+    /**
+     * Bis wann zu zahlen ist – oder `null`, wenn das Dokument nicht zur Zahlung
+     * auffordert ([requestsPayment]). Bei einer Schlussrechnung ohne Restbetrag
+     * wäre ein Zahlungsziel neben "es verbleibt kein Restbetrag" die zweite,
+     * andere Aussage desselben Blattes.
      *
      * Abgeleitet und nicht gesetzt, aus demselben Grund wie [remainingAmount]:
      * Vorher entstand das Ergebnis erst ohne Zahlungsziel und wurde danach
@@ -104,7 +115,7 @@ data class CalculatedInvoice(
      * *und* Restbetrag null nicht mehr baubar – nicht bloß ungebaut.
      */
     val dueDate: LocalDate? get() =
-        if (remainingAmount.isZero() || !invoice.type.chargesForService) {
+        if (!requestsPayment) {
             null
         } else {
             invoice.issueDate.plusDays(paymentTermDays.toLong())
