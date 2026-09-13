@@ -5,9 +5,11 @@ import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.ints.shouldBeLessThan
 import io.kotest.matchers.shouldBe
+import io.kotest.matchers.shouldNotBe
 import io.kotest.matchers.string.shouldContain
 import io.kotest.matchers.string.shouldNotContain
 import java.io.File
+import java.time.LocalDate
 import kotlin.io.path.createTempDirectory
 import kotlin.io.path.exists
 import kotlin.io.path.readText
@@ -36,8 +38,38 @@ class LatexCompilerTest : FunSpec({
     fun erfolgreicherLauf(log: String = fertig) =
         FakeProcessRunner.Run(files = mapOf("rechnung.log" to log, "rechnung.pdf" to "%PDF-1.7"))
 
-    fun setzen(runner: FakeProcessRunner, dir: java.nio.file.Path = arbeitsverzeichnis()) =
-        LatexCompiler(runner).compile(dir, "rechnung", "\\documentclass{article}", "\\Title{Test}")
+    fun setzen(
+        runner: FakeProcessRunner,
+        dir: java.nio.file.Path = arbeitsverzeichnis(),
+        tex: String = "\\documentclass{article}",
+    ) = LatexCompiler(runner).compile(dir, "rechnung", tex, "\\Title{Test}", LocalDate.of(2026, 8, 14))
+
+    test("das Erstellungsdatum ist Mitternacht des Datums, in UTC geschrieben") {
+        // 1786665600 ist 2026-08-14T00:00:00Z. Ohne TZ schriebe LuaTeX die
+        // Zeitzone des Rechners dahinter, und das PDF hinge am Rechner.
+        val runner = FakeProcessRunner(erfolgreicherLauf())
+
+        setzen(runner)
+
+        runner.environments.single() shouldBe mapOf("SOURCE_DATE_EPOCH" to "1786665600", "TZ" to "UTC")
+    }
+
+    test("dieselben Quellen ergeben dieselbe Trailer-ID, andere eine andere") {
+        // setzen legt jedes Mal ein neues Arbeitsverzeichnis an – der Pfad
+        // darf in die ID also nicht eingehen.
+        fun aufruf(tex: String) =
+            FakeProcessRunner(erfolgreicherLauf())
+                .also { setzen(it, tex = tex) }
+                .commands
+                .single()
+                .last()
+
+        val erster = aufruf("\\documentclass{article}")
+
+        erster shouldContain "\\pdfvariable trailerid"
+        aufruf("\\documentclass{article}") shouldBe erster
+        aufruf("\\documentclass{letter}") shouldNotBe erster
+    }
 
     test("die Quelldateien liegen neben dem Ergebnis") {
         val dir = arbeitsverzeichnis()
@@ -73,6 +105,9 @@ class LatexCompilerTest : FunSpec({
         setzen(runner)
 
         runner.commands shouldHaveSize 2
+        // Beide Läufe mit derselben ID und demselben Datum.
+        runner.commands.distinct() shouldHaveSize 1
+        runner.environments.distinct() shouldHaveSize 1
     }
 
     test("wer immer weiter verlangt, bekommt trotzdem nur drei Läufe") {

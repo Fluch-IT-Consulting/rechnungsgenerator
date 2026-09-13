@@ -10,6 +10,7 @@ import io.kotest.matchers.collections.shouldContainInOrder
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.string.shouldContain
 import java.nio.file.Path
+import java.time.LocalDate
 import kotlin.io.path.createTempDirectory
 import kotlin.io.path.exists
 import kotlin.io.path.readText
@@ -170,6 +171,14 @@ class GenerateCommandTest : FunSpec({
         // Ohne -o landete die Datei im Arbeitsverzeichnis des Prozesses, also
         // im Projektverzeichnis – dafür legt dieser Test keine Datei an.
         fake.jobName shouldBe "Rechnung-R26-042"
+    }
+
+    test("das PDF trägt das Rechnungsdatum als Erstellungsdatum") {
+        val fake = FakeTypesetter()
+
+        lauf(fake, "-o", eingaben.resolve("datum.pdf").toString())
+
+        fake.creationDate shouldBe LocalDate.of(2026, 8, 14)
     }
 
     test("eine Rechnungsnummer, von der kein Dateiname übrig bleibt, wird abgelehnt") {

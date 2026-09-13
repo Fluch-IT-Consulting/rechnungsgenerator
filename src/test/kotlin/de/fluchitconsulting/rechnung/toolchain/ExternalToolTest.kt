@@ -10,8 +10,9 @@ import kotlin.time.Duration.Companion.seconds
 import kotlin.time.measureTime
 
 /**
- * Die beiden Wege durch [ExternalTool], die schiefgehen, bevor ein Werkzeug
- * überhaupt etwas tut.
+ * Die Wege durch [ExternalTool], die sich nur an einem echten Prozess zeigen:
+ * zwei, die schiefgehen, bevor ein Werkzeug überhaupt etwas tut, und die
+ * Umgebung, die beim Programm ankommen muss.
  *
  * Sie brauchen weder LuaLaTeX noch veraPDF, sondern nur Programme, die auf
  * jedem Rechner liegen – und trotzdem echte Prozesse: Ein gefälschter bewiese
@@ -51,5 +52,16 @@ class ExternalToolTest : FunSpec({
         withClue("Der Aufruf kehrte erst nach $gebraucht zurück") {
             gebraucht shouldBeLessThan 5.seconds
         }
+    }
+
+    test("die Umgebung kommt beim Programm an") {
+        val ergebnis =
+            ExternalTool.run(
+                listOf("printenv", "RECHNUNGSGENERATOR_TEST"),
+                arbeitsverzeichnis,
+                environment = mapOf("RECHNUNGSGENERATOR_TEST" to "angekommen"),
+            )
+
+        ergebnis.output shouldContain "angekommen"
     }
 })

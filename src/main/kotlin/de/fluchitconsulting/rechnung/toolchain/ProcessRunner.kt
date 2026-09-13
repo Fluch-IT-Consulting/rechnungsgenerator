@@ -20,8 +20,14 @@ import kotlin.time.Duration.Companion.minutes
  * Was ein Aufrufer wissen muss, steht am Adapter [ExternalTool] und gilt für
  * jeden weiteren: stderr läuft in dieselbe Ausgabe wie stdout, die Ausgabe geht
  * über eine Datei und nicht über einen Stream, und nach [timeout] wird der
- * Prozess hart abgeräumt statt höflich gebeten.
+ * Prozess hart abgeräumt statt höflich gebeten. [environment] kommt zur
+ * geerbten Umgebung hinzu, statt sie zu ersetzen.
  */
 interface ProcessRunner {
-    fun run(command: List<String>, workingDir: Path, timeout: Duration = 2.minutes): ToolResult
+    fun run(
+        command: List<String>,
+        workingDir: Path,
+        timeout: Duration = 2.minutes,
+        environment: Map<String, String> = emptyMap(),
+    ): ToolResult
 }

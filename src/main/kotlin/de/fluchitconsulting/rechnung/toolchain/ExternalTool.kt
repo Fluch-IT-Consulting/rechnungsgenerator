@@ -55,6 +55,7 @@ object ExternalTool : ProcessRunner {
         command: List<String>,
         workingDir: Path,
         timeout: Duration,
+        environment: Map<String, String>,
     ): ToolResult {
         val program = command.first()
         val executable = locate(program) ?: throw ToolchainException("Programm nicht gefunden: $program")
@@ -65,6 +66,9 @@ object ExternalTool : ProcessRunner {
                     .directory(workingDir.toFile())
                     .redirectErrorStream(true)
                     .redirectOutput(outFile.toFile())
+                    // environment() liefert die geerbte Umgebung als veränderbare
+                    // Map; was hier hineinkommt, sieht nur dieser Prozess.
+                    .also { it.environment().putAll(environment) }
                     .start()
             if (!process.waitFor(timeout.inWholeSeconds, TimeUnit.SECONDS)) {
                 process.destroyForcibly()
