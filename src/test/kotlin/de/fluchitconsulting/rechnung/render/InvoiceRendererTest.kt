@@ -3,8 +3,10 @@ package de.fluchitconsulting.rechnung.render
 import de.fluchitconsulting.rechnung.InvoiceCalculator
 import de.fluchitconsulting.rechnung.YamlLoader
 import de.fluchitconsulting.rechnung.accepted
+import de.fluchitconsulting.rechnung.model.Invoice
 import de.fluchitconsulting.rechnung.model.LineItem
 import de.fluchitconsulting.rechnung.model.Prepayment
+import de.fluchitconsulting.rechnung.model.SellerConfig
 import de.fluchitconsulting.rechnung.model.ServicePeriod
 import de.fluchitconsulting.rechnung.testInvoice
 import de.fluchitconsulting.rechnung.testItem
@@ -12,6 +14,8 @@ import de.fluchitconsulting.rechnung.testPrepayment
 import de.fluchitconsulting.rechnung.testSellerConfig
 import de.fluchitconsulting.rechnung.values.CountryCode
 import de.fluchitconsulting.rechnung.values.InvoiceType
+import de.fluchitconsulting.rechnung.values.TaxCategory
+import de.fluchitconsulting.rechnung.values.VatId
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.assertions.withClue
 import io.kotest.core.spec.style.FunSpec
@@ -363,6 +367,84 @@ class InvoiceRendererTest : FunSpec({
 
         test("eine gewöhnliche Rechnung bekommt keine Absetzung") {
             renderMit(testItem()) shouldNotContain "Abzüglich"
+        }
+    }
+
+    context("Pflichtangaben und was fehlen darf") {
+        // Keine dieser Angaben stand bis #95 in einem Test oder einer der
+        // Vergleichsdateien: Deren Stammdaten haben alles, und keine ihrer
+        // Rechnungen ist steuerfrei. Geprüft wird am Inhalt, nicht am Makro.
+
+        fun render(invoice: Invoice, stammdaten: SellerConfig = config): String =
+            InvoiceRenderer.render(InvoiceCalculator.calculate(invoice, stammdaten).accepted())
+
+        // Eine Position zum Regelsatz und eine mit Steuerschuldnerschaft des
+        // Leistungsempfängers – die verlangt die USt-IdNr. des Kunden.
+        fun mitReverseCharge() =
+            testInvoice(
+                items =
+                    listOf(
+                        testItem(),
+                        testItem(unitPrice = "200.00", vatRate = "0", taxCategory = TaxCategory.REVERSE_CHARGE),
+                    ),
+                customerVatId = VatId("DE123456788"),
+            )
+
+        test("eine Position ohne Umsatzsteuer bekommt ihren Grund genannt") {
+            // BT-120. Bei Reverse Charge verlangt §14a Abs. 5 UStG den Hinweis
+            // ausdrücklich auf der Rechnung.
+            render(mitReverseCharge()) shouldContain
+                "Auf 200,00~€ entfällt keine Umsatzsteuer: Steuerschuldnerschaft des Leistungsempfängers (Reverse Charge)."
+        }
+
+        test("eine Steuergruppe ohne Steuerbetrag steht nicht in den Summen") {
+            // "zzgl. 0 % USt. 0,00 €" sähe aus wie ein Rechenfehler; warum keine
+            // Steuer anfällt, sagt der Hinweis darunter.
+            val tex = render(mitReverseCharge())
+
+            tex shouldContain "zzgl. 19~\\% USt."
+            tex shouldNotContain "zzgl. 0"
+        }
+
+        test("die USt-IdNr. des Kunden steht unter seiner Anschrift, wenn er eine hat") {
+            // §14a UStG. Geprüft wird der Aufruf samt Nummer: Die Fußzeile trägt
+            // ohnehin die USt-IdNr. des Rechnungsstellers, das Wort allein stünde
+            // also immer da.
+            val kundenId = VatId("ATU12345678")
+
+            render(testInvoice(customerVatId = kundenId)) shouldContain "\\ustidtrenner{}USt-IdNr. ${kundenId.formatted()}"
+            render(testInvoice()) shouldNotContain "\\ustidtrenner{}"
+        }
+
+        test("der Inhaber steht im Briefkopf nur, wenn es keine Geschäftsführung gibt") {
+            // Unter der Grußformel steht er immer (<<INHABER>>), deshalb wird die
+            // Zeile des Briefkopfs selbst verglichen.
+            val stammdaten = config.copy(ownerName = "Ina Inhaberin")
+
+            fun briefkopf(tex: String) = tex.lines().first { it.contains("Muster IT-Consulting}") }
+
+            val ohne = render(testInvoice(), stammdaten)
+            briefkopf(ohne) shouldContain "}\\\\Ina Inhaberin"
+            ohne shouldNotContain "Geschäftsführung"
+
+            val mit = render(testInvoice(), stammdaten.copy(managingDirector = "Gero Geschäftsführer"))
+            briefkopf(mit) shouldNotContain "Ina Inhaberin"
+            mit shouldContain "Geschäftsführung\\\\Gero Geschäftsführer"
+        }
+
+        test("Telefon, Registergericht und Referenz stehen nur da, wenn sie angegeben sind") {
+            val ohne = render(testInvoice())
+            ohne shouldNotContain "Tel."
+            ohne shouldNotContain "Registergericht"
+            ohne shouldNotContain "Ihre Referenz"
+
+            val basis = testInvoice()
+            val mitReferenz = basis.copy(customer = basis.customer.copy(buyerReference = "Bestellung 4711"))
+            val stammdaten = config.copy(phone = "+49 931 000000", registerCourt = "Würzburg", registerNumber = "HRB 1")
+            val mit = render(mitReferenz, stammdaten)
+            mit shouldContain "Tel. +49 931 000000"
+            mit shouldContain "Registergericht Würzburg, HRB 1"
+            mit shouldContain "Ihre Referenz: Bestellung 4711"
         }
     }
 
