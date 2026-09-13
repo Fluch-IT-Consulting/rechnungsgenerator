@@ -74,11 +74,14 @@ class GenerateCommand(private val typesetter: Typesetter = LuaLatexTypesetter) :
         val config = YamlLoader.loadSellerConfig(configFile)
         val invoice = YamlLoader.loadInvoice(invoiceFile)
 
-        val calculatedInvoice = InvoiceCalculator.calculate(invoice, config)
-        // Alle Abbrüche auf einmal: Wer fünf Fehler in der Datei hat, soll
-        // nicht fünfmal starten müssen, um sie zu finden (#49).
-        val abbrueche = calculatedInvoice.findings.filter { it.severity == Severity.ABORT }
-        if (abbrueche.isNotEmpty()) throw CliktError(abbrueche.joinToString("\n") { it.describe() })
+        // Gesetzt wird nur eine angenommene Rechnung (ADR-0007) – der Renderer
+        // nimmt keine andere. Alle Abbrüche auf einmal: Wer fünf Fehler in der
+        // Datei hat, soll nicht fünfmal starten müssen, um sie zu finden (#49).
+        val acceptedInvoice =
+            when (val checked = AcceptedInvoice.check(InvoiceCalculator.calculate(invoice, config))) {
+                is Checked.Accepted -> checked.invoice
+                is Checked.Rejected -> throw CliktError(checked.aborts.joinToString("\n") { it.describe() })
+            }
 
         val jobName = jobNameFor(invoice)
         val target = outputFile ?: Path.of("$jobName.pdf")
@@ -94,12 +97,12 @@ class GenerateCommand(private val typesetter: Typesetter = LuaLatexTypesetter) :
 
         val workDir = createTempDirectory("rechnungsgenerator")
         try {
-            val gesetzt =
+            val typesetPdf =
                 typesetter.typeset(
                     workingDir = workDir,
                     jobName = jobName,
-                    texSource = InvoiceRenderer.render(calculatedInvoice),
-                    xmpMetadata = InvoiceRenderer.renderMetadata(calculatedInvoice),
+                    texSource = InvoiceRenderer.render(acceptedInvoice),
+                    xmpMetadata = InvoiceRenderer.renderMetadata(acceptedInvoice),
                     // Das Rechnungsdatum und nicht die Uhr: Eine neu erzeugte
                     // Rechnung soll nicht jünger aussehen als die verschickte.
                     creationDate = invoice.issueDate,
@@ -107,8 +110,8 @@ class GenerateCommand(private val typesetter: Typesetter = LuaLatexTypesetter) :
             // Ein ungültiges PDF/A ist kein Erfolg: Exitcode 1, damit ein Skript
             // ringsherum es merkt. Und es kommt nicht ans Ziel – auch nicht mit
             // --ueberschreiben, das einer gültigen Rechnung gilt.
-            if (!gesetzt.validation.valid) {
-                val ansehen =
+            if (!typesetPdf.validation.valid) {
+                val inspectionNote =
                     if (keepWorkFiles) {
                         "Das PDF liegt zum Ansehen in $workDir."
                     } else {
@@ -116,18 +119,16 @@ class GenerateCommand(private val typesetter: Typesetter = LuaLatexTypesetter) :
                     }
                 throw ToolchainException(
                     "Das erzeugte PDF ist kein gültiges PDF/A-1b und wurde nicht nach $target geschrieben.\n" +
-                        "${gesetzt.validation.describe()}\n$ansehen",
+                        "${typesetPdf.validation.describe()}\n$inspectionNote",
                 )
             }
-            gesetzt.pdf.copyTo(target, overwrite = overwrite)
+            typesetPdf.pdf.copyTo(target, overwrite = overwrite)
 
             echo("$target")
-            echo(gesetzt.validation.describe())
+            echo(typesetPdf.validation.describe())
             // Hinweise nach dem Ergebnis, damit sie nicht wie ein Fehler wirken –
             // die Rechnung ist ja entstanden. Sie betreffen die eigene Ablage.
-            calculatedInvoice.findings
-                .filter { it.severity == Severity.HINT }
-                .forEach { echo("Hinweis: ${it.describe()}") }
+            acceptedInvoice.hints.forEach { echo("Hinweis: ${it.describe()}") }
             if (keepWorkFiles) echo("Arbeitsdateien: $workDir")
         } finally {
             if (!keepWorkFiles) workDir.toFile().deleteRecursively()

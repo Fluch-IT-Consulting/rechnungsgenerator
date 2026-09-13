@@ -6,6 +6,8 @@ import de.fluchitconsulting.rechnung.values.Money
 import de.fluchitconsulting.rechnung.values.Percent
 import de.fluchitconsulting.rechnung.values.TaxCategory
 import io.kotest.core.spec.style.FunSpec
+import io.kotest.matchers.collections.shouldBeEmpty
+import io.kotest.matchers.collections.shouldNotContain
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.string.shouldContain
 import io.kotest.matchers.string.shouldStartWith
@@ -28,7 +30,7 @@ class PrepaymentsTest : FunSpec({
         )
 
     test("aus einer Abschlagsrechnung wird ihr Abschlag, mit Netto und Steuer je Satz") {
-        val abschlag = prepaymentOf(InvoiceCalculator.calculate(abschlagsrechnung, config))
+        val abschlag = prepaymentOf(InvoiceCalculator.calculate(abschlagsrechnung, config).accepted())
 
         abschlag shouldBe
             testPrepayment(
@@ -46,7 +48,7 @@ class PrepaymentsTest : FunSpec({
                 items = listOf(testItem(unitPrice = "1000.00"), testItem(unitPrice = "500.00", vatRate = "7")),
             )
 
-        val abschlag = prepaymentOf(InvoiceCalculator.calculate(mixed, config))
+        val abschlag = prepaymentOf(InvoiceCalculator.calculate(mixed, config).accepted())
 
         abschlag.taxShares shouldBe
             listOf(
@@ -106,10 +108,26 @@ class PrepaymentsTest : FunSpec({
         // Anderswo können "a-1" und "A-1" zwei verschiedene Rechnungen sein.
         val upper = abschlagsrechnung.copy(number = "R26-009")
         val lower = abschlagsrechnung.copy(number = "r26-009")
+
+        val collected = prepaymentsOf(listOf(upper, lower), config)
+
+        collected.prepayments.map { it.invoiceNumber } shouldBe listOf("R26-009", "r26-009")
+        collected.findings.shouldBeEmpty()
+    }
+
+    test("eine Nummer mit Leerraum ist kein Duplikat, aber auch kein Abschlag") {
+        // Bis #70 stand "R26-009 " im vorigen Test als dritter Abschlag. Seit
+        // ADR-0005 ist Leerraum am Rand ein Abbruch – und aus einer Rechnung mit
+        // Abbruch wird kein Abschlag (ADR-0007). Exakt verglichen wird trotzdem:
+        // Als Duplikat von "R26-009" gilt sie nicht.
+        val upper = abschlagsrechnung.copy(number = "R26-009")
         val padded = abschlagsrechnung.copy(number = "R26-009 ")
 
-        prepaymentsOf(listOf(upper, lower, padded), config).prepayments.map { it.invoiceNumber } shouldBe
-            listOf("R26-009", "r26-009", "R26-009 ")
+        val collected = prepaymentsOf(listOf(upper, padded), config)
+
+        collected.prepayments.map { it.invoiceNumber } shouldBe listOf("R26-009")
+        collected.findings.rules() shouldBe listOf(Rule.RECHNUNGSNUMMER_MIT_LEERRAUM)
+        collected.findings.rules() shouldNotContain Rule.ABSCHLAGSRECHNUNG_DOPPELT
     }
 
     test("ein Regelverstoß in einer Abschlagsrechnung nennt ihre Nummer") {
