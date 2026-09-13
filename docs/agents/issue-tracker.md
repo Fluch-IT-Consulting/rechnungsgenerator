@@ -58,10 +58,24 @@ Der Typ bestimmt auch den **Zweignamen**: `bugfix/<nummer>` für einen `Bug`,
 `feature/<nummer>` für ein `Feature`, `task/<nummer>` für einen `Task`. Wer die
 Zweigliste liest, sieht damit ohne Nachschlagen, was gerade in Arbeit ist.
 
-Die **Labels** tragen ausschließlich die Triage-Rolle – wer als Nächstes dran
-ist, siehe `triage-labels.md`. Die GitHub-Vorgaben `bug` und `enhancement`
-werden **nicht** benutzt: Sie sagten dasselbe wie der Typ und widersprachen ihm
+Die **Labels** tragen die Triage-Rolle – wer als Nächstes dran ist, siehe
+`triage-labels.md`. Die GitHub-Vorgaben `bug` und `enhancement` werden
+**nicht** benutzt: Sie sagten dasselbe wie der Typ und widersprachen ihm
 prompt (ein Issue vom Typ `Bug` mit dem Label `enhancement`).
+
+Die einzige Ausnahme sagt, **woher** ein Issue stammt: `architektur-review`
+bekommt jedes Issue, das aus einem Architektur-Review hervorgeht – zusätzlich
+zur Triage-Rolle, beim Anlegen:
+
+```
+gh issue create --type Task --label "needs-triage,architektur-review" ...
+```
+
+Der Rumpf endet trotzdem mit der Zeile `Gefunden im Architektur-Review vom
+<Datum>.` Das Label macht die Issues filterbar
+(`gh issue list --label architektur-review --state all`), das Datum ordnet sie
+einem bestimmten Review zu – ein Label je Review wäre dafür zu viel. Weitere
+Herkunftslabels kommen nicht dazu, solange niemand nach ihnen filtern will.
 
 ## Bevor die Arbeit an einem Issue beginnt
 
