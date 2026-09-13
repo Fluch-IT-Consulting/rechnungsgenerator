@@ -1,5 +1,6 @@
 package de.fluchitconsulting.rechnung
 
+import de.fluchitconsulting.rechnung.values.InvoiceType
 import de.fluchitconsulting.rechnung.values.Money
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
@@ -72,6 +73,48 @@ class InvoiceCalculatorTest : FunSpec({
         test("null Tage heißen sofort") {
             InvoiceCalculator.calculate(testInvoice(paymentTermDaysOverride = 0), config).dueDate shouldBe
                 LocalDate.of(2026, 8, 14)
+        }
+    }
+
+    context("Zahlungsaufforderung") {
+        // Aus requestsPayment folgen Zahlungsziel und Bankverbindung (#94). Was
+        // davon auf dem Blatt steht, prüft InvoiceRendererTest; hier nur die
+        // Entscheidung.
+
+        test("eine gewöhnliche Rechnung fordert zur Zahlung auf") {
+            InvoiceCalculator.calculate(testInvoice(), config).requestsPayment shouldBe true
+        }
+
+        test("eine Schlussrechnung ohne Restbetrag rechnet ab, fordert aber kein Geld") {
+            // 4.000 € netto, 19 % USt.: 4.760 € brutto, genau der Abschlag.
+            val calculated =
+                InvoiceCalculator.calculate(
+                    testInvoice(
+                        type = InvoiceType.FINAL,
+                        items = listOf(testItem(quantity = "1", unitPrice = "4000.00")),
+                        prepayments = listOf(testPrepayment()),
+                    ),
+                    config,
+                )
+
+            calculated.remainingAmount shouldBe Money("0.00")
+            calculated.requestsPayment shouldBe false
+            calculated.dueDate shouldBe null
+        }
+
+        test("eine Stornorechnung fordert kein Geld") {
+            val calculated =
+                InvoiceCalculator.calculate(
+                    testInvoice(
+                        type = InvoiceType.CANCELLATION,
+                        items = listOf(testItem(quantity = "-1", unitPrice = "1000.00")),
+                        cancelled = testCancelled(),
+                    ),
+                    config,
+                )
+
+            calculated.requestsPayment shouldBe false
+            calculated.dueDate shouldBe null
         }
     }
 })
