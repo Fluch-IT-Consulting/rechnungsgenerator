@@ -61,6 +61,29 @@ class NaechsteNummerSkriptTest : FunSpec({
         lauf(verzeichnis, "--rechnungsdatum", "2026-08-14").ausgabe shouldBe "R26-012"
     }
 
+    test("eine anders benannte YAML-Datei zählt über ihre Nummer") {
+        // #75: Wer ohne den Skill erzeugt, hält sich nicht an dessen
+        // Namensregel. Die Nummer ist trotzdem vergeben. Eine YAML-Datei ohne
+        // Nummer – hier eine Liste wie vereinnahmungen.yaml – zählt nicht.
+        val verzeichnis = ablage("Rechnung_R26-011-beispiel.pdf")
+        val outgoing = verzeichnis.resolve("Outgoing")
+        outgoing.resolve("Abschlagsrechnung-R26-014.yaml").writeText("nummer: R26-014\nart: abschlagsrechnung\n")
+        outgoing.resolve("vereinnahmungen.yaml").writeText("- R26-099\n")
+
+        lauf(verzeichnis, "--rechnungsdatum", "2026-08-14").ausgabe shouldBe "R26-015"
+    }
+
+    test("eine unlesbare YAML-Datei wird genannt, nicht still übergangen") {
+        val verzeichnis = ablage("Rechnung_R26-011-beispiel.pdf")
+        verzeichnis.resolve("Outgoing").resolve("kaputt.yaml").writeText("nummer: [R26-020\n")
+
+        val ergebnis = lauf(verzeichnis, "--rechnungsdatum", "2026-08-14")
+
+        ergebnis.exitCode shouldBe 0
+        ergebnis.ausgabe shouldBe "R26-012"
+        ergebnis.fehler shouldContain "kaputt.yaml"
+    }
+
     test("ein Jahr ohne Rechnung fängt bei 001 an") {
         // Nummern aus anderen Jahrgängen zählen nicht mit, auch wenn sie
         // danebenliegen.

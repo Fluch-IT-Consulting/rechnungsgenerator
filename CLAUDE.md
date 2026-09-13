@@ -294,8 +294,9 @@ CV/Web-Auftritt des Autors), Validierung über veraPDF.
   braucht seit #81 auch der Build: `ToolchainIntegrationTest` liest damit
   zurück, ob Text aus den Eingabedaten unverändert im PDF steht.
 - Die Skripte des `rechnung`-Skills laufen mit `python3`; PyYAML
-  (`pip3 install pyyaml`) braucht `offene-abschlaege.py` immer und
-  `naechste-nummer.py` für `--stammdaten`. Seit #61 hängt auch der Build daran:
+  (`pip3 install pyyaml`) brauchen beide Skripte
+  immer – `naechste-nummer.py` seit #75, weil es vergebene Nummern auch aus den
+  YAML-Dateien liest und nicht nur aus den Dateinamen. Seit #61 hängt auch der Build daran:
   `NaechsteNummerSkriptTest` ruft das Skript wirklich auf, statt seine Regel
   nachzubauen.
 
