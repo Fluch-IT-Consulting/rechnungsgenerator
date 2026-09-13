@@ -56,6 +56,12 @@ Rechnung keine doppelte Nummer verursacht. Abschlags- und Schlussrechnungen
 zählen in derselben Reihe wie alle anderen – ein zweiter Nummernkreis
 verdoppelte nur die Gelegenheiten für Lücken und Dubletten.
 
+Belegt ist eine Nummer, wenn sie im Dateinamen (`Rechnung_R…`) oder im Feld
+`nummer` einer `.yaml` steht. Eine Rechnung zählt also auch, wenn ihre Datei
+anders heißt – etwa weil sie ohne diesen Skill erzeugt wurde. Nennt das Skript
+auf stderr eine Datei, die es nicht lesen konnte, sieh sie dir an, bevor du die
+Nummer verwendest: Ihre Nummer ist nicht mitgezählt.
+
 Steht das Rechnungsdatum schon fest und ist es nicht heute – etwa weil die
 Rechnung noch ins alte Jahr gehört –, gib es mit: `--rechnungsdatum 2025-12-31`.
 Die Nummer gehört in den Nummernkreis des Jahres, in dem die Rechnung datiert

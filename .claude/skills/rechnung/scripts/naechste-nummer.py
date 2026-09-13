@@ -1,10 +1,18 @@
 #!/usr/bin/env python3
 """Ermittelt die nächste freie Rechnungsnummer im Schema R{JJ}-{NNN}.
 
-Durchsucht das Ablageverzeichnis nach Dateien der Form
-"Rechnung_R26-011-kunde.pdf" (oder .yaml/.ods) und gibt die nächste Nummer
+Durchsucht das Ablageverzeichnis nach vergebenen Nummern und gibt die nächste
 des Jahres aus, in dem die Rechnung datiert ist. Beginnt ein neues Jahr,
 fängt die Zählung bei 001 an.
+
+Belegt ist eine Nummer, wenn sie an einer von zwei Stellen steht:
+- im Dateinamen, in der Form "Rechnung_R26-011-kunde.pdf" (oder .yaml/.ods) –
+  so heißen die Dateien, die der Skill anlegt, und die alten .ods-Rechnungen;
+- im Feld `nummer` einer YAML-Datei, gleich wie sie heißt (#75). Der Generator
+  nennt ein PDF ohne -o anders als der Skill, und wer eine Datei von Hand
+  anlegt, hält sich womöglich an keine der beiden Regeln. Ihre Nummer war
+  trotzdem vergeben, und die Einmaligkeit (§14 Abs. 4 Satz 1 Nr. 4 UStG)
+  hängt an diesem Skript.
 
 Das Schema steckt hier fest: Ein regulärer Ausdruck prüft, er zählt nicht –
 er sagt nicht, welcher Teil einer Nummer der Zähler ist. Mit --stammdaten
@@ -23,18 +31,24 @@ import re
 import sys
 
 MUSTER = re.compile(r"Rechnung_R(\d{2})-(\d{3})\b")
+NUMMER = re.compile(r"R(\d{2})-(\d{3})")
+
+
+def yaml_modul():
+    """PyYAML, oder ein Abbruch mit Installationshinweis."""
+    # Der Import steht in einer Funktion und nicht oben, damit ein fehlendes
+    # PyYAML eine Meldung ergibt statt eines Stacktraces.
+    try:
+        import yaml
+    except ImportError:
+        print("Dieses Skript braucht PyYAML: pip3 install pyyaml", file=sys.stderr)
+        raise SystemExit(1)
+    return yaml
 
 
 def muster_aus_stammdaten(pfad: pathlib.Path) -> str | None:
     """Der Prüfausdruck aus den Stammdaten, oder None, wenn keiner eingetragen ist."""
-    # Der Import steht hier und nicht oben: Ohne --stammdaten kommt das Skript
-    # wie bisher ohne PyYAML aus.
-    try:
-        import yaml
-    except ImportError:
-        print("Für --stammdaten braucht dieses Skript PyYAML: pip3 install pyyaml", file=sys.stderr)
-        raise SystemExit(1)
-
+    yaml = yaml_modul()
     try:
         stammdaten = yaml.safe_load(pfad.read_text(encoding="utf-8"))
     except (OSError, UnicodeDecodeError, yaml.YAMLError) as fehler:
@@ -43,6 +57,30 @@ def muster_aus_stammdaten(pfad: pathlib.Path) -> str | None:
 
     # Kein Eintrag heißt: nicht prüfen. Dieselbe Regel wie im Generator.
     return (stammdaten or {}).get("rechnungsnummer-muster")
+
+
+def nummern_aus_yaml(verzeichnis: pathlib.Path):
+    """Die Nummern aus dem Feld `nummer` aller YAML-Dateien, als (Jahr, Zähler)."""
+    yaml = yaml_modul()
+    for datei in sorted(verzeichnis.rglob("*.yaml")):
+        try:
+            inhalt = yaml.safe_load(datei.read_text(encoding="utf-8"))
+        except (yaml.YAMLError, UnicodeDecodeError) as fehler:
+            # Warnen wie offene-abschlaege.py, nicht still überspringen: Eine
+            # kaputte Datei kann eine Rechnung sein, deren Nummer vergeben ist.
+            # Abbrechen dagegen hielte jede Rechnung an, weil irgendwo im
+            # Verzeichnis eine unfertige Datei liegt.
+            grund = getattr(fehler, "problem", None) or str(fehler).splitlines()[0]
+            print(f"Übersprungen, nicht lesbar: {datei}: {grund}", file=sys.stderr)
+            continue
+        # Stammdaten, vereinnahmungen.yaml und Ähnliches haben keine Nummer.
+        if not isinstance(inhalt, dict) or "nummer" not in inhalt:
+            continue
+        # str(): Eine ungequotete Nummer kann YAML als Zahl lesen. Nummern in
+        # einem anderen Schema passen nicht und können mit diesem nicht
+        # zusammenstoßen.
+        if m := NUMMER.fullmatch(str(inhalt["nummer"])):
+            yield m.group(1), int(m.group(2))
 
 
 def main() -> int:
@@ -79,6 +117,7 @@ def main() -> int:
         for datei in args.verzeichnis.rglob("Rechnung_R*")
         if (m := MUSTER.search(datei.name)) and m.group(1) == jahr
     }
+    belegt |= {zaehler for j, zaehler in nummern_aus_yaml(args.verzeichnis) if j == jahr}
 
     naechste = max(belegt) + 1 if belegt else 1
     if naechste > 999:
