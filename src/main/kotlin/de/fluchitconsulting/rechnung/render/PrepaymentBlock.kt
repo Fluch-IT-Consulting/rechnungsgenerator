@@ -45,7 +45,7 @@ object PrepaymentBlock {
             "  - rechnungsnummer: ${yamlScalar(abschlag.invoiceNumber)}",
             "    rechnungsdatum: ${abschlag.issueDate}",
             // Leer statt weggelassen: So steht die Lücke dort, wo sie zu füllen
-            // ist, und Regel 3 fordert sie beim Erzeugen ein.
+            // ist, und ABSCHLAG_OHNE_VEREINNAHMUNG fordert sie beim Erzeugen ein.
             abschlag.receivedOn?.let { "    vereinnahmt-am: $it" }
                 ?: "    vereinnahmt-am:                 # Datum der Vereinnahmung eintragen",
             "    steueranteile:",

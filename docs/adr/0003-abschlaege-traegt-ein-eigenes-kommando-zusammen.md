@@ -48,5 +48,6 @@ ein Mensch es sieht und die Abbruchregeln des Calculators es prüfen.
 - `vereinnahmt-am` wird nur übernommen, wenn es in der Abschlagsrechnung
   steht. Dort hält es eine Vereinnahmung fest, die vor der Rechnungsstellung
   stattfand und die auch auf deren PDF steht. Sonst bleibt das Feld leer, und
-  Regel 3 fordert es beim Erzeugen der Schlussrechnung ein. Nachgetragen wird
-  es in der Abschlagsrechnung nie (siehe Notiz vom 10.09.2026).
+  `ABSCHLAG_OHNE_VEREINNAHMUNG` fordert es beim Erzeugen der Schlussrechnung
+  ein. Nachgetragen wird es in der Abschlagsrechnung nie (siehe Notiz vom
+  10.09.2026).

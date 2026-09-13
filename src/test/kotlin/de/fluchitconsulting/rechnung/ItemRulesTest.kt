@@ -47,7 +47,7 @@ class ItemRulesTest : FunSpec({
 
         message shouldContain "Gesamtbetrag"
         message shouldContain "Stornorechnung"
-        // Bis #47 schlug hier Regel 8 der Absetzung zu. Ihre Meldung spricht von
+        // Bis #47 schlug hier RESTBETRAG_NEGATIV zu. Seine Meldung spricht von
         // abgesetzten Abschlägen – bei einer Rechnung, die gar keine hat.
         message shouldNotContain "Abschläge"
         // Und sie meldet sich auch nicht daneben: Seit alle Befunde erscheinen

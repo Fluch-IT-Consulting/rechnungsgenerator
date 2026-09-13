@@ -404,9 +404,10 @@ object InvoiceRenderer {
      * dieselbe Zweizeiligkeit wie bei einer Position.
      */
     private fun describePrepayment(abschlag: Prepayment): Latex {
-        // checkNotNull statt eines stillen Ausweichzweigs: Regel 3 im Calculator
-        // lässt keinen Abschlag ohne Vereinnahmung durch. Wäre hier doch einer,
-        // soll es krachen und nicht eine Zeile ohne Datum gedruckt werden.
+        // checkNotNull statt eines stillen Ausweichzweigs: Ohne Vereinnahmung
+        // meldet der Calculator ABSCHLAG_OHNE_VEREINNAHMUNG, und das Kommando
+        // bricht ab, bevor gesetzt wird. Wäre hier doch einer, soll es krachen
+        // und nicht eine Zeile ohne Datum gedruckt werden.
         val vereinnahmtAm = checkNotNull(abschlag.receivedOn) { "Abschlag ${abschlag.invoiceNumber} ohne Vereinnahmung" }
         val heading =
             "Abschlagsrechnung ".escapeLatex() + abschlag.invoiceNumber.escapeLatex() + " vom ".escapeLatex() +
@@ -423,8 +424,8 @@ object InvoiceRenderer {
     }
 
     /**
-     * Der Pflichtsatz der Rechnungsart, unter den Summen – heute hat ihn nur
-     * die Abschlagsrechnung. Den Wortlaut trägt [InvoiceType], den Abstand die
+     * Der Pflichtsatz der Rechnungsart, unter den Summen. Ob eine Art einen hat
+     * und wie er lautet, trägt [InvoiceType.mandatoryNote], den Abstand die
      * Vorlage: \hinweisabsatz bringt ihn mit, sodass bei den übrigen Arten der
      * leere Platzhalter auch wirklich nichts einnimmt.
      */

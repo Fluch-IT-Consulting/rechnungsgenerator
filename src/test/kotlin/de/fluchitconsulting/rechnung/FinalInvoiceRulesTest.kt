@@ -36,7 +36,7 @@ class FinalInvoiceRulesTest : FunSpec({
     fun messageFor(invoice: Invoice, rule: Rule): String = InvoiceCalculator.calculate(invoice, config).messageOf(rule)
 
     context("die Abbruchregeln") {
-        test("1. Abschläge nur in einer Schlussrechnung") {
+        test("Abschläge nur in einer Schlussrechnung") {
             val message =
                 messageFor(
                     testInvoice(items = gesamtleistung(), prepayments = listOf(testPrepayment())),
@@ -46,13 +46,13 @@ class FinalInvoiceRulesTest : FunSpec({
             message shouldContain "schlussrechnung"
         }
 
-        test("2. eine Schlussrechnung ohne Abschläge") {
+        test("eine Schlussrechnung ohne Abschläge") {
             val message = messageFor(schlussrechnung(), Rule.ABSCHLAEGE_FEHLEN)
 
             message shouldContain "abschlaege"
         }
 
-        test("3. ein Abschlag ohne Vereinnahmung wird nicht abgesetzt") {
+        test("ein Abschlag ohne Vereinnahmung wird nicht abgesetzt") {
             // §14 Abs. 5 Satz 2 UStG setzt ab, was vereinnahmt wurde. Ein
             // berechneter, aber unbezahlter Abschlag ist eine offene Forderung.
             val message = messageFor(schlussrechnung(testPrepayment(receivedOn = null)), Rule.ABSCHLAG_OHNE_VEREINNAHMUNG)
@@ -61,7 +61,7 @@ class FinalInvoiceRulesTest : FunSpec({
             message shouldContain "vereinnahmt-am"
         }
 
-        test("4. vereinnahmt nach dem Rechnungsdatum") {
+        test("vereinnahmt nach dem Rechnungsdatum") {
             val message =
                 messageFor(
                     schlussrechnung(testPrepayment(receivedOn = LocalDate.of(2026, 9, 1))),
@@ -72,14 +72,14 @@ class FinalInvoiceRulesTest : FunSpec({
             message shouldContain "2026-08-14"
         }
 
-        test("5. die Steuer des Abschlags stimmt nicht mit Netto und Satz überein") {
+        test("die Steuer des Abschlags stimmt nicht mit Netto und Satz überein") {
             val message = messageFor(schlussrechnung(testPrepayment(vat = "670.00")), Rule.ABSCHLAG_PRUEFSUMME)
 
             message shouldContain "670"
             message shouldContain "760"
         }
 
-        test("6. eine Kombination, die in der Schlussrechnung nicht vorkommt") {
+        test("eine Kombination, die in der Schlussrechnung nicht vorkommt") {
             // Die Gesamtleistung ist mit 19 % abgerechnet; ein Abschlag mit 7 %
             // gehört entweder zu einer anderen Rechnung oder war damals falsch.
             val message =
@@ -89,14 +89,14 @@ class FinalInvoiceRulesTest : FunSpec({
             message shouldContain "R26-009"
         }
 
-        test("7. dieselbe Rechnungsnummer zweimal") {
+        test("dieselbe Rechnungsnummer zweimal") {
             val message = messageFor(schlussrechnung(testPrepayment(), testPrepayment()), Rule.ABSCHLAG_DOPPELT)
 
             message shouldContain "R26-009"
             message shouldContain "zweimal"
         }
 
-        test("7. gilt nur für exakt gleiche Nummern") {
+        test("zweimal dieselbe Nummer heißt: exakt gleich geschrieben") {
             // Der Generator nimmt nichts über das Schema einer Nummer an (#53):
             // "r26-009" und "R26-009 " sind andere Nummern als "R26-009".
             val invoice =
@@ -110,7 +110,7 @@ class FinalInvoiceRulesTest : FunSpec({
                 listOf("R26-009", "r26-009", "R26-009 ")
         }
 
-        test("8. ein negativer Restbetrag") {
+        test("ein negativer Restbetrag") {
             // Mehr abgesetzt als berechnet: Das ist keine Rechnung mehr,
             // sondern ein Fall für eine Rückzahlung.
             val tooLarge = testPrepayment(net = "30000.00", vat = "5700.00")
@@ -120,9 +120,10 @@ class FinalInvoiceRulesTest : FunSpec({
             message shouldContain "Restbetrag"
         }
 
-        test("9. ein Abschlag ohne Steueranteile") {
-            // Aus demselben Grund wie Regel 5: Sonst setzte der Abschlag still
-            // 0,00 € ab, ohne dass die Prüfsumme je etwas zu prüfen hätte.
+        test("ein Abschlag ohne Steueranteile") {
+            // Aus demselben Grund wie ABSCHLAG_PRUEFSUMME: Sonst setzte der
+            // Abschlag still 0,00 € ab, ohne dass die Prüfsumme je etwas zu
+            // prüfen hätte.
             val message =
                 messageFor(schlussrechnung(testPrepayment(taxShares = emptyList())), Rule.ABSCHLAG_OHNE_STEUERANTEILE)
 
@@ -130,10 +131,11 @@ class FinalInvoiceRulesTest : FunSpec({
             message shouldContain "R26-009"
         }
 
-        test("10. ein Abschlag, der nach der Schlussrechnung datiert ist") {
-            // Das Gegenstück zu Regel 4, diesmal für das Rechnungsdatum (#47):
-            // Ein Abschlag geht der Schlussrechnung voraus. Später datiert ist er
-            // ein Tippfehler – oder eine Rechnung, die nicht hierher gehört.
+        test("ein Abschlag, der nach der Schlussrechnung datiert ist") {
+            // Das Gegenstück zu ABSCHLAG_NACH_RECHNUNGSDATUM, diesmal für das
+            // Rechnungsdatum (#47): Ein Abschlag geht der Schlussrechnung
+            // voraus. Später datiert ist er ein Tippfehler – oder eine Rechnung,
+            // die nicht hierher gehört.
             val message =
                 messageFor(
                     schlussrechnung(testPrepayment(issueDate = LocalDate.of(2026, 9, 1))),
