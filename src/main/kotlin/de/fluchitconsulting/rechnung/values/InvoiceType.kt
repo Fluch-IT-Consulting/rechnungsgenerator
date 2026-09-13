@@ -14,6 +14,14 @@ import kotlinx.serialization.Serializable
  *
  * [label] ist die Schreibweise in der YAML, [code] die Kennung fürs spätere
  * ZUGFeRD-XML.
+ *
+ * Die drei Eigenschaften danach haben bewusst **keine** Vorgabewerte (ADR-0009):
+ * Eine neue Rechnungsart – etwa die Rechnungskorrektur aus #64 – muss sagen, ob
+ * ihr Zeitraum eine Prognose ist, ob sie Geld fordert und welcher Satz auf ihr
+ * stehen muss. Mit Vorgaben erbte sie still die Antworten der gewöhnlichen
+ * Rechnung, und Renderer und Calculator folgten ihnen, ohne dass je jemand
+ * darüber entschieden hätte. Ohne Vorgaben übersetzt der neue Eintrag erst,
+ * wenn alle drei dastehen.
  */
 @Serializable(with = InvoiceTypeSerializer::class)
 enum class InvoiceType(
@@ -28,7 +36,7 @@ enum class InvoiceType(
      * 14.8 Abs. 1 und 4 lassen dort den Kalendermonat genügen. Aus dieser einen
      * Eigenschaft folgen beide Beschriftungen und die Schreibweise des Datums.
      */
-    val servicePeriodIsForecast: Boolean = false,
+    val servicePeriodIsForecast: Boolean,
     /**
      * Rechnet dieses Dokument eine Leistung ab und fordert zur Zahlung auf?
      *
@@ -43,15 +51,23 @@ enum class InvoiceType(
      * Nicht dasselbe wie "ist ein Storno": Das Vorzeichen des Gesamtbetrags
      * hängt an der Rechnungsart selbst und fragt deshalb nach ihr.
      */
-    val chargesForService: Boolean = true,
+    val chargesForService: Boolean,
     /**
      * Ein Satz, der auf diesem Dokument stehen muss, damit es als das erkennbar
      * ist, was es ist. Hier steht der Wortlaut, nicht seine Gestalt: Wo er auf
      * der Seite landet, entscheidet die Vorlage.
      */
-    val mandatoryNote: String? = null,
+    val mandatoryNote: String?,
 ) {
-    INVOICE("rechnung", "380"),
+    // Benannte Argumente, obwohl die Reihenfolge eindeutig ist: Ein nacktes
+    // `false, true, null` ließe sich nur mit der Parameterliste daneben lesen.
+    INVOICE(
+        "rechnung",
+        "380",
+        servicePeriodIsForecast = false,
+        chargesForService = true,
+        mandatoryNote = null,
+    ),
 
     // Der Code heißt in der Liste "Prepayment invoice"; das Wort dieses
     // Projekts ist trotzdem die Abschlagsrechnung – "Anzahlung" steht in
@@ -60,6 +76,7 @@ enum class InvoiceType(
         "abschlagsrechnung",
         "386",
         servicePeriodIsForecast = true,
+        chargesForService = true,
         mandatoryNote =
             "Die Leistung ist noch nicht erbracht. Über die Gesamtleistung folgt eine " +
                 "Schlussrechnung, in der dieser Abschlag abgesetzt wird.",
@@ -72,13 +89,25 @@ enum class InvoiceType(
     // korrigiert nichts) und nicht die Bau-Codes 875/876/877, die für andere
     // Leistungen eine Falschangabe wären. Ein neutraler Code ist besser als
     // einer, der etwas Falsches behauptet.
-    FINAL("schlussrechnung", "380"),
+    FINAL(
+        "schlussrechnung",
+        "380",
+        servicePeriodIsForecast = false,
+        chargesForService = true,
+        mandatoryNote = null,
+    ),
 
     // Ändert nur den Code und nichts an der Rechnung. Aufgenommen, damit die
     // Unterscheidung zur Abschlagsrechnung im Modell sichtbar ist statt nur im
     // Kopf des Rechnungsstellers: Nicht die Höhe trennt beide, sondern ob die
     // Leistung erbracht ist.
-    PARTIAL("teilrechnung", "326"),
+    PARTIAL(
+        "teilrechnung",
+        "326",
+        servicePeriodIsForecast = false,
+        chargesForService = true,
+        mandatoryNote = null,
+    ),
 
     // 384 ("Corrected invoice") und nicht 381: Die KoSIT führt 384 für Korrektur
     // und Storno mit Bezug auf die Ursprungsrechnung, 381 für die kaufmännische
@@ -90,6 +119,7 @@ enum class InvoiceType(
     CANCELLATION(
         "stornorechnung",
         "384",
+        servicePeriodIsForecast = false,
         chargesForService = false,
         mandatoryNote =
             "Diese Stornorechnung hebt die genannte Ursprungsrechnung vollständig auf. " +
