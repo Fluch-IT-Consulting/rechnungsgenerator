@@ -133,7 +133,11 @@ CV/Web-Auftritt des Autors), Validierung über veraPDF.
   irgendwann still falsch. Zwei Netze, absichtlich versetzt:
   - Ein **Test** wird rot, sobald das Prüfdatum sechs Monate alt ist. Er
     scheitert also irgendwann ohne Codeänderung – das ist der Zweck, nicht ein
-    Defekt. Die Fehlermeldung sagt, was zu tun ist.
+    Defekt. Die Fehlermeldung sagt, was zu tun ist. Der Preis: Jeder ältere
+    Stand scheitert an ihm, bei `git bisect` ebenso wie beim Nachbauen eines
+    alten PDF. Dafür `EU_LISTE_ALTERSPRUEFUNG=aus ./gradlew build` – der Test
+    gilt dann als übersprungen, nicht als bestanden (#79). Stände vor #79
+    kennen den Schalter noch nicht.
   - Ein **Laufzeit-Hinweis** meldet sich nach zwölf Monaten, aber nur bei
     Auslandsrechnungen. Er fängt den ab, der nur das gebaute Programm benutzt,
     ohne je `./gradlew build` zu laufen. Bei Inlandsrechnungen schweigt er,
