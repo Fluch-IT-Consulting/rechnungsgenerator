@@ -29,8 +29,14 @@ rechnungsgenerator erzeuge [OPTIONEN] <rechnung.yaml>
                              (Vorgabe: stammdaten.yaml)
   -o, --ausgabe=<pfad>       Zieldatei
                              (Vorgabe: aus der Rechnungsnummer gebildet)
+  --ueberschreiben           Eine vorhandene Zieldatei ersetzen
   --arbeitsdateien-behalten  Das .tex und die LaTeX-Hilfsdateien nicht löschen
 ```
+
+Eine vorhandene Zieldatei bleibt ohne `--ueberschreiben` unangetastet: Sie
+kann die Rechnung sein, die schon beim Kunden liegt. Der Schalter ist fürs
+Nachbessern eines Entwurfs gedacht. Ein PDF, das die PDF/A-Prüfung nicht
+besteht, kommt in keinem Fall ans Ziel.
 
 Beispiel:
 

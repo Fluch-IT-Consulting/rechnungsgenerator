@@ -101,6 +101,13 @@ build/install/rechnungsgenerator/bin/rechnungsgenerator erzeuge \
   -o "$RECHNUNGEN_DIR/Outgoing/Rechnung_R26-012-beispiel.pdf"
 ```
 
+Gibt es die Zieldatei schon, bricht das Kommando ab und nennt `--ueberschreiben`.
+Den Schalter setzt du nur beim **Nachbessern**: Du hast genau diese Datei in
+dieser Sitzung erzeugt und vorgelegt, und der Nutzer will etwas daran ändern.
+Stammt die vorhandene Datei aus einer früheren Sitzung, kann sie schon beim
+Kunden liegen – dann frag, bevor du etwas ersetzt. Eine verschickte Rechnung,
+die falsch ist, wird storniert, nicht überschrieben (siehe *Stornorechnung*).
+
 Fehlt das Programm, baue es mit `./gradlew installDist` im Projektverzeichnis.
 Dasselbe, wenn es `got unexpected extra argument` meldet und dazu, eine Datei
 `erzeuge` gebe es nicht: Dann ist das installierte Programm älter als diese
