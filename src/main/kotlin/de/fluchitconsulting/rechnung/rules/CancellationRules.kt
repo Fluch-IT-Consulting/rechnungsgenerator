@@ -13,7 +13,8 @@ import de.fluchitconsulting.rechnung.values.InvoiceType
  *
  * Ob ein Storno überhaupt einen Bezug trägt – und ein anderes Dokument keinen –,
  * prüft [InvoiceKindRules]: Ohne Bezug gibt es keine Stornorechnung als Typ
- * (ADR-0008). Hier steht, was am Bezug selbst falsch sein kann.
+ * (ADR-0008). Hier steht, was am Bezug selbst falsch sein kann – und nur auf
+ * einer Stornorechnung (#97).
  *
  * Das Vorzeichen steht hier und nicht bei den Positionen, weil es zur
  * Rechnungsart gehört: Ein Storno ist negativ, jedes andere Dokument nicht.
@@ -25,6 +26,10 @@ internal object CancellationRules {
 
     private fun reference(invoice: Invoice): List<Finding> =
         buildList {
+            // Auf einer anderen Art meldet InvoiceKindRules schon, dass der Bezug
+            // dort nicht hingehört. Die Meldungen hier sprächen von "der
+            // Stornorechnung" und "diesem Storno", auf einem Blatt, das keines ist.
+            if (invoice.type != InvoiceType.CANCELLATION) return@buildList
             // Ohne Bezug gibt es nichts zu prüfen; dass er fehlt, meldet
             // InvoiceKindRules.
             val storniert = invoice.cancelled ?: return@buildList

@@ -5,6 +5,7 @@ import de.fluchitconsulting.rechnung.Finding
 import de.fluchitconsulting.rechnung.Rule
 import de.fluchitconsulting.rechnung.Subject
 import de.fluchitconsulting.rechnung.model.Invoice
+import de.fluchitconsulting.rechnung.values.InvoiceType
 
 /**
  * Die Schlussrechnung und die Absetzung ihrer Abschläge.
@@ -12,7 +13,8 @@ import de.fluchitconsulting.rechnung.model.Invoice
  * Ob abgesetzt wird, wo es hingehört, ob eine Schlussrechnung überhaupt Abschläge
  * trägt und ob jeder davon vereinnahmt ist, prüft [InvoiceKindRules] – ohne das
  * gibt es keine Schlussrechnung als Typ (ADR-0008). Hier steht, was an einem
- * vorhandenen Abschlag falsch sein kann.
+ * vorhandenen Abschlag falsch sein kann – und nur auf einer Schlussrechnung
+ * (#97).
  *
  * Zwei Teile: die Angaben je Abschlag, die sich ohne die Summen der Rechnung
  * prüfen lassen, und die Absetzung gegen die Rechnung selbst. Vorher standen
@@ -20,7 +22,14 @@ import de.fluchitconsulting.rechnung.model.Invoice
  * das Ergebnis eigens ein zweites Mal – jetzt liegt es fertig vor (#71).
  */
 internal object FinalInvoiceRules {
-    fun check(calculated: CalculatedInvoice): List<Finding> = prepayments(calculated.invoice) + deduction(calculated)
+    // Auf einer anderen Art meldet InvoiceKindRules schon, dass Abschläge dort
+    // nicht hingehören. Beide Teile sprächen sonst von "dieser Schlussrechnung",
+    // auf einem Blatt, das keine ist – dieselbe Sorte Meldung, die #47 bei
+    // RESTBETRAG_NEGATIV behoben hat.
+    fun check(calculated: CalculatedInvoice): List<Finding> {
+        if (calculated.invoice.type != InvoiceType.FINAL) return emptyList()
+        return prepayments(calculated.invoice) + deduction(calculated)
+    }
 
     private fun prepayments(invoice: Invoice): List<Finding> =
         buildList {
