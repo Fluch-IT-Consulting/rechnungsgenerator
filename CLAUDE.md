@@ -68,7 +68,11 @@ CV/Web-Auftritt des Autors), Validierung über veraPDF.
   einen vierten fordert, konvergiert nicht. Bei den Rechnungen dieses Projekts
   ist es einer: Sie haben weder Querverweise noch Lesezeichen, und nachgemessen
   mit TeX Live 2026 sind die PDFs nach einem und nach zwei Läufen im Satzbild
-  gleich.
+  gleich. Dieselben Quellen ergeben dasselbe PDF, Byte für Byte: Das
+  Erstellungsdatum ist das Rechnungsdatum (`SOURCE_DATE_EPOCH`, geschrieben in
+  UTC), und die Trailer-ID bildet `LatexCompiler` aus der Prüfsumme von `.tex`
+  und `.xmpdata`. Von sich aus nähme LuaTeX dafür Uhr und Pfad, und jeder Lauf
+  setzt in einem anderen Temp-Verzeichnis.
 - **CLI**: Clikt, und zwar `clikt-core` ohne Mordant – die Vollvariante zieht
   JNA nach und schreibt auf JDK 24+ bei jedem Start vier Warnzeilen auf stderr.
   `main()` von Clikt beendet den Prozess mit Code 0 auch im Fehlerfall, deshalb
@@ -154,8 +158,10 @@ CV/Web-Auftritt des Autors), Validierung über veraPDF.
   einer gewöhnlichen Rechnung soll sich nicht nebenbei ändern, während die
   anderen Arten dazukommen. Wird der Test rot, ist das eine Frage und keine
   Aufgabe: erst nachsehen, ob die Änderung gewollt ist, dann die Datei neu
-  erzeugen – und das erzeugte PDF gegen das vorherige prüfen (`pdftoppm` und
-  Prüfsumme genügen), denn Kommentar- und Leerzeilen im `.tex` ändern es nicht.
+  erzeugen – und das erzeugte PDF gegen das vorherige prüfen. Gleiche Prüfsumme
+  des PDF heißt: nichts geändert. Weicht sie ab, entscheidet das Bild
+  (`pdftoppm` und dessen Prüfsumme), denn eine geänderte Kommentar- oder
+  Leerzeile im `.tex` ändert die Trailer-ID, aber nicht das Satzbild.
 - **Storno**: Eine falsche Rechnung wird nicht überschrieben, sondern
   aufgehoben – `art: stornorechnung` mit eigener Nummer, dem Bezug auf die
   Ursprungsrechnung unter `storniert` (EN 16931 BG-3, Pflicht) und den
