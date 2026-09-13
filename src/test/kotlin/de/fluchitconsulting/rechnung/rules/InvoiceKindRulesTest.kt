@@ -5,6 +5,7 @@ import de.fluchitconsulting.rechnung.Checked
 import de.fluchitconsulting.rechnung.InvoiceCalculator
 import de.fluchitconsulting.rechnung.InvoiceKind
 import de.fluchitconsulting.rechnung.Rule
+import de.fluchitconsulting.rechnung.Severity
 import de.fluchitconsulting.rechnung.accepted
 import de.fluchitconsulting.rechnung.messageOf
 import de.fluchitconsulting.rechnung.model.CancelledInvoice
@@ -19,6 +20,7 @@ import de.fluchitconsulting.rechnung.testPrepayment
 import de.fluchitconsulting.rechnung.testSellerConfig
 import de.fluchitconsulting.rechnung.values.InvoiceType
 import de.fluchitconsulting.rechnung.values.Money
+import io.kotest.assertions.withClue
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.collections.shouldContain
 import io.kotest.matchers.shouldBe
@@ -172,6 +174,35 @@ class InvoiceKindRulesTest : FunSpec({
             val checked = AcceptedInvoice.check(InvoiceCalculator.calculate(storno(cancelled = null), config))
 
             checked.shouldBeInstanceOf<Checked.Rejected>().aborts.rules() shouldContain Rule.STORNO_OHNE_BEZUG
+        }
+
+        test("was den Typ unbaubar macht, ist ein Abbruch") {
+            // AcceptedInvoice.check lehnt eine Rechnung ohne gebaute Art mit ihren
+            // Abbrüchen ab. Wäre einer dieser Befunde bloß ein Hinweis, stünde
+            // eine Ablehnung ohne Grund da (#93). Je ein Weg, auf dem kein Typ
+            // entsteht – die Kennungen selbst stehen nicht noch einmal hier.
+            listOf(
+                storno(cancelled = null),
+                testInvoice(cancelled = testCancelled()),
+                testInvoice(receivedOn = LocalDate.of(2026, 8, 10)),
+                testInvoice(items = gesamtleistung(), prepayments = listOf(testPrepayment())),
+                schlussrechnung(),
+                schlussrechnung(testPrepayment(receivedOn = null)),
+            ).forEach { invoice ->
+                val notBuilt =
+                    InvoiceCalculator
+                        .calculate(invoice, config)
+                        .kindResult
+                        .shouldBeInstanceOf<InvoiceKindRules.Result.NotBuilt>()
+                notBuilt.findings.forEach { finding ->
+                    withClue(
+                        "${finding.rule} verhindert den Bau der Rechnungsart. Ohne Art gibt es nichts zu setzen, " +
+                            "also muss die Regel ein Abbruch sein und kein Hinweis.",
+                    ) {
+                        finding.severity shouldBe Severity.ABORT
+                    }
+                }
+            }
         }
     }
 })

@@ -4,6 +4,7 @@ import de.fluchitconsulting.rechnung.model.Invoice
 import de.fluchitconsulting.rechnung.model.LineItem
 import de.fluchitconsulting.rechnung.model.Prepayment
 import de.fluchitconsulting.rechnung.model.SellerConfig
+import de.fluchitconsulting.rechnung.rules.InvoiceKindRules
 import de.fluchitconsulting.rechnung.rules.InvoiceRules
 import de.fluchitconsulting.rechnung.values.Money
 import de.fluchitconsulting.rechnung.values.Percent
@@ -123,6 +124,20 @@ data class CalculatedInvoice(
      * Kommando fragt zweimal – einmal nach Abbrüchen, einmal nach Hinweisen.
      */
     val findings: List<Finding> by lazy { InvoiceRules.check(this) }
+
+    /**
+     * Die Rechnungsart – gebaut oder die Befunde, warum nicht (ADR-0008).
+     *
+     * Einmal gebaut und gemerkt, wie [findings]: Die Regelgruppe
+     * `InvoiceKindRules` liest daraus ihre Befunde, `AcceptedInvoice.check` das
+     * Ergebnis. Vorher baute jede der beiden für sich (#93), und die Ablehnung
+     * einer Rechnung ohne Art war nur deshalb begründet, weil der andere Bau zum
+     * selben Schluss kam.
+     *
+     * `internal`, weil [InvoiceKindRules.Result] es ist: Ein öffentliches Feld
+     * dürfte keinen Typ zeigen, der außerhalb des Moduls unsichtbar ist.
+     */
+    internal val kindResult: InvoiceKindRules.Result by lazy { InvoiceKindRules.build(this) }
 }
 
 /**

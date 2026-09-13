@@ -34,8 +34,10 @@ internal object InvoiceKindRules {
         data class NotBuilt(val findings: List<Finding>) : Result
     }
 
+    // Liest den gemerkten Bau und baut nicht selbst: Dieselbe Rechnungsart prüft
+    // AcceptedInvoice.check, und beide sollen aus einem Bau schöpfen (#93).
     fun check(calculated: CalculatedInvoice): List<Finding> =
-        when (val result = build(calculated)) {
+        when (val result = calculated.kindResult) {
             is Result.Built -> emptyList()
             is Result.NotBuilt -> result.findings
         }
