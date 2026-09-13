@@ -44,30 +44,8 @@ class FinalInvoiceRulesTest : FunSpec({
     fun messageFor(invoice: Invoice, rule: Rule): String = InvoiceCalculator.calculate(invoice, config).messageOf(rule)
 
     context("die Abbruchregeln") {
-        test("Abschläge nur in einer Schlussrechnung") {
-            val message =
-                messageFor(
-                    testInvoice(items = gesamtleistung(), prepayments = listOf(testPrepayment())),
-                    Rule.ABSCHLAEGE_FALSCHE_ART,
-                )
-
-            message shouldContain "schlussrechnung"
-        }
-
-        test("eine Schlussrechnung ohne Abschläge") {
-            val message = messageFor(schlussrechnung(), Rule.ABSCHLAEGE_FEHLEN)
-
-            message shouldContain "abschlaege"
-        }
-
-        test("ein Abschlag ohne Vereinnahmung wird nicht abgesetzt") {
-            // §14 Abs. 5 Satz 2 UStG setzt ab, was vereinnahmt wurde. Ein
-            // berechneter, aber unbezahlter Abschlag ist eine offene Forderung.
-            val message = messageFor(schlussrechnung(testPrepayment(receivedOn = null)), Rule.ABSCHLAG_OHNE_VEREINNAHMUNG)
-
-            message shouldContain "R26-009"
-            message shouldContain "vereinnahmt-am"
-        }
+        // Ob Abschläge dort stehen, wo sie hingehören, ob eine Schlussrechnung
+        // welche hat und ob jeder vereinnahmt ist, prüft InvoiceKindRulesTest.
 
         test("vereinnahmt nach dem Rechnungsdatum") {
             val message =

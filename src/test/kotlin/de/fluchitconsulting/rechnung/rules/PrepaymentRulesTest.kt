@@ -36,24 +36,8 @@ class PrepaymentRulesTest : FunSpec({
         totals.grossTotal shouldBe Money("4760.00")
     }
 
-    test("vereinnahmt-am gehört nur auf eine Abschlagsrechnung") {
-        val message =
-            InvoiceCalculator
-                .calculate(testInvoice(receivedOn = LocalDate.of(2026, 8, 10)), config)
-                .messageOf(Rule.VEREINNAHMUNG_FALSCHE_ART)
-
-        message shouldContain "abschlagsrechnung"
-        message shouldContain "Rechnung"
-    }
-
-    test("die Meldung nennt das Dokument, auf dem die Angabe steht") {
-        val message =
-            InvoiceCalculator
-                .calculate(testInvoice(type = InvoiceType.FINAL, receivedOn = LocalDate.of(2026, 8, 10)), config)
-                .messageOf(Rule.VEREINNAHMUNG_FALSCHE_ART)
-
-        message shouldContain "Schlussrechnung"
-    }
+    // Dass vereinnahmt-am nur auf eine Abschlagsrechnung gehört, prüft
+    // InvoiceKindRulesTest.
 
     test("eine Vereinnahmung nach dem Rechnungsdatum belegt für diese Rechnung nichts") {
         // Das Feld ist für den Fall gedacht, dass das Geld schon vor der

@@ -11,6 +11,10 @@ import de.fluchitconsulting.rechnung.values.InvoiceType
  * Das Storno: sein Bezug auf die Ursprungsrechnung und das Vorzeichen des
  * Gesamtbetrags (ADR-0006).
  *
+ * Ob ein Storno überhaupt einen Bezug trägt – und ein anderes Dokument keinen –,
+ * prüft [InvoiceKindRules]: Ohne Bezug gibt es keine Stornorechnung als Typ
+ * (ADR-0008). Hier steht, was am Bezug selbst falsch sein kann.
+ *
  * Das Vorzeichen steht hier und nicht bei den Positionen, weil es zur
  * Rechnungsart gehört: Ein Storno ist negativ, jedes andere Dokument nicht.
  * Früher stand es mitten in `calculate`, weil es die Summen braucht – jetzt
@@ -19,39 +23,11 @@ import de.fluchitconsulting.rechnung.values.InvoiceType
 internal object CancellationRules {
     fun check(calculated: CalculatedInvoice): List<Finding> = reference(calculated.invoice) + sign(calculated)
 
-    /**
-     * Der Bezug ist im Modell optional, fachlich aber Pflicht – geprüft wird er
-     * hier, damit die Meldung von der Rechnungsart spricht statt von einem
-     * fehlenden YAML-Schlüssel. In beide Richtungen: Ein Bezug ohne Storno ist
-     * genauso falsch wie ein Storno ohne Bezug, so wie 'vereinnahmt-am' nur auf
-     * eine Abschlagsrechnung gehört.
-     */
     private fun reference(invoice: Invoice): List<Finding> =
         buildList {
-            val storniert = invoice.cancelled
-            if (invoice.type == InvoiceType.CANCELLATION && storniert == null) {
-                add(
-                    Finding(
-                        Rule.STORNO_OHNE_BEZUG,
-                        Subject.WholeInvoice,
-                        "Eine Stornorechnung nennt die Rechnung, die sie aufhebt – 'storniert' fehlt. " +
-                            "Ohne Nummer und Datum der Ursprungsrechnung ist sie wertlos (EN 16931 BG-3).",
-                    ),
-                )
-            }
-            if (invoice.type != InvoiceType.CANCELLATION && storniert != null) {
-                add(
-                    Finding(
-                        Rule.BEZUG_OHNE_STORNO,
-                        Subject.WholeInvoice,
-                        "'storniert' gehört nur auf eine Stornorechnung (art: stornorechnung); " +
-                            "dieses Dokument ist eine ${invoice.type.documentName}.",
-                    ),
-                )
-            }
-            // Die beiden folgenden Regeln prüfen den Bezug selbst; ohne ihn
-            // haben sie nichts zu prüfen.
-            if (storniert == null) return@buildList
+            // Ohne Bezug gibt es nichts zu prüfen; dass er fehlt, meldet
+            // InvoiceKindRules.
+            val storniert = invoice.cancelled ?: return@buildList
 
             // Verglichen wird zeichengenau, wie bei den Abschlägen (#53): Über
             // die Schreibweise fremder Nummern weiß dieses Programm nichts.

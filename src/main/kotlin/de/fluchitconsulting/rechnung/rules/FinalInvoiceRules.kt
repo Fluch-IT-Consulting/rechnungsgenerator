@@ -5,10 +5,14 @@ import de.fluchitconsulting.rechnung.Finding
 import de.fluchitconsulting.rechnung.Rule
 import de.fluchitconsulting.rechnung.Subject
 import de.fluchitconsulting.rechnung.model.Invoice
-import de.fluchitconsulting.rechnung.values.InvoiceType
 
 /**
  * Die Schlussrechnung und die Absetzung ihrer Abschläge.
+ *
+ * Ob abgesetzt wird, wo es hingehört, ob eine Schlussrechnung überhaupt Abschläge
+ * trägt und ob jeder davon vereinnahmt ist, prüft [InvoiceKindRules] – ohne das
+ * gibt es keine Schlussrechnung als Typ (ADR-0008). Hier steht, was an einem
+ * vorhandenen Abschlag falsch sein kann.
  *
  * Zwei Teile: die Angaben je Abschlag, die sich ohne die Summen der Rechnung
  * prüfen lassen, und die Absetzung gegen die Rechnung selbst. Vorher standen
@@ -20,30 +24,6 @@ internal object FinalInvoiceRules {
 
     private fun prepayments(invoice: Invoice): List<Finding> =
         buildList {
-            // Regel: Sobald abgesetzt wird, *ist* das Dokument eine Schlussrechnung.
-            if (invoice.prepayments.isNotEmpty() && invoice.type != InvoiceType.FINAL) {
-                add(
-                    Finding(
-                        Rule.ABSCHLAEGE_FALSCHE_ART,
-                        Subject.WholeInvoice,
-                        "Abschläge werden nur in einer Schlussrechnung abgesetzt (art: schlussrechnung); " +
-                            "dieses Dokument ist eine ${invoice.type.documentName}.",
-                    ),
-                )
-            }
-            // Umgekehrt fehlt dann entweder die Absetzung – oder es ist gar keine
-            // Schlussrechnung.
-            if (invoice.type == InvoiceType.FINAL && invoice.prepayments.isEmpty()) {
-                add(
-                    Finding(
-                        Rule.ABSCHLAEGE_FEHLEN,
-                        Subject.WholeInvoice,
-                        "Eine Schlussrechnung setzt die vereinnahmten Abschläge ab, hier ist keiner angegeben. " +
-                            "Bitte 'abschlaege' füllen – oder, wenn es keine gab, 'art: rechnung' schreiben.",
-                    ),
-                )
-            }
-
             // Derselbe Abschlag zweimal abgesetzt ist ein Kopierfehler und fiele
             // sonst nur über den Restbetrag auf.
             // Verglichen wird exakt (#53): Ob "r26-009" dasselbe Dokument meint wie
@@ -67,26 +47,12 @@ internal object FinalInvoiceRules {
             invoice.prepayments.forEach { abschlag ->
                 val subject = Subject.Prepayment(abschlag.invoiceNumber)
 
-                // §14 Abs. 5 Satz 2 UStG setzt ab, was vereinnahmt wurde, nicht was
-                // berechnet wurde.
-                //
-                // Fehlt die Angabe, entfallen die Regeln, die sie brauchen – aber nur
-                // für diesen Abschlag. Ausgedrückt durch das frühe Weiterspringen:
-                // Ein Feld am Befund, das seine Voraussetzungen aufzählt, wäre ein
+                // Fehlt die Vereinnahmung, meldet das InvoiceKindRules – und die
+                // Regeln, die sie brauchen, entfallen, aber nur für diesen
+                // Abschlag. Ausgedrückt durch das frühe Weiterspringen: Ein Feld
+                // am Befund, das seine Voraussetzungen aufzählt, wäre ein
                 // Mechanismus für eine Handvoll Fälle.
-                val vereinnahmtAm = abschlag.receivedOn
-                if (vereinnahmtAm == null) {
-                    add(
-                        Finding(
-                            Rule.ABSCHLAG_OHNE_VEREINNAHMUNG,
-                            subject,
-                            "ohne 'vereinnahmt-am' keine Absetzung. Abgesetzt wird, was vereinnahmt " +
-                                "wurde – ein berechneter, aber unbezahlter Abschlag ist eine offene Forderung " +
-                                "und wird gemahnt oder storniert.",
-                        ),
-                    )
-                    return@forEach
-                }
+                val vereinnahmtAm = abschlag.receivedOn ?: return@forEach
 
                 // Was nach dem Rechnungsdatum liegt, ist für diese Rechnung nicht
                 // vereinnahmt.
