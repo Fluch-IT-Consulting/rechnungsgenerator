@@ -3,7 +3,6 @@ package de.fluchitconsulting.rechnung
 import de.fluchitconsulting.rechnung.values.Money
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
-import io.kotest.matchers.string.shouldContain
 import java.time.LocalDate
 
 class InvoiceCalculatorTest : FunSpec({
@@ -69,29 +68,7 @@ class InvoiceCalculatorTest : FunSpec({
             totals.dueDate shouldBe LocalDate.of(2026, 9, 13)
         }
 
-        // Ein negatives Zahlungsziel setzte die Fälligkeit vor das
-        // Rechnungsdatum: "zahlbar bis 9. August" auf einer Rechnung vom
-        // 14. August (#47). Die Meldung nennt, woher der Wert kommt.
-        test("ein negatives Zahlungsziel in der Rechnung wird abgelehnt") {
-            val message =
-                InvoiceCalculator
-                    .calculate(testInvoice(paymentTermDaysOverride = -5), config)
-                    .messageOf(Rule.ZAHLUNGSZIEL_NEGATIV)
-
-            message shouldContain "-5"
-            message shouldContain "Rechnung"
-        }
-
-        test("ebenso eines aus den Stammdaten") {
-            val message =
-                InvoiceCalculator
-                    .calculate(testInvoice(), testSellerConfig(paymentTermDays = -5))
-                    .messageOf(Rule.ZAHLUNGSZIEL_NEGATIV)
-
-            message shouldContain "-5"
-            message shouldContain "Stammdaten"
-        }
-
+        // Ein negatives Zahlungsziel lehnt PaymentTermRules ab, siehe den Test dort.
         test("null Tage heißen sofort") {
             InvoiceCalculator.calculate(testInvoice(paymentTermDaysOverride = 0), config).dueDate shouldBe
                 LocalDate.of(2026, 8, 14)

@@ -1,5 +1,9 @@
-package de.fluchitconsulting.rechnung
+package de.fluchitconsulting.rechnung.rules
 
+import de.fluchitconsulting.rechnung.InvoiceCalculator
+import de.fluchitconsulting.rechnung.Rule
+import de.fluchitconsulting.rechnung.aborts
+import de.fluchitconsulting.rechnung.messageOf
 import de.fluchitconsulting.rechnung.model.Address
 import de.fluchitconsulting.rechnung.model.CancelledInvoice
 import de.fluchitconsulting.rechnung.model.CheckMethod
@@ -7,6 +11,12 @@ import de.fluchitconsulting.rechnung.model.Customer
 import de.fluchitconsulting.rechnung.model.Invoice
 import de.fluchitconsulting.rechnung.model.ServicePeriod
 import de.fluchitconsulting.rechnung.model.VatIdCheck
+import de.fluchitconsulting.rechnung.rules
+import de.fluchitconsulting.rechnung.testCancelled
+import de.fluchitconsulting.rechnung.testInvoice
+import de.fluchitconsulting.rechnung.testItem
+import de.fluchitconsulting.rechnung.testPrepayment
+import de.fluchitconsulting.rechnung.testSellerConfig
 import de.fluchitconsulting.rechnung.values.CountryCode
 import de.fluchitconsulting.rechnung.values.InvoiceType
 import de.fluchitconsulting.rechnung.values.Money
