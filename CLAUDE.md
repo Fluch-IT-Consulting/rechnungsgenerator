@@ -256,6 +256,9 @@ CV/Web-Auftritt des Autors), Validierung über veraPDF.
   (BT-1), und so steht sie im Code seit jeher. Das Glossar zieht die Grenze der
   Begriffe, nicht die der Bezeichner: Es sagt, dass es *Rechnungsnummer* heißt
   und nicht *Belegnummer* – nicht, dass der Bezeichner deutsch sein muss.
+- Wo ein Kommentar, ein Testname oder ein Dokument eine Regel nennt, nennt es
+  ihre Kennung aus `Rule`, etwa `ABSCHLAG_OHNE_VEREINNAHMUNG`. Die Kennung
+  findet `grep`, und sie ändert sich nur mit der Regel selbst (ADR-0004).
 - Keine echten Firmen-/Kundendaten im Repo (Projekt wird ggf. öffentlich).
   Testdaten: fiktive Firma, Test-IBAN (DE89 3704 0044 …), erfundene USt-ID.
   Das gilt auch für **Beispiele in Dokumentation und Skills** – dort rutschen
