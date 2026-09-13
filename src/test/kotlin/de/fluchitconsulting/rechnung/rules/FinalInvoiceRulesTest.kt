@@ -18,6 +18,7 @@ import de.fluchitconsulting.rechnung.values.Percent
 import de.fluchitconsulting.rechnung.values.TaxCategory
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.collections.shouldBeEmpty
+import io.kotest.matchers.collections.shouldContainExactlyInAnyOrder
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
 import io.kotest.matchers.string.shouldContain
@@ -131,6 +132,29 @@ class FinalInvoiceRulesTest : FunSpec({
             message shouldContain "R26-009"
             message shouldContain "2026-09-01"
             message shouldContain "2026-08-14"
+        }
+
+        test("auf einer anderen Rechnungsart schweigen die Regeln der Absetzung") {
+            // Dass Abschläge dort nicht hingehören, meldet InvoiceKindRules. Die
+            // Regeln hier sprächen von "dieser Schlussrechnung", auf einem Blatt,
+            // das keine ist (#97). Die Abschläge sind absichtlich falsch: falsche
+            // Prüfsumme, später datiert und vereinnahmt, fremde Kombination.
+            // Verglichen wird mit derselben Rechnung ohne sie, damit auch eine
+            // künftige Regel dieser Gruppe erfasst ist.
+            val abschlaege =
+                listOf(
+                    testPrepayment(vat = "670.00"),
+                    testPrepayment(
+                        invoiceNumber = "R26-011",
+                        issueDate = LocalDate.of(2026, 9, 1),
+                        receivedOn = LocalDate.of(2026, 9, 2),
+                    ),
+                    testPrepayment(invoiceNumber = "R26-012", vatRate = "7", vat = "280.00"),
+                )
+            val ohne = InvoiceCalculator.calculate(testInvoice(items = gesamtleistung()), config)
+            val mit = InvoiceCalculator.calculate(testInvoice(items = gesamtleistung(), prepayments = abschlaege), config)
+
+            mit.rules() shouldContainExactlyInAnyOrder ohne.rules() + Rule.ABSCHLAEGE_FALSCHE_ART
         }
     }
 

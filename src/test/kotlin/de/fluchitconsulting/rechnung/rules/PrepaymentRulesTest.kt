@@ -10,6 +10,7 @@ import de.fluchitconsulting.rechnung.testSellerConfig
 import de.fluchitconsulting.rechnung.values.InvoiceType
 import de.fluchitconsulting.rechnung.values.Money
 import io.kotest.core.spec.style.FunSpec
+import io.kotest.matchers.collections.shouldContainExactlyInAnyOrder
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.string.shouldContain
 import java.time.LocalDate
@@ -52,5 +53,16 @@ class PrepaymentRulesTest : FunSpec({
         val message = InvoiceCalculator.calculate(invoice, config).messageOf(Rule.VEREINNAHMUNG_NACH_RECHNUNGSDATUM)
 
         message shouldContain "2026-08-15"
+    }
+
+    test("auf einer anderen Rechnungsart schweigen diese Regeln") {
+        // Dass 'vereinnahmt-am' dort nicht hingehört, meldet InvoiceKindRules.
+        // Eine Meldung über das Datum spräche von einer Vereinnahmung, die es
+        // auf diesem Dokument nicht geben kann (#97). Verglichen wird mit
+        // derselben Rechnung ohne das Feld: Hinzukommen darf nur der eine Befund.
+        val ohne = InvoiceCalculator.calculate(testInvoice(), config)
+        val mit = InvoiceCalculator.calculate(testInvoice(receivedOn = LocalDate.of(2026, 8, 15)), config)
+
+        mit.rules() shouldContainExactlyInAnyOrder ohne.rules() + Rule.VEREINNAHMUNG_FALSCHE_ART
     }
 })

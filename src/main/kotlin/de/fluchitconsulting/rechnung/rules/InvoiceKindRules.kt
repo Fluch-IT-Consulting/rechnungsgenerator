@@ -16,8 +16,16 @@ import de.fluchitconsulting.rechnung.values.InvoiceType
  * Das Kriterium: Eine Regel gehört hierher, wenn [InvoiceKind] ohne sie nicht
  * gebaut werden kann. Das sind die Angaben, die zu einer anderen Rechnungsart
  * gehören, die, die der eigenen fehlen, und ein Abschlag ohne Vereinnahmung.
- * Alle anderen Regelgruppen prüfen den gebauten Wert; ein Abschlag mit spätem
- * Datum etwa ist baubar, nur falsch.
+ * Alles andere prüfen die übrigen Regelgruppen; ein Abschlag mit spätem Datum
+ * etwa ist baubar, nur falsch.
+ *
+ * Sie prüfen die flachen Angaben, nicht den gebauten Typ – sonst entfielen
+ * mit einem einzigen Abschlag ohne Vereinnahmung auch die Prüfungen aller
+ * anderen. Gehören die Angaben zu einer Rechnungsart, prüft ihre Gruppe sie
+ * aber nur auf dieser Art (`PrepaymentRules`, `CancellationRules`,
+ * `FinalInvoiceRules`, #97). Steht das Feld auf der falschen, bleibt allein der
+ * Befund von hier: Die Meldungen dort sprächen von einem Dokument, das es auf
+ * dem Blatt nicht gibt.
  *
  * Regel und Bau stehen in einem Durchgang, damit das Wissen über die
  * Rechnungsart nur einmal dasteht: Jeder Weg, auf dem kein Typ entsteht, liefert

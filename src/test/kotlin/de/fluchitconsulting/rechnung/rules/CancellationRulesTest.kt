@@ -24,6 +24,7 @@ import de.fluchitconsulting.rechnung.values.VatId
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.collections.shouldBeEmpty
 import io.kotest.matchers.collections.shouldContain
+import io.kotest.matchers.collections.shouldContainExactlyInAnyOrder
 import io.kotest.matchers.collections.shouldNotContain
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.string.shouldContain
@@ -76,6 +77,21 @@ class CancellationRulesTest : FunSpec({
 
         message shouldContain "2026-09-01"
         message shouldContain "was es schon gibt"
+    }
+
+    test("auf einer anderen Rechnungsart schweigt die Prüfung des Bezugs") {
+        // Dass 'storniert' dort nicht hingehört, meldet InvoiceKindRules. Die
+        // Meldungen über den Bezug sprächen von "der Stornorechnung" und "diesem
+        // Storno", auf einem Blatt, das keines ist (#97). Der Bezug hier ist
+        // doppelt falsch: eigene Nummer und später datiert.
+        val ohne = InvoiceCalculator.calculate(testInvoice(), config)
+        val mit =
+            InvoiceCalculator.calculate(
+                testInvoice(cancelled = testCancelled(invoiceNumber = "R26-001", issueDate = LocalDate.of(2026, 9, 1))),
+                config,
+            )
+
+        mit.rules() shouldContainExactlyInAnyOrder ohne.rules() + Rule.BEZUG_OHNE_STORNO
     }
 
     test("ein Storno über einen positiven Betrag ist ein Widerspruch") {
