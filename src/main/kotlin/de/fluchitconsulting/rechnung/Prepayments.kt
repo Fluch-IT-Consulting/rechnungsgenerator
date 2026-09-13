@@ -16,16 +16,23 @@ import de.fluchitconsulting.rechnung.values.InvoiceType
  * Beides zusammen, weil das Kommando beides braucht – die Abschläge, um den
  * Block zu schreiben, und die Befunde, um es zu lassen (ADR-0003: alles oder
  * nichts).
+ *
+ * [prepayments] enthält nur die Abschläge angenommener Abschlagsrechnungen
+ * (ADR-0007). Vollständig ist die Liste deshalb nur, wenn [findings] keinen
+ * Abbruch trägt – und nur dann schreibt das Kommando den Block.
  */
 data class CollectedPrepayments(val prepayments: List<Prepayment>, val findings: List<Finding>)
 
 /**
- * Aus einer berechneten Abschlagsrechnung wird der Abschlag, den eine
+ * Aus einer angenommenen Abschlagsrechnung wird der Abschlag, den eine
  * Schlussrechnung absetzt.
  *
  * Die Steueranteile sind die Steueraufschlüsselung der Abschlagsrechnung,
  * Zeile für Zeile – dieselben Zahlen, die auf ihrem PDF stehen, weil sie aus
  * demselben [InvoiceCalculator] kommen.
+ *
+ * Nur eine [AcceptedInvoice]: Aus einer Abschlagsrechnung mit Abbruch wird kein
+ * Abschlag, so wie aus ihr kein PDF wird (ADR-0007).
  *
  * `vereinnahmt-am` wird übernommen, wenn die Abschlagsrechnung es trägt: Dort
  * hält es eine Vereinnahmung vor der Rechnungsstellung fest, dieselbe Tatsache
@@ -34,7 +41,8 @@ data class CollectedPrepayments(val prepayments: List<Prepayment>, val findings:
  * Reines Übertragen: Ob das Dokument überhaupt eine Abschlagsrechnung ist,
  * prüft [prepaymentsOf] – dort, wo auch die übrigen Regeln der Auswahl stehen.
  */
-fun prepaymentOf(calculatedInvoice: CalculatedInvoice): Prepayment {
+fun prepaymentOf(abschlagsrechnung: AcceptedInvoice): Prepayment {
+    val calculatedInvoice = abschlagsrechnung.calculated
     val invoice = calculatedInvoice.invoice
     return Prepayment(
         invoiceNumber = invoice.number,
@@ -89,10 +97,10 @@ fun prepaymentsOf(abschlagsrechnungen: List<Invoice>, config: SellerConfig): Col
                 )
         }
 
+    // mapNotNull: wie map, aber was `null` ergibt, fällt aus der Liste – hier
+    // die abgelehnten Abschlagsrechnungen.
     val abschlaege =
-        abschlagsrechnungen.map { abschlagsrechnung ->
-            val calculatedInvoice = InvoiceCalculator.calculate(abschlagsrechnung, config)
-
+        abschlagsrechnungen.mapNotNull { abschlagsrechnung ->
             // Keine Regel der Schlussrechnung kennt die Art des Dokuments, aus dem
             // ein Abschlag stammt – eine gewöhnliche Rechnung ginge dort klaglos
             // durch.
@@ -106,12 +114,13 @@ fun prepaymentsOf(abschlagsrechnungen: List<Invoice>, config: SellerConfig): Col
                     )
             }
 
-            findings +=
-                calculatedInvoice.findings
-                    .filter { it.severity == Severity.ABORT }
-                    .map { it.copy(subject = Subject.FromInvoice(abschlagsrechnung.number, it.subject)) }
-
-            prepaymentOf(calculatedInvoice)
+            when (val checked = AcceptedInvoice.check(InvoiceCalculator.calculate(abschlagsrechnung, config))) {
+                is Checked.Accepted -> prepaymentOf(checked.invoice)
+                is Checked.Rejected -> {
+                    findings += checked.aborts.map { it.copy(subject = Subject.FromInvoice(abschlagsrechnung.number, it.subject)) }
+                    null
+                }
+            }
         }
 
     return CollectedPrepayments(abschlaege, findings)

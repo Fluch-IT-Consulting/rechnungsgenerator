@@ -58,3 +58,6 @@ Anlass für #47. Sie war nie behoben, nur verdeckt.
   Abschlagsrechnungen fallen dort weiter weg.
 
 Umgesetzt in #49.
+
+Ergänzt durch ADR-0007: Dass nie gesetzt wird, was einen Abbruch hat, hält
+seither der Compiler und nicht mehr die Disziplin der Kommandos.

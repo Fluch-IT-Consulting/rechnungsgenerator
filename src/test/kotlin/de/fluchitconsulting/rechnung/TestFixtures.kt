@@ -133,3 +133,14 @@ fun List<Finding>.messageOf(rule: Rule): String =
 fun CalculatedInvoice.rules(): List<Rule> = findings.rules()
 
 fun CalculatedInvoice.messageOf(rule: Rule): String = findings.messageOf(rule)
+
+/**
+ * Die angenommene Rechnung für Tests, die setzen oder einen Abschlag übernehmen
+ * (ADR-0007). Hat die Testrechnung einen Abbruch, scheitert der Test hier – mit
+ * den Kennungen, statt später an einer Stelle, die davon nichts weiß.
+ */
+fun CalculatedInvoice.accepted(): AcceptedInvoice =
+    when (val checked = AcceptedInvoice.check(this)) {
+        is Checked.Accepted -> checked.invoice
+        is Checked.Rejected -> error("Die Testrechnung hat Abbrüche: ${checked.aborts.rules()}")
+    }

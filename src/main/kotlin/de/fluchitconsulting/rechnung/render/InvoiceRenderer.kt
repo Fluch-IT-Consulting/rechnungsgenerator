@@ -1,5 +1,6 @@
 package de.fluchitconsulting.rechnung.render
 
+import de.fluchitconsulting.rechnung.AcceptedInvoice
 import de.fluchitconsulting.rechnung.CalculatedInvoice
 import de.fluchitconsulting.rechnung.model.Address
 import de.fluchitconsulting.rechnung.model.Invoice
@@ -17,6 +18,10 @@ import de.fluchitconsulting.rechnung.values.Money
  * Der Renderer rechnet nichts – er bekommt die fertige [CalculatedInvoice] und
  * formatiert nur. Umgekehrt kennt der Calculator kein LaTeX. Diese Trennung ist
  * der Grund, warum die Steuerlogik ohne einen einzigen LaTeX-Lauf testbar ist.
+ *
+ * Und er bekommt sie nur angenommen, als [AcceptedInvoice] (ADR-0007): Eine
+ * Rechnung mit Abbruch lässt sich nicht setzen, statt bloß nicht gesetzt zu
+ * werden, weil beide Kommandos daran denken.
  *
  * Innen wird durchgehend mit [Latex] gearbeitet, nicht mit Zeichenketten: Was
  * hier zusammengesetzt wird, hat die Maskierung schon hinter sich. Ausgepackt
@@ -37,7 +42,8 @@ object InvoiceRenderer {
     // Eine Makro-Definition der Vorlage: \newcommand{\name}[stelligkeit].
     private val NEWCOMMAND = Regex("""\\newcommand\{\\([a-zA-Z]+)}(?:\[(\d+)])?""")
 
-    fun render(calculatedInvoice: CalculatedInvoice): String {
+    fun render(acceptedInvoice: AcceptedInvoice): String {
+        val calculatedInvoice = acceptedInvoice.calculated
         val invoice = calculatedInvoice.invoice
         val config = calculatedInvoice.config
         val template = checkNotNull(javaClass.getResource(TEMPLATE_PATH)) { "Vorlage $TEMPLATE_PATH fehlt" }.readText()
@@ -152,7 +158,8 @@ object InvoiceRenderer {
      * Auch hier maskierte Werte: Ein `&` im Firmennamen zerlegte sonst die
      * Metadaten, und ohne gültige Metadaten gibt es kein PDF/A.
      */
-    fun renderMetadata(calculatedInvoice: CalculatedInvoice): String {
+    fun renderMetadata(acceptedInvoice: AcceptedInvoice): String {
+        val calculatedInvoice = acceptedInvoice.calculated
         val invoice = calculatedInvoice.invoice
         val document = invoice.type.documentName.escapeLatex() + " ".escapeLatex() + invoice.number.escapeLatex()
         return listOf(
@@ -423,9 +430,12 @@ object InvoiceRenderer {
      */
     private fun describePrepayment(abschlag: Prepayment): Latex {
         // checkNotNull statt eines stillen Ausweichzweigs: Ohne Vereinnahmung
-        // meldet der Calculator ABSCHLAG_OHNE_VEREINNAHMUNG, und das Kommando
-        // bricht ab, bevor gesetzt wird. Wäre hier doch einer, soll es krachen
-        // und nicht eine Zeile ohne Datum gedruckt werden.
+        // meldet der Calculator ABSCHLAG_OHNE_VEREINNAHMUNG, und eine Rechnung
+        // mit Abbruch wird keine AcceptedInvoice – hierher kommt sie also nicht
+        // (ADR-0007). Der Compiler weiß das aber nicht, weil receivedOn im
+        // Modell optional ist. Entfallen kann die Prüfung erst mit dem Modell je
+        // Rechnungsart (#70, zweiter Teil); bis dahin soll es krachen, statt eine
+        // Zeile ohne Datum zu drucken.
         val vereinnahmtAm = checkNotNull(abschlag.receivedOn) { "Abschlag ${abschlag.invoiceNumber} ohne Vereinnahmung" }
         val heading =
             "Abschlagsrechnung ".escapeLatex() + abschlag.invoiceNumber.escapeLatex() + " vom ".escapeLatex() +
