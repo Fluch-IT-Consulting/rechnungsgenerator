@@ -253,6 +253,12 @@ CV/Web-Auftritt des Autors), Validierung über veraPDF.
   Abschlägen fragen Renderer und `prepaymentOf` dort, nicht im flachen Modell.
   Gebaut wird er in `InvoiceKindRules`, zusammen mit den sechs Regeln, ohne die
   er nicht baubar ist (ADR-0008).
+  Die Regelgruppe einer Rechnungsart (`PrepaymentRules`, der Bezug in
+  `CancellationRules`, `FinalInvoiceRules`) prüft nur auf dieser Art. Steht
+  ihr Feld auf einer anderen, bleibt allein der Befund aus `InvoiceKindRules` –
+  sonst stünden Sätze über "diese Schlussrechnung" unter einer gewöhnlichen
+  Rechnung (#97). Der Preis: Wer nur `art` falsch gesetzt hat, sieht Fehler
+  in den Angaben der gemeinten Art erst im zweiten Lauf.
   Die Kennungen sind deutsch benannt wie die Regeln und **nicht** nummeriert:
   Die Nummern standen nur in Kommentaren und Testnamen und liefen dort
   auseinander. Tests prüfen die Kennung statt des Wortlauts und brauchen dafür
