@@ -1,6 +1,7 @@
 package de.fluchitconsulting.rechnung.toolchain
 
 import java.nio.file.Path
+import java.time.LocalDate
 
 /** Ein gesetztes und geprüftes PDF. */
 data class TypesetPdf(val pdf: Path, val validation: ValidationResult)
@@ -32,8 +33,17 @@ interface Typesetter {
      * Setzt [texSource] samt [xmpMetadata] und prüft das Ergebnis gegen
      * PDF/A-1b. Die Arbeitsdateien bleiben in [workingDir] liegen; wer sie
      * loswerden will, räumt das Verzeichnis selbst auf.
+     *
+     * [creationDate] ist das Erstellungsdatum im PDF. Es kommt von außen statt
+     * von der Uhr, damit dieselben Quellen dasselbe PDF ergeben.
      */
-    fun typeset(workingDir: Path, jobName: String, texSource: String, xmpMetadata: String): TypesetPdf
+    fun typeset(
+        workingDir: Path,
+        jobName: String,
+        texSource: String,
+        xmpMetadata: String,
+        creationDate: LocalDate,
+    ): TypesetPdf
 }
 
 /** Der Adapter für den Betrieb: LuaLaTeX setzt, veraPDF prüft. */
@@ -51,8 +61,14 @@ object LuaLatexTypesetter : Typesetter {
 
     override fun checkAvailable() = ExternalTool.requireAll(*REQUIRED_TOOLS)
 
-    override fun typeset(workingDir: Path, jobName: String, texSource: String, xmpMetadata: String): TypesetPdf {
-        val pdf = compiler.compile(workingDir, jobName, texSource, xmpMetadata)
+    override fun typeset(
+        workingDir: Path,
+        jobName: String,
+        texSource: String,
+        xmpMetadata: String,
+        creationDate: LocalDate,
+    ): TypesetPdf {
+        val pdf = compiler.compile(workingDir, jobName, texSource, xmpMetadata, creationDate)
         return TypesetPdf(pdf, validator.validate(pdf))
     }
 }

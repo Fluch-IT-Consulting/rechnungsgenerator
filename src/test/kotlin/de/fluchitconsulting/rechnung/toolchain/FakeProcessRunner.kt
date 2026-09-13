@@ -35,11 +35,20 @@ class FakeProcessRunner(vararg runs: Run) : ProcessRunner {
     /** Womit gerufen wurde – sonst ließe sich nicht prüfen, wie oft gelaufen wurde. */
     val commands = mutableListOf<List<String>>()
 
-    override fun run(command: List<String>, workingDir: Path, timeout: Duration): ToolResult {
+    /** Mit welcher Umgebung gerufen wurde, je Lauf. */
+    val environments = mutableListOf<Map<String, String>>()
+
+    override fun run(
+        command: List<String>,
+        workingDir: Path,
+        timeout: Duration,
+        environment: Map<String, String>,
+    ): ToolResult {
         val run =
             runs.getOrNull(commands.size)
                 ?: error("Es war ${runs.size} Lauf/Läufe vorbereitet, das Modul ruft den ${commands.size + 1}.")
         commands += command
+        environments += environment
         run.files.forEach { (name, content) -> workingDir.resolve(name).writeText(content) }
         return ToolResult(run.exitCode, run.output)
     }

@@ -100,6 +100,9 @@ class GenerateCommand(private val typesetter: Typesetter = LuaLatexTypesetter) :
                     jobName = jobName,
                     texSource = InvoiceRenderer.render(calculatedInvoice),
                     xmpMetadata = InvoiceRenderer.renderMetadata(calculatedInvoice),
+                    // Das Rechnungsdatum und nicht die Uhr: Eine neu erzeugte
+                    // Rechnung soll nicht jünger aussehen als die verschickte.
+                    creationDate = invoice.issueDate,
                 )
             // Ein ungültiges PDF/A ist kein Erfolg: Exitcode 1, damit ein Skript
             // ringsherum es merkt. Und es kommt nicht ans Ziel – auch nicht mit

@@ -1,6 +1,10 @@
 package de.fluchitconsulting.rechnung.toolchain
 
 import java.nio.file.Path
+import java.security.MessageDigest
+import java.time.LocalDate
+import java.time.ZoneOffset
+import java.util.HexFormat
 import kotlin.io.path.exists
 import kotlin.io.path.readText
 import kotlin.io.path.writeText
@@ -22,21 +26,55 @@ class LatexCompiler(private val runner: ProcessRunner) {
         jobName: String,
         texSource: String,
         xmpMetadata: String,
+        creationDate: LocalDate,
     ): Path {
         workingDir.resolve("$jobName.tex").writeText(texSource)
         workingDir.resolve("$jobName.xmpdata").writeText(xmpMetadata)
 
+        val id = trailerId(texSource, xmpMetadata)
+        val command =
+            listOf(
+                PROGRAM,
+                "-interaction=nonstopmode",
+                "-halt-on-error",
+                "-jobname=$jobName",
+                "\\pdfvariable trailerid {[ <$id> <$id> ]}\\input{$jobName.tex}",
+            )
+        val environment =
+            mapOf(
+                "SOURCE_DATE_EPOCH" to creationDate.atStartOfDay(ZoneOffset.UTC).toEpochSecond().toString(),
+                "TZ" to "UTC",
+            )
+
         repeat(MAX_PASSES) { pass ->
-            val result =
-                runner.run(
-                    listOf(PROGRAM, "-interaction=nonstopmode", "-halt-on-error", "$jobName.tex"),
-                    workingDir,
-                )
+            val result = runner.run(command, workingDir, environment = environment)
             val log = workingDir.resolve("$jobName.log").let { if (it.exists()) it.readText() else result.output }
             if (result.failed) throw ToolchainException(errorReport(jobName, log))
             if (!needsAnotherPass(log)) return pdfOrFail(workingDir, jobName)
         }
         return pdfOrFail(workingDir, jobName)
+    }
+
+    /**
+     * Die Trailer-ID des PDF, gebildet aus den Quellen: gleicher Inhalt, gleiche
+     * ID, geänderter Inhalt, andere ID.
+     *
+     * Von sich aus leitet LuaTeX sie auch aus dem Pfad ab, und jeder Lauf setzt
+     * in einem eigenen Temp-Verzeichnis – dieselbe Rechnung ergäbe nie dasselbe
+     * PDF. Das Datum ist der andere Teil davon: `SOURCE_DATE_EPOCH` ersetzt die
+     * Uhr, `TZ=UTC` legt fest, wie LuaTeX es schreibt. Gesetzt wird beides hier
+     * und nicht in der Vorlage, denn es ist eine Frage des Werkzeugs, nicht des
+     * Satzes.
+     *
+     * Die Null zwischen den beiden Quellen trennt sie: Ohne sie ergäben "ab" +
+     * "c" und "a" + "bc" dieselbe Prüfsumme.
+     */
+    private fun trailerId(texSource: String, xmpMetadata: String): String {
+        val md5 = MessageDigest.getInstance("MD5")
+        md5.update(texSource.toByteArray())
+        md5.update(0.toByte())
+        md5.update(xmpMetadata.toByteArray())
+        return HexFormat.of().withUpperCase().formatHex(md5.digest())
     }
 
     /**

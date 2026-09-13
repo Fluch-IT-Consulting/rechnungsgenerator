@@ -5,6 +5,7 @@ import de.fluchitconsulting.rechnung.toolchain.TypesetPdf
 import de.fluchitconsulting.rechnung.toolchain.Typesetter
 import de.fluchitconsulting.rechnung.toolchain.ValidationResult
 import java.nio.file.Path
+import java.time.LocalDate
 import kotlin.io.path.writeText
 
 /**
@@ -18,13 +19,21 @@ class FakeTypesetter(private val valid: Boolean = true) : Typesetter {
     var workingDir: Path? = null
     var jobName: String? = null
     var texSource: String? = null
+    var creationDate: LocalDate? = null
 
     override fun checkAvailable() = Unit
 
-    override fun typeset(workingDir: Path, jobName: String, texSource: String, xmpMetadata: String): TypesetPdf {
+    override fun typeset(
+        workingDir: Path,
+        jobName: String,
+        texSource: String,
+        xmpMetadata: String,
+        creationDate: LocalDate,
+    ): TypesetPdf {
         this.workingDir = workingDir
         this.jobName = jobName
         this.texSource = texSource
+        this.creationDate = creationDate
         val pdf = workingDir.resolve("$jobName.pdf").also { it.writeText("%PDF-1.7 kein echtes PDF") }
         val violations =
             if (valid) {

@@ -15,9 +15,11 @@ import io.kotest.matchers.collections.shouldNotBeEmpty
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.string.shouldContain
 import java.nio.file.Path
+import java.time.LocalDate
 import kotlin.io.path.createTempDirectory
 import kotlin.io.path.exists
 import kotlin.io.path.fileSize
+import kotlin.io.path.readBytes
 
 /**
  * Der Integrationstest, der die Zusage des Projekts einlöst: Ohne gültiges
@@ -40,8 +42,8 @@ class ToolchainIntegrationTest : FunSpec({
      * Die Ausgaben werden eingesammelt, damit die Meldung von veraPDF im
      * Testbericht landet – sonst stünde dort nur "expected true but was false".
      */
-    fun erzeuge(rechnung: String): Pair<Path, List<String>> {
-        val ziel = workDir.resolve("$rechnung.pdf")
+    fun erzeuge(rechnung: String, zielname: String = rechnung): Pair<Path, List<String>> {
+        val ziel = workDir.resolve("$zielname.pdf")
         val ausgabe = mutableListOf<String>()
         val command = RechnungsgeneratorCommand()
         command.context { echoMessage = { _, message, _, _ -> ausgabe += message.toString() } }
@@ -89,6 +91,29 @@ class ToolchainIntegrationTest : FunSpec({
     }
 
     /**
+     * Dieselbe Rechnungsdatei ergibt dasselbe PDF, Byte für Byte – auch wenn
+     * jeder Lauf in einem eigenen Temp-Verzeichnis setzt. Nur so taugt die
+     * Prüfsumme des PDF, um nach einer Änderung zu sehen, ob sich etwas geändert
+     * hat.
+     *
+     * Hier und nicht im schnellen Test: Ob LuaLaTeX Datum und Trailer-ID
+     * wirklich aus dem übernimmt, was es bekommt, zeigt nur ein echter Lauf.
+     */
+    test("zwei Läufe über dieselbe Datei ergeben dasselbe PDF, datiert auf das Rechnungsdatum") {
+        val (erster, _) = erzeuge("rechnung", "reproduzierbar-1")
+        val (zweiter, _) = erzeuge("rechnung", "reproduzierbar-2")
+
+        val bytes = erster.readBytes()
+        withClue("${erster.fileSize()} und ${zweiter.fileSize()} Bytes") {
+            bytes.contentEquals(zweiter.readBytes()) shouldBe true
+        }
+        // ISO-8859-1 bildet jedes Byte auf ein Zeichen ab, so lässt sich im
+        // PDF nach Text suchen, ohne dass der Binärteil beim Dekodieren stört.
+        // Die Rechnung ist auf den 14.08.2026 datiert.
+        String(bytes, Charsets.ISO_8859_1) shouldContain "/CreationDate(D:20260814000000+00'00')"
+    }
+
+    /**
      * Sieht aus wie ein Doppelgänger von `PdfAValidatorTest`, ist aber das
      * Gegenstück dazu: Der schnelle Test beweist, dass wir einen
      * aufgezeichneten Bericht richtig lesen. Dieser hier beweist, dass die
@@ -107,6 +132,7 @@ class ToolchainIntegrationTest : FunSpec({
                 jobName = "ohne-pdfa",
                 texSource = "\\documentclass{article}\\begin{document}Kein PDF/A.\\end{document}",
                 xmpMetadata = "",
+                creationDate = LocalDate.of(2026, 1, 1),
             )
 
         val validation = PdfAValidator(ExternalTool).validate(plain)
@@ -128,6 +154,7 @@ class ToolchainIntegrationTest : FunSpec({
                     jobName = "kaputt",
                     texSource = "\\documentclass{article}\\begin{document}\\gibtesnicht\\end{document}",
                     xmpMetadata = "",
+                    creationDate = LocalDate.of(2026, 1, 1),
                 )
             }
 
