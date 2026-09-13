@@ -17,7 +17,7 @@ import java.io.IOException
 import java.nio.file.Path
 import kotlin.io.path.copyTo
 import kotlin.io.path.createTempDirectory
-import kotlin.io.path.name
+import kotlin.io.path.exists
 
 /**
  * `rechnungsgenerator erzeuge`: aus einer Rechnungsdatei ein geprüftes PDF.
@@ -42,6 +42,9 @@ class GenerateCommand(private val typesetter: Typesetter = LuaLatexTypesetter) :
         .path(canBeDir = false)
 
     private val keepWorkFiles by option("--arbeitsdateien-behalten", help = "Das .tex und die LaTeX-Hilfsdateien nicht löschen")
+        .flag()
+
+    private val overwrite by option("--ueberschreiben", help = "Eine vorhandene Zieldatei ersetzen – zum Nachbessern eines Entwurfs")
         .flag()
 
     override fun run() {
@@ -71,23 +74,49 @@ class GenerateCommand(private val typesetter: Typesetter = LuaLatexTypesetter) :
         val config = YamlLoader.loadSellerConfig(configFile)
         val invoice = YamlLoader.loadInvoice(invoiceFile)
 
+        val calculatedInvoice = InvoiceCalculator.calculate(invoice, config)
+        // Alle Abbrüche auf einmal: Wer fünf Fehler in der Datei hat, soll
+        // nicht fünfmal starten müssen, um sie zu finden (#49).
+        val abbrueche = calculatedInvoice.findings.filter { it.severity == Severity.ABORT }
+        if (abbrueche.isNotEmpty()) throw CliktError(abbrueche.joinToString("\n") { it.describe() })
+
+        val jobName = jobNameFor(invoice)
+        val target = outputFile ?: Path.of("$jobName.pdf")
+        // Eine vorhandene Datei kann die verschickte Rechnung sein. Ersetzt wird
+        // sie nur auf ausdrücklichen Wunsch – und geprüft wird vor dem Satz,
+        // denn ein LuaLaTeX-Lauf, dessen Ergebnis nirgends hin darf, wäre vergeudet.
+        if (target.exists() && !overwrite) {
+            throw CliktError(
+                "Die Datei $target gibt es schon. Eine verschickte Rechnung wird nicht ersetzt; " +
+                    "zum Nachbessern eines Entwurfs --ueberschreiben angeben.",
+            )
+        }
+
         val workDir = createTempDirectory("rechnungsgenerator")
         try {
-            val calculatedInvoice = InvoiceCalculator.calculate(invoice, config)
-            // Alle Abbrüche auf einmal: Wer fünf Fehler in der Datei hat, soll
-            // nicht fünfmal starten müssen, um sie zu finden (#49).
-            val abbrueche = calculatedInvoice.findings.filter { it.severity == Severity.ABORT }
-            if (abbrueche.isNotEmpty()) throw CliktError(abbrueche.joinToString("\n") { it.describe() })
-
             val gesetzt =
                 typesetter.typeset(
                     workingDir = workDir,
-                    jobName = jobNameFor(invoice),
+                    jobName = jobName,
                     texSource = InvoiceRenderer.render(calculatedInvoice),
                     xmpMetadata = InvoiceRenderer.renderMetadata(calculatedInvoice),
                 )
-            val target = outputFile ?: Path.of(gesetzt.pdf.name)
-            gesetzt.pdf.copyTo(target, overwrite = true)
+            // Ein ungültiges PDF/A ist kein Erfolg: Exitcode 1, damit ein Skript
+            // ringsherum es merkt. Und es kommt nicht ans Ziel – auch nicht mit
+            // --ueberschreiben, das einer gültigen Rechnung gilt.
+            if (!gesetzt.validation.valid) {
+                val ansehen =
+                    if (keepWorkFiles) {
+                        "Das PDF liegt zum Ansehen in $workDir."
+                    } else {
+                        "Mit --arbeitsdateien-behalten bleibt es zum Ansehen liegen."
+                    }
+                throw ToolchainException(
+                    "Das erzeugte PDF ist kein gültiges PDF/A-1b und wurde nicht nach $target geschrieben.\n" +
+                        "${gesetzt.validation.describe()}\n$ansehen",
+                )
+            }
+            gesetzt.pdf.copyTo(target, overwrite = overwrite)
 
             echo("$target")
             echo(gesetzt.validation.describe())
@@ -97,9 +126,6 @@ class GenerateCommand(private val typesetter: Typesetter = LuaLatexTypesetter) :
                 .filter { it.severity == Severity.HINT }
                 .forEach { echo("Hinweis: ${it.describe()}") }
             if (keepWorkFiles) echo("Arbeitsdateien: $workDir")
-            // Ein ungültiges PDF/A ist kein Erfolg: Exitcode 1, damit ein Skript
-            // ringsherum es merkt.
-            if (!gesetzt.validation.valid) throw ToolchainException("Das erzeugte PDF ist kein gültiges PDF/A-1b.")
         } finally {
             if (!keepWorkFiles) workDir.toFile().deleteRecursively()
         }

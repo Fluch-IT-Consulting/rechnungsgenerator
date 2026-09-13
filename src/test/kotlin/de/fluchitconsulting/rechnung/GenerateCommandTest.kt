@@ -117,6 +117,51 @@ class GenerateCommandTest : FunSpec({
         fake.workingDir!!.exists() shouldBe false
     }
 
+    test("ein ungültiges PDF/A legt keine Datei an und sagt, wie man es ansieht") {
+        val ziel = eingaben.resolve("nie-da.pdf")
+
+        val fehler = shouldThrow<CliktError> { lauf(FakeTypesetter(valid = false), "-o", ziel.toString()) }
+
+        ziel.exists() shouldBe false
+        fehler.message!! shouldContain "--arbeitsdateien-behalten"
+    }
+
+    test("ein ungültiges PDF/A ersetzt keine vorhandene Datei, auch nicht mit --ueberschreiben") {
+        val ziel = eingaben.resolve("verschickt.pdf").also { it.writeText("das verschickte Original") }
+
+        val fehler =
+            shouldThrow<CliktError> {
+                lauf(FakeTypesetter(valid = false), "-o", ziel.toString(), "--ueberschreiben")
+            }
+
+        ziel.readText() shouldBe "das verschickte Original"
+        // Die Verstöße gehören zum Fehlschlag und stehen deshalb in der
+        // Meldung, also auf stderr – der Kanal folgt dem Exitcode.
+        fehler.message!! shouldContain "6.1.2"
+    }
+
+    test("eine vorhandene Zieldatei bleibt ohne --ueberschreiben unangetastet") {
+        val ziel = eingaben.resolve("vorhanden.pdf").also { it.writeText("das verschickte Original") }
+        val fake = FakeTypesetter()
+
+        val fehler = shouldThrow<CliktError> { lauf(fake, "-o", ziel.toString()) }
+
+        fehler.statusCode shouldBe 1
+        fehler.message!! shouldContain "--ueberschreiben"
+        ziel.readText() shouldBe "das verschickte Original"
+        // Geprüft wird vor dem Satz: Ein LuaLaTeX-Lauf, dessen Ergebnis
+        // nirgends hin darf, wäre vergeudet.
+        fake.workingDir shouldBe null
+    }
+
+    test("mit --ueberschreiben wird eine vorhandene Zieldatei ersetzt") {
+        val ziel = eingaben.resolve("entwurf.pdf").also { it.writeText("der erste Entwurf") }
+
+        lauf(FakeTypesetter(), "-o", ziel.toString(), "--ueberschreiben")
+
+        ziel.readText() shouldContain "%PDF"
+    }
+
     test("der Jobname kommt aus Rechnungsart und -nummer") {
         val fake = FakeTypesetter()
 
