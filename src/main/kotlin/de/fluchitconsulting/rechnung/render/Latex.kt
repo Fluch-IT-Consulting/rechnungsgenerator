@@ -43,45 +43,28 @@ value class Latex private constructor(val tex: String) {
         fun raw(tex: String): Latex = Latex(tex)
 
         /**
-         * Ein Makroaufruf mit einem Argument: `\name{inhalt}`.
+         * Ein Makro der Vorlage: `\positionszeile{a}{b}{c}{d}{e}`.
          *
-         * Bildet nicht die einzelnen Makros der Vorlage ab – das wäre eine
-         * zweite Beschreibung des Satzes in Kotlin –, sondern ihre gemeinsame
-         * Form. Der Name bleibt eine Zeichenkette an genau einer Stelle; wer
-         * ein Makro in der Vorlage umbenennt, ändert hier ein Wort.
-         *
-         * [name] ist ein Makroname aus der Vorlage und **niemals** ein Wert aus
-         * den Eingabedaten: Er landet unmaskiert hinter einem Backslash.
-         *
-         * Bewusst **keine** zweite Fassung, die einen `String` nimmt und selbst
-         * maskiert. Sie wäre kürzer, machte aber die Aufrufstelle stumm: Heute
-         * liest man dort, ob Daten hereinkommen (`x.escapeLatex()`) oder ein
-         * fertiges Fragment (`anteile`) – mit einer Überladung hinge das am Typ
-         * einer Variablen, den man nachschlagen müsste. Sicherheit gewänne man
-         * nicht, der Compiler lässt ohnehin keinen `String` durch; man verlöre
-         * eine der drei benannten Türen von Text zu Markup ([escapeLatex],
-         * [GermanFormat], [raw]), die man durchsuchen kann. Und
-         * `macro("textbf", "\\LaTeX")` würde still das Falsche drucken, statt
-         * nicht zu übersetzen.
-         */
-        fun macro(name: String, content: Latex): Latex = raw("\\$name{") + content + raw("}")
-
-        /**
-         * Ein Makro der Vorlage mit beliebig vielen Argumenten:
-         * `\positionszeile{a}{b}{c}{d}{e}`.
+         * Der einzige Weg zu einem Makroaufruf. Der Name steht nicht als
+         * Zeichenkette da, sondern als [TemplateMacro] – und damit ist er
+         * prüfbar. Eine Fassung mit `name: String` gab es bis #76; über sie
+         * schrieb der Renderer `\mbox` an der Prüfung vorbei.
          *
          * Eine Liste statt `vararg`, weil Kotlin `vararg` für einen
-         * `value class` verbietet – und einer ist [Latex].
+         * `value class` verbietet – und einer ist [Latex]. Die Stelligkeit prüft
+         * schon der Aufruf: Eine Zeile mit vier Zellen für ein fünfspaltiges
+         * Makro fiele sonst erst LuaLaTeX auf.
          *
-         * Anders als bei [macro] steht der Name nicht als Zeichenkette da,
-         * sondern als [TemplateMacro] – und damit ist er prüfbar. Die
-         * Stelligkeit prüft schon der Aufruf: Eine Zeile mit vier Zellen für ein
-         * fünfspaltiges Makro fiele sonst erst LuaLaTeX auf.
+         * Ein Makro ohne Argument bekommt ein leeres `{}`. Ohne es fräße TeX
+         * den Leerraum dahinter, oder – schlimmer – ein folgender Buchstabe
+         * verlängerte den Namen: `\ustidtrennerUSt-IdNr.` ist ein unbekanntes
+         * Makro, und das sähe erst LuaLaTeX.
          */
-        fun macro(macro: TemplateMacro, arguments: List<Latex>): Latex {
+        fun macro(macro: TemplateMacro, arguments: List<Latex> = emptyList()): Latex {
             require(arguments.size == macro.arity) {
                 "\\${macro.macroName} nimmt ${macro.arity} Argumente, hier sind es ${arguments.size}."
             }
+            if (arguments.isEmpty()) return raw("\\${macro.macroName}{}")
             return raw("\\${macro.macroName}") + arguments.map { raw("{") + it + raw("}") }.joinToLatex()
         }
     }
@@ -137,3 +120,10 @@ fun String.escapeLatex(): Latex =
  * Zeilenumbrüche mit Abstand (` \\[2.5mm]`).
  */
 fun Iterable<Latex>.joinToLatex(separator: String = ""): Latex = Latex.raw(joinToString(separator) { it.tex })
+
+/**
+ * Dasselbe mit einem Trenner, der selbst ein Fragment ist – etwa ein Makro der
+ * Vorlage wie `\positionstrenner{}`. Eine Überladung: Kotlin wählt nach dem Typ
+ * des Arguments, welche Fassung gilt.
+ */
+fun Iterable<Latex>.joinToLatex(separator: Latex): Latex = joinToLatex(separator.tex)

@@ -10,11 +10,17 @@ package de.fluchitconsulting.rechnung.render
  * Setzen der Vorlage, mit einer Meldung, die den Namen nennt – dasselbe, was
  * #30 für die Platzhalter eingeführt hat.
  *
- * Nicht hier stehen die Makros von LaTeX selbst (`textbf`, `mbox`) und die von
- * pdfx für die Metadaten: Die kommen nicht aus dieser Vorlage, und die Prüfung
- * könnte sie dort nicht finden.
+ * Der Renderer ruft kein anderes Makro auf, auch keines von LaTeX selbst: Wo er
+ * früher `\mbox` oder `\\[\positionsabstand]` schrieb, stehen heute `ZUSAMMEN`
+ * und die Trenner (#76). Einzige Ausnahme sind die Felder der pdfx-Metadaten –
+ * sie gehören in die .xmpdata-Datei und nicht in diese Vorlage.
  */
 enum class TemplateMacro(val macroName: String, val arity: Int) {
+    POSITIONSTRENNER("positionstrenner", 0),
+    SUMMENTRENNER("summentrenner", 0),
+    BLOCKTRENNER("blocktrenner", 0),
+    USTIDTRENNER("ustidtrenner", 0),
+    ZUSAMMEN("zusammen", 1),
     RUBRIK("rubrik", 1),
     HINWEISABSATZ("hinweisabsatz", 1),
     ABSETZUNGSKOPF("absetzungskopf", 1),
