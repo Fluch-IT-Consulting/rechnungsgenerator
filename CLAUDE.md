@@ -238,7 +238,11 @@ CV/Web-Auftritt des Autors), Validierung über veraPDF.
   brauchten, entstand das Ergebnis zweimal. Setzen lässt sich nur eine
   `AcceptedInvoice`, und die gibt es nur ohne Abbruch: Renderer und
   `prepaymentOf` verlangen sie, damit hält der Compiler die Zusage aus ADR-0004
-  und nicht mehr die Disziplin der Kommandos (ADR-0007, #70).
+  und nicht mehr die Disziplin der Kommandos (ADR-0007, #70). Sie trägt die
+  Rechnungsart als Typ (`InvoiceKind`): Nach Bezug, Vereinnahmung und
+  Abschlägen fragen Renderer und `prepaymentOf` dort, nicht im flachen Modell.
+  Gebaut wird er in `InvoiceKindRules`, zusammen mit den sechs Regeln, ohne die
+  er nicht baubar ist (ADR-0008).
   Die Kennungen sind deutsch benannt wie die Regeln und **nicht** nummeriert:
   Die Nummern standen nur in Kommentaren und Testnamen und liefen dort
   auseinander. Tests prüfen die Kennung statt des Wortlauts und brauchen dafür

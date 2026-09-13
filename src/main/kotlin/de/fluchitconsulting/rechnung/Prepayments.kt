@@ -47,7 +47,10 @@ fun prepaymentOf(abschlagsrechnung: AcceptedInvoice): Prepayment {
     return Prepayment(
         invoiceNumber = invoice.number,
         issueDate = invoice.issueDate,
-        receivedOn = invoice.receivedOn,
+        // Nur eine Abschlagsrechnung trägt eine Vereinnahmung (ADR-0008). Aus
+        // einem anderen Dokument wird ebenfalls ein Abschlag, gemeldet als
+        // KEINE_ABSCHLAGSRECHNUNG – dann ohne Datum.
+        receivedOn = (abschlagsrechnung.kind as? InvoiceKind.PrepaymentInvoice)?.receivedOn,
         taxShares = calculatedInvoice.vatGroups.map { TaxShare(it.category, it.rate, net = it.base, vat = it.amount) },
     )
 }

@@ -28,6 +28,7 @@ internal object InvoiceRules {
     private val groups: List<(CalculatedInvoice) -> List<Finding>> =
         listOf(
             InvoiceNumberRules::check,
+            InvoiceKindRules::check,
             CancellationRules::check,
             ItemRules::check,
             TaxCategoryRules::check,

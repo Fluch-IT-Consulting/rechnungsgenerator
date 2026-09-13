@@ -43,7 +43,8 @@ das bisher nicht.
   dann schreibt `abschlaege` den Block (ADR-0003: alles oder nichts).
 - Das `checkNotNull` im Renderer bleibt vorerst. Seine Voraussetzung ist jetzt
   garantiert, aber der Compiler kennt sie nicht: `vereinnahmt-am` ist im Modell
-  weiter optional. Entfallen kann es mit dem Modell je Rechnungsart.
+  weiter optional. Entfallen kann es mit dem Modell je Rechnungsart. (Entfallen
+  mit ADR-0008.)
 - Tests, die setzen oder einen Abschlag übernehmen, holen sich die angenommene
   Rechnung über `accepted()`. Hat die Testrechnung einen Abbruch, scheitern sie
   dort mit den Kennungen.

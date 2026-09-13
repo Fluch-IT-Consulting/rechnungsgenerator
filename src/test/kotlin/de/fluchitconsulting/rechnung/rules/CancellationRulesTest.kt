@@ -15,7 +15,6 @@ import de.fluchitconsulting.rechnung.rules
 import de.fluchitconsulting.rechnung.testCancelled
 import de.fluchitconsulting.rechnung.testInvoice
 import de.fluchitconsulting.rechnung.testItem
-import de.fluchitconsulting.rechnung.testPrepayment
 import de.fluchitconsulting.rechnung.testSellerConfig
 import de.fluchitconsulting.rechnung.values.CountryCode
 import de.fluchitconsulting.rechnung.values.InvoiceType
@@ -57,31 +56,7 @@ class CancellationRulesTest : FunSpec({
         calculated.grossTotal shouldBe Money("-1190.00")
     }
 
-    test("ein Storno ohne Bezug wird abgelehnt") {
-        val message = messageFor(storno(cancelled = null), Rule.STORNO_OHNE_BEZUG)
-
-        message shouldContain "'storniert'"
-        // Die Meldung sagt, warum es die Angabe braucht, nicht nur dass sie fehlt.
-        message shouldContain "BG-3"
-    }
-
-    test("ein Bezug ohne Storno wird ebenso abgelehnt, und die Meldung nennt die Art des Dokuments") {
-        // Dieselbe Symmetrie wie bei 'vereinnahmt-am' und der Abschlagsrechnung.
-        //
-        // Geprüft wird der ganze Satzschluss und nicht bloß das Wort "Rechnung":
-        // Das steckt in jedem Dokumentnamen dieses Projekts, und eine Meldung,
-        // die fälschlich immer "Stornorechnung" einsetzte, käme damit durch.
-        messageFor(testInvoice(cancelled = testCancelled()), Rule.BEZUG_OHNE_STORNO)
-            .shouldContain("'storniert'")
-            .shouldContain("dieses Dokument ist eine Rechnung.")
-
-        // Und mit einer zweiten Art, damit belegt ist, dass der Name wirklich
-        // aus der Rechnung kommt und nicht zufällig passt.
-        messageFor(
-            testInvoice(type = InvoiceType.FINAL, cancelled = testCancelled()),
-            Rule.BEZUG_OHNE_STORNO,
-        ) shouldContain "dieses Dokument ist eine Schlussrechnung."
-    }
+    // Ob ein Storno überhaupt einen Bezug trägt, prüft InvoiceKindRulesTest.
 
     test("ein Storno auf die eigene Nummer wird abgelehnt") {
         val message =
@@ -172,16 +147,5 @@ class CancellationRulesTest : FunSpec({
 
             InvoiceCalculator.calculate(alteAbfrage, config).rules() shouldNotContain Rule.ABFRAGE_ALT
         }
-    }
-
-    test("Abschläge gehören auch nicht in ein Storno") {
-        // Ohne neue Regel: Die bestehende sagt "nur in einer Schlussrechnung".
-        val message =
-            messageFor(
-                storno().copy(prepayments = listOf(testPrepayment())),
-                Rule.ABSCHLAEGE_FALSCHE_ART,
-            )
-
-        message shouldContain "Stornorechnung"
     }
 })

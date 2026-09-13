@@ -1,5 +1,7 @@
 package de.fluchitconsulting.rechnung
 
+import de.fluchitconsulting.rechnung.rules.InvoiceKindRules
+
 /**
  * Eine gerechnete Rechnung ohne Abbruch – die einzige Form, die sich setzen
  * oder als Abschlag übernehmen lässt (ADR-0007).
@@ -11,19 +13,33 @@ package de.fluchitconsulting.rechnung
  * Typ, und den gibt es nur über [check]: Eine Rechnung mit Abbruch ist nicht
  * mehr ungesetzt, sondern nicht setzbar – derselbe Zug wie beim Zahlungsziel.
  *
+ * Sie trägt die Rechnungsart als Typ, [kind] (ADR-0008). Wer wissen will, ob
+ * und worauf sich ein Storno bezieht oder welche Abschläge abgesetzt werden,
+ * fragt dort und nicht im flachen Modell hinter [calculated].
+ *
  * `private constructor`: Außerhalb dieser Klasse lässt sich keine
  * `AcceptedInvoice(...)` bauen, auch nicht im selben Paket. Der einzige Weg
  * führt durch [check], das den Konstruktor aus dem `companion object` heraus
  * aufrufen darf.
  */
-class AcceptedInvoice private constructor(val calculated: CalculatedInvoice) {
+class AcceptedInvoice private constructor(val calculated: CalculatedInvoice, val kind: InvoiceKind) {
     /** Die Hinweise. Abbrüche hat eine angenommene Rechnung nicht – dafür steht der Typ. */
     val hints: List<Finding> get() = calculated.findings.filter { it.severity == Severity.HINT }
 
     companion object {
+        /**
+         * Angenommen wird nur, was keinen Abbruch hat **und** dessen Rechnungsart
+         * sich bauen lässt. Beides fällt zusammen – die Regeln, ohne die kein
+         * Typ entsteht, sind Abbrüche –, aber verlassen muss sich diese Stelle
+         * darauf nicht: Ohne gebaute Rechnungsart gibt es keine [AcceptedInvoice].
+         */
         fun check(calculated: CalculatedInvoice): Checked {
             val aborts = calculated.findings.filter { it.severity == Severity.ABORT }
-            return if (aborts.isEmpty()) Checked.Accepted(AcceptedInvoice(calculated)) else Checked.Rejected(aborts)
+            return when (val built = InvoiceKindRules.build(calculated)) {
+                is InvoiceKindRules.Result.Built ->
+                    if (aborts.isEmpty()) Checked.Accepted(AcceptedInvoice(calculated, built.kind)) else Checked.Rejected(aborts)
+                is InvoiceKindRules.Result.NotBuilt -> Checked.Rejected(aborts)
+            }
         }
     }
 }

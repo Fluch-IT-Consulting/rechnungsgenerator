@@ -4,6 +4,14 @@ Notiz vom 13.09.2026, festgehalten für später. **Hier wird nichts entschieden.
 Es ist der Stand eines Gesprächs über den zweiten Teil von #70. Eine Empfehlung
 gibt es, eine Entscheidung noch nicht.
 
+> **Nachtrag vom selben Tag:** Möglichkeit C ist beschlossen, siehe ADR-0008.
+> Entschieden sind dabei auch drei der Fragen unten: ein eigenes ADR statt eines
+> Nachtrags zu ADR-0007; die Teilrechnung teilt `Ordinary` mit der gewöhnlichen
+> Rechnung; und das flache Feld hinter `calculated` bleibt vorerst erreichbar,
+> das Verbergen wird ein eigenes Issue. Beim Bau fiel eine Verhaltensänderung
+> auf, die hier fehlt: `ABSCHLAG_OHNE_VEREINNAHMUNG` meldet sich nur noch in
+> einer Schlussrechnung. Der Text der Notiz bleibt, wie er war.
+
 ## Der Anlass
 
 #70 hat zwei Teile. Der erste ist gebaut (ADR-0007): Renderer und

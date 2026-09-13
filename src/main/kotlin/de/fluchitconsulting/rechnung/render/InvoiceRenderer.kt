@@ -2,10 +2,11 @@ package de.fluchitconsulting.rechnung.render
 
 import de.fluchitconsulting.rechnung.AcceptedInvoice
 import de.fluchitconsulting.rechnung.CalculatedInvoice
+import de.fluchitconsulting.rechnung.Deduction
+import de.fluchitconsulting.rechnung.InvoiceKind
 import de.fluchitconsulting.rechnung.model.Address
 import de.fluchitconsulting.rechnung.model.Invoice
 import de.fluchitconsulting.rechnung.model.LineItem
-import de.fluchitconsulting.rechnung.model.Prepayment
 import de.fluchitconsulting.rechnung.model.SellerConfig
 import de.fluchitconsulting.rechnung.model.ServicePeriod
 import de.fluchitconsulting.rechnung.values.CountryCode
@@ -55,13 +56,13 @@ object InvoiceRenderer {
                 "KOPF_PERSON" to letterheadPerson(config),
                 "ABSENDER_KONTAKT" to senderContact(config),
                 "EMPFAENGER" to recipient(invoice, config),
-                "EMPFAENGER_RECHTS" to recipientSideBlock(calculatedInvoice),
+                "EMPFAENGER_RECHTS" to recipientSideBlock(acceptedInvoice),
                 "DOKUMENTART" to invoice.type.documentName.escapeLatex(),
                 "RECHNUNGSNUMMER" to invoice.number.escapeLatex(),
                 "RECHNUNGSDATUM" to GermanFormat.date(invoice.issueDate),
                 "POSITIONEN" to lineItems(calculatedInvoice),
                 "SUMMEN" to totalsBlock(calculatedInvoice),
-                "ABSETZUNG" to deductionBlock(calculatedInvoice),
+                "ABSETZUNG" to deductionBlock(acceptedInvoice),
                 "ARTHINWEIS" to typeNote(invoice),
                 "STEUERHINWEISE" to taxNotes(calculatedInvoice),
                 "SCHLUSSSATZ" to (invoice.note ?: config.closingLine).escapeLatex(),
@@ -256,16 +257,22 @@ object InvoiceRenderer {
      * frühere Block mit gesperrten Versalien hat oben rechts zu viel Unruhe
      * erzeugt. Das Rechnungsdatum steht jetzt im Titelbalken.
      */
-    private fun metadata(calculatedInvoice: CalculatedInvoice): Latex =
+    private fun metadata(acceptedInvoice: AcceptedInvoice): Latex =
         buildList {
+            val calculatedInvoice = acceptedInvoice.calculated
             val invoice = calculatedInvoice.invoice
+            val kind = acceptedInvoice.kind
             // Der Bezug auf die Ursprungsrechnung (BG-3 mit BT-25 und BT-26) –
             // Pflicht auf einer Stornorechnung. Als eigene Angabe und nicht im
             // Pflichtsatz, weil EN 16931 ihn als Struktur führt und nicht als
             // Prosa (ADR-0006): Wer ihn später fürs XML aus einem Satz
             // herausklauben müsste, rät. Zuerst, weil er sagt, worauf sich das
             // ganze Blatt bezieht.
-            invoice.cancelled?.let { storniert ->
+            //
+            // `is` prüft den Typ und macht `kind` im Block zu einer
+            // Cancellation ("smart cast") – dort ist der Bezug nicht optional.
+            if (kind is InvoiceKind.Cancellation) {
+                val storniert = kind.cancelled
                 val bezug =
                     Latex.macro(
                         TemplateMacro.ZUSAMMEN,
@@ -285,7 +292,9 @@ object InvoiceRenderer {
             add("${invoice.type.servicePeriodLabel}: ".escapeLatex() + zeitraum)
             // BT-7: Steht der Zeitpunkt der Vereinnahmung fest, gehört er zu
             // den Pflichtangaben – deshalb hier und nicht in den Fließtext.
-            invoice.receivedOn?.let { add("Abschlag vereinnahmt am ".escapeLatex() + GermanFormat.date(it)) }
+            if (kind is InvoiceKind.PrepaymentInvoice) {
+                kind.receivedOn?.let { add("Abschlag vereinnahmt am ".escapeLatex() + GermanFormat.date(it)) }
+            }
             invoice.customer.buyerReference?.let { add("Ihre Referenz: ".escapeLatex() + it.escapeLatex()) }
             // "ohne Abzug" stand bisher im Zahlungssatz unter den Summen. Der Satz
             // ist entfallen, weil er das Fälligkeitsdatum ein zweites Mal nannte –
@@ -372,8 +381,12 @@ object InvoiceRenderer {
      * genügen, aber der Kunde soll sehen, welche seiner Zahlungen abgesetzt
      * wurde – und die Zeilen liegen ohnehin im Modell.
      */
-    private fun deductionBlock(calculatedInvoice: CalculatedInvoice): Latex {
-        if (calculatedInvoice.prepayments.isEmpty()) return Latex.EMPTY
+    private fun deductionBlock(acceptedInvoice: AcceptedInvoice): Latex {
+        val calculatedInvoice = acceptedInvoice.calculated
+        // Nur eine Schlussrechnung setzt ab; `!is` ist die Verneinung von `is`,
+        // und nach dem return weiß der Compiler, dass `kind` eine ist.
+        val kind = acceptedInvoice.kind
+        if (kind !is InvoiceKind.FinalInvoice) return Latex.EMPTY
 
         // Derselbe Trenner wie bei den Positionen: Jede Zeile hat eine
         // Zusatzzeile, genau wie eine Position mit Beschreibung.
@@ -382,14 +395,14 @@ object InvoiceRenderer {
         // das Vorzeichen des abgesetzten Betrags und damit Inhalt, so wie das
         // €-Zeichen zum Betrag gehört (#76).
         val rows =
-            calculatedInvoice.prepayments
+            kind.deductions
                 .map { abgesetzt ->
                     Latex.raw("  ") +
                         Latex.macro(
                             TemplateMacro.SUMMENZEILE,
                             listOf(
-                                describePrepayment(abgesetzt.prepayment),
-                                "\u2212".escapeLatex() + GermanFormat.amountWithCurrency(abgesetzt.gross),
+                                describePrepayment(abgesetzt),
+                                "\u2212".escapeLatex() + GermanFormat.amountWithCurrency(abgesetzt.deducted.gross),
                             ),
                         )
                 }.joinToLatex(rowSeparator(TemplateMacro.POSITIONSTRENNER))
@@ -428,15 +441,13 @@ object InvoiceRenderer {
      * der ersten Zeile, die Aufteilung in Netto und Steuer klein darunter –
      * dieselbe Zweizeiligkeit wie bei einer Position.
      */
-    private fun describePrepayment(abschlag: Prepayment): Latex {
-        // checkNotNull statt eines stillen Ausweichzweigs: Ohne Vereinnahmung
-        // meldet der Calculator ABSCHLAG_OHNE_VEREINNAHMUNG, und eine Rechnung
-        // mit Abbruch wird keine AcceptedInvoice – hierher kommt sie also nicht
-        // (ADR-0007). Der Compiler weiß das aber nicht, weil receivedOn im
-        // Modell optional ist. Entfallen kann die Prüfung erst mit dem Modell je
-        // Rechnungsart (#70, zweiter Teil); bis dahin soll es krachen, statt eine
-        // Zeile ohne Datum zu drucken.
-        val vereinnahmtAm = checkNotNull(abschlag.receivedOn) { "Abschlag ${abschlag.invoiceNumber} ohne Vereinnahmung" }
+    private fun describePrepayment(abgesetzt: Deduction): Latex {
+        val abschlag = abgesetzt.deducted.prepayment
+        // Hier stand bis #70 ein checkNotNull: Die Vereinnahmung war im Modell
+        // optional, und der Renderer verließ sich darauf, dass die Prüfung einen
+        // Abschlag ohne sie nie durchlässt. Eine Deduction gibt es nur mit
+        // Datum (ADR-0008).
+        val vereinnahmtAm = abgesetzt.receivedOn
         val heading =
             "Abschlagsrechnung ".escapeLatex() + abschlag.invoiceNumber.escapeLatex() + " vom ".escapeLatex() +
                 GermanFormat.shortDate(abschlag.issueDate) + ", vereinnahmt am ".escapeLatex() +
@@ -537,13 +548,13 @@ object InvoiceRenderer {
      * "Geschäftsführung" statt "Geschäftsführer": Die Bezeichnung steht neben
      * einem Namen, dessen Geschlecht die Konfiguration nicht kennt.
      */
-    private fun recipientSideBlock(calculatedInvoice: CalculatedInvoice): Latex =
+    private fun recipientSideBlock(acceptedInvoice: AcceptedInvoice): Latex =
         buildList {
-            val config = calculatedInvoice.config
+            val config = acceptedInvoice.calculated.config
             config.managingDirector?.let {
                 add("Geschäftsführung".escapeLatex() + Latex.raw(BR) + it.escapeLatex())
             }
-            add(metadata(calculatedInvoice))
+            add(metadata(acceptedInvoice))
         }.joinToLatex(Latex.macro(TemplateMacro.BLOCKTRENNER))
 
     /** Erste Fußzeile: Firmierung, Sitz und die Angaben nach §35a GmbHG. */
