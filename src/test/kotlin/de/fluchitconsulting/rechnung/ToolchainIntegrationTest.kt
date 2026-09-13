@@ -16,10 +16,13 @@ import io.kotest.matchers.shouldBe
 import io.kotest.matchers.string.shouldContain
 import java.nio.file.Path
 import java.time.LocalDate
+import java.util.concurrent.TimeUnit
 import kotlin.io.path.createTempDirectory
 import kotlin.io.path.exists
 import kotlin.io.path.fileSize
 import kotlin.io.path.readBytes
+import kotlin.io.path.readText
+import kotlin.io.path.writeText
 
 /**
  * Der Integrationstest, der die Zusage des Projekts einlöst: Ohne gültiges
@@ -42,7 +45,11 @@ class ToolchainIntegrationTest : FunSpec({
      * Die Ausgaben werden eingesammelt, damit die Meldung von veraPDF im
      * Testbericht landet – sonst stünde dort nur "expected true but was false".
      */
-    fun erzeuge(rechnung: String, zielname: String = rechnung): Pair<Path, List<String>> {
+    fun erzeuge(
+        rechnung: String,
+        zielname: String = rechnung,
+        eingabe: Path = Path.of("src/test/resources/$rechnung.yaml"),
+    ): Pair<Path, List<String>> {
         val ziel = workDir.resolve("$zielname.pdf")
         val ausgabe = mutableListOf<String>()
         val command = RechnungsgeneratorCommand()
@@ -53,7 +60,7 @@ class ToolchainIntegrationTest : FunSpec({
                 command.parse(
                     arrayOf(
                         "erzeuge",
-                        "src/test/resources/$rechnung.yaml",
+                        eingabe.toString(),
                         "-s",
                         "src/test/resources/stammdaten.yaml",
                         "-o",
@@ -111,6 +118,44 @@ class ToolchainIntegrationTest : FunSpec({
         // PDF nach Text suchen, ohne dass der Binärteil beim Dekodieren stört.
         // Die Rechnung ist auf den 14.08.2026 datiert.
         String(bytes, Charsets.ISO_8859_1) shouldContain "/CreationDate(D:20260814000000+00'00')"
+    }
+
+    /**
+     * Text aus den Eingabedaten steht im PDF so, wie er in der YAML-Datei
+     * steht. Ohne `Ligatures=TeXOff` in der Vorlage zöge die Schrift "A--C" zu
+     * "A–C" zusammen und "<<A>>" zu "«A»" (#81) – das LaTeX sähe dabei richtig
+     * aus, deshalb prüft das nur ein echter Lauf.
+     *
+     * Jede Folge steht in einer eigenen, kurzen Bezeichnung: In der schmalen
+     * Spalte könnte ein Umbruch eine lange Bezeichnung zerteilen, und dann
+     * fände `contains` sie nicht, ohne dass etwas falsch gesetzt wäre.
+     */
+    test("Zeichenfolgen, die TeX zu einem Zeichen zusammenzieht, stehen unverändert im PDF") {
+        val bezeichnungen =
+            listOf("Paket A--C", "Paket A---C", "Paket <<A>>", "Paket ``A''", "Paket ,,A''")
+        val positionen =
+            bezeichnungen.joinToString("") {
+                "  - bezeichnung: \"$it\"\n    menge: 1\n    einheit: pauschal\n    einzelpreis: 10.00\n"
+            }
+        val beispiel = Path.of("src/test/resources/rechnung.yaml").readText()
+        val eingabe = workDir.resolve("ligaturen.yaml")
+        eingabe.writeText(beispiel.substringBefore("positionen:") + "positionen:\n" + positionen)
+
+        val (pdf, _) = erzeuge("ligaturen", eingabe = eingabe)
+
+        // Die Ausgabe in eine Datei, nicht in einen Stream – aus demselben
+        // Grund wie bei den Werkzeugen des Programms (siehe ProcessRunner).
+        val text = workDir.resolve("ligaturen.txt")
+        val prozess =
+            ProcessBuilder("pdftotext", "-enc", "UTF-8", pdf.toString(), text.toString())
+                .redirectErrorStream(true)
+                .redirectOutput(workDir.resolve("pdftotext.log").toFile())
+                .start()
+        prozess.waitFor(30, TimeUnit.SECONDS) shouldBe true
+        prozess.exitValue() shouldBe 0
+
+        val gesetzt = text.readText()
+        bezeichnungen.forEach { gesetzt shouldContain it }
     }
 
     /**

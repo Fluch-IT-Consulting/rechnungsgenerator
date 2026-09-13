@@ -25,7 +25,16 @@
 \usepackage{array}
 
 %% Dieselbe Schrift wie im Lebenslauf – dadurch passen die Dokumente zusammen.
+%%
+%% Ligatures=TeXOff: fontspec zieht für die Hauptschrift sonst Folgen wie
+%% "--", "<<" oder zwei Hochkommas zu einem Zeichen zusammen (Strich, Guillemet,
+%% Anführungszeichen). Die Vorlage braucht das nicht, sie schreibt keine dieser
+%% Folgen; getroffen hätte es nur Text aus den Eingabedaten, und der soll so
+%% dastehen, wie er in der YAML-Datei steht. In escapeLatex aufbrechen geht
+%% nicht: Nachgemessen trennt LuaLaTeX die Ligatur weder bei "-{}-" noch bei
+%% "{<}{<}". Die Schriftligaturen (fi, fl) bleiben, sie ändern keinen Text.
 \setmainfont{texgyreheros}[
+  Ligatures      = TeXOff,
   Extension      = .otf,
   UprightFont    = *-regular,
   BoldFont       = *-bold,

@@ -283,6 +283,9 @@ CV/Web-Auftritt des Autors), Validierung über veraPDF.
 
 - macOS, TeX Live lokal (`lualatex` in /Library/TeX/texbin), veraPDF via
   Homebrew (`verapdf`), JDK 25 lokal; Build zielt per Toolchain auf JDK 21.
+- `pdftotext` und `pdftoppm` aus poppler (Homebrew `poppler`). `pdftotext`
+  braucht seit #81 auch der Build: `ToolchainIntegrationTest` liest damit
+  zurück, ob Text aus den Eingabedaten unverändert im PDF steht.
 - Die Skripte des `rechnung`-Skills laufen mit `python3`; PyYAML
   (`pip3 install pyyaml`) braucht `offene-abschlaege.py` immer und
   `naechste-nummer.py` für `--stammdaten`. Seit #61 hängt auch der Build daran:
