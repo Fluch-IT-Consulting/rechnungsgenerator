@@ -7,6 +7,7 @@ import io.kotest.matchers.string.shouldNotContain
 import java.io.File
 import java.nio.file.Path
 import java.util.concurrent.TimeUnit
+import kotlin.io.path.copyTo
 import kotlin.io.path.createTempDirectory
 import kotlin.io.path.readText
 import kotlin.io.path.writeText
@@ -208,5 +209,45 @@ class OffeneAbschlaegeSkriptTest : FunSpec({
 
         ergebnis.ausgabe shouldBe ""
         ergebnis.fehler shouldContain "Alle 1 Abschlagsrechnungen an '$kunde' sind schon abgesetzt."
+    }
+
+    // Die Tests darüber schreiben ihr YAML selbst, und zwar nur die Schlüssel,
+    // die das Skript liest. Benennt der Generator einen davon um, bleiben sie
+    // grün, während das Skript echte Dateien still für "keine Rechnung" hält
+    // (#139). Die beiden folgenden lesen deshalb die Beispielrechnungen, die
+    // andere Tests mit dem Generator lesen: Eine Umbenennung muss dort
+    // nachgezogen werden und kommt so auch hier an.
+    fun beispiele(vararg namen: String): Path {
+        val verzeichnis = createTempDirectory("offene-abschlaege-beispiele")
+        namen.forEach { Path.of("src/test/resources", it).copyTo(verzeichnis.resolve(it)) }
+        return verzeichnis
+    }
+
+    test("in den Beispielrechnungen setzt die Schlussrechnung beide Abschläge ab") {
+        // Das Storno der Beispiele hebt eine gewöhnliche Rechnung auf und darf
+        // am Ergebnis nichts ändern. Eine Umbenennung von `storniert` fiele
+        // hier deshalb nicht auf – die decken die Beispiele nicht ab.
+        val verzeichnis =
+            beispiele(
+                "abschlagsrechnung.yaml",
+                "abschlagsrechnung-2.yaml",
+                "schlussrechnung.yaml",
+                "stornorechnung.yaml",
+            )
+
+        val ergebnis = lauf(verzeichnis)
+
+        ergebnis.exitCode shouldBe 0
+        ergebnis.ausgabe shouldBe ""
+        ergebnis.fehler shouldContain "Alle 2 Abschlagsrechnungen an '$kunde' sind schon abgesetzt."
+    }
+
+    test("ohne Schlussrechnung ist die Abschlagsrechnung aus den Beispielen offen") {
+        val verzeichnis = beispiele("abschlagsrechnung-2.yaml")
+
+        val ergebnis = lauf(verzeichnis)
+
+        ergebnis.exitCode shouldBe 0
+        ergebnis.ausgabe shouldBe "R26-011\t2026-08-20\t${verzeichnis.resolve("abschlagsrechnung-2.yaml")}"
     }
 })
