@@ -10,6 +10,24 @@ Der gemeinsame Auslöser ist der zweite Ausgabemodus (ZUGFeRD) beziehungsweise
 die nächste Rechnungsart (#64): der Moment, in dem der Kern zum ersten Mal
 zwei Ränder bedient.
 
+> **Nachtrag vom selben Tag:** Zu Punkt 3 ist eine Achse dazugekommen, die die
+> offen gelassene Schnittlinie entscheidet: Es werden verschiedene
+> **Rechnungsdesigns** kommen, und nicht jedes wird sich sinnvoll mit demselben
+> Renderer erzeugen lassen. Vervielfacht sich etwas, dann die Designs – die
+> Rechnungsarten bleiben die geschlossene Menge, die *jeder* Renderer
+> vollständig beantwortet. Ein Schnitt je Art stünde quer dazu (D Designs ×
+> K Arten Bausteine), deshalb wandern die artabhängigen Blöcke **nicht** zur
+> `InvoiceKind`: Die `when` ohne `else` je Block bleiben die Checkliste, die
+> auch jeder weitere Renderer ausfüllen muss. Für ein neues Design gilt eine
+> Treppe: erst versuchen, ob eine zweite Vorlage mit demselben Makro-Vokabular
+> reicht (`checkMacros` prüft jede Vorlage gegen `TemplateMacro`); erst wenn
+> das Vokabular nicht passt, ein zweiter Renderer hinter der Naht
+> `AcceptedInvoice → tex + xmp` – das Interface dafür entsteht erst mit dem
+> zweiten Adapter, wie bei `Typesetter`. Zum Gespräch vor dem zweiten Design
+> gehört dann ein Pflichtangaben-Netz je Design (die `pdftotext`-Rücklese aus
+> #81, verallgemeinert), denn `rechnung-erwartet.tex` schützt nur ein
+> Satzbild. Der Text der Notiz bleibt, wie er war.
+
 ## 1. Gradle-Module statt `PackageStructureTest`
 
 Die Schichtung `values → model → calculation → rules` und die beiden
