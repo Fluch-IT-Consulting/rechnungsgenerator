@@ -1,6 +1,7 @@
 package de.fluchitconsulting.rechnungsgenerator.generate.render
 
 import io.kotest.assertions.assertSoftly
+import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
 
@@ -44,5 +45,38 @@ class LatexTest : FunSpec({
         // das erst LuaLaTeX bemerkte (#76).
         (Latex.macro(TemplateMacro.USTIDTRENNER) + "USt-IdNr.".escapeLatex()).tex shouldBe
             "\\ustidtrenner{}USt-IdNr."
+    }
+
+    context("Text mit Platzhaltern") {
+        test("maskiert nur den festen Text, die eingesetzten Werte bleiben unberührt") {
+            "50 % von <<BETRAG>> & mehr".escapeLatex { Latex.raw("\\textbf{x}") }.tex shouldBe
+                "50 \\% von \\textbf{x} \\& mehr"
+        }
+
+        test("löst jeden Platzhalter nach seinem Namen auf, auch am Anfang und am Ende") {
+            val values = mapOf("A" to "eins".escapeLatex(), "B" to "zwei".escapeLatex())
+            "<<A>> und <<B>>".escapeLatex { values.getValue(it) }.tex shouldBe "eins und zwei"
+        }
+
+        test("ohne Platzhalter dasselbe wie escapeLatex(), und der Resolver wird nicht gefragt") {
+            "Meier & Söhne".escapeLatex { error("nicht gefragt: $it") } shouldBe "Meier & Söhne".escapeLatex()
+        }
+
+        test("ein Wert, der selbst einen Platzhalter enthält, ist Inhalt") {
+            "<<A>>"
+                .escapeLatex { name ->
+                    if (name == "A") "<<B>>".escapeLatex() else error("nicht gefragt: $name")
+                }.tex shouldBe "<<B>>"
+        }
+
+        test("kleingeschrieben ist es kein Platzhalter") {
+            "<<name>>".escapeLatex { error("nicht gefragt: $it") }.tex shouldBe "<<name>>"
+        }
+
+        test("kann der Resolver einen Namen nicht auflösen, kommt seine Ausnahme durch") {
+            shouldThrow<IllegalStateException> {
+                "<<FRIMA>>".escapeLatex { error("Unbekannte Variable <<$it>>") }
+            }.message shouldBe "Unbekannte Variable <<FRIMA>>"
+        }
     }
 })
