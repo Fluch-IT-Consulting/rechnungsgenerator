@@ -152,10 +152,11 @@ fun prepaymentsOf(abschlagsrechnungen: List<NamedInvoice>, config: SellerConfig)
  * wie im Abschlag.
  *
  * `private`: Der einzige Aufrufer steht darüber, und der hat die Art schon
- * geprüft. Deshalb ist der `else`-Zweig unten unerreichbar – aber nur, weil
- * [prepaymentsOf] daran denkt. Der Compiler weiß es nicht: [AcceptedInvoice]
- * ist nicht über die Rechnungsart typisiert, und das zu ändern wäre ein
- * eigener Schnitt (#118).
+ * geprüft. Deshalb ist der `else`-Zweig unten unerreichbar. Gewollt ist er
+ * trotzdem, und kein vergessenes `when` wie im Renderer vor #128: Dort braucht
+ * jede Rechnungsart eine eigene Entscheidung, hier ist genau eine richtig, und
+ * eine neue gehört zu Recht zu den übrigen. Die Vorprüfung am flachen Modell
+ * bleibt, damit ein fremdes Dokument gar nicht erst gerechnet wird (#118).
  */
 private fun prepaymentOf(abschlagsrechnung: AcceptedInvoice): Prepayment {
     val calculatedInvoice = abschlagsrechnung.calculated

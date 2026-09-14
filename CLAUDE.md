@@ -277,6 +277,10 @@ CV/Web-Auftritt des Autors), Validierung über veraPDF.
   sonst stünden Sätze über "diese Schlussrechnung" unter einer gewöhnlichen
   Rechnung (#97). Der Preis: Wer nur `art` falsch gesetzt hat, sieht Fehler
   in den Angaben der gemeinten Art erst im zweiten Lauf.
+  Ebenso fragt der Renderer die `InvoiceKind`: Bezug, Vereinnahmung und
+  Absetzung je in einem `when` ohne `else`, drei Stellen für drei
+  Entscheidungen (#128). Nur `prepaymentOf` behält sein `else` – dort ist genau
+  eine Art richtig.
   Die Kennungen sind deutsch benannt wie die Regeln und **nicht** nummeriert:
   Die Nummern standen nur in Kommentaren und Testnamen und liefen dort
   auseinander. Tests prüfen die Kennung statt des Wortlauts und brauchen dafür

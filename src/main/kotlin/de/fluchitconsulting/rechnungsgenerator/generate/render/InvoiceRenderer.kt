@@ -263,19 +263,24 @@ object InvoiceRenderer {
             // herausklauben müsste, rät. Zuerst, weil er sagt, worauf sich das
             // ganze Blatt bezieht.
             //
-            // `is` prüft den Typ und macht `kind` im Block zu einer
-            // Cancellation ("smart cast") – dort ist der Bezug nicht optional.
-            if (kind is InvoiceKind.Cancellation) {
-                val storniert = kind.cancelled
-                val bezug =
-                    Latex.macro(
-                        TemplateMacro.ZUSAMMEN,
-                        listOf(
-                            storniert.invoiceNumber.escapeLatex() + " vom ".escapeLatex() +
-                                GermanFormat.date(storniert.issueDate),
-                        ),
-                    )
-                add("Ursprungsrechnung: ".escapeLatex() + bezug)
+            // `when` mit Subjekt macht `kind` in jedem Zweig zu dessen Variante
+            // ("smart cast") – in der Cancellation ist der Bezug nicht optional.
+            // Ohne `else`: Kommt eine Variante dazu (#64), übersetzt diese Stelle
+            // erst, wenn entschieden ist, ob sie einen Bezug nennt (#128).
+            when (kind) {
+                is InvoiceKind.Cancellation -> {
+                    val storniert = kind.cancelled
+                    val bezug =
+                        Latex.macro(
+                            TemplateMacro.ZUSAMMEN,
+                            listOf(
+                                storniert.invoiceNumber.escapeLatex() + " vom ".escapeLatex() +
+                                    GermanFormat.date(storniert.issueDate),
+                            ),
+                        )
+                    add("Ursprungsrechnung: ".escapeLatex() + bezug)
+                }
+                is InvoiceKind.Ordinary, is InvoiceKind.PrepaymentInvoice, is InvoiceKind.FinalInvoice -> {}
             }
             // Pflichtangabe nach §14 Abs. 4 Nr. 6 UStG. Wie der Zeitraum heißt,
             // hängt an der Rechnungsart – siehe InvoiceType.servicePeriodLabel.
@@ -286,8 +291,10 @@ object InvoiceRenderer {
             add("${invoice.type.servicePeriodLabel}: ".escapeLatex() + zeitraum)
             // BT-7: Steht der Zeitpunkt der Vereinnahmung fest, gehört er zu
             // den Pflichtangaben – deshalb hier und nicht in den Fließtext.
-            if (kind is InvoiceKind.PrepaymentInvoice) {
-                kind.receivedOn?.let { add("Abschlag vereinnahmt am ".escapeLatex() + GermanFormat.date(it)) }
+            when (kind) {
+                is InvoiceKind.PrepaymentInvoice ->
+                    kind.receivedOn?.let { add("Abschlag vereinnahmt am ".escapeLatex() + GermanFormat.date(it)) }
+                is InvoiceKind.Ordinary, is InvoiceKind.FinalInvoice, is InvoiceKind.Cancellation -> {}
             }
             invoice.customer.buyerReference?.let { add("Ihre Referenz: ".escapeLatex() + it.escapeLatex()) }
             // "ohne Abzug" stand bisher im Zahlungssatz unter den Summen. Der Satz
@@ -377,10 +384,15 @@ object InvoiceRenderer {
      */
     private fun deductionBlock(acceptedInvoice: AcceptedInvoice): Latex {
         val calculatedInvoice = acceptedInvoice.calculated
-        // Nur eine Schlussrechnung setzt ab; `!is` ist die Verneinung von `is`,
-        // und nach dem return weiß der Compiler, dass `kind` eine ist.
-        val kind = acceptedInvoice.kind
-        if (kind !is InvoiceKind.FinalInvoice) return Latex.EMPTY
+        // Nur eine Schlussrechnung setzt ab. Die übrigen Varianten stehen
+        // ausgeschrieben da statt als `else`: Eine neue muss hier sagen, ob sie
+        // absetzt (#128). `return` ist in Kotlin ein Ausdruck und passt deshalb
+        // als Wert eines Zweigs.
+        val deductions =
+            when (val kind = acceptedInvoice.kind) {
+                is InvoiceKind.FinalInvoice -> kind.deductions
+                is InvoiceKind.Ordinary, is InvoiceKind.PrepaymentInvoice, is InvoiceKind.Cancellation -> return Latex.EMPTY
+            }
 
         // Derselbe Trenner wie bei den Positionen: Jede Zeile hat eine
         // Zusatzzeile, genau wie eine Position mit Beschreibung.
@@ -389,7 +401,7 @@ object InvoiceRenderer {
         // das Vorzeichen des abgesetzten Betrags und damit Inhalt, so wie das
         // €-Zeichen zum Betrag gehört (#76).
         val rows =
-            kind.deductions
+            deductions
                 .map { abgesetzt ->
                     Latex.raw("  ") +
                         Latex.macro(
