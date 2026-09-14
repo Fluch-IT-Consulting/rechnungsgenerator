@@ -9,8 +9,11 @@ import com.github.ajalt.clikt.core.parse
 import com.github.ajalt.clikt.core.subcommands
 import de.fluchitconsulting.rechnungsgenerator.generate.GenerateCommand
 import de.fluchitconsulting.rechnungsgenerator.generate.toolchain.LuaLatexTypesetter
+import de.fluchitconsulting.rechnungsgenerator.generate.toolchain.ToolchainException
 import de.fluchitconsulting.rechnungsgenerator.generate.toolchain.Typesetter
+import de.fluchitconsulting.rechnungsgenerator.model.InputFileException
 import de.fluchitconsulting.rechnungsgenerator.prepayments.PrepaymentsCommand
+import de.fluchitconsulting.rechnungsgenerator.rules.RejectedException
 import java.io.PrintStream
 import kotlin.system.exitProcess
 
@@ -35,11 +38,13 @@ fun main(args: Array<String>) {
  * statusCode des CliktError den Exitcode – 0 nur bei --help und Erfolg.
  *
  * Der Kanal folgt dem Exitcode: Was mit einem Exitcode ungleich 0 endet, steht
- * auf stderr, stdout trägt nur das Ergebnis. Dafür braucht es zwei Stellen:
+ * auf stderr, stdout trägt nur das Ergebnis. Dafür braucht es drei Stellen:
  *
  *  - einen eigenen Ausgeber. Der von `clikt-core` wirft den Parameter `err`
  *    weg und schreibt alles auf stdout; erst die Vollvariante mit Mordant
  *    beachtet ihn.
+ *  - die Übersetzung der Fachfehler in [parseReportingFailures], einmal für
+ *    alle Kommandos.
  *  - die Wahl des Kanals für die Fehlermeldung hier unten, statt Clikts
  *    `printError` zu folgen. Das hielte die Hilfe ohne Unterkommando auf
  *    stdout, obwohl der Aufruf mit 1 endet.
@@ -59,11 +64,34 @@ fun execute(
         }
     }
     return try {
-        command.parse(args)
+        parseReportingFailures(command, args)
         0
     } catch (e: CliktError) {
         command.getFormattedHelp(e)?.let { command.echo(it, err = e.statusCode != 0) }
         e.statusCode
+    }
+}
+
+/**
+ * Macht aus den Fachfehlern der Kommandos einen CliktError: Clikt gibt dann die
+ * Meldung aus und beendet mit Exitcode 1, ohne Stacktrace. Ein Tippfehler in der
+ * YAML soll nicht wie ein Programmabsturz aussehen.
+ *
+ * Hier und nicht in jedem Kommando (#119): Vorher übersetzte jedes für sich, und
+ * in #52 liefen die Fassungen auseinander – `abschlaege` fing den Lesefehler gar
+ * nicht. Jedes Kommando, das dazukommt, bekommt die Übersetzung jetzt umsonst.
+ * Was nur ein Kommando betrifft, bleibt dort, etwa das Schreiben der Zieldatei
+ * in `erzeuge`.
+ */
+private fun parseReportingFailures(command: CoreCliktCommand, args: Array<String>) {
+    try {
+        command.parse(args)
+    } catch (e: InputFileException) {
+        throw CliktError(e.message)
+    } catch (e: ToolchainException) {
+        throw CliktError(e.message)
+    } catch (e: RejectedException) {
+        throw CliktError(e.message)
     }
 }
 

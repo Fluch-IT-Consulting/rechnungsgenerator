@@ -1,10 +1,13 @@
 package de.fluchitconsulting.rechnungsgenerator
 
+import de.fluchitconsulting.rechnungsgenerator.generate.toolchain.FakeTypesetter
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.string.shouldContain
 import io.kotest.matchers.string.shouldNotContain
+import java.nio.file.Path
 import kotlin.io.path.createTempDirectory
+import kotlin.io.path.readText
 import kotlin.io.path.writeText
 
 /**
@@ -63,6 +66,41 @@ class MainTest : FunSpec({
         result.err shouldContain unlesbar.toString()
         result.err shouldContain "gelesen"
         result.err shouldNotContain "geschrieben"
+    }
+
+    // Die drei Fachfehler übersetzt execute() einmal für alle Kommandos (#119).
+    // Deshalb stehen sie hier und nicht in den Tests der Kommandos: Die prüfen
+    // nur noch, dass die Ausnahme geworfen wird.
+
+    test("eine abgelehnte Rechnung steht auf stderr, mit allen Abbrüchen") {
+        // Zwei Verstöße in einer Datei: Beide sollen dastehen, nicht nur der erste.
+        val abgelehnt =
+            eingaben.resolve("abgelehnt.yaml").also {
+                it.writeText(
+                    Path
+                        .of(rechnung)
+                        .readText()
+                        .replace("nummer: R26-042", "nummer: \"///\"")
+                        .replace("    einzelpreis: 95.00", "    einzelpreis: -95.00"),
+                )
+            }
+
+        val result = runCli("erzeuge", abgelehnt.toString(), "-s", stammdaten)
+
+        result.exitCode shouldBe 1
+        result.out shouldBe ""
+        result.err shouldContain "passt nicht zum Muster"
+        result.err shouldContain "Position 1"
+    }
+
+    test("ein ungültiges PDF/A steht auf stderr") {
+        val ziel = eingaben.resolve("ungueltig.pdf")
+
+        val result = runCli("erzeuge", rechnung, "-s", stammdaten, "-o", ziel.toString(), typesetter = FakeTypesetter(valid = false))
+
+        result.exitCode shouldBe 1
+        result.out shouldBe ""
+        result.err shouldContain "kein gültiges PDF/A-1b"
     }
 
     test("das Ergebnis steht auf stdout, stderr bleibt leer") {

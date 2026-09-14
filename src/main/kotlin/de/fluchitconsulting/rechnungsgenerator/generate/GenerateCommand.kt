@@ -13,11 +13,11 @@ import de.fluchitconsulting.rechnungsgenerator.generate.render.InvoiceRenderer
 import de.fluchitconsulting.rechnungsgenerator.generate.toolchain.LuaLatexTypesetter
 import de.fluchitconsulting.rechnungsgenerator.generate.toolchain.ToolchainException
 import de.fluchitconsulting.rechnungsgenerator.generate.toolchain.Typesetter
-import de.fluchitconsulting.rechnungsgenerator.model.InputFileException
 import de.fluchitconsulting.rechnungsgenerator.model.Invoice
 import de.fluchitconsulting.rechnungsgenerator.model.YamlLoader
 import de.fluchitconsulting.rechnungsgenerator.rules.AcceptedInvoice
 import de.fluchitconsulting.rechnungsgenerator.rules.Checked
+import de.fluchitconsulting.rechnungsgenerator.rules.RejectedException
 import java.io.IOException
 import java.nio.file.Path
 import kotlin.io.path.copyTo
@@ -53,21 +53,16 @@ class GenerateCommand(private val typesetter: Typesetter = LuaLatexTypesetter) :
         .flag()
 
     override fun run() {
-        // CliktError statt einer durchgereichten Exception: Clikt gibt die
-        // Meldung aus und beendet mit Exitcode 1, ohne Stacktrace. Ein
-        // Tippfehler in der YAML soll nicht wie ein Programmabsturz aussehen.
+        // Fehler beim Lesen, der Werkzeuge und die Ablehnung gehen durch: Zur
+        // Meldung ohne Stacktrace macht sie execute(), für alle Kommandos an
+        // einer Stelle (#119).
         try {
             erzeuge()
-        } catch (e: ToolchainException) {
-            throw CliktError(e.message)
-        } catch (e: InputFileException) {
-            throw CliktError(e.message)
         } catch (e: IOException) {
-            // Etwa ein Zielpfad, der nicht beschreibbar ist. Ohne diesen Zweig
-            // beendet sich das Programm mit einem Stacktrace, was wie ein
-            // Programmfehler aussieht statt wie ein falsches Argument. Das
-            // Lesen der Eingabedateien ist hier nicht mehr dabei: Es meldet
-            // sich selbst, mit Datei und Grund (#52).
+            // Etwa ein Zielpfad, der nicht beschreibbar ist. Dieser Zweig
+            // bleibt hier, weil nur dieses Kommando schreibt. Das Lesen der
+            // Eingabedateien ist nicht dabei: YamlLoader wirft dafür
+            // InputFileException, mit Datei und Grund (#52).
             throw CliktError("Die Datei konnte nicht geschrieben werden: ${e.message}")
         }
     }
@@ -85,7 +80,7 @@ class GenerateCommand(private val typesetter: Typesetter = LuaLatexTypesetter) :
         val acceptedInvoice =
             when (val checked = AcceptedInvoice.check(InvoiceCalculator.calculate(invoice, config))) {
                 is Checked.Accepted -> checked.invoice
-                is Checked.Rejected -> throw CliktError(checked.aborts.joinToString("\n") { it.describe() })
+                is Checked.Rejected -> throw RejectedException(checked.aborts)
             }
 
         val jobName = jobNameFor(invoice)
