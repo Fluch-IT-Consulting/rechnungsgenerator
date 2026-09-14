@@ -30,4 +30,11 @@ dependencies {
 
 tasks.test {
     useJUnitPlatform() // JUnit 5/6 statt des alten JUnit-4-Runners
+    // Benannte Abwahl der Tests, die LuaLaTeX, veraPDF und pdftotext brauchen
+    // (Kotest-Tag `Toolchain`, #136). CI ruft `./gradlew build -PohneToolchain`
+    // auf; lokal ohne den Schalter bleibt build das volle Netz – ohne gültiges
+    // PDF/A kein grüner Build.
+    if (providers.gradleProperty("ohneToolchain").isPresent) {
+        systemProperty("kotest.tags", "!Toolchain")
+    }
 }
