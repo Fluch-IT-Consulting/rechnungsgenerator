@@ -49,8 +49,9 @@ enum class InvoiceType(
      *
      * Ob das Dokument auch zur Zahlung auffordert – mit Zahlungsziel und
      * Bankverbindung –, sagt erst `CalculatedInvoice.requestsPayment`: Dafür
-     * zählt zusätzlich der Restbetrag, und eine voll abgesetzte Schlussrechnung
-     * rechnet ab, ohne Geld zu fordern (#94).
+     * muss zusätzlich ein positiver Restbetrag bleiben. Eine voll abgesetzte
+     * Schlussrechnung rechnet ab, ohne Geld zu fordern (#94), und ein negativer
+     * Betrag fordert nie etwas (#130).
      *
      * Nicht dasselbe wie "ist ein Storno": Das Vorzeichen des Gesamtbetrags
      * hängt an der Rechnungsart selbst und fragt deshalb nach ihr.

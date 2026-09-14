@@ -42,11 +42,13 @@ class Money(value: BigDecimal) : Comparable<Money> {
 
     fun isZero(): Boolean = signum() == 0
 
-    // Privat: Draußen wird nach isZero oder isNegative gefragt, nicht nach
-    // einem Vorzeichen als Zahl.
+    // Privat: Draußen wird nach isZero, isNegative oder isPositive gefragt,
+    // nicht nach einem Vorzeichen als Zahl.
     private fun signum(): Int = value.signum()
 
     fun isNegative(): Boolean = signum() < 0
+
+    fun isPositive(): Boolean = signum() > 0
 
     // Ohne Sonderfall für die Null: BigDecimal kennt kein negatives Vorzeichen der Null,
     override operator fun compareTo(other: Money): Int = value.compareTo(other.value)
