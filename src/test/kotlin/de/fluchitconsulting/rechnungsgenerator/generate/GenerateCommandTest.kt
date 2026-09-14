@@ -5,9 +5,14 @@ import com.github.ajalt.clikt.core.context
 import com.github.ajalt.clikt.core.parse
 import de.fluchitconsulting.rechnungsgenerator.RechnungsgeneratorCommand
 import de.fluchitconsulting.rechnungsgenerator.generate.toolchain.FakeTypesetter
+import de.fluchitconsulting.rechnungsgenerator.generate.toolchain.ToolchainException
 import de.fluchitconsulting.rechnungsgenerator.generate.toolchain.Typesetter
+import de.fluchitconsulting.rechnungsgenerator.rules.RejectedException
+import de.fluchitconsulting.rechnungsgenerator.rules.Rule
+import de.fluchitconsulting.rechnungsgenerator.rules.rules
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.FunSpec
+import io.kotest.matchers.collections.shouldContain
 import io.kotest.matchers.collections.shouldContainInOrder
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.string.shouldContain
@@ -101,20 +106,21 @@ class GenerateCommandTest : FunSpec({
         ausgabe.last() shouldContain "Arbeitsdateien:"
     }
 
-    test("ein ungültiges PDF/A endet mit Exitcode 1") {
+    test("ein ungültiges PDF/A ist ein Fehler der Werkzeuge") {
+        // Den Exitcode und den Kanal prüft MainTest: Übersetzt wird die
+        // Ausnahme in execute(), einmal für alle Kommandos (#119).
         val fehler =
-            shouldThrow<CliktError> {
+            shouldThrow<ToolchainException> {
                 lauf(FakeTypesetter(valid = false), "-o", eingaben.resolve("ungueltig.pdf").toString())
             }
 
-        fehler.statusCode shouldBe 1
         fehler.message!! shouldContain "kein gültiges PDF/A-1b"
     }
 
     test("auch ein ungültiges PDF/A lässt kein Arbeitsverzeichnis zurück") {
         val fake = FakeTypesetter(valid = false)
 
-        shouldThrow<CliktError> { lauf(fake, "-o", eingaben.resolve("ungueltig2.pdf").toString()) }
+        shouldThrow<ToolchainException> { lauf(fake, "-o", eingaben.resolve("ungueltig2.pdf").toString()) }
 
         // Das Aufräumen steht in einem finally – hier wird es geprüft.
         fake.workingDir!!.exists() shouldBe false
@@ -123,7 +129,7 @@ class GenerateCommandTest : FunSpec({
     test("ein ungültiges PDF/A legt keine Datei an und sagt, wie man es ansieht") {
         val ziel = eingaben.resolve("nie-da.pdf")
 
-        val fehler = shouldThrow<CliktError> { lauf(FakeTypesetter(valid = false), "-o", ziel.toString()) }
+        val fehler = shouldThrow<ToolchainException> { lauf(FakeTypesetter(valid = false), "-o", ziel.toString()) }
 
         ziel.exists() shouldBe false
         fehler.message!! shouldContain "--arbeitsdateien-behalten"
@@ -133,7 +139,7 @@ class GenerateCommandTest : FunSpec({
         val ziel = eingaben.resolve("verschickt.pdf").also { it.writeText("das verschickte Original") }
 
         val fehler =
-            shouldThrow<CliktError> {
+            shouldThrow<ToolchainException> {
                 lauf(FakeTypesetter(valid = false), "-o", ziel.toString(), "--ueberschreiben")
             }
 
@@ -199,10 +205,10 @@ class GenerateCommandTest : FunSpec({
 
     test("mit Muster in den Stammdaten hält schon der Calculator die Nummer an") {
         // Dieselbe Nummer, dieselbe Rechnung – nur die Stammdaten tragen ein
-        // Muster. Die Meldung nennt dann die Nummer und nicht den Dateinamen.
-        val fehler = shouldThrow<CliktError> { laufMitNummer("\"///\"", stammdaten) }
+        // Muster. Dann lehnt die Prüfung ab, und der Dateiname kommt nie dran.
+        val fehler = shouldThrow<RejectedException> { laufMitNummer("\"///\"", stammdaten) }
 
-        fehler.message!! shouldContain "passt nicht zum Muster"
+        fehler.aborts.rules() shouldContain Rule.RECHNUNGSNUMMER_PASST_NICHT
     }
 
     test("die Hinweise für die eigene Akte stehen nach dem Ergebnis, nicht davor") {

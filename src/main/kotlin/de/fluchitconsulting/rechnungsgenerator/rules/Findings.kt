@@ -17,6 +17,21 @@ data class Finding(val rule: Rule, val subject: Subject, val message: String) {
 }
 
 /**
+ * Eine Ablehnung, die ein Kommando nach außen gibt – mit allen Abbrüchen auf einmal.
+ *
+ * Beide Kommandos lehnen ab, `erzeuge` mit `Checked.Rejected` und `abschlaege`
+ * mit `CollectedPrepayments.Rejected`. Zu Text wird die Liste nur hier, und
+ * übersetzt wird die Ausnahme nur in `execute()` (#119). Vorher baute jedes
+ * Kommando seine eigene Zeile und seinen eigenen `CliktError` – so sind in #52
+ * zwei Fassungen derselben Regel auseinandergelaufen.
+ *
+ * `: Exception(…)` ruft den Konstruktor der Oberklasse gleich in der
+ * Klassenzeile auf: Die Meldung entsteht beim Bauen, und [aborts] bleibt für
+ * Tests als Liste erreichbar, die nach Kennungen fragen statt nach Wortlaut.
+ */
+class RejectedException(val aborts: List<Finding>) : Exception(aborts.joinToString("\n") { it.describe() })
+
+/**
  * Wie ernst ein Befund ist.
  *
  * Beides in einer Liste statt in zweien: Zwei Listen derselben Gestalt werfen

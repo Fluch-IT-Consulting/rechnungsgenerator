@@ -87,6 +87,11 @@ CV/Web-Auftritt des Autors), Validierung über veraPDF.
   Was mit Code ungleich 0 endet, steht auf stderr, stdout trägt nur das
   Ergebnis. Weil `clikt-core` den Parameter `err` ignoriert und alles auf
   stdout schreibt, setzt `execute()` dafür einen eigenen Ausgeber.
+  Die Fachfehler – `InputFileException`, `ToolchainException` und die
+  `RejectedException` einer Ablehnung – übersetzt ebenfalls `execute()`, einmal
+  für alle Kommandos; die Kommandos werfen sie nur durch (#119). Zu Text wird
+  die Abbruchliste allein in `RejectedException`. Vorher tat jedes Kommando das
+  selbst, und in #52 liefen die Fassungen auseinander.
 - **Positionstexte**: drei Felder statt einem, entlang der Aufteilung von
   EN 16931 – `bezeichnung` (BT-153, Pflicht), `beschreibung` (BT-154) und
   `hinweis` (BT-127). Ein einziges Freitextfeld hätte fürs PDF gereicht, würde

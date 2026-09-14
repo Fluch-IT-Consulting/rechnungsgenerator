@@ -93,25 +93,7 @@ class PrepaymentsCommandTest : FunSpec({
         result.err shouldContain "gibtsnicht"
     }
 
-    test("eine unlesbare Datei endet nicht im Stacktrace") {
-        // Das Kommando fing IOException nirgends, und Main fängt nur
-        // CliktError – der Aufruf endete mit einer AccessDeniedException und
-        // sah wie ein Programmfehler aus. (Als root ist auch chmod 000 lesbar,
-        // dieser Test schlüge dort fehl.)
-        val unlesbar =
-            createTempDirectory("abschlaege-test")
-                .resolve("unlesbar.yaml")
-                .also {
-                    it.writeText("nummer: R26-099\n")
-                    it.toFile().setReadable(false)
-                }
-
-        val result = runCli("abschlaege", june, unlesbar.toString(), "-s", stammdaten)
-
-        result.exitCode shouldBe 1
-        result.out shouldBe ""
-        result.err shouldContain unlesbar.toString()
-        result.err shouldContain "gelesen"
-        result.err shouldNotContain "Exception"
-    }
+    // Dass eine unlesbare Datei nicht im Stacktrace endet, stand hier bis #119
+    // noch einmal eigens für dieses Kommando. Das hält jetzt execute() für alle,
+    // geprüft in MainTest.
 })

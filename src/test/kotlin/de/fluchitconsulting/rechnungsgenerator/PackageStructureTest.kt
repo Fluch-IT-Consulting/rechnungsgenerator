@@ -30,7 +30,8 @@ class PackageStructureTest : FunSpec({
     // Wer darf woher importieren – die Zeichnung aus #107, Zeile für Zeile.
     val allowedImports =
         mapOf(
-            root to setOf("$root.generate", "$root.generate.toolchain", "$root.prepayments"),
+            // model und rules für die Fachfehler, die execute() übersetzt (#119).
+            root to setOf("$root.generate", "$root.generate.toolchain", "$root.prepayments", "$root.rules", "$root.model"),
             "$root.generate" to
                 setOf("$root.generate.render", "$root.generate.toolchain", "$root.rules", "$root.calculation", "$root.model"),
             "$root.generate.render" to setOf("$root.rules", "$root.calculation", "$root.model", "$root.values"),
