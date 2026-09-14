@@ -235,17 +235,21 @@ CV/Web-Auftritt des Autors), Validierung über veraPDF.
   ZUGFeRD (PDF/A-3 + XML) später ein zusätzlicher Ausgabemodus wird, kein Umbau.
   Bis dahin bewusst nur PDF/A-1b (Archivierungsanforderungen der E-Rechnung
   noch offen).
-- **Befunde statt Abbruch beim ersten Fehler**: `calculate` wirft nicht,
-  sondern liefert die Werte samt einer Liste von Befunden. Ein Befund trägt eine
+- **Befunde statt Abbruch beim ersten Fehler**: Die Prüfung wirft nicht,
+  sondern liefert eine Liste von Befunden. Ein Befund trägt eine
   Kennung, eine Schwere (Abbruch oder Hinweis), den Gegenstand (Rechnung,
   Position, Abschlag) und die Meldung; den Gegenstand nennt die Meldung nicht
   selbst, das tut die Ausgabe. Abgebrochen wird im Kommando – und dann stehen
   alle Gründe auf einmal da, statt dass fünf Fehler fünf Läufe brauchen.
   `calculate` rechnet nur. Geprüft wird in Regelgruppen im Paket `rules`, je
   eine Datei neben ihrem gleichnamigen Test, jede gegen das fertig gerechnete
-  Ergebnis; `findings` leitet sich daraus ab wie `dueDate` (#71). Vorher
-  standen Regeln zwischen den Rechenschritten, und weil zwei die Summen
-  brauchten, entstand das Ergebnis zweimal. Setzen lässt sich nur eine
+  Ergebnis (#71). Vorher standen Regeln zwischen den Rechenschritten, und weil
+  zwei die Summen brauchten, entstand das Ergebnis zweimal. Den Prüflauf führt
+  `AcceptedInvoice.check`, nicht die `CalculatedInvoice`: Befunde sind ein
+  Urteil über die Rechnung und kein abgeleiteter Wert wie `dueDate`. Als `lazy`
+  auf ihr hatte die Prüfung keinen Besitzer – die Rechnungsart wurde dort
+  gemerkt, und dass eine Ablehnung ihre Gründe nannte, hing an einem Eintrag in
+  der Liste der Regelgruppen (#105). Setzen lässt sich nur eine
   `AcceptedInvoice`, und die gibt es nur ohne Abbruch: Renderer und
   `prepaymentOf` verlangen sie, damit hält der Compiler die Zusage aus ADR-0004
   und nicht mehr die Disziplin der Kommandos (ADR-0007, #70). Sie trägt die
