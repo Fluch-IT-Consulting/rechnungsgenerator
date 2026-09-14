@@ -23,6 +23,7 @@ import de.fluchitconsulting.rechnung.values.Money
 import io.kotest.assertions.withClue
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.collections.shouldContain
+import io.kotest.matchers.collections.shouldContainAll
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.string.shouldContain
 import io.kotest.matchers.types.shouldBeInstanceOf
@@ -59,6 +60,18 @@ class InvoiceKindRulesTest : FunSpec({
 
     fun schlussrechnung(vararg prepayments: Prepayment) =
         testInvoice(type = InvoiceType.FINAL, items = gesamtleistung(), prepayments = prepayments.toList())
+
+    // Je ein Weg, auf dem kein Typ entsteht – die Kennungen selbst stehen nicht
+    // noch einmal hier.
+    fun unbaubar(): List<Invoice> =
+        listOf(
+            storno(cancelled = null),
+            testInvoice(cancelled = testCancelled()),
+            testInvoice(receivedOn = LocalDate.of(2026, 8, 10)),
+            testInvoice(items = gesamtleistung(), prepayments = listOf(testPrepayment())),
+            schlussrechnung(),
+            schlussrechnung(testPrepayment(receivedOn = null)),
+        )
 
     context("aus jeder Rechnungsart wird ihr Typ") {
         test("Rechnung und Teilrechnung sind gewöhnlich und behalten ihre Art") {
@@ -179,16 +192,8 @@ class InvoiceKindRulesTest : FunSpec({
         test("was den Typ unbaubar macht, ist ein Abbruch") {
             // AcceptedInvoice.check lehnt eine Rechnung ohne gebaute Art mit ihren
             // Abbrüchen ab. Wäre einer dieser Befunde bloß ein Hinweis, stünde
-            // eine Ablehnung ohne Grund da (#93). Je ein Weg, auf dem kein Typ
-            // entsteht – die Kennungen selbst stehen nicht noch einmal hier.
-            listOf(
-                storno(cancelled = null),
-                testInvoice(cancelled = testCancelled()),
-                testInvoice(receivedOn = LocalDate.of(2026, 8, 10)),
-                testInvoice(items = gesamtleistung(), prepayments = listOf(testPrepayment())),
-                schlussrechnung(),
-                schlussrechnung(testPrepayment(receivedOn = null)),
-            ).forEach { invoice ->
+            // eine Ablehnung ohne Grund da (#93).
+            unbaubar().forEach { invoice ->
                 val notBuilt =
                     InvoiceCalculator
                         .calculate(invoice, config)
@@ -202,6 +207,21 @@ class InvoiceKindRulesTest : FunSpec({
                         finding.severity shouldBe Severity.ABORT
                     }
                 }
+            }
+        }
+
+        test("die Ablehnung nennt die Befunde, die den Bau verhindert haben") {
+            // Das Gegenstück zum Test davor: Abbruch sein genügt nicht, der Befund
+            // muss auch in der Ablehnung ankommen. Heute hängt das an einem Eintrag
+            // in der Liste der Regelgruppen (#105). Gebaut wird hier eigens, damit
+            // der Test nicht mitliest, was check selbst gebaut hat.
+            unbaubar().forEach { invoice ->
+                val calculated = InvoiceCalculator.calculate(invoice, config)
+                val notBuilt = InvoiceKindRules.build(calculated).shouldBeInstanceOf<InvoiceKindRules.Result.NotBuilt>()
+
+                val rejected = AcceptedInvoice.check(calculated).shouldBeInstanceOf<Checked.Rejected>()
+
+                rejected.aborts shouldContainAll notBuilt.findings
             }
         }
     }
