@@ -270,7 +270,9 @@ CV/Web-Auftritt des Autors), Validierung über veraPDF.
   Gebaut wird er in `InvoiceKindRules`, zusammen mit den sechs Regeln, ohne die
   er nicht baubar ist (ADR-0008).
   Die Regelgruppe einer Rechnungsart (`PrepaymentRules`, der Bezug in
-  `CancellationRules`, `FinalInvoiceRules`) prüft nur auf dieser Art. Steht
+  `CancellationRules`, `FinalInvoiceRules`) prüft nur auf dieser Art – als
+  `when` über alle Arten ohne `else`, damit eine neue Art (#64) dort
+  entscheiden muss (#121). Steht
   ihr Feld auf einer anderen, bleibt allein der Befund aus `InvoiceKindRules` –
   sonst stünden Sätze über "diese Schlussrechnung" unter einer gewöhnlichen
   Rechnung (#97). Der Preis: Wer nur `art` falsch gesetzt hat, sieht Fehler
