@@ -133,3 +133,21 @@ Ein Land außerhalb der EU. Für eine USt-IdNr. von dort gibt es weder eine
 VIES-Abfrage noch eine Bestätigung durch das BZSt; die Unternehmereigenschaft
 muss anders nachgewiesen werden, etwa durch eine Unternehmerbescheinigung.
 _Vermeiden_: Nicht-EU-Land, Ausland (für diesen Fall)
+
+## Prüfung
+
+**Befund**:
+Was die Prüfung an einer Rechnung feststellt – bezogen auf die ganze Rechnung,
+eine Position oder einen Abschlag. Jeder Befund ist entweder ein Abbruch oder
+ein Hinweis; alle Befunde einer Rechnung erscheinen auf einmal.
+_Vermeiden_: Fehler, Validierungsfehler, Meldung (das ist der Text eines Befunds)
+
+**Abbruch**:
+Ein Befund, mit dem aus der Rechnung kein Dokument entsteht. Die Rechnung
+widerspricht dem Recht oder sich selbst.
+_Vermeiden_: Fehler, Verstoß
+
+**Hinweis**:
+Ein Befund, der das Dokument nicht verhindert: Die Angabe ist zulässig, aber
+selten gemeint, oder in die eigene Akte gehört noch etwas.
+_Vermeiden_: Warnung
