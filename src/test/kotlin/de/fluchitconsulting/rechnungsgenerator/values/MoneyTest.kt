@@ -48,6 +48,9 @@ class MoneyTest : FunSpec({
         test("isNegative genau dann, wenn kleiner als ZERO") {
             checkAll(money) { a -> a.isNegative() shouldBe (a < Money.ZERO) }
         }
+        test("isPositive genau dann, wenn größer als ZERO") {
+            checkAll(money) { a -> a.isPositive() shouldBe (a > Money.ZERO) }
+        }
         test("compareTo==0 ist deckungsgleich mit equals") {
             checkAll(money, money) { a, b -> (a.compareTo(b) == 0) shouldBe (a == b) }
         }

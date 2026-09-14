@@ -122,6 +122,20 @@ class InvoiceCalculatorTest : FunSpec({
             calculated.requestsPayment shouldBe false
             calculated.dueDate shouldBe null
         }
+
+        test("ein negativer Betrag fordert kein Geld, auch wo die Art eine Leistung abrechnet") {
+            // Auf ein PDF kommt diese Rechnung nicht, GESAMTBETRAG_NEGATIV lehnt
+            // sie ab. Dass sie kein Geld fordert, soll aber am Wert selbst hängen
+            // und nicht an einer Regel in einer anderen Gruppe (#130).
+            val calculated =
+                InvoiceCalculator.calculate(
+                    testInvoice(items = listOf(testItem(quantity = "-1", unitPrice = "1000.00"))),
+                    config,
+                )
+
+            calculated.requestsPayment shouldBe false
+            calculated.dueDate shouldBe null
+        }
     }
 
     context("Inland und EU") {

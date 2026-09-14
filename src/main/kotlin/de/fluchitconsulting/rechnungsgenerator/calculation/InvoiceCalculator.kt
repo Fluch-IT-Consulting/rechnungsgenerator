@@ -98,8 +98,14 @@ data class CalculatedInvoice(
      * fragte jedes für sich, und unter "es verbleibt kein Restbetrag" stand ein
      * Konto (#94). Die Entscheidung fällt hier und nicht im Renderer – der setzt,
      * was dasteht, und entscheidet nicht, was dastehen soll.
+     *
+     * Positiv und nicht bloß "nicht null": Ein negativer Betrag fordert kein
+     * Geld, gleich was die Art abrechnet. Auf ein PDF kommt er heute ohnehin
+     * nicht, GESAMTBETRAG_NEGATIV und RESTBETRAG_NEGATIV lehnen ihn ab. Die
+     * Aussage soll aber am Wert selbst hängen und nicht daran, dass Regeln in
+     * anderen Gruppen zu ihr passen (#130).
      */
-    val requestsPayment: Boolean get() = invoice.type.chargesForService && !remainingAmount.isZero()
+    val requestsPayment: Boolean get() = invoice.type.chargesForService && remainingAmount.isPositive()
 
     /**
      * Ist das eine Inlandsrechnung? Glossar *Inland*: Der Kunde sitzt im Land
