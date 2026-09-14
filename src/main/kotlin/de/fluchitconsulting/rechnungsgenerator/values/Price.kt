@@ -37,8 +37,6 @@ class Price(val value: BigDecimal) : Comparable<Price> {
      */
     fun roundToAmount(): Money = Money(value)
 
-    fun isZero(): Boolean = value.signum() == 0
-
     override operator fun compareTo(other: Price): Int = value.compareTo(other.value)
 
     // Wertgleichheit wie bei Money: numerisch über compareTo, damit "0.10" und
