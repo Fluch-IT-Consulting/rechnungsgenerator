@@ -23,7 +23,7 @@ class AcceptedInvoiceTest : FunSpec({
         accepted.hints.rules() shouldBe listOf(Rule.MENGE_NULL)
     }
 
-    test("eine Rechnung mit Abbruch wird abgelehnt, mit allen Abbrüchen und ohne Hinweise") {
+    test("eine Rechnung mit Abbruch wird abgelehnt, mit allen Abbrüchen – und trägt auch ihre Hinweise") {
         val invoice =
             testInvoice(
                 items = listOf(testItem(quantity = "0", unitPrice = "-1.00")),
@@ -33,5 +33,7 @@ class AcceptedInvoiceTest : FunSpec({
         val rejected = AcceptedInvoice.check(InvoiceCalculator.calculate(invoice, config)).shouldBeInstanceOf<Checked.Rejected>()
 
         rejected.aborts.rules() shouldBe listOf(Rule.EINZELPREIS_NEGATIV, Rule.ZAHLUNGSZIEL_NEGATIV)
+        // Die Regeltests lesen ihre Befunde auch von abgelehnten Rechnungen (#105).
+        rejected.findings.rules() shouldBe listOf(Rule.EINZELPREIS_NEGATIV, Rule.ZAHLUNGSZIEL_NEGATIV, Rule.MENGE_NULL)
     }
 })
