@@ -288,8 +288,15 @@ CV/Web-Auftritt des Autors), Validierung über veraPDF.
   ADR-0004: `calculate` rechnet nur, `check` prüft und urteilt. Deshalb liegt
   die `AcceptedInvoice` bei den Regeln, und der Renderer importiert aus
   `rules`. Kotlin hält keine Paketgrenze (`internal` gilt pro Modul, nicht pro
-  Paket). Die Testpakete spiegeln die Hauptpakete, geteilte Helfer liegen im
-  Testpaket dessen, was sie bauen oder prüfen (`model/TestFixtures.kt`,
+  Paket); `PackageStructureTest` hält sie stattdessen (#112): eine Tabelle, wer
+  woher importieren darf, gegen die Importe aller Quellen unter `src/main`,
+  gelesen mit Konsist. Ein neues Paket muss dort eingetragen werden. Derselbe
+  Test verbietet Importe aus dem eigenen Paket – ktlint lässt die absichtlich
+  stehen, und beim Umzug in #111 blieben 99 davon liegen. Nicht Konsists
+  `assertArchitecture`: Dessen Schichten schließen Unterpakete immer ein, und
+  dann fällt ein Import von `generate.render` nach `generate` nicht auf.
+  Die Testpakete spiegeln die Hauptpakete, geteilte Helfer liegen im Testpaket
+  dessen, was sie bauen oder prüfen (`model/TestFixtures.kt`,
   `rules/CheckHelpers.kt`); ein Test darf aber jedes Paket sehen. Kein ADR:
   Die Alternative war "so lassen", der Grund sind die Zyklen. Kommt ZUGFeRD als
   weiterer Ausgabemodus, ist das der Moment für eines.
