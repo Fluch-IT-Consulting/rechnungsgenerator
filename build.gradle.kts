@@ -24,6 +24,7 @@ dependencies {
     testImplementation(libs.kotest.runner) // Kotest läuft als JUnit-Platform-Engine
     testImplementation(libs.kotest.assertions) // shouldBe & Co.
     testImplementation(libs.kotest.property) // Property-based Testing (checkAll, Arb)
+    testImplementation(libs.konsist) // Architekturtests: liest die Quellen, prüft Paketgrenzen (#112)
     testRuntimeOnly(libs.junit.platform.launcher) // Gradle 9 verlangt den Launcher explizit
 }
 
