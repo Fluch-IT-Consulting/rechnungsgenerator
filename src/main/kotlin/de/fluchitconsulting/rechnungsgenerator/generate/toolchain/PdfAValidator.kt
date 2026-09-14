@@ -1,4 +1,4 @@
-package de.fluchitconsulting.rechnungsgenerator.toolchain
+package de.fluchitconsulting.rechnungsgenerator.generate.toolchain
 
 import org.w3c.dom.Element
 import java.nio.file.Path

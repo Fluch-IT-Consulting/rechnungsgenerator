@@ -1,5 +1,6 @@
 package de.fluchitconsulting.rechnungsgenerator
 
+import de.fluchitconsulting.rechnungsgenerator.generate.toolchain.FakeTypesetter
 import java.io.ByteArrayOutputStream
 import java.io.PrintStream
 import kotlin.text.Charsets.UTF_8

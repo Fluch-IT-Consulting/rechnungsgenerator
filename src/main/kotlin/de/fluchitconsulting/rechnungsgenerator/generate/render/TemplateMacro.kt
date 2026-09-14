@@ -1,4 +1,4 @@
-package de.fluchitconsulting.rechnungsgenerator.render
+package de.fluchitconsulting.rechnungsgenerator.generate.render
 
 /**
  * Die Makros, die der Renderer aus der Vorlage aufruft – mit ihrer Stelligkeit.

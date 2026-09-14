@@ -1,4 +1,4 @@
-package de.fluchitconsulting.rechnungsgenerator.render
+package de.fluchitconsulting.rechnungsgenerator.generate.render
 
 import de.fluchitconsulting.rechnungsgenerator.values.Money
 import de.fluchitconsulting.rechnungsgenerator.values.Percent

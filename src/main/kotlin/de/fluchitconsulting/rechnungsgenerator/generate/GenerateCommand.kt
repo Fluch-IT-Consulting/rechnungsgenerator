@@ -1,4 +1,4 @@
-package de.fluchitconsulting.rechnungsgenerator
+package de.fluchitconsulting.rechnungsgenerator.generate
 
 import com.github.ajalt.clikt.core.CliktError
 import com.github.ajalt.clikt.core.Context
@@ -8,11 +8,16 @@ import com.github.ajalt.clikt.parameters.options.default
 import com.github.ajalt.clikt.parameters.options.flag
 import com.github.ajalt.clikt.parameters.options.option
 import com.github.ajalt.clikt.parameters.types.path
+import de.fluchitconsulting.rechnungsgenerator.AcceptedInvoice
+import de.fluchitconsulting.rechnungsgenerator.Checked
+import de.fluchitconsulting.rechnungsgenerator.InputFileException
+import de.fluchitconsulting.rechnungsgenerator.InvoiceCalculator
+import de.fluchitconsulting.rechnungsgenerator.YamlLoader
+import de.fluchitconsulting.rechnungsgenerator.generate.render.InvoiceRenderer
+import de.fluchitconsulting.rechnungsgenerator.generate.toolchain.LuaLatexTypesetter
+import de.fluchitconsulting.rechnungsgenerator.generate.toolchain.ToolchainException
+import de.fluchitconsulting.rechnungsgenerator.generate.toolchain.Typesetter
 import de.fluchitconsulting.rechnungsgenerator.model.Invoice
-import de.fluchitconsulting.rechnungsgenerator.render.InvoiceRenderer
-import de.fluchitconsulting.rechnungsgenerator.toolchain.LuaLatexTypesetter
-import de.fluchitconsulting.rechnungsgenerator.toolchain.ToolchainException
-import de.fluchitconsulting.rechnungsgenerator.toolchain.Typesetter
 import java.io.IOException
 import java.nio.file.Path
 import kotlin.io.path.copyTo

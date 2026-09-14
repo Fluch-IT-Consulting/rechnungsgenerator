@@ -1,4 +1,4 @@
-package de.fluchitconsulting.rechnungsgenerator.render
+package de.fluchitconsulting.rechnungsgenerator.generate.render
 
 /**
  * Ein fertiges Stück LaTeX – gesetzt aus Text, der maskiert wurde, oder aus

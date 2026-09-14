@@ -1,4 +1,4 @@
-package de.fluchitconsulting.rechnungsgenerator.render
+package de.fluchitconsulting.rechnungsgenerator.generate.render
 
 import de.fluchitconsulting.rechnungsgenerator.AcceptedInvoice
 import de.fluchitconsulting.rechnungsgenerator.CalculatedInvoice
