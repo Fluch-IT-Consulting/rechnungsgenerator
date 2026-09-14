@@ -7,6 +7,7 @@ import com.github.ajalt.clikt.core.PrintHelpMessage
 import com.github.ajalt.clikt.core.context
 import com.github.ajalt.clikt.core.parse
 import com.github.ajalt.clikt.core.subcommands
+import de.fluchitconsulting.rechnungsgenerator.prepayments.PrepaymentsCommand
 import de.fluchitconsulting.rechnungsgenerator.toolchain.LuaLatexTypesetter
 import de.fluchitconsulting.rechnungsgenerator.toolchain.Typesetter
 import java.io.PrintStream

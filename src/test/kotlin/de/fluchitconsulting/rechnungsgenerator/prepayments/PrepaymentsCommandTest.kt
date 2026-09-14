@@ -1,5 +1,8 @@
-package de.fluchitconsulting.rechnungsgenerator
+package de.fluchitconsulting.rechnungsgenerator.prepayments
 
+import de.fluchitconsulting.rechnungsgenerator.InvoiceCalculator
+import de.fluchitconsulting.rechnungsgenerator.YamlLoader
+import de.fluchitconsulting.rechnungsgenerator.runCli
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.string.shouldContain
