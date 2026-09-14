@@ -37,18 +37,15 @@ import de.fluchitconsulting.rechnung.values.InvoiceType
 internal object InvoiceKindRules {
     /** Entweder die Rechnungsart oder die Befunde, warum keine entsteht. */
     sealed interface Result {
-        data class Built(val kind: InvoiceKind) : Result
+        /** Die Befunde, warum keine Rechnungsart entsteht – leer, wenn sie gebaut ist. */
+        val findings: List<Finding>
 
-        data class NotBuilt(val findings: List<Finding>) : Result
-    }
-
-    // Liest den gemerkten Bau und baut nicht selbst: Dieselbe Rechnungsart prüft
-    // AcceptedInvoice.check, und beide sollen aus einem Bau schöpfen (#93).
-    fun check(calculated: CalculatedInvoice): List<Finding> =
-        when (val result = calculated.kindResult) {
-            is Result.Built -> emptyList()
-            is Result.NotBuilt -> result.findings
+        data class Built(val kind: InvoiceKind) : Result {
+            override val findings: List<Finding> get() = emptyList()
         }
+
+        data class NotBuilt(override val findings: List<Finding>) : Result
+    }
 
     fun build(calculated: CalculatedInvoice): Result {
         val invoice = calculated.invoice

@@ -19,26 +19,29 @@ import de.fluchitconsulting.rechnung.Finding
  * verworfen, die Meldung steht weiter neben ihrer Bedingung.
  *
  * `internal` heißt: sichtbar im ganzen Modul, aber nicht darüber hinaus. Nach
- * außen bleibt [CalculatedInvoice.findings] die einzige Schnittstelle.
+ * außen bleibt `AcceptedInvoice.check` die einzige Schnittstelle.
  */
 internal object InvoiceRules {
-    // `::check` ist eine Funktionsreferenz: die Funktion selbst als Wert, ohne
-    // sie aufzurufen. Die Liste sagt damit nur, welche Gruppen es gibt und in
-    // welcher Reihenfolge – die Hinweise bleiben in der Reihenfolge von vorher.
-    private val groups: List<(CalculatedInvoice) -> List<Finding>> =
+    /**
+     * Die Befunde aller Gruppen. Die der Rechnungsart kommen aus dem Bau, den der
+     * Aufrufer schon in der Hand hat: Er braucht ihn ohnehin, und so gibt es ihn
+     * nur einmal (#93). Weitergereicht werden sie hier, an ihrer Stelle in der
+     * Reihenfolge – nicht als Eintrag, der in einer Liste fehlen könnte, ohne dass
+     * es jemand merkt (#105).
+     */
+    fun check(calculated: CalculatedInvoice, kind: InvoiceKindRules.Result): List<Finding> =
+        // `flatten` macht aus der Liste von Listen eine einzige.
         listOf(
-            InvoiceNumberRules::check,
-            InvoiceKindRules::check,
-            CancellationRules::check,
-            ItemRules::check,
-            TaxCategoryRules::check,
-            ServicePeriodRules::check,
-            PrepaymentRules::check,
-            FinalInvoiceRules::check,
-            PaymentTermRules::check,
-            PlausibilityHints::check,
-            VatIdCheckRules::check,
-        )
-
-    fun check(calculated: CalculatedInvoice): List<Finding> = groups.flatMap { it(calculated) }
+            InvoiceNumberRules.check(calculated),
+            kind.findings,
+            CancellationRules.check(calculated),
+            ItemRules.check(calculated),
+            TaxCategoryRules.check(calculated),
+            ServicePeriodRules.check(calculated),
+            PrepaymentRules.check(calculated),
+            FinalInvoiceRules.check(calculated),
+            PaymentTermRules.check(calculated),
+            PlausibilityHints.check(calculated),
+            VatIdCheckRules.check(calculated),
+        ).flatten()
 }
