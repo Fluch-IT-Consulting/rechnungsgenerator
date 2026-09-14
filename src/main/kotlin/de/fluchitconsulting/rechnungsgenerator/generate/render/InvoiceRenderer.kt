@@ -29,11 +29,6 @@ import de.fluchitconsulting.rechnungsgenerator.rules.AcceptedInvoice
 object InvoiceRenderer {
     private const val TEMPLATE_PATH = "/templates/invoice.tex"
 
-    // Ein Platzhalter der Vorlage: <<GROSSGESCHRIEBEN>>.
-    // Die Klammer um den Namen ist eine Gruppe: groupValues[1] liefert den
-    // Schlüssel ohne die spitzen Klammern.
-    private val PLACEHOLDER = Regex("<<([A-Z_]+)>>")
-
     // Eine Makro-Definition der Vorlage: \newcommand{\name}[stelligkeit].
     private val NEWCOMMAND = Regex("""\\newcommand\{\\([a-zA-Z]+)}(?:\[(\d+)])?""")
 

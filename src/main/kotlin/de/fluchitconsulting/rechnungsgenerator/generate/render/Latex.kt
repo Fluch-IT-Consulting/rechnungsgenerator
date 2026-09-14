@@ -114,6 +114,38 @@ fun String.escapeLatex(): Latex =
         },
     )
 
+// Ein Platzhalter: <<GROSSGESCHRIEBEN>>.
+// Die Klammer um den Namen ist eine Gruppe: groupValues[1] liefert den
+// Schlüssel ohne die spitzen Klammern.
+internal val PLACEHOLDER = Regex("<<([A-Z_]+)>>")
+
+/**
+ * Maskiert einen Text mit Platzhaltern `<<NAME>>` und setzt an deren Stelle,
+ * was [resolver] liefert.
+ *
+ * Zerlegt wird **vor** dem Maskieren: Der feste Text geht durch [escapeLatex],
+ * die Werte kommen als fertiges [Latex] und bleiben unberührt. Umgekehrt –
+ * erst einsetzen, dann maskieren – würde ein schon maskierter Wert ein zweites
+ * Mal maskiert, und aus `\&` würde `\textbackslash{}\&`.
+ *
+ * Ersetzt wird in einem Durchgang über den Text, nicht über das Ergebnis: Ein
+ * Wert, der selbst `<<…>>` enthält, ist Inhalt und wird nicht noch einmal
+ * aufgelöst. Kleingeschriebenes wie `<<name>>` ist kein Platzhalter und bleibt
+ * stehen.
+ */
+fun String.escapeLatex(resolver: VariableResolver): Latex {
+    val parts = mutableListOf<Latex>()
+    var textStart = 0
+    PLACEHOLDER.findAll(this).forEach { match ->
+        parts += substring(textStart, match.range.first).escapeLatex()
+        parts += resolver.resolve(match.groupValues[1])
+        // range ist ein geschlossenes Intervall, last also das letzte `>`.
+        textStart = match.range.last + 1
+    }
+    parts += substring(textStart).escapeLatex()
+    return parts.joinToLatex()
+}
+
 /**
  * Fügt Fragmente zusammen. Der Trenner ist Markup und deshalb eine rohe
  * Zeichenkette – in dieser Vorlage sind es Spaltentrenner (` & `) und
