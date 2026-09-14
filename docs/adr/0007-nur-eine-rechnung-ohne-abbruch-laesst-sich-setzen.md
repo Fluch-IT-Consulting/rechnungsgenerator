@@ -40,7 +40,9 @@ das bisher nicht.
   angenommenen Rechnung liefert `AcceptedInvoice.hints`.
 - `prepaymentsOf` übernimmt nur Abschläge angenommener Abschlagsrechnungen.
   Die Liste ist deshalb nur vollständig, wenn kein Abbruch gemeldet ist, und nur
-  dann schreibt `abschlaege` den Block (ADR-0003: alles oder nichts).
+  dann schreibt `abschlaege` den Block (ADR-0003: alles oder nichts). (Seit
+  #118 hält das der Typ: `CollectedPrepayments` ist entweder vollständig oder
+  abgelehnt, und die Liste gibt es nur im ersten Fall.)
 - Das `checkNotNull` im Renderer bleibt vorerst. Seine Voraussetzung ist jetzt
   garantiert, aber der Compiler kennt sie nicht: `vereinnahmt-am` ist im Modell
   weiter optional. Entfallen kann es mit dem Modell je Rechnungsart. (Entfallen

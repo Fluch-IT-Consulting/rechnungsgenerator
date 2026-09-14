@@ -9,10 +9,11 @@ import de.fluchitconsulting.rechnungsgenerator.calculation.InvoiceKind
  *
  * ADR-0004 sagt: "Die Zahlen entstehen, gesetzt werden sie nie: Das Kommando
  * bricht vorher ab." Bis #70 stimmte das nur, weil beide Kommandos daran
- * dachten. `InvoiceRenderer.render` und `prepaymentOf` nahmen jede
- * [CalculatedInvoice] an, auch eine mit Abbrüchen. Jetzt verlangen sie diesen
- * Typ, und den gibt es nur über [check]: Eine Rechnung mit Abbruch ist nicht
- * mehr ungesetzt, sondern nicht setzbar – derselbe Zug wie beim Zahlungsziel.
+ * dachten. `InvoiceRenderer.render` und das Zusammentragen der Abschläge
+ * nahmen jede [CalculatedInvoice] an, auch eine mit Abbrüchen. Jetzt verlangen
+ * sie diesen Typ, und den gibt es nur über [check]: Eine Rechnung mit Abbruch
+ * ist nicht mehr ungesetzt, sondern nicht setzbar – derselbe Zug wie beim
+ * Zahlungsziel.
  *
  * Sie trägt die Rechnungsart als Typ, [kind] (ADR-0008). Wer wissen will, ob
  * und worauf sich ein Storno bezieht oder welche Abschläge abgesetzt werden,
