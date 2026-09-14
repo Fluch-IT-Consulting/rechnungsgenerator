@@ -1,0 +1,256 @@
+package de.fluchitconsulting.rechnungsgenerator
+
+import com.github.ajalt.clikt.core.CliktError
+import com.github.ajalt.clikt.core.context
+import com.github.ajalt.clikt.core.parse
+import de.fluchitconsulting.rechnungsgenerator.toolchain.Typesetter
+import io.kotest.assertions.throwables.shouldThrow
+import io.kotest.core.spec.style.FunSpec
+import io.kotest.matchers.collections.shouldContainInOrder
+import io.kotest.matchers.shouldBe
+import io.kotest.matchers.string.shouldContain
+import java.nio.file.Path
+import java.time.LocalDate
+import kotlin.io.path.createTempDirectory
+import kotlin.io.path.exists
+import kotlin.io.path.readText
+import kotlin.io.path.writeText
+
+/**
+ * Prüft, was zwischen Einlesen und Ergebnis passiert: kopieren, ausgeben,
+ * aufräumen, Exitcode setzen.
+ *
+ * Das war bis hierher die einzige größere Stelle ohne Test, weil jeder Lauf
+ * LuaLaTeX und veraPDF vorausgesetzt hätte. Hinter der Naht steht jetzt ein
+ * Adapter, der ein vorbereitetes PDF und ein vorbereitetes Prüfergebnis
+ * liefert – der Weg davor bleibt echt, nur die beiden fremden Programme sind
+ * ersetzt.
+ *
+ * Aufgerufen wird über das Elternkommando, so wie ein Mensch es tut:
+ * `rechnungsgenerator erzeuge …`. Die Ausgabe lässt sich trotzdem dort
+ * abgreifen, denn ein Unterkommando erbt `echoMessage` von seinem Elternteil.
+ */
+class GenerateCommandTest : FunSpec({
+
+    val eingaben = createTempDirectory("kommando-test")
+    val rechnung = eingaben.resolve("rechnung.yaml").also { it.writeText(quelle("rechnung.yaml")) }
+    val stammdaten = eingaben.resolve("stammdaten.yaml").also { it.writeText(quelle("stammdaten.yaml")) }
+
+    // Dieselben Stammdaten ohne das Muster der Rechnungsnummern. Für die Tests,
+    // in denen die Nummer erst weiter hinten auffallen soll.
+    val ohneMuster =
+        eingaben.resolve("stammdaten-ohne-muster.yaml").also {
+            it.writeText(
+                quelle("stammdaten.yaml")
+                    .lines()
+                    .filterNot { zeile ->
+                        zeile.startsWith("rechnungsnummer-muster")
+                    }.joinToString("\n"),
+            )
+        }
+
+    /** Erzeugt aus der Beispielrechnung eine mit anderer Nummer und lässt sie laufen. */
+    fun laufMitNummer(nummer: String, konfiguration: Path) {
+        val datei =
+            eingaben.resolve("nummer-$nummer.yaml".replace(Regex("[^A-Za-z0-9.-]"), "_")).also {
+                it.writeText(quelle("rechnung.yaml").replace("nummer: R26-042", "nummer: $nummer"))
+            }
+        val command = RechnungsgeneratorCommand(FakeTypesetter())
+        command.context { echoMessage = { _, _, _, _ -> } }
+        command.parse(arrayOf("erzeuge", datei.toString(), "-s", konfiguration.toString()))
+    }
+
+    /** Führt das Kommando aus und sammelt, was es ausgegeben hätte. */
+    fun lauf(typesetter: Typesetter, vararg args: String): List<String> {
+        val ausgabe = mutableListOf<String>()
+        val command = RechnungsgeneratorCommand(typesetter)
+        command.context { echoMessage = { _, message, _, _ -> ausgabe += message.toString() } }
+        command.parse(arrayOf("erzeuge", rechnung.toString(), "-s", stammdaten.toString()) + args)
+        return ausgabe
+    }
+
+    test("das PDF landet am gewünschten Ort, und das Ergebnis steht in der Ausgabe") {
+        val ziel = eingaben.resolve("ergebnis.pdf")
+
+        val ausgabe = lauf(FakeTypesetter(), "-o", ziel.toString())
+
+        ziel.exists() shouldBe true
+        ziel.readText() shouldContain "%PDF"
+        ausgabe shouldContainInOrder listOf(ziel.toString(), "PDF/A-1b: gültig")
+    }
+
+    test("das Arbeitsverzeichnis wird aufgeräumt") {
+        val fake = FakeTypesetter()
+
+        lauf(fake, "-o", eingaben.resolve("weg.pdf").toString())
+
+        // Der Adapter hat sich gemerkt, wo gearbeitet wurde – sonst wüsste der
+        // Test es nicht, denn das Kommando nennt das Verzeichnis nur mit
+        // --arbeitsdateien-behalten.
+        fake.workingDir!!.exists() shouldBe false
+    }
+
+    test("mit --arbeitsdateien-behalten bleibt es stehen und wird genannt") {
+        val fake = FakeTypesetter()
+
+        val ausgabe = lauf(fake, "-o", eingaben.resolve("bleibt.pdf").toString(), "--arbeitsdateien-behalten")
+
+        fake.workingDir!!.exists() shouldBe true
+        ausgabe.last() shouldContain "Arbeitsdateien:"
+    }
+
+    test("ein ungültiges PDF/A endet mit Exitcode 1") {
+        val fehler =
+            shouldThrow<CliktError> {
+                lauf(FakeTypesetter(valid = false), "-o", eingaben.resolve("ungueltig.pdf").toString())
+            }
+
+        fehler.statusCode shouldBe 1
+        fehler.message!! shouldContain "kein gültiges PDF/A-1b"
+    }
+
+    test("auch ein ungültiges PDF/A lässt kein Arbeitsverzeichnis zurück") {
+        val fake = FakeTypesetter(valid = false)
+
+        shouldThrow<CliktError> { lauf(fake, "-o", eingaben.resolve("ungueltig2.pdf").toString()) }
+
+        // Das Aufräumen steht in einem finally – hier wird es geprüft.
+        fake.workingDir!!.exists() shouldBe false
+    }
+
+    test("ein ungültiges PDF/A legt keine Datei an und sagt, wie man es ansieht") {
+        val ziel = eingaben.resolve("nie-da.pdf")
+
+        val fehler = shouldThrow<CliktError> { lauf(FakeTypesetter(valid = false), "-o", ziel.toString()) }
+
+        ziel.exists() shouldBe false
+        fehler.message!! shouldContain "--arbeitsdateien-behalten"
+    }
+
+    test("ein ungültiges PDF/A ersetzt keine vorhandene Datei, auch nicht mit --ueberschreiben") {
+        val ziel = eingaben.resolve("verschickt.pdf").also { it.writeText("das verschickte Original") }
+
+        val fehler =
+            shouldThrow<CliktError> {
+                lauf(FakeTypesetter(valid = false), "-o", ziel.toString(), "--ueberschreiben")
+            }
+
+        ziel.readText() shouldBe "das verschickte Original"
+        // Die Verstöße gehören zum Fehlschlag und stehen deshalb in der
+        // Meldung, also auf stderr – der Kanal folgt dem Exitcode.
+        fehler.message!! shouldContain "6.1.2"
+    }
+
+    test("eine vorhandene Zieldatei bleibt ohne --ueberschreiben unangetastet") {
+        val ziel = eingaben.resolve("vorhanden.pdf").also { it.writeText("das verschickte Original") }
+        val fake = FakeTypesetter()
+
+        val fehler = shouldThrow<CliktError> { lauf(fake, "-o", ziel.toString()) }
+
+        fehler.statusCode shouldBe 1
+        fehler.message!! shouldContain "--ueberschreiben"
+        ziel.readText() shouldBe "das verschickte Original"
+        // Geprüft wird vor dem Satz: Ein LuaLaTeX-Lauf, dessen Ergebnis
+        // nirgends hin darf, wäre vergeudet.
+        fake.workingDir shouldBe null
+    }
+
+    test("mit --ueberschreiben wird eine vorhandene Zieldatei ersetzt") {
+        val ziel = eingaben.resolve("entwurf.pdf").also { it.writeText("der erste Entwurf") }
+
+        lauf(FakeTypesetter(), "-o", ziel.toString(), "--ueberschreiben")
+
+        ziel.readText() shouldContain "%PDF"
+    }
+
+    test("der Jobname kommt aus Rechnungsart und -nummer") {
+        val fake = FakeTypesetter()
+
+        lauf(fake, "-o", eingaben.resolve("jobname.pdf").toString())
+
+        // Ohne -o landete die Datei im Arbeitsverzeichnis des Prozesses, also
+        // im Projektverzeichnis – dafür legt dieser Test keine Datei an.
+        fake.jobName shouldBe "Rechnung-R26-042"
+    }
+
+    test("das PDF trägt das Rechnungsdatum als Erstellungsdatum") {
+        val fake = FakeTypesetter()
+
+        lauf(fake, "-o", eingaben.resolve("datum.pdf").toString())
+
+        fake.creationDate shouldBe LocalDate.of(2026, 8, 14)
+    }
+
+    test("eine Rechnungsnummer, von der kein Dateiname übrig bleibt, wird abgelehnt") {
+        // Die Nummer wird für den Jobnamen von allem befreit, womit LuaLaTeX
+        // nicht umgehen kann. Bleibt nichts übrig, ist das ein Fehler in der
+        // Rechnungsdatei – und wird als solcher gemeldet, nicht als Fehler der
+        // Werkzeuge.
+        //
+        // Geprüft wird hier ohne Muster in den Stammdaten (ADR-0005): Mit einem
+        // hielte schon der Calculator die Nummer an, und diese letzte Schranke
+        // käme nie zum Zug. Sie bleibt trotzdem nötig – ein Muster ist optional.
+        val fehler = shouldThrow<CliktError> { laufMitNummer("\"///\"", ohneMuster) }
+
+        fehler.message!! shouldContain "ergibt keinen Dateinamen"
+    }
+
+    test("mit Muster in den Stammdaten hält schon der Calculator die Nummer an") {
+        // Dieselbe Nummer, dieselbe Rechnung – nur die Stammdaten tragen ein
+        // Muster. Die Meldung nennt dann die Nummer und nicht den Dateinamen.
+        val fehler = shouldThrow<CliktError> { laufMitNummer("\"///\"", stammdaten) }
+
+        fehler.message!! shouldContain "passt nicht zum Muster"
+    }
+
+    test("die Hinweise für die eigene Akte stehen nach dem Ergebnis, nicht davor") {
+        // Eine Rechnung ohne Umsatzsteuer an einen Kunden in Österreich, deren
+        // Bestätigungsabfrage nur einfach war: Der Calculator gibt dazu einen
+        // Hinweis aus – er betrifft die eigene Ablage, nicht den Kunden, und
+        // soll deshalb nicht wie ein Fehler oben stehen.
+        val oesterreich =
+            eingaben.resolve("oesterreich.yaml").also {
+                it.writeText(
+                    quelle("rechnung.yaml")
+                        .replace("ort: Nürnberg", "ort: Wien\n    land: AT")
+                        .replace(
+                            "  referenz: BST-2026-0815",
+                            """
+                            |  umsatzsteuer-id: ATU12345678
+                            |  ust-id-geprueft:
+                            |    am: 2026-08-01
+                            |    verfahren: einfach
+                            |    nachweis: BZSt-Protokoll 4711
+                            """.trimMargin(),
+                        ).replace(
+                            "    einzelpreis: 95.00",
+                            "    einzelpreis: 95.00\n    ust-satz: 0\n    steuerkategorie: AE",
+                        ).replace(
+                            "    einzelpreis: 120.00",
+                            "    einzelpreis: 120.00\n    ust-satz: 0\n    steuerkategorie: AE",
+                        ),
+                )
+            }
+
+        val ausgabe = mutableListOf<String>()
+        val command = RechnungsgeneratorCommand(FakeTypesetter())
+        command.context { echoMessage = { _, message, _, _ -> ausgabe += message.toString() } }
+        command.parse(
+            arrayOf(
+                "erzeuge",
+                oesterreich.toString(),
+                "-s",
+                stammdaten.toString(),
+                "-o",
+                eingaben.resolve("at.pdf").toString(),
+            ),
+        )
+
+        val ergebnis = ausgabe.indexOfFirst { it.contains("PDF/A-1b") }
+        val hinweis = ausgabe.indexOfFirst { it.startsWith("Hinweis:") }
+        (hinweis > ergebnis) shouldBe true
+        ausgabe[hinweis] shouldContain "nicht qualifiziert"
+    }
+})
+
+private fun quelle(name: String) = Path.of("src/test/resources/$name").readText()
