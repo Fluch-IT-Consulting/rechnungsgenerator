@@ -1,4 +1,4 @@
-package de.fluchitconsulting.rechnungsgenerator
+package de.fluchitconsulting.rechnungsgenerator.prepayments
 
 import com.github.ajalt.clikt.core.CliktError
 import com.github.ajalt.clikt.core.Context
@@ -8,7 +8,9 @@ import com.github.ajalt.clikt.parameters.arguments.multiple
 import com.github.ajalt.clikt.parameters.options.default
 import com.github.ajalt.clikt.parameters.options.option
 import com.github.ajalt.clikt.parameters.types.path
-import de.fluchitconsulting.rechnungsgenerator.render.PrepaymentBlock
+import de.fluchitconsulting.rechnungsgenerator.InputFileException
+import de.fluchitconsulting.rechnungsgenerator.Severity
+import de.fluchitconsulting.rechnungsgenerator.YamlLoader
 import java.nio.file.Path
 import kotlin.io.path.name
 

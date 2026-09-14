@@ -1,5 +1,12 @@
-package de.fluchitconsulting.rechnungsgenerator
+package de.fluchitconsulting.rechnungsgenerator.prepayments
 
+import de.fluchitconsulting.rechnungsgenerator.AcceptedInvoice
+import de.fluchitconsulting.rechnungsgenerator.Checked
+import de.fluchitconsulting.rechnungsgenerator.Finding
+import de.fluchitconsulting.rechnungsgenerator.InvoiceCalculator
+import de.fluchitconsulting.rechnungsgenerator.InvoiceKind
+import de.fluchitconsulting.rechnungsgenerator.Rule
+import de.fluchitconsulting.rechnungsgenerator.Subject
 import de.fluchitconsulting.rechnungsgenerator.model.Invoice
 import de.fluchitconsulting.rechnungsgenerator.model.Prepayment
 import de.fluchitconsulting.rechnungsgenerator.model.SellerConfig

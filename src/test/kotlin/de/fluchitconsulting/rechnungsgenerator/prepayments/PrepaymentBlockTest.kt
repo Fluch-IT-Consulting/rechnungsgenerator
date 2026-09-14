@@ -1,4 +1,4 @@
-package de.fluchitconsulting.rechnungsgenerator.render
+package de.fluchitconsulting.rechnungsgenerator.prepayments
 
 import de.fluchitconsulting.rechnungsgenerator.InvoiceCalculator
 import de.fluchitconsulting.rechnungsgenerator.Rule
