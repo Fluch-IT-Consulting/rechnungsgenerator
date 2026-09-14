@@ -32,7 +32,7 @@ fun CalculatedInvoice.messageOf(rule: Rule): String = findings().messageOf(rule)
  * den Kennungen, statt später an einer Stelle, die davon nichts weiß.
  */
 fun CalculatedInvoice.accepted(): AcceptedInvoice =
-    when (val checked = AcceptedInvoice.check(this)) {
-        is Checked.Accepted -> checked.invoice
-        is Checked.Rejected -> error("Die Testrechnung hat Abbrüche: ${checked.aborts.rules()}")
+    when (val verdict = AcceptedInvoice.check(this)) {
+        is Verdict.Accepted -> verdict.invoice
+        is Verdict.Rejected -> error("Die Testrechnung hat Abbrüche: ${verdict.aborts.rules()}")
     }

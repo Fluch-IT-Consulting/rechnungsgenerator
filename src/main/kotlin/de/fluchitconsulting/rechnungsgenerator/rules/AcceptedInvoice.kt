@@ -49,48 +49,53 @@ class AcceptedInvoice private constructor(
          * weiter. Dass jeder davon ein Abbruch ist, verlangt ein Test in
          * `InvoiceKindRulesTest`.
          *
-         * Einen Einstieg, der gleich aus Rechnung und Stammdaten ein [Checked]
+         * Einen Einstieg, der gleich aus Rechnung und Stammdaten ein [Verdict]
          * macht, gibt es bewusst nicht. Aufgerufen wird die Folge aus
          * `InvoiceCalculator.calculate` und [check] nur zweimal, und die
          * Regeltests brauchen `calculate` ohnehin einzeln: Sie rechnen gerade
          * Rechnungen mit Abbruch und lesen deren Befunde (ADR-0004).
          */
-        fun check(calculated: CalculatedInvoice): Checked {
+        fun check(calculated: CalculatedInvoice): Verdict {
             val built = InvoiceKindRules.build(calculated)
             val findings = InvoiceRules.check(calculated, built)
             val hasAbort = findings.any { it.severity == Severity.ABORT }
             return when (built) {
                 is InvoiceKindRules.Result.Built ->
                     if (hasAbort) {
-                        Checked.Rejected(findings)
+                        Verdict.Rejected(findings)
                     } else {
-                        Checked.Accepted(AcceptedInvoice(calculated, built.kind, findings))
+                        Verdict.Accepted(AcceptedInvoice(calculated, built.kind, findings))
                     }
-                is InvoiceKindRules.Result.NotBuilt -> Checked.Rejected(findings)
+                is InvoiceKindRules.Result.NotBuilt -> Verdict.Rejected(findings)
             }
         }
     }
 }
 
 /**
- * Das Ergebnis von [AcceptedInvoice.check]: angenommen oder abgelehnt.
+ * Das Urteil der Prüfung ([AcceptedInvoice.check]): angenommen oder abgelehnt,
+ * wie im Glossar.
+ *
+ * Bis #125 hieß der Typ nach dem Vorgang statt nach dem Ergebnis. Der Name
+ * sagte nur, dass geprüft wurde – nicht was, und nicht, was herauskam; die
+ * Bedeutung trugen allein die beiden Fälle.
  *
  * `sealed`: Es gibt genau diese beiden Fälle, und der Compiler weiß das. Ein
  * `when` darüber braucht deshalb keinen `else`-Zweig – und kommt ein dritter
  * Fall dazu, wird jedes `when` ohne ihn zum Übersetzungsfehler.
  */
-sealed interface Checked {
+sealed interface Verdict {
     /** Alle Befunde der Prüfung, in der Reihenfolge der Regelgruppen (#49). */
     val findings: List<Finding>
 
-    data class Accepted(val invoice: AcceptedInvoice) : Checked {
+    data class Accepted(val invoice: AcceptedInvoice) : Verdict {
         // Einer angenommenen Rechnung bleiben nur Hinweise. Gehalten werden sie
         // einmal, in der Rechnung selbst.
         override val findings: List<Finding> get() = invoice.hints
     }
 
     /** Alle Befunde, auch die Hinweise. Was abbricht, steht in [aborts]. */
-    data class Rejected(override val findings: List<Finding>) : Checked {
+    data class Rejected(override val findings: List<Finding>) : Verdict {
         val aborts: List<Finding> get() = findings.filter { it.severity == Severity.ABORT }
     }
 }

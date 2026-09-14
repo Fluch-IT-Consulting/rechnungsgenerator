@@ -21,7 +21,7 @@ class AcceptedInvoiceTest : FunSpec({
         // Menge 0 ist zulässig, aber ein Hinweis (MENGE_NULL).
         val calculated = InvoiceCalculator.calculate(testInvoice(items = listOf(testItem(quantity = "0"))), config)
 
-        val accepted = AcceptedInvoice.check(calculated).shouldBeInstanceOf<Checked.Accepted>().invoice
+        val accepted = AcceptedInvoice.check(calculated).shouldBeInstanceOf<Verdict.Accepted>().invoice
 
         accepted.calculated shouldBe calculated
         accepted.hints.rules() shouldBe listOf(Rule.MENGE_NULL)
@@ -34,7 +34,7 @@ class AcceptedInvoiceTest : FunSpec({
                 paymentTermDaysOverride = -5,
             )
 
-        val rejected = AcceptedInvoice.check(InvoiceCalculator.calculate(invoice, config)).shouldBeInstanceOf<Checked.Rejected>()
+        val rejected = AcceptedInvoice.check(InvoiceCalculator.calculate(invoice, config)).shouldBeInstanceOf<Verdict.Rejected>()
 
         rejected.aborts.rules() shouldBe listOf(Rule.EINZELPREIS_NEGATIV, Rule.ZAHLUNGSZIEL_NEGATIV)
         // Die Regeltests lesen ihre Befunde auch von abgelehnten Rechnungen (#105).
