@@ -1,9 +1,11 @@
-package de.fluchitconsulting.rechnungsgenerator
+package de.fluchitconsulting.rechnungsgenerator.generate
 
 import com.github.ajalt.clikt.core.CliktError
 import com.github.ajalt.clikt.core.context
 import com.github.ajalt.clikt.core.parse
-import de.fluchitconsulting.rechnungsgenerator.toolchain.Typesetter
+import de.fluchitconsulting.rechnungsgenerator.RechnungsgeneratorCommand
+import de.fluchitconsulting.rechnungsgenerator.generate.toolchain.FakeTypesetter
+import de.fluchitconsulting.rechnungsgenerator.generate.toolchain.Typesetter
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.collections.shouldContainInOrder

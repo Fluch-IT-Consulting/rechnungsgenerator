@@ -1,4 +1,4 @@
-package de.fluchitconsulting.rechnungsgenerator.toolchain
+package de.fluchitconsulting.rechnungsgenerator.generate.toolchain
 
 import java.nio.file.Path
 import java.time.LocalDate

@@ -1,12 +1,13 @@
-package de.fluchitconsulting.rechnungsgenerator
+package de.fluchitconsulting.rechnungsgenerator.generate.toolchain
 
 import com.github.ajalt.clikt.core.context
 import com.github.ajalt.clikt.core.parse
-import de.fluchitconsulting.rechnungsgenerator.toolchain.ExternalTool
-import de.fluchitconsulting.rechnungsgenerator.toolchain.LatexCompiler
-import de.fluchitconsulting.rechnungsgenerator.toolchain.LuaLatexTypesetter
-import de.fluchitconsulting.rechnungsgenerator.toolchain.PdfAValidator
-import de.fluchitconsulting.rechnungsgenerator.toolchain.ToolchainException
+import de.fluchitconsulting.rechnungsgenerator.RechnungsgeneratorCommand
+import de.fluchitconsulting.rechnungsgenerator.generate.toolchain.ExternalTool
+import de.fluchitconsulting.rechnungsgenerator.generate.toolchain.LatexCompiler
+import de.fluchitconsulting.rechnungsgenerator.generate.toolchain.LuaLatexTypesetter
+import de.fluchitconsulting.rechnungsgenerator.generate.toolchain.PdfAValidator
+import de.fluchitconsulting.rechnungsgenerator.generate.toolchain.ToolchainException
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.assertions.withClue
 import io.kotest.core.spec.style.FunSpec

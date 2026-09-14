@@ -1,4 +1,4 @@
-package de.fluchitconsulting.rechnungsgenerator.render
+package de.fluchitconsulting.rechnungsgenerator.generate.render
 
 import io.kotest.assertions.assertSoftly
 import io.kotest.core.spec.style.FunSpec
