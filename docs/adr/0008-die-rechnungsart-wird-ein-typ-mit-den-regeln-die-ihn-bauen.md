@@ -34,7 +34,9 @@ Mit #64 käme eine weitere Rechnungsart mit eigenen Feldern, mit ZUGFeRD eine
 zweite Ausgabe, die dieselben Unterscheidungen noch einmal träfe. Beide
 bekommen jetzt einen Ort, den der Compiler einfordert: Ein neuer Eintrag in
 `InvoiceType` macht das `when` in `InvoiceKindRules` unvollständig, eine neue
-Variante von `InvoiceKind` jedes `when` darüber.
+Variante von `InvoiceKind` jedes `when` darüber. (Hielt bis #128 nicht: Der
+Renderer fragte mit `is` und `!is`, und eine neue Variante wäre dort still
+durchgegangen. Ausgenommen bleibt `prepaymentOf`, wo genau eine Art richtig ist.)
 
 **Regel und Bau an einer Stelle.** Stünden die sechs Regeln weiter in ihren
 Gruppen und der Bau des Typs daneben, stünde das Wissen über die Rechnungsart
