@@ -56,7 +56,8 @@ Repo stand das Wort an acht Stellen in der falschen Bedeutung.
   Werte stünde im Renderer, der Wortlaut im Enum. Dagegen ist der Bezug in
   EN 16931 ohnehin **Struktur** (BT-25, BT-26) und keine Prosa: Wer ihn später
   fürs XML aus einem Satz herausklauben muss, rät. Er steht deshalb als eigene
-  Zeile im Kopf, und der Pflichtsatz bleibt konstant.
+  Zeile im Kopf, und der Pflichtsatz bleibt konstant. (Aufgehoben samt der
+  Zeile im Kopf, siehe ADR-0010.)
 
   Der Unterschied zu ADR-0005, wo eine Platzhaltersprache aus demselben Grund
   scheiterte, ist trotzdem einer: Dort kommt der Text von außen, aus den
