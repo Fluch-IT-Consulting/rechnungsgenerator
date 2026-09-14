@@ -1,17 +1,17 @@
 package de.fluchitconsulting.rechnungsgenerator.generate.render
 
-import de.fluchitconsulting.rechnungsgenerator.InvoiceCalculator
-import de.fluchitconsulting.rechnungsgenerator.YamlLoader
-import de.fluchitconsulting.rechnungsgenerator.accepted
+import de.fluchitconsulting.rechnungsgenerator.calculation.InvoiceCalculator
 import de.fluchitconsulting.rechnungsgenerator.model.Invoice
 import de.fluchitconsulting.rechnungsgenerator.model.LineItem
 import de.fluchitconsulting.rechnungsgenerator.model.Prepayment
 import de.fluchitconsulting.rechnungsgenerator.model.SellerConfig
 import de.fluchitconsulting.rechnungsgenerator.model.ServicePeriod
-import de.fluchitconsulting.rechnungsgenerator.testInvoice
-import de.fluchitconsulting.rechnungsgenerator.testItem
-import de.fluchitconsulting.rechnungsgenerator.testPrepayment
-import de.fluchitconsulting.rechnungsgenerator.testSellerConfig
+import de.fluchitconsulting.rechnungsgenerator.model.YamlLoader
+import de.fluchitconsulting.rechnungsgenerator.model.testInvoice
+import de.fluchitconsulting.rechnungsgenerator.model.testItem
+import de.fluchitconsulting.rechnungsgenerator.model.testPrepayment
+import de.fluchitconsulting.rechnungsgenerator.model.testSellerConfig
+import de.fluchitconsulting.rechnungsgenerator.rules.accepted
 import de.fluchitconsulting.rechnungsgenerator.values.CountryCode
 import de.fluchitconsulting.rechnungsgenerator.values.InvoiceType
 import de.fluchitconsulting.rechnungsgenerator.values.TaxCategory

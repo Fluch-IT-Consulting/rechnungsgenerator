@@ -1,7 +1,6 @@
 package de.fluchitconsulting.rechnungsgenerator.rules
 
-import de.fluchitconsulting.rechnungsgenerator.CalculatedInvoice
-import de.fluchitconsulting.rechnungsgenerator.Finding
+import de.fluchitconsulting.rechnungsgenerator.calculation.CalculatedInvoice
 
 /**
  * Alle Regelgruppen einer Rechnung – in der Reihenfolge, in der ihre Befunde

@@ -1,5 +1,10 @@
-package de.fluchitconsulting.rechnungsgenerator
+package de.fluchitconsulting.rechnungsgenerator.calculation
 
+import de.fluchitconsulting.rechnungsgenerator.model.testCancelled
+import de.fluchitconsulting.rechnungsgenerator.model.testInvoice
+import de.fluchitconsulting.rechnungsgenerator.model.testItem
+import de.fluchitconsulting.rechnungsgenerator.model.testPrepayment
+import de.fluchitconsulting.rechnungsgenerator.model.testSellerConfig
 import de.fluchitconsulting.rechnungsgenerator.values.InvoiceType
 import de.fluchitconsulting.rechnungsgenerator.values.Money
 import io.kotest.core.spec.style.FunSpec

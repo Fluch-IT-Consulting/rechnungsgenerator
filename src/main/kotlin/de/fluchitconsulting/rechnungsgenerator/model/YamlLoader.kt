@@ -1,8 +1,6 @@
-package de.fluchitconsulting.rechnungsgenerator
+package de.fluchitconsulting.rechnungsgenerator.model
 
 import com.charleskorn.kaml.Yaml
-import de.fluchitconsulting.rechnungsgenerator.model.Invoice
-import de.fluchitconsulting.rechnungsgenerator.model.SellerConfig
 import kotlinx.serialization.SerializationException
 import java.io.IOException
 import java.nio.file.Path

@@ -1,5 +1,9 @@
-package de.fluchitconsulting.rechnungsgenerator
+package de.fluchitconsulting.rechnungsgenerator.rules
 
+import de.fluchitconsulting.rechnungsgenerator.calculation.InvoiceCalculator
+import de.fluchitconsulting.rechnungsgenerator.model.testInvoice
+import de.fluchitconsulting.rechnungsgenerator.model.testItem
+import de.fluchitconsulting.rechnungsgenerator.model.testSellerConfig
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.types.shouldBeInstanceOf

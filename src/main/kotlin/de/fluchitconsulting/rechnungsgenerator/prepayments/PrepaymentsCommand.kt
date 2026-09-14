@@ -8,9 +8,9 @@ import com.github.ajalt.clikt.parameters.arguments.multiple
 import com.github.ajalt.clikt.parameters.options.default
 import com.github.ajalt.clikt.parameters.options.option
 import com.github.ajalt.clikt.parameters.types.path
-import de.fluchitconsulting.rechnungsgenerator.InputFileException
-import de.fluchitconsulting.rechnungsgenerator.Severity
-import de.fluchitconsulting.rechnungsgenerator.YamlLoader
+import de.fluchitconsulting.rechnungsgenerator.model.InputFileException
+import de.fluchitconsulting.rechnungsgenerator.model.YamlLoader
+import de.fluchitconsulting.rechnungsgenerator.rules.Severity
 import java.nio.file.Path
 import kotlin.io.path.name
 
