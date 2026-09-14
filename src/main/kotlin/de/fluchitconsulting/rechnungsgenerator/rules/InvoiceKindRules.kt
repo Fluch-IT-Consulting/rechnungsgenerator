@@ -27,8 +27,8 @@ import de.fluchitconsulting.rechnungsgenerator.values.InvoiceType
  *
  * Diese Zuordnung trifft jede Gruppe selbst, als `when` über alle Arten ohne
  * `else`, ebenso das Vorzeichen in `CancellationRules` (#121). Eine neue Art
- * (#64) übersetzt dort erst, wenn entschieden ist, ob die Gruppe auf ihr
- * spricht – mit `if (type != X)` fiele sie still heraus. Nicht zentral in
+ * übersetzt dort erst, wenn entschieden ist, ob die Gruppe auf ihr spricht –
+ * mit `if (type != X)` fiele sie still heraus. Nicht zentral in
  * `InvoiceRules.check`: Dann müsste der Aufrufer wissen, auf welcher Art eine
  * Gruppe aufgerufen werden darf, und den gebauten Typ hineinzureichen verbietet
  * das oben Gesagte.
@@ -57,7 +57,7 @@ internal object InvoiceKindRules {
         val invoice = calculated.invoice
         val fremd = foreignFields(invoice)
 
-        // `when` über ein Enum ohne `else`: Kommt eine Rechnungsart dazu (#64),
+        // `when` über ein Enum ohne `else`: Kommt eine Rechnungsart dazu,
         // übersetzt diese Stelle nicht mehr, bis sie ihren Typ bekommt.
         val eigen =
             when (invoice.type) {

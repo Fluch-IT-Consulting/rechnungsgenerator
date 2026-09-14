@@ -167,7 +167,7 @@ CV/Web-Auftritt des Autors), Validierung über veraPDF.
 
   Diese Eigenschaft, `chargesForService` und `mandatoryNote` haben **keine**
   Vorgabewerte: Jeder Eintrag nennt sie ausdrücklich, damit eine neue Art
-  (#64) nicht still die Antworten der gewöhnlichen Rechnung erbt – samt
+  nicht still die Antworten der gewöhnlichen Rechnung erbt – samt
   Zahlungsziel und Bankverbindung. Das hält die Zusage aus ADR-0008 an der
   Stelle, an der die Art entsteht. Das flache Modell hinter
   `AcceptedInvoice.calculated` bleibt dafür bewusst lesbar (ADR-0009).
@@ -195,15 +195,18 @@ CV/Web-Auftritt des Autors), Validierung über veraPDF.
   ein Storno kein Geld fordert; dafür wurde der Bankblock zum Makro der Vorlage,
   sonst bliebe die Überschrift ohne Konto stehen. Das Wort **Gutschrift** fällt
   nicht: Umsatzsteuerlich ist das eine Rechnung des Leistungsempfängers. Nur
-  ganz, nicht teilweise – die Rechnungskorrektur ist ein eigenes Modell, weil
-  bei ihr das Vorzeichen kippen kann (#64). Über die eigene Datei hinaus wirkt
-  ein Storno nur dort, wo jemand das Ablageverzeichnis liest, also im Skript
-  `offene-abschlaege.py` (#66): Eine stornierte Abschlagsrechnung ist nicht
-  offen, und die Abschläge einer stornierten Schlussrechnung sind es wieder.
-  Beide Richtungen kosten Geld – die eine setzt Zurückgezahltes ab, die andere
-  lässt zweimal zahlen –, deshalb bleibt keine still: Jede vermerkt das Skript
-  auf stderr, auch den Fall, der weder offen noch in Ordnung ist (ein
-  stornierter Abschlag, den eine gültige Schlussrechnung absetzt).
+  ganz, nicht teilweise. Eine Teilberichtigung kennt das Projekt nicht: Falsche
+  Angaben, falsche Beträge und zu viel ausgewiesene Steuer laufen über Storno
+  und neue Rechnung. Offen wäre allein die nachträgliche Entgeltminderung
+  (§17 UStG), ein eigener Vorgang. Erwogen und mangels Anlass geschlossen in
+  #64. Über die eigene Datei hinaus wirkt ein Storno nur dort, wo jemand das
+  Ablageverzeichnis liest, also im Skript `offene-abschlaege.py` (#66): Eine
+  stornierte Abschlagsrechnung ist nicht offen, und die Abschläge einer
+  stornierten Schlussrechnung sind es wieder. Beide Richtungen kosten Geld –
+  die eine setzt Zurückgezahltes ab, die andere lässt zweimal zahlen –, deshalb
+  bleibt keine still: Jede vermerkt das Skript auf stderr, auch den Fall, der
+  weder offen noch in Ordnung ist (ein stornierter Abschlag, den eine gültige
+  Schlussrechnung absetzt).
 - **Absetzung**: Die Schlussrechnung trägt die vereinnahmten Abschläge unter
   `abschlaege` ausgeschrieben, mit `steueranteile` je Kombination aus Kategorie
   und Satz. Nachgeschlagen wird nichts (ADR-0001): Zwischen Abschlag und
@@ -271,7 +274,7 @@ CV/Web-Auftritt des Autors), Validierung über veraPDF.
   er nicht baubar ist (ADR-0008).
   Die Regelgruppe einer Rechnungsart (`PrepaymentRules`, der Bezug in
   `CancellationRules`, `FinalInvoiceRules`) prüft nur auf dieser Art – als
-  `when` über alle Arten ohne `else`, damit eine neue Art (#64) dort
+  `when` über alle Arten ohne `else`, damit eine neue Art dort
   entscheiden muss (#121). Steht
   ihr Feld auf einer anderen, bleibt allein der Befund aus `InvoiceKindRules` –
   sonst stünden Sätze über "diese Schlussrechnung" unter einer gewöhnlichen

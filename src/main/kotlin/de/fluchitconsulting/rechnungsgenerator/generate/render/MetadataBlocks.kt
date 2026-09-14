@@ -87,8 +87,8 @@ internal object MetadataBlocks {
             //
             // `when` mit Subjekt macht `kind` in jedem Zweig zu dessen Variante
             // ("smart cast") – in der Cancellation ist der Bezug nicht optional.
-            // Ohne `else`: Kommt eine Variante dazu (#64), übersetzt diese Stelle
-            // erst, wenn entschieden ist, ob sie einen Bezug nennt (#128).
+            // Ohne `else`: Kommt eine Variante dazu, übersetzt diese Stelle erst,
+            // wenn entschieden ist, ob sie einen Bezug nennt (#128).
             when (kind) {
                 is InvoiceKind.Cancellation ->
                     add("Ursprungsrechnung: ".escapeLatex() + precedingInvoiceReference(kind.cancelled))
@@ -122,10 +122,8 @@ internal object MetadataBlocks {
      * Der Bezug auf eine vorausgegangene Rechnung: Nummer und Datum, als ein
      * Stück (\zusammen – die Angabe soll nicht mitten im Datum umbrechen).
      *
-     * Heute ruft ihn nur das Storno auf. Die Rechnungsberichtigung (#64) trägt
-     * denselben Bezug – Code 384 und BG-3 stehen dort schon fest –, ruft dann
-     * also dieselbe Funktion, statt die Zeile zu kopieren. Die Beschriftung
-     * bleibt beim Aufrufer: Sie gehört zur Rechnungsart, nicht zum Bezug.
+     * Die Beschriftung bleibt beim Aufrufer: Sie gehört zur Rechnungsart, nicht
+     * zum Bezug.
      */
     private fun precedingInvoiceReference(cancelled: CancelledInvoice): Latex =
         Latex.macro(
