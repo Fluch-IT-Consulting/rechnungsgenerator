@@ -193,7 +193,11 @@ CV/Web-Auftritt des Autors), Validierung über veraPDF.
   Vorzeichen des Gesamtbetrags gehört seither zur Rechnungsart: im Storno
   Pflicht, überall sonst verboten. Fälligkeit und Bankverbindung entfallen, weil
   ein Storno kein Geld fordert; dafür wurde der Bankblock zum Makro der Vorlage,
-  sonst bliebe die Überschrift ohne Konto stehen. Das Wort **Gutschrift** fällt
+  sonst bliebe die Überschrift ohne Konto stehen. Die Ursprungsrechnung nennt
+  der Pflichtsatz mit Nummer und Datum, über die Platzhalter
+  `<<URSPRUNGSNUMMER>>` und `<<URSPRUNGSDATUM>>`, die `InvoiceVariableResolver`
+  beim Setzen auflöst; eine eigene Zeile im Kopf gibt es nicht mehr (ADR-0010).
+  Im Modell bleibt der Bezug Struktur. Das Wort **Gutschrift** fällt
   nicht: Umsatzsteuerlich ist das eine Rechnung des Leistungsempfängers. Nur
   ganz, nicht teilweise. Eine Teilberichtigung kennt das Projekt nicht: Falsche
   Angaben, falsche Beträge und zu viel ausgewiesene Steuer laufen über Storno
@@ -280,10 +284,13 @@ CV/Web-Auftritt des Autors), Validierung über veraPDF.
   sonst stünden Sätze über "diese Schlussrechnung" unter einer gewöhnlichen
   Rechnung (#97). Der Preis: Wer nur `art` falsch gesetzt hat, sieht Fehler
   in den Angaben der gemeinten Art erst im zweiten Lauf.
-  Ebenso fragt der Renderer die `InvoiceKind`: Bezug, Vereinnahmung und
-  Absetzung je in einem `when` ohne `else`, drei Stellen für drei
-  Entscheidungen (#128). Nur `prepaymentOf` behält sein `else` – dort ist genau
-  eine Art richtig.
+  Ebenso fragt der Renderer die `InvoiceKind`: Vereinnahmung und Absetzung je
+  in einem `when` ohne `else`, zwei Stellen für zwei Entscheidungen (#128).
+  Nur `prepaymentOf` behält sein `else` – dort ist genau eine Art richtig.
+  Den Bezug fragt seit ADR-0010 `InvoiceVariableResolver` mit `as?`, und das
+  wirkt wie ein `else`: Eine neue Art mit eigenem Bezug wird dort nicht zur
+  Entscheidung gezwungen. Ein Pflichtsatz, der eine Variable auf der falschen
+  Art nennt, bricht aber beim Setzen ab, also in der Vergleichsdatei.
   Die Kennungen sind deutsch benannt wie die Regeln und **nicht** nummeriert:
   Die Nummern standen nur in Kommentaren und Testnamen und liefen dort
   auseinander. Tests prüfen die Kennung statt des Wortlauts und brauchen dafür
