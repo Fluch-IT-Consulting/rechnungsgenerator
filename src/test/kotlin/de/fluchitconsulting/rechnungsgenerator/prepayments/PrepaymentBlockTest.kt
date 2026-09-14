@@ -32,9 +32,9 @@ private fun finalInvoiceWith(block: String): String =
  */
 class PrepaymentBlockTest : FunSpec({
 
-    val vereinnahmt = PrepaymentBlock.Entry("Rechnung_R26-009-beispiel.yaml", testPrepayment())
+    val vereinnahmt = CollectedPrepayment("Rechnung_R26-009-beispiel.yaml", testPrepayment())
     val nichtVereinnahmt =
-        PrepaymentBlock.Entry(
+        CollectedPrepayment(
             "Rechnung_R26-011-beispiel.yaml",
             testPrepayment(invoiceNumber = "R26-011", issueDate = LocalDate.of(2026, 8, 20), receivedOn = null),
         )
@@ -79,7 +79,7 @@ class PrepaymentBlockTest : FunSpec({
         // Ein gemischter Abschlag mit zwei Steueranteilen, damit auch die Liste
         // unter steueranteile mehr als einen Eintrag trägt.
         val mixed =
-            PrepaymentBlock.Entry(
+            CollectedPrepayment(
                 "gemischt.yaml",
                 testPrepayment(
                     invoiceNumber = "R26-012",
@@ -118,7 +118,7 @@ class PrepaymentBlockTest : FunSpec({
         // " #" ein Kommentar, und YAML liest still "R26" – der Abschlag stünde
         // mit falscher Nummer in der Schlussrechnung, und keine Regel merkte es.
         listOf("R26 #9", "R26: 9", "-R26", "R26 \"neu\"", "R26\\9").forEach { number ->
-            val entry = PrepaymentBlock.Entry("x.yaml", testPrepayment(invoiceNumber = number))
+            val entry = CollectedPrepayment("x.yaml", testPrepayment(invoiceNumber = number))
 
             val parsed = YamlLoader.parseInvoice(finalInvoiceWith(PrepaymentBlock.render(listOf(entry))))
 

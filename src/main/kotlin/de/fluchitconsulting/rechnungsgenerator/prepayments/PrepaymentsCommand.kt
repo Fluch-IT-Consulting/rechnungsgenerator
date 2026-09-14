@@ -10,7 +10,6 @@ import com.github.ajalt.clikt.parameters.options.option
 import com.github.ajalt.clikt.parameters.types.path
 import de.fluchitconsulting.rechnungsgenerator.model.InputFileException
 import de.fluchitconsulting.rechnungsgenerator.model.YamlLoader
-import de.fluchitconsulting.rechnungsgenerator.rules.Severity
 import java.nio.file.Path
 import kotlin.io.path.name
 
@@ -40,21 +39,23 @@ class PrepaymentsCommand : CoreCliktCommand(name = "abschlaege") {
             val config = YamlLoader.loadSellerConfig(configFile)
             // Einzeln geladen, weil jede Datei ihre eigene Meldung verdient:
             // kaml sagt nur, welcher Schlüssel falsch ist, nicht wo. Den
-            // Dateinamen setzt das Lesen selbst davor (#52).
-            val abschlagsrechnungen = invoiceFiles.map { YamlLoader.loadInvoice(it) }
-            val (abschlaege, findings) = prepaymentsOf(abschlagsrechnungen, config)
-            // Alles oder nichts (ADR-0003), und dann alle Gründe auf einmal: Wer
-            // fünf Dateien übergibt, soll nicht fünfmal starten müssen.
-            val abbrueche = findings.filter { it.severity == Severity.ABORT }
-            if (abbrueche.isNotEmpty()) throw CliktError(abbrueche.joinToString("\n") { it.describe() })
-            // zip legt zwei Listen paarweise nebeneinander: die n-te Datei zum
-            // n-ten Abschlag. Die Reihenfolge ist dieselbe, prepaymentsOf behält sie.
-            val entries = invoiceFiles.zip(abschlaege) { file, abschlag -> PrepaymentBlock.Entry(file.name, abschlag) }
+            // Dateinamen setzt das Lesen selbst davor (#52). Der Name reist
+            // von hier an mit der Rechnung: Er soll am Ende über ihrem
+            // Abschlag stehen, aber nie der Pfad – der wechselt, sobald die
+            // Datei in einen Jahresordner wandert.
+            val abschlagsrechnungen = invoiceFiles.map { NamedInvoice(it.name, YamlLoader.loadInvoice(it)) }
 
-            // Erst ganz am Ende und in einem Stück: Bis hierher kann jede Datei
-            // noch scheitern, und dann soll auf stdout gar nichts stehen. Ein
-            // halber Block fiele keiner Regel der Schlussrechnung auf.
-            echo(PrepaymentBlock.render(entries))
+            // Alles oder nichts (ADR-0003), und dann alle Gründe auf einmal: Wer
+            // fünf Dateien übergibt, soll nicht fünfmal starten müssen. Ob es
+            // alles ist, sagt der Typ (#118): Einträge gibt es nur, wenn kein
+            // Befund entstand. Und erst ganz am Ende und in einem Stück auf
+            // stdout – bis hierher kann jede Datei noch scheitern, und dann soll
+            // dort gar nichts stehen. Ein halber Block fiele keiner Regel der
+            // Schlussrechnung auf.
+            when (val collected = prepaymentsOf(abschlagsrechnungen, config)) {
+                is CollectedPrepayments.Complete -> echo(PrepaymentBlock.render(collected.entries))
+                is CollectedPrepayments.Rejected -> throw CliktError(collected.aborts.joinToString("\n") { it.describe() })
+            }
         } catch (e: InputFileException) {
             throw CliktError(e.message)
         }

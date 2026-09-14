@@ -9,9 +9,9 @@ import io.kotest.matchers.shouldBe
 import io.kotest.matchers.types.shouldBeInstanceOf
 
 /**
- * Die Prüfung, hinter der gesetzt wird (ADR-0007). Dass Renderer und
- * `prepaymentOf` nur eine [AcceptedInvoice] annehmen, prüft der Compiler; hier
- * steht, wann es eine gibt.
+ * Die Prüfung, hinter der gesetzt wird (ADR-0007). Dass Renderer und das
+ * Zusammentragen der Abschläge nur eine [AcceptedInvoice] annehmen, prüft der
+ * Compiler; hier steht, wann es eine gibt.
  */
 class AcceptedInvoiceTest : FunSpec({
 

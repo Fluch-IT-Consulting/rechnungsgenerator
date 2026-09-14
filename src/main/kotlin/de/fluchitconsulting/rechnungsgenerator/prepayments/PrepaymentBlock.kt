@@ -1,6 +1,5 @@
 package de.fluchitconsulting.rechnungsgenerator.prepayments
 
-import de.fluchitconsulting.rechnungsgenerator.model.Prepayment
 import de.fluchitconsulting.rechnungsgenerator.model.TaxShare
 
 /**
@@ -18,9 +17,6 @@ import de.fluchitconsulting.rechnungsgenerator.model.TaxShare
  * Erzeugen gegenprüfen.
  */
 object PrepaymentBlock {
-    /** Ein Abschlag und der Name der Datei, aus der er stammt. */
-    data class Entry(val fileName: String, val prepayment: Prepayment)
-
     private val header =
         """
         # Abschläge für die Schlussrechnung, vorbereitet von `rechnungsgenerator abschlaege`.
@@ -34,14 +30,16 @@ object PrepaymentBlock {
         """.trimIndent()
 
     /** Ohne abschließenden Zeilenumbruch – den setzt, wer den Block ausgibt. */
-    fun render(entries: List<Entry>): String = (listOf(header, "abschlaege:") + entries.flatMap(::entryLines)).joinToString("\n")
+    fun render(
+        entries: List<CollectedPrepayment>,
+    ): String = (listOf(header, "abschlaege:") + entries.flatMap(::entryLines)).joinToString("\n")
 
     // flatMap: Jeder Abschlag liefert mehrere Zeilen, und flatMap hängt diese
     // Listen aneinander, statt eine Liste von Listen zu bauen.
-    private fun entryLines(entry: Entry): List<String> {
+    private fun entryLines(entry: CollectedPrepayment): List<String> {
         val abschlag = entry.prepayment
         return listOf(
-            "  # ${entry.fileName}",
+            "  # ${entry.name}",
             "  - rechnungsnummer: ${yamlScalar(abschlag.invoiceNumber)}",
             "    rechnungsdatum: ${abschlag.issueDate}",
             // Leer statt weggelassen: So steht die Lücke dort, wo sie zu füllen

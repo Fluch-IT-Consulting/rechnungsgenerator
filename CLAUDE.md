@@ -207,7 +207,13 @@ CV/Web-Auftritt des Autors), Validierung über veraPDF.
   dasselbe PDF. Das Abtippen übernimmt `rechnungsgenerator abschlaege`
   (ADR-0003): Es rechnet die Abschlagsrechnungen mit demselben Calculator wie
   beim PDF und gibt den Block auf stdout aus – alles oder nichts, ohne Datum
-  und Pfad, ein fehlendes `vereinnahmt-am` als leeres Feld. Eingefügt wird von
+  und Pfad, ein fehlendes `vereinnahmt-am` als leeres Feld. Das "alles oder
+  nichts" hält der Typ: `prepaymentsOf` liefert ein versiegeltes
+  `CollectedPrepayments`, vollständig oder abgelehnt, und die Einträge tragen
+  den Namen ihrer Datei selbst (#118). Vorher war es eine Liste neben den
+  Befunden, "nur vollständig, wenn kein Abbruch" laut Kommentar, und das
+  Kommando filterte und paarte per `zip` – dieselbe Sorte Disziplin, die
+  ADR-0007 beim Renderer abgeschafft hat. Eingefügt wird von
   Hand, und danach kann der Block geändert oder ganz von Hand geschrieben sein.
   Deshalb bleiben die Abbruchregeln im `InvoiceCalculator` – darunter die
   Prüfsumme `netto × satz = ust` und die Forderung, dass Kategorie und Satz in
@@ -250,11 +256,12 @@ CV/Web-Auftritt des Autors), Validierung über veraPDF.
   auf ihr hatte die Prüfung keinen Besitzer – die Rechnungsart wurde dort
   gemerkt, und dass eine Ablehnung ihre Gründe nannte, hing an einem Eintrag in
   der Liste der Regelgruppen (#105). Setzen lässt sich nur eine
-  `AcceptedInvoice`, und die gibt es nur ohne Abbruch: Renderer und
-  `prepaymentOf` verlangen sie, damit hält der Compiler die Zusage aus ADR-0004
-  und nicht mehr die Disziplin der Kommandos (ADR-0007, #70). Sie trägt die
-  Rechnungsart als Typ (`InvoiceKind`): Nach Bezug, Vereinnahmung und
-  Abschlägen fragen Renderer und `prepaymentOf` dort, nicht im flachen Modell.
+  `AcceptedInvoice`, und die gibt es nur ohne Abbruch: Renderer und das
+  Zusammentragen der Abschläge (`prepaymentsOf`) verlangen sie, damit hält der
+  Compiler die Zusage aus ADR-0004 und nicht mehr die Disziplin der Kommandos
+  (ADR-0007, #70). Sie trägt die Rechnungsart als Typ (`InvoiceKind`): Nach
+  Bezug, Vereinnahmung und Abschlägen fragen Renderer und `prepaymentsOf`
+  dort, nicht im flachen Modell.
   Gebaut wird er in `InvoiceKindRules`, zusammen mit den sechs Regeln, ohne die
   er nicht baubar ist (ADR-0008).
   Die Regelgruppe einer Rechnungsart (`PrepaymentRules`, der Bezug in
