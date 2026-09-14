@@ -5,6 +5,7 @@ import com.github.ajalt.clikt.core.parse
 import de.fluchitconsulting.rechnungsgenerator.RechnungsgeneratorCommand
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.assertions.withClue
+import io.kotest.core.Tag
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.collections.shouldContain
 import io.kotest.matchers.collections.shouldNotBeEmpty
@@ -21,11 +22,20 @@ import kotlin.io.path.readText
 import kotlin.io.path.writeText
 
 /**
+ * Markiert die Tests, die die echten Werkzeuge brauchen. CI wählt sie mit
+ * `./gradlew build -PohneToolchain` benannt ab (#136) – eine Abwahl in der
+ * Aufrufzeile, dieselbe Sorte Schalter wie EU_LISTE_ALTERSPRUEFUNG=aus.
+ * Lokal ohne den Schalter läuft weiterhin alles.
+ */
+object Toolchain : Tag()
+
+/**
  * Der Integrationstest, der die Zusage des Projekts einlöst: Ohne gültiges
  * PDF/A gibt es keinen grünen Build. Er ruft LuaLaTeX und veraPDF wirklich auf –
  * fehlen sie, schlägt er fehl, statt sich stillschweigend zu überspringen.
  */
 class ToolchainIntegrationTest : FunSpec({
+    tags(Toolchain)
 
     val workDir = createTempDirectory("rechnungsgenerator-test")
 

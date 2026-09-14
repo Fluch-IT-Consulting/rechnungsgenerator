@@ -1,0 +1,43 @@
+# CI ohne die externen Werkzeuge (#136): baut, lintet und testet alles, was
+# kein LuaLaTeX, veraPDF oder pdftotext braucht – das ist dank der
+# Typesetter-Naht alles außer dem ToolchainIntegrationTest. Was hier grün
+# wird, beweist NICHT die PDF/A-Gültigkeit; die prüft weiterhin der lokale
+# `./gradlew build` vor dem Merge.
+#
+# Der EU-Alterstest läuft absichtlich mit (kein EU_LISTE_ALTERSPRUEFUNG=aus):
+# Wird er rot, ist EuMemberStates.AS_OF nachzuprüfen – das ist der Zweck.
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+# Ein neuer Push auf denselben PR bricht den laufenden, überholten Lauf ab.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # Nur das JDK, das Gradle selbst startet – das Toolchain-JDK 21 aus
+      # build.gradle.kts lädt der Foojay-Resolver bei Bedarf selbst.
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+
+      # Gradle-Cache und Wrapper-Prüfung.
+      - uses: gradle/actions/setup-gradle@v4
+
+      # Die Skripttests rufen die Python-Skripte wirklich auf; beide brauchen
+      # PyYAML (siehe CLAUDE.md, Umgebung).
+      - name: PyYAML installieren
+        run: python3 -m pip install pyyaml
+
+      - name: Bauen und testen (ohne Werkzeug-Tests)
+        run: ./gradlew build -PohneToolchain
