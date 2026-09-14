@@ -40,13 +40,13 @@ class Money(value: BigDecimal) : Comparable<Money> {
 
     // --- Prädikate ------------------------------------------------------------
 
-    fun isZero(): Boolean = signum() == 0
-
-    // Privat: Draußen wird nach isZero, isNegative oder isPositive gefragt,
+    // Privat: Draußen wird nach isNegative, isZero oder isPositive gefragt,
     // nicht nach einem Vorzeichen als Zahl.
     private fun signum(): Int = value.signum()
 
     fun isNegative(): Boolean = signum() < 0
+
+    fun isZero(): Boolean = signum() == 0
 
     fun isPositive(): Boolean = signum() > 0
 

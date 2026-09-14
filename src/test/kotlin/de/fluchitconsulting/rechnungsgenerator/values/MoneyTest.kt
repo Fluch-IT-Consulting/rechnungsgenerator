@@ -44,10 +44,10 @@ class MoneyTest : FunSpec({
     }
 
     context("Vorzeichen & Prädikate") {
-        test("isZero genau dann, wenn == ZERO") { checkAll(money) { a -> a.isZero() shouldBe (a == Money.ZERO) } }
         test("isNegative genau dann, wenn kleiner als ZERO") {
             checkAll(money) { a -> a.isNegative() shouldBe (a < Money.ZERO) }
         }
+        test("isZero genau dann, wenn == ZERO") { checkAll(money) { a -> a.isZero() shouldBe (a == Money.ZERO) } }
         test("isPositive genau dann, wenn größer als ZERO") {
             checkAll(money) { a -> a.isPositive() shouldBe (a > Money.ZERO) }
         }
