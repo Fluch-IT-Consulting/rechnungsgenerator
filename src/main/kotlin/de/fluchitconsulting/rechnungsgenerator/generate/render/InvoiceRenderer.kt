@@ -52,7 +52,7 @@ object InvoiceRenderer {
                 "POSITIONEN" to ItemBlocks.lineItems(calculatedInvoice),
                 "SUMMEN" to ItemBlocks.totalsBlock(calculatedInvoice),
                 "ABSETZUNG" to DeductionBlocks.deductionBlock(acceptedInvoice),
-                "ARTHINWEIS" to ItemBlocks.typeNote(invoice),
+                "ARTHINWEIS" to ItemBlocks.typeNote(acceptedInvoice),
                 "STEUERHINWEISE" to ItemBlocks.taxNotes(calculatedInvoice),
                 "SCHLUSSSATZ" to (invoice.note ?: config.closingLine).escapeLatex(),
                 "BANKVERBINDUNG" to SellerBlocks.bankDetails(calculatedInvoice),
