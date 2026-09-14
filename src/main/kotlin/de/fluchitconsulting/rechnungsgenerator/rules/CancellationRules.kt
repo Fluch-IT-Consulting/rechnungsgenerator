@@ -23,10 +23,11 @@ internal object CancellationRules {
 
     private fun reference(invoice: Invoice): List<Finding> =
         buildList {
-            // Auf einer anderen Art meldet InvoiceKindRules schon, dass der Bezug
-            // dort nicht hingehört. Die Meldungen hier sprächen von "der
-            // Stornorechnung" und "diesem Storno", auf einem Blatt, das keines ist.
-            if (invoice.type != InvoiceType.CANCELLATION) return@buildList
+            // Nur auf einer Stornorechnung; warum, steht bei InvoiceKindRules (#97).
+            when (invoice.type) {
+                InvoiceType.CANCELLATION -> {}
+                InvoiceType.INVOICE, InvoiceType.PREPAYMENT, InvoiceType.FINAL, InvoiceType.PARTIAL -> return@buildList
+            }
             // Ohne Bezug gibt es nichts zu prüfen; dass er fehlt, meldet
             // InvoiceKindRules.
             val storniert = invoice.cancelled ?: return@buildList
@@ -63,25 +64,33 @@ internal object CancellationRules {
     private fun sign(calculated: CalculatedInvoice): List<Finding> {
         val invoice = calculated.invoice
         val grossTotal = calculated.grossTotal
-        if (invoice.type == InvoiceType.CANCELLATION) {
-            if (grossTotal.isNegative()) return emptyList()
-            return listOf(
-                Finding(
-                    Rule.STORNO_NICHT_NEGATIV,
-                    Subject.WholeInvoice,
-                    "Der Gesamtbetrag wäre $grossTotal. Eine Stornorechnung hebt eine Rechnung auf; ihre " +
-                        "Positionen tragen deshalb die Mengen der Ursprungsrechnung mit negativem Vorzeichen.",
-                ),
-            )
+        return when (invoice.type) {
+            InvoiceType.CANCELLATION ->
+                if (grossTotal.isNegative()) {
+                    emptyList()
+                } else {
+                    listOf(
+                        Finding(
+                            Rule.STORNO_NICHT_NEGATIV,
+                            Subject.WholeInvoice,
+                            "Der Gesamtbetrag wäre $grossTotal. Eine Stornorechnung hebt eine Rechnung auf; ihre " +
+                                "Positionen tragen deshalb die Mengen der Ursprungsrechnung mit negativem Vorzeichen.",
+                        ),
+                    )
+                }
+            InvoiceType.INVOICE, InvoiceType.PREPAYMENT, InvoiceType.FINAL, InvoiceType.PARTIAL ->
+                if (!grossTotal.isNegative()) {
+                    emptyList()
+                } else {
+                    listOf(
+                        Finding(
+                            Rule.GESAMTBETRAG_NEGATIV,
+                            Subject.WholeInvoice,
+                            "Der Gesamtbetrag wäre $grossTotal. Ein negativer Betrag gehört in eine Stornorechnung " +
+                                "(art: stornorechnung), nicht in eine ${invoice.type.documentName}.",
+                        ),
+                    )
+                }
         }
-        if (!grossTotal.isNegative()) return emptyList()
-        return listOf(
-            Finding(
-                Rule.GESAMTBETRAG_NEGATIV,
-                Subject.WholeInvoice,
-                "Der Gesamtbetrag wäre $grossTotal. Ein negativer Betrag gehört in eine Stornorechnung " +
-                    "(art: stornorechnung), nicht in eine ${invoice.type.documentName}.",
-            ),
-        )
     }
 }

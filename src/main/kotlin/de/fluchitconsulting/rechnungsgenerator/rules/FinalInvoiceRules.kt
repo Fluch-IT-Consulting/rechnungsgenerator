@@ -19,14 +19,12 @@ import de.fluchitconsulting.rechnungsgenerator.values.InvoiceType
  * das Ergebnis eigens ein zweites Mal – jetzt liegt es fertig vor (#71).
  */
 internal object FinalInvoiceRules {
-    // Auf einer anderen Art meldet InvoiceKindRules schon, dass Abschläge dort
-    // nicht hingehören. Beide Teile sprächen sonst von "dieser Schlussrechnung",
-    // auf einem Blatt, das keine ist – dieselbe Sorte Meldung, die #47 bei
-    // RESTBETRAG_NEGATIV behoben hat.
-    fun check(calculated: CalculatedInvoice): List<Finding> {
-        if (calculated.invoice.type != InvoiceType.FINAL) return emptyList()
-        return prepayments(calculated.invoice) + deduction(calculated)
-    }
+    // Nur auf einer Schlussrechnung; warum, steht bei InvoiceKindRules (#97).
+    fun check(calculated: CalculatedInvoice): List<Finding> =
+        when (calculated.invoice.type) {
+            InvoiceType.FINAL -> prepayments(calculated.invoice) + deduction(calculated)
+            InvoiceType.INVOICE, InvoiceType.PREPAYMENT, InvoiceType.PARTIAL, InvoiceType.CANCELLATION -> emptyList()
+        }
 
     private fun prepayments(invoice: Invoice): List<Finding> =
         buildList {

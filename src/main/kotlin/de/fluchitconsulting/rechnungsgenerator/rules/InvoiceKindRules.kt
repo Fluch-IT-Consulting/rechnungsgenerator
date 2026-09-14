@@ -22,7 +22,16 @@ import de.fluchitconsulting.rechnungsgenerator.values.InvoiceType
  * aber nur auf dieser Art (`PrepaymentRules`, `CancellationRules`,
  * `FinalInvoiceRules`, #97). Steht das Feld auf der falschen, bleibt allein der
  * Befund von hier: Die Meldungen dort sprächen von einem Dokument, das es auf
- * dem Blatt nicht gibt.
+ * dem Blatt nicht gibt – etwa von "dieser Schlussrechnung" auf einem Blatt, das
+ * keine ist, dieselbe Sorte Meldung, die #47 bei RESTBETRAG_NEGATIV behoben hat.
+ *
+ * Diese Zuordnung trifft jede Gruppe selbst, als `when` über alle Arten ohne
+ * `else`, ebenso das Vorzeichen in `CancellationRules` (#121). Eine neue Art
+ * (#64) übersetzt dort erst, wenn entschieden ist, ob die Gruppe auf ihr
+ * spricht – mit `if (type != X)` fiele sie still heraus. Nicht zentral in
+ * `InvoiceRules.check`: Dann müsste der Aufrufer wissen, auf welcher Art eine
+ * Gruppe aufgerufen werden darf, und den gebauten Typ hineinzureichen verbietet
+ * das oben Gesagte.
  *
  * Regel und Bau stehen in einem Durchgang, damit das Wissen über die
  * Rechnungsart nur einmal dasteht: Jeder Weg, auf dem kein Typ entsteht, liefert

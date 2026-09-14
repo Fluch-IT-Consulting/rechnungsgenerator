@@ -16,11 +16,12 @@ internal object PrepaymentRules {
     fun check(calculated: CalculatedInvoice): List<Finding> =
         buildList {
             val invoice = calculated.invoice
-            // Auf einer anderen Art meldet InvoiceKindRules schon, dass das Feld
-            // dort nicht hingehört. Eine Meldung über das Datum spräche von einer
-            // Vereinnahmung, die es auf diesem Dokument nicht geben kann –
-            // unterdrückt durch frühes Weiterspringen wie in ADR-0004.
-            if (invoice.type != InvoiceType.PREPAYMENT) return@buildList
+            // Nur auf einer Abschlagsrechnung; warum, steht bei InvoiceKindRules
+            // (#97). `{}` heißt: nichts tun, weiter unten.
+            when (invoice.type) {
+                InvoiceType.PREPAYMENT -> {}
+                InvoiceType.INVOICE, InvoiceType.FINAL, InvoiceType.PARTIAL, InvoiceType.CANCELLATION -> return@buildList
+            }
             val vereinnahmt = invoice.receivedOn ?: return@buildList
 
             // Gleiche Prüfung wie beim Datum der Bestätigungsabfrage: Was nach dem
