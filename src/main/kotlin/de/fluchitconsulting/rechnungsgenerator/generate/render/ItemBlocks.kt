@@ -1,8 +1,8 @@
 package de.fluchitconsulting.rechnungsgenerator.generate.render
 
 import de.fluchitconsulting.rechnungsgenerator.calculation.CalculatedInvoice
-import de.fluchitconsulting.rechnungsgenerator.model.Invoice
 import de.fluchitconsulting.rechnungsgenerator.model.LineItem
+import de.fluchitconsulting.rechnungsgenerator.rules.AcceptedInvoice
 import de.fluchitconsulting.rechnungsgenerator.values.InvoiceType
 
 /**
@@ -79,10 +79,13 @@ internal object ItemBlocks {
      * und wie er lautet, trägt [InvoiceType.mandatoryNote], den Abstand die
      * Vorlage: \hinweisabsatz bringt ihn mit, sodass bei den übrigen Arten der
      * leere Platzhalter auch wirklich nichts einnimmt.
+     *
+     * Der Satz darf Werte der Rechnung nennen, als `<<NAME>>`; welche es gibt,
+     * zählt [InvoiceVariableResolver] auf.
      */
-    fun typeNote(invoice: Invoice): Latex =
-        invoice.type.mandatoryNote
-            ?.let { Latex.macro(TemplateMacro.HINWEISABSATZ, listOf(it.escapeLatex())) }
+    fun typeNote(acceptedInvoice: AcceptedInvoice): Latex =
+        acceptedInvoice.calculated.invoice.type.mandatoryNote
+            ?.let { Latex.macro(TemplateMacro.HINWEISABSATZ, listOf(it.escapeLatex(InvoiceVariableResolver(acceptedInvoice)))) }
             ?: Latex.EMPTY
 
     /**
