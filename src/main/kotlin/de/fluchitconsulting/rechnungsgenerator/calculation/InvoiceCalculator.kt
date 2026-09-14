@@ -1,4 +1,4 @@
-package de.fluchitconsulting.rechnungsgenerator
+package de.fluchitconsulting.rechnungsgenerator.calculation
 
 import de.fluchitconsulting.rechnungsgenerator.model.Invoice
 import de.fluchitconsulting.rechnungsgenerator.model.LineItem

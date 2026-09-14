@@ -273,6 +273,26 @@ CV/Web-Auftritt des Autors), Validierung über veraPDF.
   sah das niemand.
 - **Validierung ist Teil der Tests**: erzeugte PDFs werden per veraPDF geprüft;
   ohne valides PDF/A kein grüner Build.
+- **Paketstruktur**: Zwei vertikale Pakete, eines je Kommando, mit allem, was
+  nur dieses Kommando braucht: `generate` mit dem LaTeX-Satz
+  (`generate.render`) und der Naht zu den Werkzeugen (`generate.toolchain`),
+  `prepayments` mit dem Zusammentragen der Abschläge und dem YAML-Block.
+  Darunter der gemeinsame Kern, in dem jede Kante nach unten zeigt: `rules`
+  (Befunde, Regelgruppen, `AcceptedInvoice.check`) → `calculation`
+  (`InvoiceCalculator`, `CalculatedInvoice`, `InvoiceKind`) → `model` (samt
+  `YamlLoader`) → `values`. In der Wurzel steht nur `Main.kt`. Vorher war die
+  Wurzel Kern und CLI zugleich, und daraus entstanden die beiden einzigen
+  Zyklen des Projekts: Wurzel ↔ `rules` und Wurzel ↔ `render` (#107). Der
+  Schnitt trennt den Rand, nicht die Mitte – was beide Kommandos brauchen, ist
+  der größere Teil. Die Grenze zwischen `rules` und `calculation` ist die aus
+  ADR-0004: `calculate` rechnet nur, `check` prüft und urteilt. Deshalb liegt
+  die `AcceptedInvoice` bei den Regeln, und der Renderer importiert aus
+  `rules`. Kotlin hält keine Paketgrenze (`internal` gilt pro Modul, nicht pro
+  Paket). Die Testpakete spiegeln die Hauptpakete, geteilte Helfer liegen im
+  Testpaket dessen, was sie bauen oder prüfen (`model/TestFixtures.kt`,
+  `rules/CheckHelpers.kt`); ein Test darf aber jedes Paket sehen. Kein ADR:
+  Die Alternative war "so lassen", der Grund sind die Zyklen. Kommt ZUGFeRD als
+  weiterer Ausgabemodus, ist das der Moment für eines.
 
 ## Konventionen
 

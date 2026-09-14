@@ -1,4 +1,4 @@
-package de.fluchitconsulting.rechnungsgenerator
+package de.fluchitconsulting.rechnungsgenerator.rules
 
 /**
  * Was bei der Prüfung einer Rechnung auffällt – ein Befund.

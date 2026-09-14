@@ -1,7 +1,7 @@
-package de.fluchitconsulting.rechnungsgenerator
+package de.fluchitconsulting.rechnungsgenerator.rules
 
-import de.fluchitconsulting.rechnungsgenerator.rules.InvoiceKindRules
-import de.fluchitconsulting.rechnungsgenerator.rules.InvoiceRules
+import de.fluchitconsulting.rechnungsgenerator.calculation.CalculatedInvoice
+import de.fluchitconsulting.rechnungsgenerator.calculation.InvoiceKind
 
 /**
  * Eine gerechnete Rechnung ohne Abbruch – die einzige Form, die sich setzen

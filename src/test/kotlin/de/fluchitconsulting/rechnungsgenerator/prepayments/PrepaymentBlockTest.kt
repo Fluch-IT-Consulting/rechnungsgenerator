@@ -1,12 +1,12 @@
 package de.fluchitconsulting.rechnungsgenerator.prepayments
 
-import de.fluchitconsulting.rechnungsgenerator.InvoiceCalculator
-import de.fluchitconsulting.rechnungsgenerator.Rule
-import de.fluchitconsulting.rechnungsgenerator.YamlLoader
-import de.fluchitconsulting.rechnungsgenerator.messageOf
+import de.fluchitconsulting.rechnungsgenerator.calculation.InvoiceCalculator
 import de.fluchitconsulting.rechnungsgenerator.model.TaxShare
-import de.fluchitconsulting.rechnungsgenerator.testPrepayment
-import de.fluchitconsulting.rechnungsgenerator.testSellerConfig
+import de.fluchitconsulting.rechnungsgenerator.model.YamlLoader
+import de.fluchitconsulting.rechnungsgenerator.model.testPrepayment
+import de.fluchitconsulting.rechnungsgenerator.model.testSellerConfig
+import de.fluchitconsulting.rechnungsgenerator.rules.Rule
+import de.fluchitconsulting.rechnungsgenerator.rules.messageOf
 import de.fluchitconsulting.rechnungsgenerator.values.Money
 import de.fluchitconsulting.rechnungsgenerator.values.Percent
 import de.fluchitconsulting.rechnungsgenerator.values.TaxCategory

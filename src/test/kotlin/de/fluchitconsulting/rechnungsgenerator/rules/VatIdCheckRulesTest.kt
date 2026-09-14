@@ -1,17 +1,13 @@
 package de.fluchitconsulting.rechnungsgenerator.rules
 
-import de.fluchitconsulting.rechnungsgenerator.InvoiceCalculator
-import de.fluchitconsulting.rechnungsgenerator.Rule
-import de.fluchitconsulting.rechnungsgenerator.hints
-import de.fluchitconsulting.rechnungsgenerator.messageOf
+import de.fluchitconsulting.rechnungsgenerator.calculation.InvoiceCalculator
 import de.fluchitconsulting.rechnungsgenerator.model.Address
 import de.fluchitconsulting.rechnungsgenerator.model.CheckMethod
 import de.fluchitconsulting.rechnungsgenerator.model.Customer
 import de.fluchitconsulting.rechnungsgenerator.model.VatIdCheck
-import de.fluchitconsulting.rechnungsgenerator.rules
-import de.fluchitconsulting.rechnungsgenerator.testInvoice
-import de.fluchitconsulting.rechnungsgenerator.testItem
-import de.fluchitconsulting.rechnungsgenerator.testSellerConfig
+import de.fluchitconsulting.rechnungsgenerator.model.testInvoice
+import de.fluchitconsulting.rechnungsgenerator.model.testItem
+import de.fluchitconsulting.rechnungsgenerator.model.testSellerConfig
 import de.fluchitconsulting.rechnungsgenerator.values.CountryCode
 import de.fluchitconsulting.rechnungsgenerator.values.EuMemberStates
 import de.fluchitconsulting.rechnungsgenerator.values.TaxCategory

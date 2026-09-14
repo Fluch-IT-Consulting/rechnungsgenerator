@@ -1,9 +1,6 @@
 package de.fluchitconsulting.rechnungsgenerator.rules
 
-import de.fluchitconsulting.rechnungsgenerator.CalculatedInvoice
-import de.fluchitconsulting.rechnungsgenerator.Finding
-import de.fluchitconsulting.rechnungsgenerator.Rule
-import de.fluchitconsulting.rechnungsgenerator.Subject
+import de.fluchitconsulting.rechnungsgenerator.calculation.CalculatedInvoice
 
 /**
  * Hinweise, die den Lauf nicht abbrechen: Angaben, die zulässig sind, aber

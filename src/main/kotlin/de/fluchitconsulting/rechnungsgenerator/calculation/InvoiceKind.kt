@@ -1,4 +1,4 @@
-package de.fluchitconsulting.rechnungsgenerator
+package de.fluchitconsulting.rechnungsgenerator.calculation
 
 import de.fluchitconsulting.rechnungsgenerator.model.CancelledInvoice
 import de.fluchitconsulting.rechnungsgenerator.values.InvoiceType

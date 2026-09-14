@@ -1,14 +1,14 @@
 package de.fluchitconsulting.rechnungsgenerator.generate.render
 
-import de.fluchitconsulting.rechnungsgenerator.AcceptedInvoice
-import de.fluchitconsulting.rechnungsgenerator.CalculatedInvoice
-import de.fluchitconsulting.rechnungsgenerator.Deduction
-import de.fluchitconsulting.rechnungsgenerator.InvoiceKind
+import de.fluchitconsulting.rechnungsgenerator.calculation.CalculatedInvoice
+import de.fluchitconsulting.rechnungsgenerator.calculation.Deduction
+import de.fluchitconsulting.rechnungsgenerator.calculation.InvoiceKind
 import de.fluchitconsulting.rechnungsgenerator.model.Address
 import de.fluchitconsulting.rechnungsgenerator.model.Invoice
 import de.fluchitconsulting.rechnungsgenerator.model.LineItem
 import de.fluchitconsulting.rechnungsgenerator.model.SellerConfig
 import de.fluchitconsulting.rechnungsgenerator.model.ServicePeriod
+import de.fluchitconsulting.rechnungsgenerator.rules.AcceptedInvoice
 import de.fluchitconsulting.rechnungsgenerator.values.CountryCode
 import de.fluchitconsulting.rechnungsgenerator.values.InvoiceType
 import de.fluchitconsulting.rechnungsgenerator.values.Money
