@@ -37,7 +37,9 @@ das bisher nicht.
 ## Konsequenzen
 
 - Die Kommandos werten `Checked` mit `when` aus. Die Hinweise einer
-  angenommenen Rechnung liefert `AcceptedInvoice.hints`.
+  angenommenen Rechnung liefert `AcceptedInvoice.hints`. (Seit #125 heißt der
+  Typ `Verdict`: Er ist das Urteil der Prüfung, und "Checked" sagte nur, dass
+  geprüft wurde.)
 - `prepaymentsOf` übernimmt nur Abschläge angenommener Abschlagsrechnungen.
   Die Liste ist deshalb nur vollständig, wenn kein Abbruch gemeldet ist, und nur
   dann schreibt `abschlaege` den Block (ADR-0003: alles oder nichts). (Seit

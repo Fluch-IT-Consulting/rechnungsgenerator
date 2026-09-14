@@ -16,8 +16,8 @@ import de.fluchitconsulting.rechnungsgenerator.generate.toolchain.Typesetter
 import de.fluchitconsulting.rechnungsgenerator.model.Invoice
 import de.fluchitconsulting.rechnungsgenerator.model.YamlLoader
 import de.fluchitconsulting.rechnungsgenerator.rules.AcceptedInvoice
-import de.fluchitconsulting.rechnungsgenerator.rules.Checked
 import de.fluchitconsulting.rechnungsgenerator.rules.RejectedException
+import de.fluchitconsulting.rechnungsgenerator.rules.Verdict
 import java.io.IOException
 import java.nio.file.Path
 import kotlin.io.path.copyTo
@@ -78,9 +78,9 @@ class GenerateCommand(private val typesetter: Typesetter = LuaLatexTypesetter) :
         // nimmt keine andere. Alle Abbrüche auf einmal: Wer fünf Fehler in der
         // Datei hat, soll nicht fünfmal starten müssen, um sie zu finden (#49).
         val acceptedInvoice =
-            when (val checked = AcceptedInvoice.check(InvoiceCalculator.calculate(invoice, config))) {
-                is Checked.Accepted -> checked.invoice
-                is Checked.Rejected -> throw RejectedException(checked.aborts)
+            when (val verdict = AcceptedInvoice.check(InvoiceCalculator.calculate(invoice, config))) {
+                is Verdict.Accepted -> verdict.invoice
+                is Verdict.Rejected -> throw RejectedException(verdict.aborts)
             }
 
         val jobName = jobNameFor(invoice)

@@ -19,7 +19,7 @@ data class Finding(val rule: Rule, val subject: Subject, val message: String) {
 /**
  * Eine Ablehnung, die ein Kommando nach außen gibt – mit allen Abbrüchen auf einmal.
  *
- * Beide Kommandos lehnen ab, `erzeuge` mit `Checked.Rejected` und `abschlaege`
+ * Beide Kommandos lehnen ab, `erzeuge` mit `Verdict.Rejected` und `abschlaege`
  * mit `CollectedPrepayments.Rejected`. Zu Text wird die Liste nur hier, und
  * übersetzt wird die Ausnahme nur in `execute()` (#119). Vorher baute jedes
  * Kommando seine eigene Zeile und seinen eigenen `CliktError` – so sind in #52

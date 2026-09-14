@@ -177,9 +177,9 @@ class InvoiceKindRulesTest : FunSpec({
         test("ohne gebaute Rechnungsart wird nicht angenommen") {
             // Die Voraussetzung von ADR-0008: Eine AcceptedInvoice ohne kind
             // gibt es nicht, also auch keine Stornorechnung ohne Bezug im Renderer.
-            val checked = AcceptedInvoice.check(InvoiceCalculator.calculate(storno(cancelled = null), config))
+            val verdict = AcceptedInvoice.check(InvoiceCalculator.calculate(storno(cancelled = null), config))
 
-            checked.shouldBeInstanceOf<Checked.Rejected>().aborts.rules() shouldContain Rule.STORNO_OHNE_BEZUG
+            verdict.shouldBeInstanceOf<Verdict.Rejected>().aborts.rules() shouldContain Rule.STORNO_OHNE_BEZUG
         }
 
         test("was den Typ unbaubar macht, ist ein Abbruch") {
@@ -211,7 +211,7 @@ class InvoiceKindRulesTest : FunSpec({
                 val calculated = InvoiceCalculator.calculate(invoice, config)
                 val notBuilt = InvoiceKindRules.build(calculated).shouldBeInstanceOf<InvoiceKindRules.Result.NotBuilt>()
 
-                val rejected = AcceptedInvoice.check(calculated).shouldBeInstanceOf<Checked.Rejected>()
+                val rejected = AcceptedInvoice.check(calculated).shouldBeInstanceOf<Verdict.Rejected>()
 
                 rejected.aborts shouldContainAll notBuilt.findings
             }

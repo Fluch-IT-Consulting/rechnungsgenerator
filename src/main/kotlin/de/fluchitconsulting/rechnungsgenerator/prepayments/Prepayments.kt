@@ -7,10 +7,10 @@ import de.fluchitconsulting.rechnungsgenerator.model.Prepayment
 import de.fluchitconsulting.rechnungsgenerator.model.SellerConfig
 import de.fluchitconsulting.rechnungsgenerator.model.TaxShare
 import de.fluchitconsulting.rechnungsgenerator.rules.AcceptedInvoice
-import de.fluchitconsulting.rechnungsgenerator.rules.Checked
 import de.fluchitconsulting.rechnungsgenerator.rules.Finding
 import de.fluchitconsulting.rechnungsgenerator.rules.Rule
 import de.fluchitconsulting.rechnungsgenerator.rules.Subject
+import de.fluchitconsulting.rechnungsgenerator.rules.Verdict
 import de.fluchitconsulting.rechnungsgenerator.values.InvoiceType
 
 // Der fachliche Teil von `rechnungsgenerator abschlaege` (ADR-0003): Aus
@@ -33,7 +33,7 @@ data class CollectedPrepayment(val name: String, val prepayment: Prepayment)
  * Was beim Zusammentragen herauskommt: alle Abschläge – oder die Gründe, warum
  * keiner geschrieben wird (#118).
  *
- * `sealed` wie [Checked]: genau diese beiden Fälle, und ein `when` darüber
+ * `sealed` wie [Verdict]: genau diese beiden Fälle, und ein `when` darüber
  * braucht keinen `else`. Bis #118 war das ein Paar aus einer Liste und den
  * Befunden, und die Liste war laut Kommentar "nur vollständig, wenn kein
  * Abbruch gemeldet ist" – geprüft hat das das Kommando. Jetzt gibt es die
@@ -124,10 +124,10 @@ fun prepaymentsOf(abschlagsrechnungen: List<NamedInvoice>, config: SellerConfig)
                 return@mapNotNull null
             }
 
-            when (val checked = AcceptedInvoice.check(InvoiceCalculator.calculate(abschlagsrechnung, config))) {
-                is Checked.Accepted -> CollectedPrepayment(name, prepaymentOf(checked.invoice))
-                is Checked.Rejected -> {
-                    findings += checked.aborts.map { it.copy(subject = Subject.FromInvoice(abschlagsrechnung.number, it.subject)) }
+            when (val verdict = AcceptedInvoice.check(InvoiceCalculator.calculate(abschlagsrechnung, config))) {
+                is Verdict.Accepted -> CollectedPrepayment(name, prepaymentOf(verdict.invoice))
+                is Verdict.Rejected -> {
+                    findings += verdict.aborts.map { it.copy(subject = Subject.FromInvoice(abschlagsrechnung.number, it.subject)) }
                     null
                 }
             }

@@ -151,3 +151,19 @@ _Vermeiden_: Fehler, Verstoß
 Ein Befund, der das Dokument nicht verhindert: Die Angabe ist zulässig, aber
 selten gemeint, oder in die eigene Akte gehört noch etwas.
 _Vermeiden_: Warnung
+
+**Urteil**:
+Was die Prüfung über eine Rechnung als Ganzes entscheidet: angenommen oder
+abgelehnt. Es folgt allein aus den Befunden.
+_Vermeiden_: Prüfergebnis, Status, Validierung
+
+**Angenommen**:
+Das Urteil über eine Rechnung ohne Abbruch. Nur aus ihr entsteht ein Dokument;
+Hinweise kann sie tragen.
+_Vermeiden_: gültig (das sagt veraPDF über das PDF), korrekt, freigegeben
+
+**Abgelehnt**:
+Das Urteil über eine Rechnung mit mindestens einem Abbruch – oder über das
+Zusammentragen der Abschläge, wenn eine Abschlagsrechnung abgelehnt ist oder sie
+nicht zusammenpassen. Es nennt alle Befunde auf einmal.
+_Vermeiden_: ungültig, fehlerhaft
