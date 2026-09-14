@@ -16,12 +16,11 @@ import kotlinx.serialization.Serializable
  * ZUGFeRD-XML.
  *
  * Die drei Eigenschaften danach haben bewusst **keine** Vorgabewerte (ADR-0009):
- * Eine neue Rechnungsart – etwa die Rechnungskorrektur aus #64 – muss sagen, ob
- * ihr Zeitraum eine Prognose ist, ob sie Geld fordert und welcher Satz auf ihr
- * stehen muss. Mit Vorgaben erbte sie still die Antworten der gewöhnlichen
- * Rechnung, und Renderer und Calculator folgten ihnen, ohne dass je jemand
- * darüber entschieden hätte. Ohne Vorgaben übersetzt der neue Eintrag erst,
- * wenn alle drei dastehen.
+ * Eine neue Rechnungsart muss sagen, ob ihr Zeitraum eine Prognose ist, ob sie
+ * Geld fordert und welcher Satz auf ihr stehen muss. Mit Vorgaben erbte sie
+ * still die Antworten der gewöhnlichen Rechnung, und Renderer und Calculator
+ * folgten ihnen, ohne dass je jemand darüber entschieden hätte. Ohne Vorgaben
+ * übersetzt der neue Eintrag erst, wenn alle drei dastehen.
  */
 @Serializable(with = InvoiceTypeSerializer::class)
 enum class InvoiceType(
