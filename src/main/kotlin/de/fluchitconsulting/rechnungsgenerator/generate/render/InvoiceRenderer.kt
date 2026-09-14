@@ -9,7 +9,6 @@ import de.fluchitconsulting.rechnungsgenerator.model.LineItem
 import de.fluchitconsulting.rechnungsgenerator.model.SellerConfig
 import de.fluchitconsulting.rechnungsgenerator.model.ServicePeriod
 import de.fluchitconsulting.rechnungsgenerator.rules.AcceptedInvoice
-import de.fluchitconsulting.rechnungsgenerator.values.CountryCode
 import de.fluchitconsulting.rechnungsgenerator.values.InvoiceType
 import de.fluchitconsulting.rechnungsgenerator.values.Money
 
@@ -55,7 +54,7 @@ object InvoiceRenderer {
                 "INHABER" to config.ownerName.escapeLatex(),
                 "KOPF_PERSON" to letterheadPerson(config),
                 "ABSENDER_KONTAKT" to senderContact(config),
-                "EMPFAENGER" to recipient(invoice, config),
+                "EMPFAENGER" to recipient(calculatedInvoice),
                 "EMPFAENGER_RECHTS" to recipientSideBlock(acceptedInvoice),
                 "DOKUMENTART" to invoice.type.documentName.escapeLatex(),
                 "RECHNUNGSNUMMER" to invoice.number.escapeLatex(),
@@ -198,11 +197,12 @@ object InvoiceRenderer {
             add(config.email.escapeLatex())
         }.joinToLatex(BR)
 
-    private fun recipient(invoice: Invoice, config: SellerConfig): Latex {
+    private fun recipient(calculatedInvoice: CalculatedInvoice): Latex {
+        val invoice = calculatedInvoice.invoice
         val anschrift =
             buildList {
                 add(invoice.customer.name.escapeLatex())
-                addAll(addressLines(invoice.customer.address, config.address.countryCode))
+                addAll(addressLines(invoice.customer.address, showCountry = !calculatedInvoice.isDomestic))
             }.joinToLatex(BR)
         // BT-48. Bei Reverse Charge und innergemeinschaftlicher Lieferung verlangt
         // §14a UStG die USt-IdNr. beider Parteien auf der Rechnung – die des
@@ -231,24 +231,18 @@ object InvoiceRenderer {
         }
 
     /**
-     * Die Anschrift, Zeile für Zeile. [sellerCountry] ist das Land des
-     * Rechnungsstellers, gegen das verglichen wird – nicht "DE".
+     * Die Anschrift, Zeile für Zeile, mit dem Land nur bei [showCountry].
      *
-     * Der Unterschied ist nicht theoretisch: Vorher stand hier ein fester
-     * Vergleich mit "DE", und der bedeutete zweierlei Falsches. Ein
-     * kleingeschriebenes `land: de` galt als Ausland und bekam eine Landzeile,
-     * während der Calculator dieselbe Rechnung als Inlandsrechnung behandelte.
-     * Und säße der Rechnungssteller in Österreich, hätte jede seiner
-     * Inlandsrechnungen "AT" unter der Anschrift stehen.
+     * Ob es eine Inlandsrechnung ist, entscheidet nicht diese Funktion, sondern
+     * [CalculatedInvoice.isDomestic] – dort steht auch, warum "nicht Deutschland"
+     * die falsche Frage ist. Hier wird nur gesetzt (#120).
      */
-    private fun addressLines(address: Address, sellerCountry: CountryCode): List<Latex> =
+    private fun addressLines(address: Address, showCountry: Boolean): List<Latex> =
         buildList {
             add(address.street.escapeLatex())
             add("${address.postalCode} ${address.city}".escapeLatex())
-            // Das Land nur nennen, wenn es ein anderes ist als das des
-            // Rechnungsstellers – sonst steht auf jeder Inlandsrechnung eine
-            // überflüssige Zeile.
-            if (address.countryCode != sellerCountry) add(address.countryCode.value.escapeLatex())
+            // Auf einer Inlandsrechnung wäre die Landzeile überflüssig.
+            if (showCountry) add(address.countryCode.value.escapeLatex())
         }
 
     /**

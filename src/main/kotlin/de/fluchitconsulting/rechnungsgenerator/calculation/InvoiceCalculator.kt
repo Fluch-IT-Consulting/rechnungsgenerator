@@ -4,6 +4,7 @@ import de.fluchitconsulting.rechnungsgenerator.model.Invoice
 import de.fluchitconsulting.rechnungsgenerator.model.LineItem
 import de.fluchitconsulting.rechnungsgenerator.model.Prepayment
 import de.fluchitconsulting.rechnungsgenerator.model.SellerConfig
+import de.fluchitconsulting.rechnungsgenerator.values.EuMemberStates
 import de.fluchitconsulting.rechnungsgenerator.values.Money
 import de.fluchitconsulting.rechnungsgenerator.values.Percent
 import de.fluchitconsulting.rechnungsgenerator.values.TaxCategory
@@ -99,6 +100,32 @@ data class CalculatedInvoice(
      * was dasteht, und entscheidet nicht, was dastehen soll.
      */
     val requestsPayment: Boolean get() = invoice.type.chargesForService && !remainingAmount.isZero()
+
+    /**
+     * Ist das eine Inlandsrechnung? Glossar *Inland*: Der Kunde sitzt im Land
+     * des Rechnungsstellers – nicht "in Deutschland". Beides fällt nur
+     * zusammen, solange der Rechnungssteller in Deutschland sitzt.
+     *
+     * Die Verwechslung ist schon passiert: Im Renderer stand ein fester
+     * Vergleich mit "DE". Ein kleingeschriebenes `land: de` bekam dort eine
+     * Landzeile, während die Regeln dieselbe Rechnung als Inlandsrechnung
+     * behandelten, und ein Rechnungssteller in Österreich hätte "AT" unter jede
+     * seiner Inlandsanschriften gesetzt. Danach rechneten Renderer und Regeln
+     * den Vergleich je für sich – ein Umzug musste an zwei Stellen richtig
+     * sein. Jetzt steht er hier einmal (#120). Ein schlichtes `==` genügt, weil
+     * `CountryCode` die Schreibweise vereinheitlicht.
+     */
+    val isDomestic: Boolean get() = invoice.customer.address.countryCode == config.address.countryCode
+
+    /**
+     * Sitzt der Kunde in einem EU-Mitgliedstaat? Glossar *Ausland*: Ausland
+     * und EU sind zwei Fragen, nicht eine – ein Kunde in Deutschland ist für
+     * einen Rechnungssteller in der Schweiz Ausland *und* EU.
+     *
+     * Davon hängt ab, ob die USt-IdNr. über VIES oder das BZSt überhaupt
+     * geprüft werden kann.
+     */
+    val customerInEu: Boolean get() = EuMemberStates.contains(invoice.customer.address.countryCode)
 
     /**
      * Bis wann zu zahlen ist – oder `null`, wenn das Dokument nicht zur Zahlung
