@@ -2,8 +2,6 @@ package de.fluchitconsulting.rechnungsgenerator.rules
 
 import de.fluchitconsulting.rechnungsgenerator.calculation.CalculatedInvoice
 import de.fluchitconsulting.rechnungsgenerator.model.CheckMethod
-import de.fluchitconsulting.rechnungsgenerator.model.Invoice
-import de.fluchitconsulting.rechnungsgenerator.model.SellerConfig
 import de.fluchitconsulting.rechnungsgenerator.values.EuMemberStates
 import de.fluchitconsulting.rechnungsgenerator.values.TaxCategory
 import de.fluchitconsulting.rechnungsgenerator.values.VatIdConfirmation
@@ -21,17 +19,19 @@ import java.time.temporal.ChronoUnit
  *
  * Hier steht nur noch, wie daraus eine Pflicht wird: Der Nachweis muss
  * vorliegen, er muss vor dem Rechnungsdatum erbracht sein, und fehlt er,
- * bricht der Lauf ab.
+ * bricht der Lauf ab. Ob der Kunde im Ausland und ob er in der EU sitzt,
+ * fragen die Regeln die gerechnete Rechnung ([CalculatedInvoice.isDomestic],
+ * [CalculatedInvoice.customerInEu]) – der Renderer fragt dasselbe (#120).
  *
  * Das ist Steuerrecht und keine Rechtsberatung – wer die Regeln ändert,
  * sollte sie mit dem Steuerberater abgleichen.
  */
 internal object VatIdCheckRules {
-    fun check(calculated: CalculatedInvoice): List<Finding> =
-        confirmation(calculated.invoice, calculated.config) + hints(calculated.invoice, calculated.config)
+    fun check(calculated: CalculatedInvoice): List<Finding> = confirmation(calculated) + hints(calculated)
 
-    private fun confirmation(invoice: Invoice, config: SellerConfig): List<Finding> =
+    private fun confirmation(calculated: CalculatedInvoice): List<Finding> =
         buildList {
+            val invoice = calculated.invoice
             val kategorien =
                 invoice.items
                     .map { it.taxCategory }
@@ -39,13 +39,11 @@ internal object VatIdCheckRules {
                     .toSet()
             if (kategorien.isEmpty()) return@buildList
             val kunde = invoice.customer
-            val ausland = istAusland(invoice, config)
-            val inEu = EuMemberStates.contains(kunde.address.countryCode)
             val pflicht =
                 kategorien.any {
                     when (it.vatIdConfirmation) {
                         VatIdConfirmation.ALWAYS -> true
-                        VatIdConfirmation.IN_EU -> ausland && inEu
+                        VatIdConfirmation.IN_EU -> !calculated.isDomestic && calculated.customerInEu
                         VatIdConfirmation.NEVER -> false
                     }
                 }
@@ -81,18 +79,18 @@ internal object VatIdCheckRules {
         }
 
     /** Hinweise, die den Lauf nicht abbrechen, aber in die eigene Akte gehören. */
-    private fun hints(invoice: Invoice, config: SellerConfig): List<Finding> =
+    private fun hints(calculated: CalculatedInvoice): List<Finding> =
         buildList {
+            val invoice = calculated.invoice
             val kunde = invoice.customer
             val kategorien = invoice.items.map { it.taxCategory }.toSet()
-            val ausland = istAusland(invoice, config)
 
-            // Die Altersprüfung der EU-Liste hängt bewusst an `ausland` und läuft
+            // Die Altersprüfung der EU-Liste hängt bewusst am Ausland und läuft
             // nicht immer: Bei einer Inlandsrechnung wird die Liste gar nicht
             // befragt, ein Hinweis darauf wäre also Lärm. Und Hinweise, die bei
             // jeder Rechnung erscheinen, liest nach der dritten niemand mehr –
             // dann geht der eine unter, auf den es ankommt.
-            if (ausland) {
+            if (!calculated.isDomestic) {
                 val listenAlter = ChronoUnit.MONTHS.between(EuMemberStates.AS_OF, invoice.issueDate)
                 if (listenAlter >= 12) {
                     add(
@@ -113,7 +111,7 @@ internal object VatIdCheckRules {
             // nichts (siehe confirmation), aber die Akte braucht trotzdem
             // etwas.
             val nurInEu = kategorien.any { it.vatIdConfirmation == VatIdConfirmation.IN_EU }
-            if (nurInEu && ausland && !EuMemberStates.contains(kunde.address.countryCode)) {
+            if (nurInEu && !calculated.isDomestic && !calculated.customerInEu) {
                 add(
                     Finding(
                         Rule.KEIN_VIES_MOEGLICH,
@@ -163,16 +161,4 @@ internal object VatIdCheckRules {
                 }
             }
         }
-
-    /**
-     * Ausland heißt hier: Das Land des Kunden ist nicht das Land des
-     * Rechnungsstellers – nicht "nicht Deutschland". Die beiden fallen nur
-     * zusammen, solange der Rechnungssteller in Deutschland sitzt, und genau
-     * diese Verwechslung stand vorher im Renderer.
-     *
-     * Beide Teile dieser Gruppe fragen danach. Der Vergleich selbst ist ein
-     * schlichtes `!=`, weil `CountryCode` die Schreibweise vereinheitlicht.
-     */
-    private fun istAusland(invoice: Invoice, config: SellerConfig): Boolean =
-        invoice.customer.address.countryCode != config.address.countryCode
 }

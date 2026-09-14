@@ -5,6 +5,7 @@ import de.fluchitconsulting.rechnungsgenerator.model.testInvoice
 import de.fluchitconsulting.rechnungsgenerator.model.testItem
 import de.fluchitconsulting.rechnungsgenerator.model.testPrepayment
 import de.fluchitconsulting.rechnungsgenerator.model.testSellerConfig
+import de.fluchitconsulting.rechnungsgenerator.values.CountryCode
 import de.fluchitconsulting.rechnungsgenerator.values.InvoiceType
 import de.fluchitconsulting.rechnungsgenerator.values.Money
 import io.kotest.core.spec.style.FunSpec
@@ -120,6 +121,52 @@ class InvoiceCalculatorTest : FunSpec({
 
             calculated.requestsPayment shouldBe false
             calculated.dueDate shouldBe null
+        }
+    }
+
+    context("Inland und EU") {
+        // Zwei Fragen, nicht eine (CONTEXT.md, *Ausland*). Regeln und Renderer
+        // fragen beide hier, statt je für sich zu vergleichen (#120). Was daraus
+        // folgt, prüfen VatIdCheckRulesTest und InvoiceRendererTest.
+
+        /** Die Beispielrechnung, mit Rechnungssteller und Kunde in den genannten Ländern. */
+        fun zwischen(steller: String, kunde: String): CalculatedInvoice {
+            val invoice = testInvoice()
+            val sellerConfig = testSellerConfig()
+            return InvoiceCalculator.calculate(
+                invoice.copy(customer = invoice.customer.copy(address = invoice.customer.address.copy(countryCode = CountryCode(kunde)))),
+                sellerConfig.copy(address = sellerConfig.address.copy(countryCode = CountryCode(steller))),
+            )
+        }
+
+        test("Kunde im Land des Rechnungsstellers: Inland") {
+            val calculated = zwischen(steller = "DE", kunde = "DE")
+
+            calculated.isDomestic shouldBe true
+            calculated.customerInEu shouldBe true
+        }
+
+        test("Kunde in einem anderen Mitgliedstaat: Ausland, aber EU") {
+            val calculated = zwischen(steller = "DE", kunde = "AT")
+
+            calculated.isDomestic shouldBe false
+            calculated.customerInEu shouldBe true
+        }
+
+        test("Inland heißt das Land des Rechnungsstellers, nicht Deutschland") {
+            // Die Verwechslung, die im Renderer schon einmal stand: Für einen
+            // Rechnungssteller in Österreich ist ein Kunde in Wien Inland.
+            val calculated = zwischen(steller = "AT", kunde = "AT")
+
+            calculated.isDomestic shouldBe true
+            calculated.customerInEu shouldBe true
+        }
+
+        test("Kunde in einem Drittland: Ausland und nicht EU") {
+            val calculated = zwischen(steller = "DE", kunde = "CH")
+
+            calculated.isDomestic shouldBe false
+            calculated.customerInEu shouldBe false
         }
     }
 })
