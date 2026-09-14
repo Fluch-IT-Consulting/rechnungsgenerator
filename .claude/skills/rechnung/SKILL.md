@@ -251,9 +251,9 @@ negativen Einzelpreis (BR-27), weil er offenließe, ob Gutschrift, Rabatt oder
 Erfassungsfehler gemeint ist. Ein Storno über einen positiven Gesamtbetrag
 bricht ab.
 
-Das PDF nennt die Ursprungsrechnung oben rechts, trägt den Pflichtsatz, dass sie
-vollständig aufgehoben ist, und lässt Fälligkeit und Bankverbindung weg – ein
-Storno fordert kein Geld, es kündigt eine Erstattung an.
+Das PDF nennt die Ursprungsrechnung mit Nummer und Datum im Pflichtsatz, dass
+sie vollständig aufgehoben ist, und lässt Fälligkeit und Bankverbindung weg –
+ein Storno fordert kein Geld, es kündigt eine Erstattung an.
 
 Eine stornierte **Abschlagsrechnung** ist damit auch aus dem Spiel: Sie taucht
 in `offene-abschlaege.py` nicht mehr als offen auf, und wird eine

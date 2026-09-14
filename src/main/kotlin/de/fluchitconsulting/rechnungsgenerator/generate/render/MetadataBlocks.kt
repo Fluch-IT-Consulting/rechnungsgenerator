@@ -3,13 +3,13 @@ package de.fluchitconsulting.rechnungsgenerator.generate.render
 import de.fluchitconsulting.rechnungsgenerator.calculation.CalculatedInvoice
 import de.fluchitconsulting.rechnungsgenerator.calculation.InvoiceKind
 import de.fluchitconsulting.rechnungsgenerator.model.Address
-import de.fluchitconsulting.rechnungsgenerator.model.CancelledInvoice
 import de.fluchitconsulting.rechnungsgenerator.rules.AcceptedInvoice
 
 /**
  * Die Blöcke um den Empfänger: Anschrift und die Angaben zur Rechnung rechts
- * daneben. Hier stehen zwei der drei `when` über die Rechnungsart (#128) –
- * der Bezug einer Stornorechnung und die Vereinnahmung eines Abschlags.
+ * daneben. Hier steht eines der `when` über die Rechnungsart (#128): die
+ * Vereinnahmung eines Abschlags. Den Bezug einer Stornorechnung nennt der
+ * Pflichtsatz (#141).
  */
 internal object MetadataBlocks {
     fun recipient(calculatedInvoice: CalculatedInvoice): Latex {
@@ -78,31 +78,19 @@ internal object MetadataBlocks {
             val calculatedInvoice = acceptedInvoice.calculated
             val invoice = calculatedInvoice.invoice
             val kind = acceptedInvoice.kind
-            // Der Bezug auf die Ursprungsrechnung (BG-3 mit BT-25 und BT-26) –
-            // Pflicht auf einer Stornorechnung. Als eigene Angabe und nicht im
-            // Pflichtsatz, weil EN 16931 ihn als Struktur führt und nicht als
-            // Prosa (ADR-0006): Wer ihn später fürs XML aus einem Satz
-            // herausklauben müsste, rät. Zuerst, weil er sagt, worauf sich das
-            // ganze Blatt bezieht.
-            //
-            // `when` mit Subjekt macht `kind` in jedem Zweig zu dessen Variante
-            // ("smart cast") – in der Cancellation ist der Bezug nicht optional.
-            // Ohne `else`: Kommt eine Variante dazu, übersetzt diese Stelle erst,
-            // wenn entschieden ist, ob sie einen Bezug nennt (#128).
-            when (kind) {
-                is InvoiceKind.Cancellation ->
-                    add("Ursprungsrechnung: ".escapeLatex() + precedingInvoiceReference(kind.cancelled))
-                is InvoiceKind.Ordinary, is InvoiceKind.PrepaymentInvoice, is InvoiceKind.FinalInvoice -> {}
-            }
             // Pflichtangabe nach §14 Abs. 4 Nr. 6 UStG. Wie der Zeitraum heißt,
             // hängt an der Rechnungsart – siehe InvoiceType.servicePeriodLabel.
             // \zusammen: Die Zeile darf hinter dem Doppelpunkt umbrechen, der
-            // Zeitraum selbst nicht – warum, steht in der Vorlage. Beim Bezug
-            // gilt dasselbe.
+            // Zeitraum selbst nicht – warum, steht in der Vorlage.
             val zeitraum = Latex.macro(TemplateMacro.ZUSAMMEN, listOf(servicePeriod(invoice.servicePeriod, invoice.type)))
             add("${invoice.type.servicePeriodLabel}: ".escapeLatex() + zeitraum)
             // BT-7: Steht der Zeitpunkt der Vereinnahmung fest, gehört er zu
             // den Pflichtangaben – deshalb hier und nicht in den Fließtext.
+            //
+            // `when` mit Subjekt macht `kind` in jedem Zweig zu dessen Variante
+            // ("smart cast"). Ohne `else`: Kommt eine Variante dazu, übersetzt
+            // diese Stelle erst, wenn entschieden ist, ob sie eine Vereinnahmung
+            // nennt (#128).
             when (kind) {
                 is InvoiceKind.PrepaymentInvoice ->
                     kind.receivedOn?.let { add("Abschlag vereinnahmt am ".escapeLatex() + GermanFormat.date(it)) }
@@ -117,20 +105,4 @@ internal object MetadataBlocks {
             // nur gesetzt, was dasteht.
             calculatedInvoice.dueDate?.let { add("Zahlbar ohne Abzug bis ".escapeLatex() + GermanFormat.date(it)) }
         }.joinToLatex(BR)
-
-    /**
-     * Der Bezug auf eine vorausgegangene Rechnung: Nummer und Datum, als ein
-     * Stück (\zusammen – die Angabe soll nicht mitten im Datum umbrechen).
-     *
-     * Die Beschriftung bleibt beim Aufrufer: Sie gehört zur Rechnungsart, nicht
-     * zum Bezug.
-     */
-    private fun precedingInvoiceReference(cancelled: CancelledInvoice): Latex =
-        Latex.macro(
-            TemplateMacro.ZUSAMMEN,
-            listOf(
-                cancelled.invoiceNumber.escapeLatex() + " vom ".escapeLatex() +
-                    GermanFormat.date(cancelled.issueDate),
-            ),
-        )
 }

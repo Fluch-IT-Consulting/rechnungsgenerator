@@ -60,6 +60,9 @@ enum class InvoiceType(
      * Ein Satz, der auf diesem Dokument stehen muss, damit es als das erkennbar
      * ist, was es ist. Hier steht der Wortlaut, nicht seine Gestalt: Wo er auf
      * der Seite landet, entscheidet die Vorlage.
+     *
+     * Werte der Rechnung nennt er als Platzhalter `<<NAME>>`. Eingesetzt
+     * werden sie erst beim Setzen; der Satz selbst bleibt ohne LaTeX.
      */
     val mandatoryNote: String?,
 ) {
@@ -117,16 +120,16 @@ enum class InvoiceType(
     // und Storno mit Bezug auf die Ursprungsrechnung, 381 für die kaufmännische
     // Gutschrift ohne Bezug und 389 für die Gutschrift im Sinne des §14 Abs. 2
     // Satz 2 UStG (ADR-0006). Der Pflichtsatz nennt Nummer und Datum der
-    // Ursprungsrechnung nicht: Sie stehen als eigene Angabe auf dem Blatt, weil
-    // EN 16931 sie als Struktur führt (BG-3) und nicht als Prosa. Er sagt auch
-    // nicht, *wo* sie stehen – das entscheidet die Vorlage.
+    // Ursprungsrechnung als Platzhalter, eingesetzt beim Setzen. Im Modell
+    // bleibt der Bezug trotzdem Struktur (BG-3): Ein XML-Export liest ihn dort
+    // und nicht aus diesem Satz.
     CANCELLATION(
         "stornorechnung",
         "384",
         servicePeriodIsForecast = false,
         chargesForService = false,
         mandatoryNote =
-            "Diese Stornorechnung hebt die genannte Ursprungsrechnung vollständig auf. " +
+            "Diese Stornorechnung hebt die Rechnung <<URSPRUNGSNUMMER>> vom <<URSPRUNGSDATUM>> vollständig auf. " +
                 "Ein bereits gezahlter Betrag wird erstattet.",
     ),
     ;
