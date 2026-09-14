@@ -14,7 +14,7 @@ kotlin {
 }
 
 application {
-    mainClass = "de.fluchitconsulting.rechnung.MainKt"
+    mainClass = "de.fluchitconsulting.rechnungsgenerator.MainKt"
 }
 
 dependencies {
