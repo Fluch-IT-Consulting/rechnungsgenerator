@@ -112,6 +112,20 @@ data class CalculatedInvoice(
     val remainingAmount: Money get() = grossTotal - prepaymentTotal
 
     /**
+     * Decken die vereinnahmten Abschläge den Rechnungsbetrag genau? Dann steht
+     * statt eines Restbetrags von null ein Satz auf dem Blatt.
+     *
+     * Hier und nicht im Renderer, der vorher selbst `remainingAmount.isZero()`
+     * fragte, während Zahlungsziel und Bankverbindung [requestsPayment]
+     * folgten (#148). Beides bleibt getrennt: "ausgeglichen" heißt genau null,
+     * "fordert kein Geld" heißt nicht positiv. Ausgeglichen *und* Konto ist
+     * damit nicht baubar, weil null nicht positiv ist.
+     *
+     * Ohne Abschläge ist nichts ausgeglichen, auch nicht bei Gesamtbetrag null.
+     */
+    val settledByPrepayments: Boolean get() = prepayments.isNotEmpty() && remainingAmount.isZero()
+
+    /**
      * Fordert dieses Dokument zur Zahlung auf?
      *
      * Nicht dasselbe wie [InvoiceType.chargesForService]: Eine Schlussrechnung,

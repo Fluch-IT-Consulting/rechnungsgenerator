@@ -57,7 +57,7 @@ internal object DeductionBlocks {
         // nacktes "0,00 €" unter dem Strich sieht aus wie ein Fehler, nicht wie
         // ein ausgeglichener Betrag.
         val (closingRow, trailingNote) =
-            if (calculatedInvoice.remainingAmount.isZero()) {
+            if (calculatedInvoice.settledByPrepayments) {
                 // Kein Absatzwechsel davor: \hinweisabsatz beginnt selbst mit \par.
                 Latex.EMPTY to
                     Latex.macro(

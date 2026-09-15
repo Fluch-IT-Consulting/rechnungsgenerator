@@ -104,8 +104,35 @@ class InvoiceCalculatorTest : FunSpec({
                 )
 
             calculated.remainingAmount shouldBe Money("0.00")
+            calculated.settledByPrepayments shouldBe true
             calculated.requestsPayment shouldBe false
             calculated.dueDate shouldBe null
+        }
+
+        test("eine Schlussrechnung mit Restbetrag ist nicht ausgeglichen") {
+            val calculated =
+                InvoiceCalculator.calculate(
+                    testInvoice(
+                        type = InvoiceType.FINAL,
+                        items = listOf(testItem(quantity = "2", unitPrice = "4000.00")),
+                        prepayments = listOf(testPrepayment()),
+                    ),
+                    config,
+                )
+
+            calculated.settledByPrepayments shouldBe false
+            calculated.requestsPayment shouldBe true
+        }
+
+        test("ohne Abschläge ist nichts ausgeglichen, auch bei Gesamtbetrag null") {
+            val calculated =
+                InvoiceCalculator.calculate(
+                    testInvoice(items = listOf(testItem(quantity = "0", unitPrice = "1000.00"))),
+                    config,
+                )
+
+            calculated.remainingAmount shouldBe Money("0.00")
+            calculated.settledByPrepayments shouldBe false
         }
 
         test("eine Stornorechnung fordert kein Geld") {
