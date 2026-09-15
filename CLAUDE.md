@@ -92,6 +92,13 @@ CV/Web-Auftritt des Autors), Validierung über veraPDF.
   für alle Kommandos; die Kommandos werfen sie nur durch (#119). Zu Text wird
   die Abbruchliste allein in `RejectedException`. Vorher tat jedes Kommando das
   selbst, und in #52 liefen die Fassungen auseinander.
+  `erzeuge --oeffnen` öffnet das fertige PDF über `PdfViewer`, eine eigene
+  Naht im Paket `generate` und bewusst nicht in `toolchain` (#144): Dort
+  liegen die Werkzeuge, ohne die kein PDF entsteht, und `checkAvailable()`
+  prüft sie beim Start. Fehlt der Viewer, entsteht die Rechnung trotzdem – ein
+  Fehlschlag ist deshalb ein Hinweis mit Exitcode 0, kein Abbruch. Gestartet
+  wird nicht über `ProcessRunner`, dessen Vertrag bis zum Ende wartet und hart
+  abräumt; das risse unter Linux den Viewer mit.
 - **Positionstexte**: drei Felder statt einem, entlang der Aufteilung von
   EN 16931 – `bezeichnung` (BT-153, Pflicht), `beschreibung` (BT-154) und
   `hinweis` (BT-127). Ein einziges Freitextfeld hätte fürs PDF gereicht, würde
