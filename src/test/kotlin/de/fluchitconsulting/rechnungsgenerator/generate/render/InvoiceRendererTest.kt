@@ -280,7 +280,7 @@ class InvoiceRendererTest : FunSpec({
         }
 
         test("die Vereinnahmung wird genannt, sobald sie feststeht") {
-            abschlag(LocalDate.of(2026, 8, 10)) shouldContain "Abschlag vereinnahmt am 10. August 2026"
+            abschlag(LocalDate.of(2026, 8, 10)) shouldContain "Abschlag vereinnahmt am 10.~August 2026"
             // Auf die Zeile prüfen, nicht auf das Wort: Es steht auch in einem
             // Kommentar der Vorlage, und die wird mit gerendert.
             abschlag() shouldNotContain "Abschlag vereinnahmt am"

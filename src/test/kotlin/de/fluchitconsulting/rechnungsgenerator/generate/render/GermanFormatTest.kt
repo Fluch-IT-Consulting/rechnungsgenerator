@@ -95,8 +95,11 @@ class GermanFormatTest : FunSpec({
 
     test("Datumsangaben") {
         assertSoftly {
-            GermanFormat.date(LocalDate.of(2026, 8, 14)).tex shouldBe "14. August 2026"
-            GermanFormat.date(LocalDate.of(2026, 3, 1)).tex shouldBe "1. März 2026"
+            // ~ hinter dem Tag: Der Punkt ist kein Satzende (#143).
+            GermanFormat.date(LocalDate.of(2026, 8, 14)).tex shouldBe "14.~August 2026"
+            GermanFormat.date(LocalDate.of(2026, 3, 1)).tex shouldBe "1.~März 2026"
+            // In den Metadaten ist ~ ein Zeichen und kein Abstand.
+            GermanFormat.dateInMetadata(LocalDate.of(2026, 8, 14)).tex shouldBe "14. August 2026"
             GermanFormat.shortDate(LocalDate.of(2026, 7, 1)).tex shouldBe "01.07.2026"
         }
     }

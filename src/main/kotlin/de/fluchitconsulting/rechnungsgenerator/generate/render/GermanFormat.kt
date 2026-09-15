@@ -86,8 +86,29 @@ object GermanFormat {
      */
     fun percent(percent: Percent): Latex = "${exact(percent.valueAsPercentage, minFraction = 0)} %".escapeLatex()
 
-    /** Ausgeschriebenes Datum: `14. August 2026` */
+    /**
+     * Ausgeschriebenes Datum: `14. August 2026`.
+     *
+     * Hinter dem Tag ein geschütztes Leerzeichen, das [escapeLatex] zu `~`
+     * macht: ein fester Wortzwischenraum. Der Punkt nach dem Tag ist kein
+     * Satzende, und ohne `~` bekäme er dort, wo die Vorlage den breiten
+     * Satzabstand setzt, eine Lücke wie nach einem Satz (#143). Nebenbei bricht
+     * das Datum nicht mehr zwischen Tag und Monat um.
+     *
+     * Nicht f\u00FCr die XMP-Metadaten, dort gilt [dateInMetadata].
+     */
     fun date(date: LocalDate): Latex =
+        DateTimeFormatter.ofPattern("d.\u00A0MMMM yyyy", Locale.GERMANY).format(date).escapeLatex()
+
+    /**
+     * Dasselbe Datum mit gew\u00F6hnlichem Leerzeichen, f\u00FCr die .xmpdata-Datei.
+     *
+     * pdfx liest die Felder dort als Text und nicht als Satz: Ein `~` k\u00E4me als
+     * Tilde in die Dokumenteigenschaften des PDF ("vom 14.~August 2026").
+     * Nachgemessen mit pdfinfo; veraPDF bem\u00E4ngelt das nicht, es ist ja g\u00FCltiger
+     * Text \u2013 nur eben der falsche.
+     */
+    fun dateInMetadata(date: LocalDate): Latex =
         DateTimeFormatter.ofPattern("d. MMMM yyyy", Locale.GERMANY).format(date).escapeLatex()
 
     /**
