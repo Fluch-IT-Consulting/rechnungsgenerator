@@ -9,10 +9,6 @@ import de.fluchitconsulting.rechnungsgenerator.values.Money
 // Top-Level wie escapeLatex und joinToLatex: Ein Objekt drumherum trüge nur
 // einen Namen, nach dem niemand sucht.
 
-// Zeilenumbruch in LaTeX. Als Konstante, weil "\\\\" im Kotlin-Quelltext
-// schwer zu lesen ist: vier Backslashes für zwei im Ergebnis.
-internal const val BR = "\\\\"
-
 /**
  * Ein Trenner zwischen Tabellenzeilen, mit Leerzeichen davor und
  * Zeilenumbruch danach – beides nur, damit das erzeugte .tex lesbar bleibt.
