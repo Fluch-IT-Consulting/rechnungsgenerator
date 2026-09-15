@@ -64,6 +64,17 @@ CV/Web-Auftritt des Autors), Validierung über veraPDF.
   wurde dabei der Unterschied im Einzug zwischen der gedämpften Zweitzeile einer
   Position und der eines Abschlags: Das ist Satzbild und gehört vor Augen, nicht
   in einen Umbau.
+  Auch der Satzabstand ist Satzbild (#143): Im ganzen Dokument gilt
+  `\frenchspacing`, weil TeX sonst jeden Punkt nach Kleinbuchstabe oder Ziffer
+  für ein Satzende hält ("Dr. Erika") und sich in Eingabedaten nicht erkennen
+  lässt, wo ein Satz wirklich endet. Den breiten Abstand nach `.` `?` `!` setzt
+  allein `\hinweisabsatz`, der die eigenen Sätze des Programms trägt –
+  Eingabedaten gehören deshalb nicht hinein. Ein Datum schreibt
+  `GermanFormat.date` mit `~` hinter dem Tag, damit es auch dort keine Lücke
+  bekommt; in den XMP-Metadaten wäre `~` aber ein Zeichen, dort gilt
+  `dateInMetadata`. Erwogen und verworfen: ein zweiter Weg in `escapeLatex`,
+  der in Daten jeden Punkt entschärft – 74 Aufrufe hätten ihre Bedeutung
+  geändert, für eine Entscheidung, die in die Vorlage gehört.
 - **Externe Prozesse**: Ausgabe wird in eine Datei umgeleitet, nicht in einen
   Stream gelesen – sonst blockiert das Lesen bei einem hängenden Prozess, und
   die Zeitgrenze käme nie zum Zug. LuaLaTeX läuft, solange die Log-Datei einen
