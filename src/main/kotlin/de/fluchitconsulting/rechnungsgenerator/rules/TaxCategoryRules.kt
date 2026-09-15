@@ -75,21 +75,19 @@ internal object TaxCategoryRules {
 
             // Alle Positionen einer Gruppe müssen sich über den Befreiungsgrund
             // einig sein: BG-23 trägt genau einen je Kategorie und Satz. Eine
-            // uneinige Gruppe trägt deshalb keinen (InvoiceCalculator.reasonFor) –
-            // gemeldet wird es hier, am fertigen Ergebnis.
+            // uneinige Gruppe trägt deshalb keinen (VatGroup.exemptionReason) –
+            // gemeldet wird es hier, am fertigen Ergebnis. Nur bei Kategorien
+            // mit Grund: Bei den übrigen meldet BEFREIUNGSGRUND_UNZULAESSIG
+            // schon jede Position.
             calculated.vatGroups.filter { it.category.requiresReason }.forEach { group ->
-                val gruende =
-                    calculated.lines
-                        .filter { it.item.taxCategory == group.category && it.item.vatRate == group.rate }
-                        .mapNotNull { it.item.taxExemptionReason }
-                        .distinct()
-                if (gruende.size > 1) {
+                if (group.reasons.size > 1) {
                     add(
                         Finding(
                             Rule.BEFREIUNGSGRUENDE_UNEINHEITLICH,
                             Subject.WholeInvoice,
                             "Kategorie ${group.category.code} hat zwei verschiedene Befreiungsgründe: " +
-                                gruende.joinToString(" / ") + ". Die Steueraufschlüsselung trägt nur einen je Kategorie.",
+                                group.reasons.joinToString(" / ") +
+                                ". Die Steueraufschlüsselung trägt nur einen je Kategorie.",
                         ),
                     )
                 }

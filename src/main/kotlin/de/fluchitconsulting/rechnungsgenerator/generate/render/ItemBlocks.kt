@@ -94,10 +94,15 @@ internal object ItemBlocks {
      * Bei Reverse Charge ist das keine Höflichkeit: §14a Abs. 5 UStG verlangt
      * den Hinweis auf die Steuerschuldnerschaft des Leistungsempfängers
      * ausdrücklich auf der Rechnung.
+     *
+     * Gefragt wird nur nach dem Grund, nicht zusätzlich nach dem Steuerbetrag
+     * null: Einen Grund tragen nur Kategorien, die auch den Satz 0 verlangen –
+     * das hält ein Test am Enum fest. Vorher stand beides hier, und der
+     * Renderer entschied selbst, was die Gruppe schon wusste (#148).
      */
     fun taxNotes(calculatedInvoice: CalculatedInvoice): Latex =
         calculatedInvoice.vatGroups
-            .filter { it.amount.isZero() && it.exemptionReason != null }
+            .filter { it.exemptionReason != null }
             .map { group ->
                 "Auf ".escapeLatex() + GermanFormat.amountWithCurrency(group.base) +
                     " entfällt keine Umsatzsteuer: ".escapeLatex() + group.exemptionReason!!.escapeLatex() +

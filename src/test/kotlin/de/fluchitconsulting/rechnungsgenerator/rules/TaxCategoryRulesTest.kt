@@ -133,8 +133,22 @@ class TaxCategoryRulesTest : FunSpec({
                     ),
             )
 
-        InvoiceCalculator.calculate(invoice, config).messageOf(Rule.BEFREIUNGSGRUENDE_UNEINHEITLICH) shouldContain
-            "zwei verschiedene"
+        val calculated = InvoiceCalculator.calculate(invoice, config)
+
+        calculated.messageOf(Rule.BEFREIUNGSGRUENDE_UNEINHEITLICH) shouldContain "zwei verschiedene"
+        // Die Gruppe kennt beide Gründe und setzt keinen davon aufs PDF.
+        calculated.vatGroups.single().reasons shouldBe setOf("Grund A", "Grund B")
+        calculated.vatGroups.single().exemptionReason shouldBe null
+    }
+
+    test("wer einen Befreiungsgrund verlangt, verlangt auch den Satz 0") {
+        // Darauf verlässt sich ItemBlocks.taxNotes: Es fragt nur nach dem Grund
+        // und nicht zusätzlich, ob der Steuerbetrag null ist. Eine Kategorie
+        // mit Grund und Steuer bräche diese Annahme – dann hier entscheiden,
+        // nicht im Renderer.
+        TaxCategory.entries.filter { it.requiresReason }.forEach { kategorie ->
+            withClue("${kategorie.code} (${kategorie.label})") { kategorie.requiresZeroRate shouldBe true }
+        }
     }
 
     test("gleicher Satz, verschiedene Kategorien ergeben getrennte Gruppen") {

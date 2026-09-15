@@ -34,9 +34,34 @@ data class VatGroup(
     // Bemessungsgrundlage: Summe aller Positionsnetto-Beträge dieser Gruppe.
     val base: Money,
     val amount: Money,
-    /** BT-120, nur bei Kategorien ohne Steuer. */
-    val exemptionReason: String? = null,
-)
+    /**
+     * Die Befreiungsgründe, die die Positionen dieser Gruppe ausdrücklich
+     * nennen – ohne den Vorgabegrund der Kategorie.
+     *
+     * Die Gruppe trägt alle und nicht nur den einen, der auf das PDF kommt:
+     * Sonst gäbe [exemptionReason] `null` für "kein Grund" ebenso wie für
+     * "uneinig", und die Regel BEFREIUNGSGRUENDE_UNEINHEITLICH müsste den
+     * Gruppenschlüssel nachbauen, um das eine vom anderen zu unterscheiden.
+     * Änderte sich dann die Gruppierung, prüfte sie still andere Gruppen (#148).
+     */
+    val reasons: Set<String> = emptySet(),
+) {
+    /**
+     * BT-120, nur bei Kategorien, die einen Grund verlangen. Alle Positionen
+     * einer Gruppe müssen sich einig sein: BG-23 trägt genau einen Grund je
+     * Kategorie und Satz.
+     *
+     * Ohne Einigkeit gibt es keinen Grund: Einen der beiden zu wählen hieße
+     * raten, welcher gemeint war. Gemeldet wird das als
+     * BEFREIUNGSGRUENDE_UNEINHEITLICH.
+     */
+    val exemptionReason: String? get() =
+        when {
+            !category.requiresReason -> null
+            reasons.size > 1 -> null
+            else -> reasons.singleOrNull() ?: category.defaultReason
+        }
+}
 
 /**
  * Ein abgesetzter Abschlag mit seinen Summen.
@@ -186,7 +211,7 @@ object InvoiceCalculator {
                         rate = rate,
                         base = base,
                         amount = base * rate,
-                        exemptionReason = reasonFor(category, group),
+                        reasons = group.mapNotNull { it.item.taxExemptionReason }.toSet(),
                     )
                 }.sortedWith(compareBy({ it.category.ordinal }, { -it.rate.valueAsPercentage.toDouble() }))
 
@@ -200,22 +225,5 @@ object InvoiceCalculator {
             }
 
         return CalculatedInvoice(invoice, config, lines, netTotal, vatGroups, grossTotal, prepayments)
-    }
-
-    /**
-     * Der Befreiungsgrund einer Gruppe. Alle Positionen einer Gruppe müssen sich
-     * einig sein: BG-23 trägt genau einen Grund je Kategorie und Satz, zwei
-     * verschiedene Begründungen ließen sich dort nicht abbilden.
-     *
-     * Ohne Einigkeit trägt die Gruppe keinen Grund: Einen der beiden zu wählen
-     * hieße raten, welcher gemeint war. Gemeldet wird das in
-     * `TaxCategoryRules` als BEFREIUNGSGRUENDE_UNEINHEITLICH – nicht hier, wo
-     * die Meldung früher als Seiteneffekt an eine Liste angehängt wurde.
-     */
-    private fun reasonFor(category: TaxCategory, group: List<CalculatedLine>): String? {
-        if (!category.requiresReason) return null
-        val gruende = group.mapNotNull { it.item.taxExemptionReason }.distinct()
-        if (gruende.size > 1) return null
-        return gruende.firstOrNull() ?: category.defaultReason
     }
 }
