@@ -181,6 +181,29 @@ class InvoiceRendererTest : FunSpec({
             // "\" und "$1" im Ersatztext als Rückverweis – LaTeX besteht aus beidem.
             InvoiceRenderer.fillIn("<<A>>", mapOf("A" to Latex.raw("\\textbf{\$1}"))) shouldBe "\\textbf{\$1}"
         }
+
+        test("ein rohes Zeilenende in einem Wert bricht ab und nennt den Platzhalter") {
+            // Der Fall aus #147: Hinter einem rohen \\ liest LaTeX eine Zeile,
+            // die mit "[" beginnt, als Abstandsangabe.
+            val fehler =
+                shouldThrow<IllegalStateException> {
+                    InvoiceRenderer.checkLineBreaks(mapOf("EMPFAENGER" to Latex.raw("Muster GmbH\\\\Musterweg 1")))
+                }
+
+            fehler.message!! shouldContain "<<EMPFAENGER>>"
+        }
+
+        test("ein Zeilenwechsel über das Makro der Vorlage besteht die Prüfung") {
+            val anschrift = "Muster GmbH".escapeLatex() + Latex.macro(TemplateMacro.ZEILENWECHSEL) + "Musterweg 1".escapeLatex()
+
+            InvoiceRenderer.checkLineBreaks(mapOf("EMPFAENGER" to anschrift))
+        }
+
+        test("zwei Backslashes aus den Eingabedaten sind kein Zeilenende") {
+            // escapeLatex macht aus jedem einzelnen \textbackslash{} – deshalb
+            // kann keine Rechnungsdatei die Prüfung auslösen.
+            InvoiceRenderer.checkLineBreaks(mapOf("SCHLUSSSATZ" to "Ablage unter \\\\server\\rechnungen".escapeLatex()))
+        }
     }
 
     context("Das Land in der Anschrift") {
