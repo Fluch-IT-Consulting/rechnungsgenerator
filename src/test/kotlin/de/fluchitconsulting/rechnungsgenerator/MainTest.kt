@@ -89,7 +89,7 @@ class MainTest : FunSpec({
 
         result.exitCode shouldBe 1
         result.out shouldBe ""
-        result.err shouldContain "passt nicht zum Muster"
+        result.err shouldContain "bleibt kein Dateiname übrig"
         result.err shouldContain "Position 1"
     }
 

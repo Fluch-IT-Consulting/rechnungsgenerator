@@ -16,6 +16,24 @@ class InvoiceCalculatorTest : FunSpec({
 
     val config = testSellerConfig()
 
+    context("Dateiname") {
+        test("setzt sich aus Rechnungsart und -nummer zusammen") {
+            // Im Ordner liegen die Dokumente eines Vorgangs nebeneinander; welches
+            // der Abschlag ist, soll man am Namen sehen.
+            InvoiceCalculator
+                .calculate(testInvoice(number = "R26-009", type = InvoiceType.PREPAYMENT), config)
+                .fileBaseName shouldBe "Abschlagsrechnung-R26-009"
+        }
+
+        test("ersetzt Zeichen außerhalb des portablen Zeichensatzes durch Bindestriche") {
+            InvoiceCalculator.calculate(testInvoice(number = "R26/009"), config).fileBaseName shouldBe "Rechnung-R26-009"
+        }
+
+        test("gibt es nicht, wenn von der Nummer nichts übrig bleibt") {
+            InvoiceCalculator.calculate(testInvoice(number = "///"), config).fileBaseName shouldBe null
+        }
+    }
+
     test("Positionsnetto wird kaufmännisch auf Cent gerundet") {
         // 1.25 × 98.99 = 123.7375 -> 123.74
         val invoice = testInvoice(items = listOf(testItem(quantity = "1.25", unitPrice = "98.99")))
