@@ -32,11 +32,13 @@ internal object VatIdCheckRules {
     private fun confirmation(calculated: CalculatedInvoice): List<Finding> =
         buildList {
             val invoice = calculated.invoice
-            val kategorien =
-                invoice.items
-                    .map { it.taxCategory }
-                    .filter { it.requiresCustomerVatId }
-                    .toSet()
+            // Ausgewählt wird über den Nachweis und nicht über
+            // requiresCustomerVatId: Das eine ist eine Angabe auf dem Papier,
+            // das andere diese Pflicht. Vorher stand hier das Papier – heute
+            // ohne Folgen, weil beide bei AE und K anschlagen, aber eine
+            // Kategorie mit Nachweis und ohne Angabe wäre still ungeprüft
+            // geblieben (#148).
+            val kategorien = calculated.taxCategories.filter { it.vatIdConfirmation != VatIdConfirmation.NEVER }
             if (kategorien.isEmpty()) return@buildList
             val kunde = invoice.customer
             val pflicht =
@@ -83,7 +85,7 @@ internal object VatIdCheckRules {
         buildList {
             val invoice = calculated.invoice
             val kunde = invoice.customer
-            val kategorien = invoice.items.map { it.taxCategory }.toSet()
+            val kategorien = calculated.taxCategories
 
             // Die Altersprüfung der EU-Liste hängt bewusst am Ausland und läuft
             // nicht immer: Bei einer Inlandsrechnung wird die Liste gar nicht

@@ -61,7 +61,7 @@ internal object TaxCategoryRules {
 
             // BT-48: Ohne USt-IdNr. des Empfängers lässt sich weder die
             // Steuerschuldnerschaft noch eine innergemeinschaftliche Lieferung belegen.
-            val brauchtKundenUstId = invoice.items.map { it.taxCategory }.filter { it.requiresCustomerVatId }
+            val brauchtKundenUstId = calculated.taxCategories.filter { it.requiresCustomerVatId }
             if (brauchtKundenUstId.isNotEmpty() && invoice.customer.vatId == null) {
                 add(
                     Finding(

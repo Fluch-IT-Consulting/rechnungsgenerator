@@ -173,6 +173,16 @@ data class CalculatedInvoice(
     val customerInEu: Boolean get() = EuMemberStates.contains(invoice.customer.address.countryCode)
 
     /**
+     * Die Steuerkategorien, die auf dieser Rechnung vorkommen – aus derselben
+     * Gruppierung wie die Steueraufschlüsselung, in deren Reihenfolge.
+     *
+     * Welche davon etwas verlangen, fragt jede Regel selbst: Die USt-IdNr. auf
+     * dem Papier und der Nachweis der Abfrage sind zwei Eigenschaften der
+     * Kategorie, keine gemeinsame Menge (#148).
+     */
+    val taxCategories: Set<TaxCategory> get() = vatGroups.map { it.category }.toSet()
+
+    /**
      * Bis wann zu zahlen ist – oder `null`, wenn das Dokument nicht zur Zahlung
      * auffordert ([requestsPayment]). Bei einer Schlussrechnung ohne Restbetrag
      * wäre ein Zahlungsziel neben "es verbleibt kein Restbetrag" die zweite,
