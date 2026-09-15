@@ -22,9 +22,10 @@ internal object InvoiceNumberRules {
     fun check(calculated: CalculatedInvoice): List<Finding> {
         val number = calculated.invoice.number
 
-        // Leer und Leerraum gelten unabhängig vom Muster, also auch ohne
-        // Eintrag in den Stammdaten: Aus der Nummer entsteht der Dateiname des
-        // PDF, und ein gequotetes ' R26-009' ergäbe still eine andere Datei.
+        // Leer, Leerraum und der Dateiname gelten unabhängig vom Muster, also
+        // auch ohne Eintrag in den Stammdaten: Aus der Nummer entsteht der
+        // Dateiname des PDF, und ein gequotetes ' R26-009' ergäbe still eine
+        // andere Datei.
         if (number.isBlank()) {
             return listOf(
                 Finding(
@@ -41,6 +42,18 @@ internal object InvoiceNumberRules {
                     Subject.WholeInvoice,
                     "Die Rechnungsnummer '$number' beginnt oder endet mit Leerraum. Nur ein gequoteter " +
                         "YAML-Wert kann ihn tragen; gemeint war vermutlich '${number.trim()}'.",
+                ),
+            )
+        }
+        // Vor dem Muster, weil es die Ursache nennt: "///" passt zu keinem
+        // vernünftigen Muster, aber ändern muss man die Zeichen (#150).
+        if (calculated.fileBaseName == null) {
+            return listOf(
+                Finding(
+                    Rule.RECHNUNGSNUMMER_OHNE_DATEINAMEN,
+                    Subject.WholeInvoice,
+                    "Von der Rechnungsnummer '$number' bleibt kein Dateiname übrig – stehen bleiben nur " +
+                        "Buchstaben A–Z, Ziffern, Punkt, Unterstrich und Bindestrich.",
                 ),
             )
         }

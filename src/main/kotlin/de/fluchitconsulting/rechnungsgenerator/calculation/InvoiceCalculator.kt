@@ -200,6 +200,29 @@ data class CalculatedInvoice(
         } else {
             invoice.issueDate.plusDays(paymentTermDays.toLong())
         }
+
+    /**
+     * Rechnungsart und -nummer als Dateiname ohne Endung –
+     * "Abschlagsrechnung-R26-009". Oder `null`, wenn von der Nummer nichts
+     * übrig bleibt; das meldet `RECHNUNGSNUMMER_OHNE_DATEINAMEN`.
+     *
+     * Im Ordner liegen die Dokumente zu einem Vorgang nebeneinander; welches
+     * davon der Abschlag ist, soll man am Namen sehen und nicht erst nach dem
+     * Öffnen. Von der Nummer bleibt nur der portable Zeichensatz für Dateinamen
+     * aus POSIX stehen, alles andere wird zum Bindestrich. Das ist kein Wissen
+     * über LuaLaTeX, auch wenn es dort über Leerzeichen im Jobnamen stolpert.
+     *
+     * Hier und nicht im Kommando (#150): Dort fiel eine Nummer ohne Dateinamen
+     * erst auf, nachdem die Rechnung angenommen war – mit weiteren Abbrüchen in
+     * der Datei also erst im zweiten Lauf.
+     */
+    val fileBaseName: String? get() =
+        invoice.number
+            .replace(Regex("[^A-Za-z0-9._-]"), "-")
+            .trim('-')
+            // takeIf gibt den Wert zurück, wenn die Bedingung gilt, sonst null.
+            .takeIf { it.isNotEmpty() }
+            ?.let { "${invoice.type.documentName}-$it" }
 }
 
 /**

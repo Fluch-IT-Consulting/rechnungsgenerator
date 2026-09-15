@@ -58,6 +58,19 @@ class InvoiceNumberRulesTest : FunSpec({
             message shouldContain "Leerraum"
             message shouldContain "'R26-001'"
         }
+
+        test("eine Nummer, von der kein Dateiname übrig bleibt, wird abgelehnt und nennt die Zeichen") {
+            // Bis #150 fiel sie erst in `erzeuge` auf, nachdem die Rechnung
+            // angenommen war – mit weiteren Abbrüchen in der Datei also erst im
+            // zweiten Lauf (ADR-0004).
+            val message =
+                InvoiceCalculator
+                    .calculate(testInvoice(number = "///"), ohneMuster)
+                    .messageOf(Rule.RECHNUNGSNUMMER_OHNE_DATEINAMEN)
+
+            message shouldContain "'///'"
+            message shouldContain "Bindestrich"
+        }
     }
 
     context("mit Muster in den Stammdaten") {
@@ -93,6 +106,15 @@ class InvoiceNumberRulesTest : FunSpec({
                 .calculate(testInvoice(number = ""), mitMuster)
                 .rules()
                 .shouldContainOnlyRule(Rule.RECHNUNGSNUMMER_FEHLT)
+        }
+
+        test("eine Nummer ohne Dateinamen meldet nicht zusätzlich, dass sie nicht passt") {
+            // Wie leer und Leerraum gilt das unabhängig vom Muster und wird
+            // vorher geprüft: Es nennt die Ursache.
+            InvoiceCalculator
+                .calculate(testInvoice(number = "///"), mitMuster)
+                .rules()
+                .shouldContainOnlyRule(Rule.RECHNUNGSNUMMER_OHNE_DATEINAMEN)
         }
 
         test("die Nummern der abgesetzten Abschläge bleiben ungeprüft") {
