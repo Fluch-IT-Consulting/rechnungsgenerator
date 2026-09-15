@@ -32,9 +32,12 @@ value class Latex private constructor(val tex: String) {
         val EMPTY = Latex("")
 
         /**
-         * Markup, das der Renderer selbst schreibt: `\midrule`, Spaltentrenner,
-         * Zeilenumbrüche mit Abstand. Der Name ist die Warnung – wer hier Daten
-         * hineinreicht, umgeht die Maskierung.
+         * Markup, das der Renderer selbst schreibt: die Klammern eines
+         * Makroaufrufs, Leerraum und Umbrüche, die das erzeugte .tex lesbar
+         * halten. Zeilenenden von LaTeX gehören nicht dazu, sie stehen als Makro
+         * in der Vorlage (#147) – und [InvoiceRenderer.checkLineBreaks] bricht
+         * ab, wenn doch eines hier hereinkommt. Der Name ist die Warnung – wer
+         * hier Daten hineinreicht, umgeht die Maskierung.
          *
          * Für den häufigsten Fall gibt es [macro]; sonst stünde diese Warnung
          * an zwanzig Stellen, von denen siebzehn nur Klammern setzen, und wäre
@@ -148,8 +151,9 @@ fun String.escapeLatex(resolver: VariableResolver): Latex {
 
 /**
  * Fügt Fragmente zusammen. Der Trenner ist Markup und deshalb eine rohe
- * Zeichenkette – in dieser Vorlage sind es Spaltentrenner (` & `) und
- * Zeilenumbrüche mit Abstand (` \\[2.5mm]`).
+ * Zeichenkette – hier der Mittelpunkt ` · ` zwischen den Angaben einer Zeile
+ * und der Umbruch, der das erzeugte .tex lesbar hält. Ein Zeilenende von LaTeX
+ * ist dagegen ein Makro der Vorlage und nimmt die Überladung darunter (#147).
  */
 fun Iterable<Latex>.joinToLatex(separator: String = ""): Latex = Latex.raw(joinToString(separator) { it.tex })
 

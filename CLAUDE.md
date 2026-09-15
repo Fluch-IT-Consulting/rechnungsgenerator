@@ -54,7 +54,16 @@ CV/Web-Auftritt des Autors), Validierung über veraPDF.
   weiter, *ob* etwas dasteht. Die Millimeter sind benannte Längen, die
   Zeilenwechsel mit Abstand Makros (`\positionstrenner`), ebenso das
   Zusammenhalten einer Angabe (`\zusammen`): Der Renderer schreibt weder einen
-  Längennamen noch ein Makro von LaTeX selbst (#76). Die Tabellenzeilen sind
+  Längennamen noch ein Makro von LaTeX selbst (#76). Auch kein `\\` (#147):
+  Die Zeilen eines Blocks verbindet `\zeilenwechsel`, die Abschlusszeile eines
+  Betragsblocks beendet die Zeile davor selbst, und die Person im Briefkopf
+  setzt `\kopfperson`. Vorher schrieb der Renderer das rohe `\\`, und eine
+  Zeile, die mit `[` begann, las LaTeX als Abstandsangabe und brach ab – das
+  `{}`, das `Latex.macro` hinter ein Makro ohne Argument setzt, verhindert das.
+  Beim Setzen prüft `checkLineBreaks`, dass kein Wert ein `\\` enthält.
+  **Nicht** umgestellt wurden die Trenner ` · ` im Fuß und in den
+  Zusatzzeilen: Sie sind Satzbild und werden mit dem zweiten Design fällig,
+  wenn feststeht, welche dort anders sind. Die Tabellenzeilen sind
   Makros (`\positionszeile` mit
   fünf Argumenten) – damit steht die Spaltenzahl nur an einer Stelle, statt in
   Vorlage und Kotlin getrennt getroffen zu werden. Welche Makros der Renderer

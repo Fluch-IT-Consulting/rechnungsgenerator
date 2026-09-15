@@ -12,8 +12,11 @@ package de.fluchitconsulting.rechnungsgenerator.generate.render
  *
  * Der Renderer ruft kein anderes Makro auf, auch keines von LaTeX selbst: Wo er
  * früher `\mbox` oder `\\[\positionsabstand]` schrieb, stehen heute `ZUSAMMEN`
- * und die Trenner (#76). Einzige Ausnahme sind die Felder der pdfx-Metadaten –
- * sie gehören in die .xmpdata-Datei und nicht in diese Vorlage.
+ * und die Trenner (#76), wo er `\\` schrieb, `ZEILENWECHSEL`, `KOPFPERSON` und
+ * das Zeilenende in `ABSCHLUSSZEILE` (#147). Dass keines mehr hineinkommt,
+ * prüft `InvoiceRenderer.checkLineBreaks`. Einzige Ausnahme sind die Felder
+ * der pdfx-Metadaten – sie gehören in die .xmpdata-Datei und nicht in diese
+ * Vorlage.
  */
 enum class TemplateMacro(val macroName: String, val arity: Int) {
     POSITIONSTRENNER("positionstrenner", 0),
