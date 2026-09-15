@@ -112,6 +112,15 @@
 \newcommand{\blocktrenner}{\\[\blockabstand]}
 \newcommand{\ustidtrenner}{\\[\ustidabstand]}
 
+%% Der schlichte Zeilenwechsel ohne Abstand: zwischen den Zeilen von Anschrift,
+%% Kontakt, Bankverbindung, Steuerhinweisen und dem Block oben rechts (#147).
+%% Eines für alle Blöcke, solange es ein Design gibt – teilt ein zweites sie
+%% auf, kostet das einen Eintrag in TemplateMacro.
+%%
+%% Der Renderer ruft es als \zeilenwechsel{} auf, und das leere Paar schützt die
+%% nächste Zeile: Beginnt sie mit "[", läse \\ sie sonst als Abstandsangabe.
+\newcommand{\zeilenwechsel}{\\}
+
 %% Diese Angabe bricht nicht um. Im schmalen Block oben rechts bräche
 %% "Juni bis Oktober 2026" sonst hinter dem "bis" und läse sich wie zwei Angaben.
 \newcommand{\zusammen}[1]{\mbox{#1}}

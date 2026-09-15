@@ -102,5 +102,5 @@ internal object ItemBlocks {
                 "Auf ".escapeLatex() + GermanFormat.amountWithCurrency(group.base) +
                     " entfällt keine Umsatzsteuer: ".escapeLatex() + group.exemptionReason!!.escapeLatex() +
                     ".".escapeLatex()
-            }.joinToLatex(BR)
+            }.joinToLatex(Latex.macro(TemplateMacro.ZEILENWECHSEL))
 }

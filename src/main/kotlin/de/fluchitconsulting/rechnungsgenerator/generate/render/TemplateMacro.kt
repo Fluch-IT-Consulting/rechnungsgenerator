@@ -20,6 +20,7 @@ enum class TemplateMacro(val macroName: String, val arity: Int) {
     SUMMENTRENNER("summentrenner", 0),
     BLOCKTRENNER("blocktrenner", 0),
     USTIDTRENNER("ustidtrenner", 0),
+    ZEILENWECHSEL("zeilenwechsel", 0),
     ZUSAMMEN("zusammen", 1),
 
     // Nur für Sätze aus dem Quelltext: Allein hier setzt die Vorlage nach einem
