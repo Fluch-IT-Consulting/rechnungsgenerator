@@ -21,6 +21,10 @@ enum class TemplateMacro(val macroName: String, val arity: Int) {
     BLOCKTRENNER("blocktrenner", 0),
     USTIDTRENNER("ustidtrenner", 0),
     ZUSAMMEN("zusammen", 1),
+
+    // Nur für Sätze aus dem Quelltext: Allein hier setzt die Vorlage nach einem
+    // Satzende den breiten Abstand, und in Eingabedaten bekäme ihn auch eine
+    // Abkürzung wie "Dr." (#143).
     HINWEISABSATZ("hinweisabsatz", 1),
     ABSETZUNGSKOPF("absetzungskopf", 1),
     ABSETZUNGSTABELLE("absetzungstabelle", 1),
