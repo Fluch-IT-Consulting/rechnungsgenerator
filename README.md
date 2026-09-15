@@ -31,12 +31,19 @@ rechnungsgenerator erzeuge [OPTIONEN] <rechnung.yaml>
                              (Vorgabe: aus der Rechnungsnummer gebildet)
   --ueberschreiben           Eine vorhandene Zieldatei ersetzen
   --arbeitsdateien-behalten  Das .tex und die LaTeX-Hilfsdateien nicht löschen
+  --oeffnen                  Die fertige Rechnung im PDF-Viewer des Systems öffnen
 ```
 
 Eine vorhandene Zieldatei bleibt ohne `--ueberschreiben` unangetastet: Sie
 kann die Rechnung sein, die schon beim Kunden liegt. Der Schalter ist fürs
 Nachbessern eines Entwurfs gedacht. Ein PDF, das die PDF/A-Prüfung nicht
 besteht, kommt in keinem Fall ans Ziel.
+
+`--oeffnen` öffnet die Rechnung nach der Ausgabe mit dem Programm, das das
+System für PDFs eingerichtet hat – `open` auf macOS, `xdg-open` auf Linux.
+Geöffnet wird nur, was gültig am Ziel liegt. Lässt sich das PDF nicht öffnen,
+steht ein Hinweis unter der Ausgabe; der Exitcode bleibt 0, denn die Rechnung
+ist entstanden.
 
 Beispiel:
 
