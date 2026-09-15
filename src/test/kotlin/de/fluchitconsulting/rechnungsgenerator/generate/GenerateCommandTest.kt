@@ -67,10 +67,20 @@ class GenerateCommandTest : FunSpec({
         command.parse(arrayOf("erzeuge", datei.toString(), "-s", konfiguration.toString()))
     }
 
-    /** Führt das Kommando aus und sammelt, was es ausgegeben hätte. */
-    fun lauf(typesetter: Typesetter, vararg args: String): List<String> {
-        val ausgabe = mutableListOf<String>()
-        val command = RechnungsgeneratorCommand(typesetter)
+    /**
+     * Führt das Kommando aus und sammelt, was es ausgegeben hätte.
+     *
+     * Der Viewer ist immer ein Fake, auch wo ein Test ihn nicht nennt: Ein
+     * `--oeffnen` soll im Build nie ein Fenster aufmachen. [ausgabe] lässt sich
+     * hineinreichen, damit ein Test sie schon während des Laufs sieht.
+     */
+    fun lauf(
+        typesetter: Typesetter,
+        vararg args: String,
+        viewer: PdfViewer = FakePdfViewer(),
+        ausgabe: MutableList<String> = mutableListOf(),
+    ): List<String> {
+        val command = RechnungsgeneratorCommand(typesetter, viewer)
         command.context { echoMessage = { _, message, _, _ -> ausgabe += message.toString() } }
         command.parse(arrayOf("erzeuge", rechnung.toString(), "-s", stammdaten.toString()) + args)
         return ausgabe
@@ -187,6 +197,68 @@ class GenerateCommandTest : FunSpec({
         lauf(fake, "-o", eingaben.resolve("datum.pdf").toString())
 
         fake.creationDate shouldBe LocalDate.of(2026, 8, 14)
+    }
+
+    context("--oeffnen") {
+        test("öffnet genau die Zieldatei, und zwar nach der Ausgabe") {
+            val ziel = eingaben.resolve("oeffnen.pdf")
+            val ausgabe = mutableListOf<String>()
+            var ausgabeBeimOeffnen: List<String>? = null
+            val viewer = FakePdfViewer(onOpen = { ausgabeBeimOeffnen = ausgabe.toList() })
+
+            lauf(FakeTypesetter(), "-o", ziel.toString(), "--oeffnen", viewer = viewer, ausgabe = ausgabe)
+
+            viewer.opened shouldBe listOf(ziel)
+            ausgabe shouldContainInOrder listOf(ziel.toString(), "PDF/A-1b: gültig")
+            ausgabeBeimOeffnen shouldBe ausgabe
+        }
+
+        test("ohne den Schalter öffnet sich nichts") {
+            val viewer = FakePdfViewer()
+
+            lauf(FakeTypesetter(), "-o", eingaben.resolve("nicht-oeffnen.pdf").toString(), viewer = viewer)
+
+            viewer.opened shouldBe emptyList()
+        }
+
+        test("ein ungültiges PDF/A öffnet sich nicht, auch nicht mit --arbeitsdateien-behalten") {
+            val viewer = FakePdfViewer()
+
+            shouldThrow<ToolchainException> {
+                lauf(
+                    FakeTypesetter(valid = false),
+                    "-o",
+                    eingaben.resolve("ungueltig-oeffnen.pdf").toString(),
+                    "--oeffnen",
+                    "--arbeitsdateien-behalten",
+                    viewer = viewer,
+                )
+            }
+
+            viewer.opened shouldBe emptyList()
+        }
+
+        test("bricht erzeuge an einer vorhandenen Zieldatei ab, öffnet sich auch die nicht") {
+            // Die vorhandene Datei kann die verschickte Rechnung sein – nicht
+            // die, die gerade aus der Rechnungsdatei entstehen sollte.
+            val ziel = eingaben.resolve("vorhanden-oeffnen.pdf").also { it.writeText("das verschickte Original") }
+            val viewer = FakePdfViewer()
+
+            shouldThrow<CliktError> { lauf(FakeTypesetter(), "-o", ziel.toString(), "--oeffnen", viewer = viewer) }
+
+            viewer.opened shouldBe emptyList()
+        }
+
+        test("scheitert das Öffnen, bleibt es ein Erfolg – mit einem Hinweis als letzter Zeile") {
+            val ziel = eingaben.resolve("viewer-fehlt.pdf")
+            val viewer = FakePdfViewer(result = ViewerResult.Failed("open endete mit Exitcode 1."))
+
+            // Keine Ausnahme heißt Exitcode 0: Übersetzt wird erst in execute().
+            val ausgabe = lauf(FakeTypesetter(), "-o", ziel.toString(), "--oeffnen", viewer = viewer)
+
+            ziel.exists() shouldBe true
+            ausgabe.last() shouldBe "Hinweis: Das PDF konnte nicht geöffnet werden: open endete mit Exitcode 1."
+        }
     }
 
     test("eine Rechnungsnummer, von der kein Dateiname übrig bleibt, wird abgelehnt") {
