@@ -18,7 +18,7 @@ internal object MetadataBlocks {
             buildList {
                 add(invoice.customer.name.escapeLatex())
                 addAll(addressLines(invoice.customer.address, showCountry = !calculatedInvoice.isDomestic))
-            }.joinToLatex(BR)
+            }.joinToLatex(Latex.macro(TemplateMacro.ZEILENWECHSEL))
         // BT-48. Bei Reverse Charge und innergemeinschaftlicher Lieferung verlangt
         // §14a UStG die USt-IdNr. beider Parteien auf der Rechnung – die des
         // Ausstellers steht im Fuß, die des Empfängers hier.
@@ -62,7 +62,7 @@ internal object MetadataBlocks {
         buildList {
             val config = acceptedInvoice.calculated.config
             config.managingDirector?.let {
-                add("Geschäftsführung".escapeLatex() + Latex.raw(BR) + it.escapeLatex())
+                add("Geschäftsführung".escapeLatex() + Latex.macro(TemplateMacro.ZEILENWECHSEL) + it.escapeLatex())
             }
             add(metadata(acceptedInvoice))
         }.joinToLatex(Latex.macro(TemplateMacro.BLOCKTRENNER))
@@ -104,5 +104,5 @@ internal object MetadataBlocks {
             // Ob es ein Zahlungsziel gibt, entscheidet der Calculator; hier wird
             // nur gesetzt, was dasteht.
             calculatedInvoice.dueDate?.let { add("Zahlbar ohne Abzug bis ".escapeLatex() + GermanFormat.date(it)) }
-        }.joinToLatex(BR)
+        }.joinToLatex(Latex.macro(TemplateMacro.ZEILENWECHSEL))
 }

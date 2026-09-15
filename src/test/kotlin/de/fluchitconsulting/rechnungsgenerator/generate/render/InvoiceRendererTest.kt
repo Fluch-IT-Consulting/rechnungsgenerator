@@ -205,7 +205,7 @@ class InvoiceRendererTest : FunSpec({
             // Zeile "de" unter der Anschrift, während der Calculator dieselbe
             // Rechnung als Inlandsrechnung behandelte.
             anschrift(kundenland = "de", stellerland = "DE") shouldBe
-                """Beispiel Software GmbH\\Industriestraße 1\\90402 Nürnberg"""
+                """Beispiel Software GmbH\zeilenwechsel{}Industriestraße 1\zeilenwechsel{}90402 Nürnberg"""
         }
 
         test("Inland ist relativ zum Rechnungssteller, nicht zu Deutschland") {
@@ -213,12 +213,12 @@ class InvoiceRendererTest : FunSpec({
             // für ihn Ausland – und bekommt sein Land genannt. Vorher stand
             // "DE" fest im Code, und diese Rechnung hätte es verschwiegen.
             anschrift(kundenland = "DE", stellerland = "AT") shouldBe
-                """Beispiel Software GmbH\\Industriestraße 1\\90402 Nürnberg\\DE"""
+                """Beispiel Software GmbH\zeilenwechsel{}Industriestraße 1\zeilenwechsel{}90402 Nürnberg\zeilenwechsel{}DE"""
         }
 
         test("das Land des Kunden wird genannt, wenn es ein anderes ist") {
             anschrift(kundenland = "at", stellerland = "DE") shouldBe
-                """Beispiel Software GmbH\\Industriestraße 1\\90402 Nürnberg\\AT"""
+                """Beispiel Software GmbH\zeilenwechsel{}Industriestraße 1\zeilenwechsel{}90402 Nürnberg\zeilenwechsel{}AT"""
         }
     }
 
@@ -429,7 +429,7 @@ class InvoiceRendererTest : FunSpec({
 
             val mit = render(testInvoice(), stammdaten.copy(managingDirector = "Gero Geschäftsführer"))
             briefkopf(mit) shouldNotContain "Ina Inhaberin"
-            mit shouldContain "Geschäftsführung\\\\Gero Geschäftsführer"
+            mit shouldContain "Geschäftsführung\\zeilenwechsel{}Gero Geschäftsführer"
         }
 
         test("Telefon, Registergericht und Referenz stehen nur da, wenn sie angegeben sind") {

@@ -22,7 +22,7 @@ internal object SellerBlocks {
             add("${config.address.street} · ${config.address.postalCode} ${config.address.city}".escapeLatex())
             config.phone?.let { add("Tel. ".escapeLatex() + it.escapeLatex()) }
             add(config.email.escapeLatex())
-        }.joinToLatex(BR)
+        }.joinToLatex(Latex.macro(TemplateMacro.ZEILENWECHSEL))
 
     /**
      * Die Person unter dem Firmennamen im Briefkopf – aber nur dann, wenn sie
@@ -66,7 +66,7 @@ internal object SellerBlocks {
             "BIC: ".escapeLatex() +
                 config.bank.bic.value
                     .escapeLatex(),
-        ).joinToLatex(BR)
+        ).joinToLatex(Latex.macro(TemplateMacro.ZEILENWECHSEL))
 
     /** Erste Fußzeile: Firmierung, Sitz und die Angaben nach §35a GmbHG. */
     fun footerCompanyLine(config: SellerConfig): Latex =

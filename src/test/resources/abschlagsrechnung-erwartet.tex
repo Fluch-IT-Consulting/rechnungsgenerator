@@ -112,6 +112,15 @@
 \newcommand{\blocktrenner}{\\[\blockabstand]}
 \newcommand{\ustidtrenner}{\\[\ustidabstand]}
 
+%% Der schlichte Zeilenwechsel ohne Abstand: zwischen den Zeilen von Anschrift,
+%% Kontakt, Bankverbindung, Steuerhinweisen und dem Block oben rechts (#147).
+%% Eines für alle Blöcke, solange es ein Design gibt – teilt ein zweites sie
+%% auf, kostet das einen Eintrag in TemplateMacro.
+%%
+%% Der Renderer ruft es als \zeilenwechsel{} auf, und das leere Paar schützt die
+%% nächste Zeile: Beginnt sie mit "[", läse \\ sie sonst als Abstandsangabe.
+\newcommand{\zeilenwechsel}{\\}
+
 %% Diese Angabe bricht nicht um. Im schmalen Block oben rechts bräche
 %% "Juni bis Oktober 2026" sonst hinter dem "bis" und läse sich wie zwei Angaben.
 \newcommand{\zusammen}[1]{\mbox{#1}}
@@ -178,7 +187,7 @@
 %% Links bleibt frei – der Balken weiter unten ist der einzige Blickfang.
 {\raggedleft\small\color{gedaempft}
   {\bfseries\color{haupttext}Muster IT-Consulting UG (haftungsbeschränkt)}\\
-  Beispielweg 42 · 97070 Würzburg\\Tel. +49 931 1234567\\rechnung@muster-it-consulting.example\par}
+  Beispielweg 42 · 97070 Würzburg\zeilenwechsel{}Tel. +49 931 1234567\zeilenwechsel{}rechnung@muster-it-consulting.example\par}
 
 \vspace{18mm}
 
@@ -188,12 +197,12 @@
 %% Rechnung. 0.44 der Breite = 72,6 mm; nachgemessen braucht die längste
 %% Zeile ("Leistungszeitraum: 01.07.2026 – 31.08.2026") 69,8 mm.
 \begin{minipage}[t]{0.52\linewidth}\raggedright
-  Beispiel Software GmbH\\Industriestraße 1\\90402 Nürnberg
+  Beispiel Software GmbH\zeilenwechsel{}Industriestraße 1\zeilenwechsel{}90402 Nürnberg
 \end{minipage}%
 \hfill
 \begin{minipage}[t]{0.44\linewidth}
   \raggedleft\small\color{gedaempft}
-  Geschäftsführung\\Dr. Erika Musterfrau\blocktrenner{}Voraussichtlicher Leistungszeitraum: \zusammen{Juni bis Oktober 2026}\\Abschlag vereinnahmt am 10.~Juni 2026\\Zahlbar ohne Abzug bis 29.~Juni 2026
+  Geschäftsführung\zeilenwechsel{}Dr. Erika Musterfrau\blocktrenner{}Voraussichtlicher Leistungszeitraum: \zusammen{Juni bis Oktober 2026}\zeilenwechsel{}Abschlag vereinnahmt am 10.~Juni 2026\zeilenwechsel{}Zahlbar ohne Abzug bis 29.~Juni 2026
 \end{minipage}
 
 \vspace{14mm}
@@ -272,7 +281,7 @@ Dr. Erika Musterfrau
 %% Im Textfluss, linksbündig, mit schlichter Beschriftung – wie auf der
 %% bisherigen Rechnung. Kein Kasten, keine Linie, keine Versalien. Ob sie
 %% dasteht, entscheidet der Renderer (siehe \bankblock oben).
-\bankblock{Kontoinhaber: Muster IT-Consulting UG (haftungsbeschränkt)\\Institut: Musterbank Würzburg\\IBAN: DE89 3704 0044 0532 0130 00\\BIC: MUSTDEFFXXX}
+\bankblock{Kontoinhaber: Muster IT-Consulting UG (haftungsbeschränkt)\zeilenwechsel{}Institut: Musterbank Würzburg\zeilenwechsel{}IBAN: DE89 3704 0044 0532 0130 00\zeilenwechsel{}BIC: MUSTDEFFXXX}
 
 \vfill
 
