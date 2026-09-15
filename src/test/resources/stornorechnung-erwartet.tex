@@ -177,7 +177,11 @@
 
 %% Die fette Zeile unter dem Strich, mit der ein Betragsblock endet – der
 %% Gesamtbetrag der Summen, der Restbetrag der Absetzung.
-\newcommand{\abschlusszeile}[2]{\midrule\textbf{#1} & \textbf{#2}}
+%%
+%% Sie beendet selbst die Zeile davor und steht deshalb nur hinter einer Zeile,
+%% nie als erste (#147). Ein Trenner vor ihr ginge nicht: Der Renderer schreibt
+%% ihn als \name{}, und ein {} vor \midrule ist ein "Misplaced \noalign".
+\newcommand{\abschlusszeile}[2]{\\\midrule\textbf{#1} & \textbf{#2}}
 
 \begin{document}
 
@@ -243,7 +247,7 @@
 \begin{minipage}{0.55\linewidth}
   \begin{tabularx}{\linewidth}{@{}>{\raggedright\arraybackslash}X r@{}}
   \summenzeile{Nettobetrag}{-8.337,50~€} \summentrenner{}
-  \summenzeile{zzgl. 19~\% USt.}{-1.584,13~€} \\
+  \summenzeile{zzgl. 19~\% USt.}{-1.584,13~€}
   \abschlusszeile{Gesamtbetrag}{-9.921,63~€}
   \end{tabularx}
 \end{minipage}

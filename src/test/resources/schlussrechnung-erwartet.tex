@@ -177,7 +177,11 @@
 
 %% Die fette Zeile unter dem Strich, mit der ein Betragsblock endet – der
 %% Gesamtbetrag der Summen, der Restbetrag der Absetzung.
-\newcommand{\abschlusszeile}[2]{\midrule\textbf{#1} & \textbf{#2}}
+%%
+%% Sie beendet selbst die Zeile davor und steht deshalb nur hinter einer Zeile,
+%% nie als erste (#147). Ein Trenner vor ihr ginge nicht: Der Renderer schreibt
+%% ihn als \name{}, und ein {} vor \midrule ist ein "Misplaced \noalign".
+\newcommand{\abschlusszeile}[2]{\\\midrule\textbf{#1} & \textbf{#2}}
 
 \begin{document}
 
@@ -242,7 +246,7 @@
 \begin{minipage}{0.55\linewidth}
   \begin{tabularx}{\linewidth}{@{}>{\raggedright\arraybackslash}X r@{}}
   \summenzeile{Nettobetrag}{20.000,00~€} \summentrenner{}
-  \summenzeile{zzgl. 19~\% USt.}{3.800,00~€} \\
+  \summenzeile{zzgl. 19~\% USt.}{3.800,00~€}
   \abschlusszeile{Gesamtbetrag}{23.800,00~€}
   \end{tabularx}
 \end{minipage}
@@ -265,7 +269,7 @@
 \absetzungskopf{Abzüglich der berechneten und vereinnahmten Abschläge:}
 \absetzungstabelle{
   \summenzeile{Abschlagsrechnung R26-009 vom 15.06.2026, vereinnahmt am 10.06.2026\absetzungsdetail{netto 4.000,00~€ zzgl. 19~\% USt. 760,00~€}}{−4.760,00~€} \positionstrenner{}
-  \summenzeile{Abschlagsrechnung R26-011 vom 20.08.2026, vereinnahmt am 02.09.2026\absetzungsdetail{netto 4.000,00~€ zzgl. 19~\% USt. 760,00~€}}{−4.760,00~€} \\
+  \summenzeile{Abschlagsrechnung R26-011 vom 20.08.2026, vereinnahmt am 02.09.2026\absetzungsdetail{netto 4.000,00~€ zzgl. 19~\% USt. 760,00~€}}{−4.760,00~€}
   \abschlusszeile{Restbetrag}{14.280,00~€}
 }
 
