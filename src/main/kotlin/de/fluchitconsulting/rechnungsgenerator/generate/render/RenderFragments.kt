@@ -22,9 +22,12 @@ internal fun rowSeparator(macro: TemplateMacro): Latex = Latex.raw(" ") + Latex.
 /**
  * Die fette Zeile unter dem Strich, mit der ein Betragsblock endet – der
  * Gesamtbetrag der Summen, der Restbetrag der Absetzung.
+ *
+ * Sie steht immer hinter anderen Zeilen: Das Zeilenende davor setzt das Makro
+ * selbst. Der Umbruch hier hält nur das erzeugte .tex lesbar.
  */
 internal fun summaryRow(label: String, amount: Money): Latex =
-    Latex.raw(" $BR\n  ") +
+    Latex.raw("\n  ") +
         Latex.macro(
             TemplateMacro.ABSCHLUSSZEILE,
             listOf(label.escapeLatex(), GermanFormat.amountWithCurrency(amount)),
