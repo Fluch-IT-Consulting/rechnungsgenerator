@@ -74,6 +74,15 @@
 \exhyphenpenalty=10000
 \tolerance=2000
 
+%% Satzabstand: Nach Punkt, Doppelpunkt und Komma steht der gewöhnliche
+%% Wortzwischenraum, nicht der breitere englische (#143). Von sich aus hielte
+%% TeX jeden Punkt nach einem Kleinbuchstaben oder einer Ziffer für ein
+%% Satzende – "Dr. Erika", "14. August", "USt-IdNr. DE" –, und aus den
+%% Eingabedaten lässt sich nicht ablesen, wo ein Satz wirklich endet. Den
+%% breiten Abstand bekommen nur die eigenen Sätze des Programms, siehe
+%% \hinweisabsatz.
+\frenchspacing
+
 %% Achtung: minipage ruft \@parboxrestore auf und setzt damit die
 %% Absatzparameter zurück – der Flattersatz von oben gilt dort NICHT.
 %% Ein \AtBeginEnvironment-Hook hilft nicht, weil \@parboxrestore erst danach
@@ -109,11 +118,19 @@
 
 \newcommand{\rubrik}[1]{{\footnotesize\color{gedaempft}\addfontfeature{LetterSpace=14}\MakeUppercase{#1}}}
 
-%% Ein Hinweisabsatz unter den Summen – heute der Pflichtsatz der
-%% Abschlagsrechnung. Er bringt seinen Abstand selbst mit, weil er nur bei
-%% einzelnen Rechnungsarten gesetzt wird: Stünde der \vspace in der Vorlage,
-%% nähme er bei allen anderen Raum ein, obwohl dort nichts steht.
-\newcommand{\hinweisabsatz}[1]{\par\vspace{6mm}\noindent #1}
+%% Ein Hinweisabsatz unter den Summen – der Pflichtsatz der Rechnungsart oder
+%% der Satz zum ausgeglichenen Restbetrag. Er bringt seinen Abstand selbst mit,
+%% weil er nur bei einzelnen Rechnungsarten gesetzt wird: Stünde der \vspace in
+%% der Vorlage, nähme er bei allen anderen Raum ein, obwohl dort nichts steht.
+%%
+%% Er trägt die eigenen Sätze des Programms, und nur in ihm steht nach einem
+%% Satzende der breitere Abstand (#143): nach . ? !, aber nicht nach : ; , –
+%% das sind nie Satzenden. Die Gruppe hält das auf das Argument beschränkt.
+%% Eingabedaten gehören deshalb nicht hier hinein: Eine Abkürzung wie "Dr."
+%% bekäme sonst wieder den breiten Abstand. Das % hinter \noindent verhindert
+%% einen Leerraum am Absatzanfang.
+\newcommand{\hinweisabsatz}[1]{\par\vspace{6mm}\noindent%
+  {\nonfrenchspacing\sfcode`\:=1000 \sfcode`\;=1000 \sfcode`\,=1000 #1}}
 
 %% Der Kopf des Absetzungsblocks: wie ein Hinweisabsatz, aber mit Luft zur
 %% Tabelle darunter – sonst klebt die erste Rechnung an der Ankündigung.
