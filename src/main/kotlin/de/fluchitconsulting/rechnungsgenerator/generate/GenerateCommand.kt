@@ -13,7 +13,6 @@ import de.fluchitconsulting.rechnungsgenerator.generate.render.InvoiceRenderer
 import de.fluchitconsulting.rechnungsgenerator.generate.toolchain.LuaLatexTypesetter
 import de.fluchitconsulting.rechnungsgenerator.generate.toolchain.ToolchainException
 import de.fluchitconsulting.rechnungsgenerator.generate.toolchain.Typesetter
-import de.fluchitconsulting.rechnungsgenerator.model.Invoice
 import de.fluchitconsulting.rechnungsgenerator.model.YamlLoader
 import de.fluchitconsulting.rechnungsgenerator.rules.AcceptedInvoice
 import de.fluchitconsulting.rechnungsgenerator.rules.RejectedException
@@ -90,7 +89,9 @@ class GenerateCommand(
                 is Verdict.Rejected -> throw RejectedException(verdict.aborts)
             }
 
-        val jobName = jobNameFor(invoice)
+        // Ob die Nummer einen Dateinamen ergibt, hat die Prüfung schon gesagt
+        // (#150); eine angenommene Rechnung hat immer einen.
+        val jobName = acceptedInvoice.fileBaseName
         val target = outputFile ?: Path.of("$jobName.pdf")
         // Eine vorhandene Datei kann die verschickte Rechnung sein. Ersetzt wird
         // sie nur auf ausdrücklichen Wunsch – und geprüft wird vor dem Satz,
@@ -150,25 +151,5 @@ class GenerateCommand(
         } finally {
             if (!keepWorkFiles) workDir.toFile().deleteRecursively()
         }
-    }
-
-    /**
-     * Rechnungsart und -nummer als Dateiname – "Abschlagsrechnung-R26-009".
-     *
-     * Im Ordner liegen die Dokumente zu einem Vorgang nebeneinander; welches
-     * davon der Abschlag ist, soll man am Namen sehen und nicht erst nach dem
-     * Öffnen. LuaLaTeX stolpert über Leerzeichen und Sonderzeichen im Jobnamen,
-     * deshalb bleibt von der Nummer nur Unverfängliches übrig.
-     *
-     * Eine Nummer, von der nichts übrig bleibt, ist ein Fehler in der
-     * Rechnungsdatei und keiner der Werkzeuge – deshalb dieselbe Meldung ohne
-     * Stacktrace wie bei einem falschen Argument, nicht ToolchainException.
-     */
-    private fun jobNameFor(invoice: Invoice): String {
-        val safe = invoice.number.replace(Regex("[^A-Za-z0-9._-]"), "-").trim('-')
-        if (safe.isEmpty()) {
-            throw CliktError("Die Rechnungsnummer '${invoice.number}' ergibt keinen Dateinamen.")
-        }
-        return "${invoice.type.documentName}-$safe"
     }
 }

@@ -5,6 +5,8 @@ import de.fluchitconsulting.rechnungsgenerator.model.testInvoice
 import de.fluchitconsulting.rechnungsgenerator.model.testItem
 import de.fluchitconsulting.rechnungsgenerator.model.testSellerConfig
 import io.kotest.core.spec.style.FunSpec
+import io.kotest.inspectors.forAll
+import io.kotest.matchers.collections.shouldNotBeEmpty
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.types.shouldBeInstanceOf
 
@@ -25,6 +27,23 @@ class AcceptedInvoiceTest : FunSpec({
 
         accepted.calculated shouldBe calculated
         accepted.hints.rules() shouldBe listOf(Rule.MENGE_NULL)
+        accepted.fileBaseName shouldBe "Rechnung-R26-001"
+    }
+
+    test("eine Nummer ohne Dateinamen wird nie ohne Grund abgelehnt") {
+        // check verlangt den Dateinamen selbst, die Gründe nennen aber die
+        // Regeln zur Rechnungsnummer (#150). Liefen beide auseinander, stünde
+        // eine Ablehnung ohne einen einzigen Abbruch da.
+        listOf("", "   ", "///", "ä").forAll { nummer ->
+            val calculated = InvoiceCalculator.calculate(testInvoice(number = nummer), config)
+
+            calculated.fileBaseName shouldBe null
+            AcceptedInvoice
+                .check(calculated)
+                .shouldBeInstanceOf<Verdict.Rejected>()
+                .aborts
+                .shouldNotBeEmpty()
+        }
     }
 
     test("eine Rechnung mit Abbruch wird abgelehnt, mit allen Abbrüchen – und trägt auch ihre Hinweise") {

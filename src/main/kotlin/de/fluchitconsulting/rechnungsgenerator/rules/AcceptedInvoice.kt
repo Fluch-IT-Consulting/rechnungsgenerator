@@ -27,6 +27,11 @@ import de.fluchitconsulting.rechnungsgenerator.calculation.InvoiceKind
 class AcceptedInvoice private constructor(
     val calculated: CalculatedInvoice,
     val kind: InvoiceKind,
+    /**
+     * Der Dateiname ohne Endung. Auf der [CalculatedInvoice] kann er fehlen,
+     * hier nicht mehr: Wer setzt, braucht keinen eigenen Abbruch dafür (#150).
+     */
+    val fileBaseName: String,
     /** Die Hinweise. Abbrüche hat eine angenommene Rechnung nicht – dafür steht der Typ. */
     val hints: List<Finding>,
 ) {
@@ -37,7 +42,10 @@ class AcceptedInvoice private constructor(
          *
          * Angenommen wird nur, was keinen Abbruch hat **und** dessen Rechnungsart
          * sich bauen lässt. Ohne gebaute Rechnungsart gibt es keine
-         * [AcceptedInvoice], das hält der Typ.
+         * [AcceptedInvoice], das hält der Typ. Ebenso ohne Dateinamen – den
+         * Grund dafür nennen `RECHNUNGSNUMMER_FEHLT` und
+         * `RECHNUNGSNUMMER_OHNE_DATEINAMEN`, und dass keine Ablehnung ohne
+         * Grund bleibt, verlangt ein Test in `AcceptedInvoiceTest`.
          *
          * Geprüft wird hier und nicht in [CalculatedInvoice] (#105). Das
          * Zahlungsziel ist ein abgeleiteter Wert, die Befunde sind ein Urteil
@@ -60,12 +68,17 @@ class AcceptedInvoice private constructor(
             val findings = InvoiceRules.check(calculated, built)
             val hasAbort = findings.any { it.severity == Severity.ABORT }
             return when (built) {
-                is InvoiceKindRules.Result.Built ->
-                    if (hasAbort) {
+                is InvoiceKindRules.Result.Built -> {
+                    // Eine lokale val, damit der Compiler nach der Prüfung auf
+                    // null weiß, dass sie ein String ist (Smart Cast). Bei
+                    // einem Getter wie calculated.fileBaseName darf er das nicht.
+                    val fileBaseName = calculated.fileBaseName
+                    if (hasAbort || fileBaseName == null) {
                         Verdict.Rejected(findings)
                     } else {
-                        Verdict.Accepted(AcceptedInvoice(calculated, built.kind, findings))
+                        Verdict.Accepted(AcceptedInvoice(calculated, built.kind, fileBaseName, findings))
                     }
+                }
                 is InvoiceKindRules.Result.NotBuilt -> Verdict.Rejected(findings)
             }
         }
