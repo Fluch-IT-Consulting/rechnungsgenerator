@@ -206,8 +206,13 @@ CV/Web-Auftritt des Autors), Validierung über veraPDF.
   Aufgabe: erst nachsehen, ob die Änderung gewollt ist, dann die Datei neu
   erzeugen – und das erzeugte PDF gegen das vorherige prüfen. Gleiche Prüfsumme
   des PDF heißt: nichts geändert. Weicht sie ab, entscheidet das Bild
-  (`pdftoppm` und dessen Prüfsumme), denn eine geänderte Kommentar- oder
-  Leerzeile im `.tex` ändert die Trailer-ID, aber nicht das Satzbild.
+  (`pdftoppm` und dessen Prüfsumme), denn eine geänderte Leerzeile der
+  Vorlage ändert die Trailer-ID, aber nicht das Satzbild. Kommentarzeilen der
+  Vorlage kommen gar nicht erst im `.tex` an: Der Renderer streicht ganze
+  `%`-Zeilen vor den Prüfungen, nachgestellte Kommentare bleiben, weil ein `%`
+  am Zeilenende in LaTeX Bedeutung hat (#149). Den Schnitt zwischen Inhalt und
+  Vorlage, der die Vergleichsdateien vom Design löst, hebt die Notiz vom 14.09.
+  für das zweite Design auf.
 - **Storno**: Eine falsche Rechnung wird nicht überschrieben, sondern
   aufgehoben – `art: stornorechnung` mit eigener Nummer, dem Bezug auf die
   Ursprungsrechnung unter `storniert` (EN 16931 BG-3, Pflicht) und den
