@@ -142,7 +142,10 @@ CV/Web-Auftritt des Autors), Validierung über veraPDF.
   Prüfung sitzt deshalb im `InvoiceCalculator` und nicht im Serialisierer: Ob
   eine Nummer gültig ist, hängt an zwei Dateien, und der sieht beim Einlesen
   immer nur eine. Leere Nummer und Leerraum am Rand brechen unabhängig vom
-  Muster ab, weil aus der Nummer auch der Dateiname entsteht. Die Nummern der
+  Muster ab, weil aus der Nummer auch der Dateiname entsteht – ebenso eine,
+  von der kein Dateiname übrig bleibt (#150). Den Namen leitet
+  `CalculatedInvoice.fileBaseName` ab, die `AcceptedInvoice` trägt ihn sicher,
+  und `erzeuge` hat keinen eigenen Abbruch mehr dafür. Die Nummern der
   abgesetzten Abschläge bleiben ungeprüft: Sie stammen aus früheren Rechnungen,
   womöglich aus der Zeit vor einem Wechsel des Musters.
 - **Steuerkategorie**: `TaxCategory` (BT-151, Codeliste UNCL 5305) pro Position,
