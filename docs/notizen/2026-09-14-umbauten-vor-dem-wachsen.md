@@ -28,6 +28,19 @@ zwei Ränder bedient.
 > #81, verallgemeinert), denn `rechnung-erwartet.tex` schützt nur ein
 > Satzbild. Der Text der Notiz bleibt, wie er war.
 
+> **Nachtrag vom 15.09.2026:** Mit dem zweiten Design wird auch der Zuschnitt
+> der Vergleichsdateien fällig. Heute enthält jede `*-erwartet.tex` die ganze
+> Vorlage samt Werten; mit D Designs wären es D × K Dateien, und jede änderte
+> sich mit ihrer Vorlage. Die Richtung, erwogen in #149: `InvoiceRenderer.render`
+> liefert den Inhalt je Platzhalter, das Einsetzen in die Vorlage wird ein
+> eigener Schritt, und die Vergleichsdateien halten nur den Inhalt, je Art und
+> unabhängig vom Design. Offen blieb, was dann die Vorlage selbst schützt – der
+> Bildvergleich mit `pdftoppm` ist heute ein Handgriff, kein Test – und ob
+> Reihenfolge-Tests wie "der Pflichtsatz steht unter den Summen" dann zur
+> Vorlage gehören statt zum Renderer. Entschieden wurde in #149 nur der kleine
+> Teil, der schon heute wehtat: Die Vorlage kommt ohne Kommentarzeilen im
+> `.tex` an.
+
 ## 1. Gradle-Module statt `PackageStructureTest`
 
 Die Schichtung `values → model → calculation → rules` und die beiden

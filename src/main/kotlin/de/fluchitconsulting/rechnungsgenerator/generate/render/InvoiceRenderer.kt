@@ -168,7 +168,7 @@ object InvoiceRenderer {
      * nicht, LuaLaTeX übersetzt sie klaglos, und veraPDF bestätigt ein
      * einwandfreies PDF/A – es ist ja eines. Aufgefallen wäre es bisher nur
      * mittelbar, als Unterschied in einer der Vergleichsdateien, und dort als
-     * Diff über 216 Zeilen statt als benannte Meldung.
+     * Diff statt als benannte Meldung.
      *
      * [check] und nicht eine Ausnahme für den Benutzer: Keine Rechnungsdatei
      * kann das auslösen. Wenn Vorlage und Renderer auseinanderlaufen, ist das
