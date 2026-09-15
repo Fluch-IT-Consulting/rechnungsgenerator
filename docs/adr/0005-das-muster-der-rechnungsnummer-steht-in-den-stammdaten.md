@@ -73,6 +73,11 @@ Der Stand des Gesprächs vor dieser Entscheidung steht in
   14.5 Abs. 14 Kleinunternehmern und Kleinbetragsrechnungen zugesteht – dieser
   Generator benennt seine Ausgabe nach der Nummer und bräuchte sonst eine
   zweite Antwort auf die Frage, wie die Datei heißt.
+  Nachgetragen mit #150: Ebenso bricht eine Nummer ab, von der kein Dateiname
+  übrig bleibt, etwa `"///"`. Vorher fiel sie erst in `erzeuge` auf, nachdem
+  die Rechnung angenommen war, und damit neben anderen Abbrüchen erst im
+  zweiten Lauf. Den Namen leitet jetzt `CalculatedInvoice.fileBaseName` ab,
+  und nur eine `AcceptedInvoice` trägt ihn sicher.
 - **Die Nummern der Abschläge bleiben ungeprüft.** Sie stammen aus früheren
   Rechnungen, womöglich aus der Zeit vor einem Wechsel des Musters. Gegen das
   heutige Muster geprüft, hielte eine korrekte alte Nummer die Schlussrechnung
