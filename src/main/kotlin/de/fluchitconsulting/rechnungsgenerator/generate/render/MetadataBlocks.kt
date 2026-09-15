@@ -24,9 +24,9 @@ internal object MetadataBlocks {
         // Ausstellers steht im Fuß, die des Empfängers hier.
         //
         // Der Abstand wird angehängt, nicht in die Liste gelegt: joinToLatex
-        // setzt selbst ein \\ zwischen die Einträge, und \\ direkt gefolgt vom
-        // \\ in \ustidtrenner ist in LaTeX ein Fehler ("There's no line here
-        // to end").
+        // setzt \zeilenwechsel zwischen die Einträge, und zwei Zeilenenden
+        // hintereinander – \zeilenwechsel{}\ustidtrenner{} – sind in LaTeX ein
+        // Fehler ("There's no line here to end").
         val ustId =
             invoice.customer.vatId
                 ?.let { Latex.macro(TemplateMacro.USTIDTRENNER) + "USt-IdNr. ".escapeLatex() + it.formatted().escapeLatex() }
