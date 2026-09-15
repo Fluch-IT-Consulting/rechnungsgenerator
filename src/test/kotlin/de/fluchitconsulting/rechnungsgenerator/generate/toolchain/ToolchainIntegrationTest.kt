@@ -79,6 +79,24 @@ class ToolchainIntegrationTest : FunSpec({
         return ziel to ausgabe
     }
 
+    /**
+     * Der Text eines PDF, wie `pdftotext` ihn liest – für die Frage, ob etwas
+     * wirklich so gesetzt wurde, wie es in der Eingabe steht.
+     */
+    fun textOf(pdf: Path): String {
+        // Die Ausgabe in eine Datei, nicht in einen Stream – aus demselben
+        // Grund wie bei den Werkzeugen des Programms (siehe ProcessRunner).
+        val text = workDir.resolve("${pdf.fileName}.txt")
+        val prozess =
+            ProcessBuilder("pdftotext", "-enc", "UTF-8", pdf.toString(), text.toString())
+                .redirectErrorStream(true)
+                .redirectOutput(workDir.resolve("pdftotext.log").toFile())
+                .start()
+        prozess.waitFor(30, TimeUnit.SECONDS) shouldBe true
+        prozess.exitValue() shouldBe 0
+        return text.readText()
+    }
+
     test("die benötigten Werkzeuge sind vorhanden") {
         LuaLatexTypesetter.checkAvailable()
     }
@@ -149,19 +167,25 @@ class ToolchainIntegrationTest : FunSpec({
 
         val (pdf, _) = erzeuge("ligaturen", eingabe = eingabe)
 
-        // Die Ausgabe in eine Datei, nicht in einen Stream – aus demselben
-        // Grund wie bei den Werkzeugen des Programms (siehe ProcessRunner).
-        val text = workDir.resolve("ligaturen.txt")
-        val prozess =
-            ProcessBuilder("pdftotext", "-enc", "UTF-8", pdf.toString(), text.toString())
-                .redirectErrorStream(true)
-                .redirectOutput(workDir.resolve("pdftotext.log").toFile())
-                .start()
-        prozess.waitFor(30, TimeUnit.SECONDS) shouldBe true
-        prozess.exitValue() shouldBe 0
-
-        val gesetzt = text.readText()
+        val gesetzt = textOf(pdf)
         bezeichnungen.forEach { gesetzt shouldContain it }
+    }
+
+    /**
+     * Eine Zeile, die mit `[` beginnt, steht unverändert im PDF. Hinter einem
+     * rohen `\\` liest LaTeX die Klammer als Abstandsangabe – `\\[Hinterhaus]`
+     * – und bricht ab (#147). Das LaTeX sähe dabei richtig aus: `[` ist kein
+     * Sonderzeichen, und `escapeLatex` lässt es stehen.
+     */
+    test("eine Anschriftszeile, die mit eckiger Klammer beginnt, steht unverändert im PDF") {
+        val strasse = "[Hinterhaus] Industriestraße 1"
+        val beispiel = Path.of("src/test/resources/rechnung.yaml").readText()
+        val eingabe = workDir.resolve("klammer.yaml")
+        eingabe.writeText(beispiel.replace("strasse: Industriestraße 1", "strasse: \"$strasse\""))
+
+        val (pdf, _) = erzeuge("klammer", eingabe = eingabe)
+
+        textOf(pdf) shouldContain strasse
     }
 
     /**
