@@ -61,7 +61,34 @@ object InvoiceRenderer {
             )
 
         checkMacros(template)
+        checkLineBreaks(values)
         return fillIn(template, values)
+    }
+
+    /**
+     * Prüft, dass kein Wert ein rohes `\\` enthält: Zeilenwechsel und
+     * Zeilenenden stehen in der Vorlage, der Renderer ruft sie als Makro auf
+     * (#147).
+     *
+     * Geprüft wird das Ergebnis, nicht die Schreibweise – ob ein `\\` über
+     * [Latex.raw], einen Trenner oder eine Konstante hineinkam, ist gleich. Aus
+     * den Eingabedaten kommt keines: [escapeLatex] macht aus jedem Backslash
+     * `\textbackslash{}`. Ohne die Prüfung fiele ein neues rohes `\\` nur als
+     * Zeile in einer Vergleichsdatei auf, und dort sieht es richtig aus. Der
+     * Fehler dahinter – eine Zeile, die mit `[` beginnt, bricht den Satz ab –
+     * zeigte sich erst bei der Rechnung mit dieser Zeile.
+     *
+     * [check] wie bei [checkMacros]: Keine Rechnungsdatei kann das auslösen.
+     */
+    internal fun checkLineBreaks(values: Map<String, Latex>) {
+        // `(key, value)` zerlegt jeden Eintrag der Map in seine zwei Teile
+        // ("destructuring"), statt it.key und it.value zu schreiben.
+        values.forEach { (key, value) ->
+            check("\\\\" !in value.tex) {
+                "Der Renderer liefert für <<$key>> ein rohes \\\\. Zeilenwechsel stehen in der Vorlage, " +
+                    "der Renderer ruft sie als Makro aus TemplateMacro auf."
+            }
+        }
     }
 
     /**
