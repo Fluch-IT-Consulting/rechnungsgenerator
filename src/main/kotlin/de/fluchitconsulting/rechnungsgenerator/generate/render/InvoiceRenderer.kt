@@ -155,7 +155,7 @@ object InvoiceRenderer {
         return listOf(
             xmpField("Title", document),
             xmpField("Author", calculatedInvoice.config.companyName.escapeLatex()),
-            xmpField("Subject", document + " vom ".escapeLatex() + GermanFormat.date(invoice.issueDate)),
+            xmpField("Subject", document + " vom ".escapeLatex() + GermanFormat.dateInMetadata(invoice.issueDate)),
             xmpField("Language", "de-DE".escapeLatex()),
         ).joinToLatex("\n").tex
     }

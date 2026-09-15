@@ -33,7 +33,7 @@ class InvoiceVariableResolverTest : FunSpec({
 
     test("auf einer Stornorechnung: Nummer und Datum der Ursprungsrechnung, je zusammengehalten") {
         storno.resolve("URSPRUNGSNUMMER").tex shouldBe "\\zusammen{R26-042}"
-        storno.resolve("URSPRUNGSDATUM").tex shouldBe "\\zusammen{15. Juli 2026}"
+        storno.resolve("URSPRUNGSDATUM").tex shouldBe "\\zusammen{15.~Juli 2026}"
     }
 
     test("auf einer anderen Rechnungsart gibt es die Ursprungsrechnung nicht") {
@@ -50,6 +50,6 @@ class InvoiceVariableResolverTest : FunSpec({
 
     test("im Text eingesetzt: der feste Teil maskiert, die Werte zusammengehalten") {
         "Storno zu <<URSPRUNGSNUMMER>> vom <<URSPRUNGSDATUM>> & fertig".escapeLatex(storno).tex shouldBe
-            "Storno zu \\zusammen{R26-042} vom \\zusammen{15. Juli 2026} \\& fertig"
+            "Storno zu \\zusammen{R26-042} vom \\zusammen{15.~Juli 2026} \\& fertig"
     }
 })
