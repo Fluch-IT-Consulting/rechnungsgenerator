@@ -19,6 +19,7 @@ import de.fluchitconsulting.rechnungsgenerator.values.VatId
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.assertions.withClue
 import io.kotest.core.spec.style.FunSpec
+import io.kotest.matchers.collections.shouldBeEmpty
 import io.kotest.matchers.ints.shouldBeGreaterThan
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.string.shouldContain
@@ -203,6 +204,32 @@ class InvoiceRendererTest : FunSpec({
             // escapeLatex macht aus jedem einzelnen \textbackslash{} – deshalb
             // kann keine Rechnungsdatei die Prüfung auslösen.
             InvoiceRenderer.checkLineBreaks(mapOf("SCHLUSSSATZ" to "Ablage unter \\\\server\\rechnungen".escapeLatex()))
+        }
+    }
+
+    context("Die Kommentarzeilen der Vorlage") {
+        // #149: Die Kommentare erklären invoice.tex, im erzeugten .tex liest
+        // sie niemand – und eine geänderte Kommentarzeile soll keinen Test rot
+        // machen.
+
+        test("eine ganze Kommentarzeile verschwindet samt Zeilenende, auch eingerückt") {
+            InvoiceRenderer.withoutCommentLines("a\n%% Kommentar\n  % eingerückt\nb\n") shouldBe "a\nb\n"
+        }
+
+        test("ein % hinter Code bleibt stehen") {
+            // Am Zeilenende einer Makrodefinition unterdrückt es den
+            // Zwischenraum; gestrichen, änderte sich das Satzbild.
+            val vorlage = "\\newcommand{\\x}[1]{%\n  #1}%\n\\usepackage{booktabs}  %% Hinweis\n"
+
+            InvoiceRenderer.withoutCommentLines(vorlage) shouldBe vorlage
+        }
+
+        test("ein maskiertes Prozentzeichen am Zeilenanfang ist kein Kommentar") {
+            InvoiceRenderer.withoutCommentLines("\\% Rabatt\n") shouldBe "\\% Rabatt\n"
+        }
+
+        test("im gesetzten LaTeX steht keine Kommentarzeile der Vorlage") {
+            renderMit(testItem()).lines().filter { it.trimStart().startsWith("%") }.shouldBeEmpty()
         }
     }
 
@@ -502,6 +529,21 @@ class InvoiceRendererTest : FunSpec({
 
             fehler.message!! shouldContain "positionszeile"
             fehler.message!! shouldContain "6"
+        }
+
+        test("ein auskommentiertes Makro gilt nicht als definiert") {
+            // Die Vorlage wird gestrichen geprüft, so wie render sie prüft:
+            // Ein \newcommand hinter % definiert für TeX nichts.
+            val vorlage =
+                vorlageOhne(fehlend = TemplateMacro.POSITIONSZEILE) +
+                    "\n% \\newcommand{\\positionszeile}[${TemplateMacro.POSITIONSZEILE.arity}]{}"
+
+            val fehler =
+                shouldThrow<IllegalStateException> {
+                    InvoiceRenderer.checkMacros(InvoiceRenderer.withoutCommentLines(vorlage))
+                }
+
+            fehler.message!! shouldContain "positionszeile"
         }
 
         test("die echte Vorlage passt zum Renderer") {
