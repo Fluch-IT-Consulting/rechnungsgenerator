@@ -36,7 +36,10 @@ object InvoiceRenderer {
         val calculatedInvoice = acceptedInvoice.calculated
         val invoice = calculatedInvoice.invoice
         val config = calculatedInvoice.config
-        val template = checkNotNull(javaClass.getResource(TEMPLATE_PATH)) { "Vorlage $TEMPLATE_PATH fehlt" }.readText()
+        val template =
+            withoutCommentLines(
+                checkNotNull(javaClass.getResource(TEMPLATE_PATH)) { "Vorlage $TEMPLATE_PATH fehlt" }.readText(),
+            )
 
         val values =
             mapOf(
@@ -64,6 +67,32 @@ object InvoiceRenderer {
         checkLineBreaks(values)
         return fillIn(template, values)
     }
+
+    /**
+     * Streicht die Kommentarzeilen der Vorlage – jede Zeile, deren erstes
+     * Zeichen nach Leerraum ein `%` ist, samt ihrem Zeilenende (#149).
+     *
+     * Die Kommentare erklären die Vorlage, im erzeugten `.tex` liest sie
+     * niemand. Blieben sie stehen, machte eine geänderte Kommentarzeile jede
+     * Vergleichsdatei rot, und Inhaltstests fänden Wörter aus den Kommentaren.
+     *
+     * Für TeX ändert sich nichts: Eine Kommentarzeile verschluckt ihr eigenes
+     * Zeilenende, und Leerraum am Zeilenanfang überliest TeX ohnehin.
+     * Nachgestellte Kommentare bleiben dagegen stehen – ein `%` am Zeilenende
+     * unterdrückt in einer Makrodefinition den Zwischenraum, und `\%` ist gar
+     * keiner. Das zu unterscheiden, bräuchte einen LaTeX-Parser. Aus demselben
+     * Grund bleiben die Leerzeilen, die zwischen gestrichenen Blöcken
+     * zusammenrücken: Zwei Leerzeilen sind für TeX dasselbe wie eine, aber das
+     * wäre eine zweite Umformung mit eigener Begründung.
+     *
+     * Gestrichen wird vor [checkMacros] und [fillIn], damit beide nur sehen,
+     * was TeX liest: Ein auskommentiertes `\newcommand` definiert nichts.
+     */
+    internal fun withoutCommentLines(template: String): String =
+        template
+            .lines()
+            .filterNot { it.trimStart().startsWith("%") }
+            .joinToString("\n")
 
     /**
      * Prüft, dass kein Wert ein rohes `\\` enthält: Zeilenwechsel und
