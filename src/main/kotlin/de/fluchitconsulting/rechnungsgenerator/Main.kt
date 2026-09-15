@@ -8,6 +8,8 @@ import com.github.ajalt.clikt.core.context
 import com.github.ajalt.clikt.core.parse
 import com.github.ajalt.clikt.core.subcommands
 import de.fluchitconsulting.rechnungsgenerator.generate.GenerateCommand
+import de.fluchitconsulting.rechnungsgenerator.generate.PdfViewer
+import de.fluchitconsulting.rechnungsgenerator.generate.SystemPdfViewer
 import de.fluchitconsulting.rechnungsgenerator.generate.toolchain.LuaLatexTypesetter
 import de.fluchitconsulting.rechnungsgenerator.generate.toolchain.ToolchainException
 import de.fluchitconsulting.rechnungsgenerator.generate.toolchain.Typesetter
@@ -108,12 +110,14 @@ private fun parseReportingFailures(command: CoreCliktCommand, args: Array<String
  * Das Flag `error` der `PrintHelpMessage` bleibt bewusst weg: Es klingt, als
  * lenke es die Hilfe auf stderr, doch in `clikt-core` liest es niemand aus.
  */
-class RechnungsgeneratorCommand(typesetter: Typesetter = LuaLatexTypesetter) :
-    CoreCliktCommand(name = "rechnungsgenerator") {
+class RechnungsgeneratorCommand(
+    typesetter: Typesetter = LuaLatexTypesetter,
+    viewer: PdfViewer = SystemPdfViewer,
+) : CoreCliktCommand(name = "rechnungsgenerator") {
     override val invokeWithoutSubcommand = true
 
     init {
-        subcommands(GenerateCommand(typesetter), PrepaymentsCommand())
+        subcommands(GenerateCommand(typesetter, viewer), PrepaymentsCommand())
     }
 
     override fun help(context: Context) = "Erzeugt deutsche Rechnungen als geprüftes PDF/A-1b."

@@ -31,9 +31,13 @@ import kotlin.io.path.exists
  * so lässt sich alles prüfen, was danach kommt: das Kopieren der Datei, die
  * Reihenfolge der Ausgaben, der Exitcode bei ungültigem PDF/A und das
  * Aufräumen des Arbeitsverzeichnisses. Im Betrieb steht dort LuaLaTeX und
- * veraPDF, im Test ein vorbereitetes Ergebnis.
+ * veraPDF, im Test ein vorbereitetes Ergebnis. Ebenso der [PdfViewer] für
+ * `--oeffnen`: Im Test öffnet sich kein Fenster.
  */
-class GenerateCommand(private val typesetter: Typesetter = LuaLatexTypesetter) : CoreCliktCommand(name = "erzeuge") {
+class GenerateCommand(
+    private val typesetter: Typesetter = LuaLatexTypesetter,
+    private val viewer: PdfViewer = SystemPdfViewer,
+) : CoreCliktCommand(name = "erzeuge") {
     override fun help(context: Context) =
         "Erzeugt aus einer YAML-Rechnung ein geprüftes PDF/A-1b."
 
@@ -50,6 +54,9 @@ class GenerateCommand(private val typesetter: Typesetter = LuaLatexTypesetter) :
         .flag()
 
     private val overwrite by option("--ueberschreiben", help = "Eine vorhandene Zieldatei ersetzen – zum Nachbessern eines Entwurfs")
+        .flag()
+
+    private val openAfterwards by option("--oeffnen", help = "Die fertige Rechnung im PDF-Viewer des Systems öffnen")
         .flag()
 
     override fun run() {
@@ -130,6 +137,16 @@ class GenerateCommand(private val typesetter: Typesetter = LuaLatexTypesetter) :
             // die Rechnung ist ja entstanden. Sie betreffen die eigene Ablage.
             acceptedInvoice.hints.forEach { echo("Hinweis: ${it.describe()}") }
             if (keepWorkFiles) echo("Arbeitsdateien: $workDir")
+            // Zuletzt: Das Ergebnis steht vollständig da, bevor ein Fenster den
+            // Blick wegzieht. Und nur hier, also nur für ein gültiges PDF am
+            // Ziel. Ein Fehlschlag ist ein Hinweis und kein Abbruch – die
+            // Rechnung ist entstanden, der Exitcode bleibt 0.
+            if (openAfterwards) {
+                when (val result = viewer.open(target)) {
+                    ViewerResult.Opened -> Unit
+                    is ViewerResult.Failed -> echo("Hinweis: Das PDF konnte nicht geöffnet werden: ${result.reason}")
+                }
+            }
         } finally {
             if (!keepWorkFiles) workDir.toFile().deleteRecursively()
         }
