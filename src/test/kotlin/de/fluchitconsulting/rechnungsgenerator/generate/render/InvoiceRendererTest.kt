@@ -424,7 +424,7 @@ class InvoiceRendererTest : FunSpec({
             fun briefkopf(tex: String) = tex.lines().first { it.contains("Muster IT-Consulting}") }
 
             val ohne = render(testInvoice(), stammdaten)
-            briefkopf(ohne) shouldContain "}\\\\Ina Inhaberin"
+            briefkopf(ohne) shouldContain "}\\kopfperson{Ina Inhaberin}"
             ohne shouldNotContain "Geschäftsführung"
 
             val mit = render(testInvoice(), stammdaten.copy(managingDirector = "Gero Geschäftsführer"))

@@ -22,6 +22,7 @@ enum class TemplateMacro(val macroName: String, val arity: Int) {
     USTIDTRENNER("ustidtrenner", 0),
     ZEILENWECHSEL("zeilenwechsel", 0),
     ZUSAMMEN("zusammen", 1),
+    KOPFPERSON("kopfperson", 1),
 
     // Nur für Sätze aus dem Quelltext: Allein hier setzt die Vorlage nach einem
     // Satzende den breiten Abstand, und in Eingabedaten bekäme ihn auch eine

@@ -121,6 +121,11 @@
 %% nächste Zeile: Beginnt sie mit "[", läse \\ sie sonst als Abstandsangabe.
 \newcommand{\zeilenwechsel}{\\}
 
+%% Die Person unter der Firmierung im Briefkopf (#147). Ob sie dasteht,
+%% entscheidet der Renderer; wo und in welcher Zeile, diese Vorlage. Das {}
+%% hinter \\ aus demselben Grund wie beim Aufruf von \zeilenwechsel.
+\newcommand{\kopfperson}[1]{\\{}#1}
+
 %% Diese Angabe bricht nicht um. Im schmalen Block oben rechts bräche
 %% "Juni bis Oktober 2026" sonst hinter dem "bis" und läse sich wie zwei Angaben.
 \newcommand{\zusammen}[1]{\mbox{#1}}

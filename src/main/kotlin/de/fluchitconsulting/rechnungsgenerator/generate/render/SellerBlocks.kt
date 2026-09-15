@@ -35,7 +35,11 @@ internal object SellerBlocks {
      * Unternehmers, und der ist dort die Person, nicht die Firmierung.
      */
     fun letterheadPerson(config: SellerConfig): Latex =
-        if (config.managingDirector != null) Latex.EMPTY else Latex.raw(BR) + config.ownerName.escapeLatex()
+        if (config.managingDirector != null) {
+            Latex.EMPTY
+        } else {
+            Latex.macro(TemplateMacro.KOPFPERSON, listOf(config.ownerName.escapeLatex()))
+        }
 
     /**
      * Die Bankverbindung – nur auf einem Dokument, das zur Zahlung auffordert.
