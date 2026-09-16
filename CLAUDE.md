@@ -331,11 +331,8 @@ CV/Web-Auftritt des Autors), Validierung über veraPDF.
   in den Angaben der gemeinten Art erst im zweiten Lauf.
   Ebenso fragt der Renderer die `InvoiceKind`: Vereinnahmung und Absetzung je
   in einem `when` ohne `else`, zwei Stellen für zwei Entscheidungen (#128).
-  Nur `prepaymentOf` behält sein `else` – dort ist genau eine Art richtig.
-  Den Bezug fragt seit ADR-0010 `InvoiceVariableResolver` mit `as?`, und das
-  wirkt wie ein `else`: Eine neue Art mit eigenem Bezug wird dort nicht zur
-  Entscheidung gezwungen. Ein Pflichtsatz, der eine Variable auf der falschen
-  Art nennt, bricht aber beim Setzen ab, also in der Vergleichsdatei.
+  Ebenso fragt `InvoiceVariableResolver` den Bezug (ADR-0010). Nur
+  `prepaymentOf` behält sein `else` – dort ist genau eine Art richtig.
   Die Kennungen sind deutsch benannt wie die Regeln und **nicht** nummeriert:
   Die Nummern standen nur in Kommentaren und Testnamen und liefen dort
   auseinander. Tests prüfen die Kennung statt des Wortlauts und brauchen dafür
