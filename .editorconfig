@@ -40,6 +40,19 @@ ktlint_standard_class-signature = disabled
 # Zeilenlängengrenze oben fängt die Fälle ab, in denen der Umbruch wirklich nötig ist.
 ktlint_standard_function-signature = disabled
 
+# Verbietet KDoc, auf das keine Deklaration folgt ("dangling KDoc"). In den
+# Kotest-Specs steht der erklärende Block aber über einem test(...)-Aufruf, also
+# vor keiner Deklaration – acht solche Stellen in drei Testdateien. Genau diese
+# Kommentare pflegt das Projekt (CLAUDE.md), und die Regel kennt nur an/aus.
+# Seit ktlint 1.8.0 ist sie Standard statt experimentell (#159).
+ktlint_standard_kdoc = disabled
+
+# Ausdrücklich eingeschaltet: Seit ktlint 1.7.0 läuft diese Regel nicht mehr von
+# selbst, in 2.0 verschwindet sie ganz. Der Hook in .claude/settings.json stützt
+# sich auf sie – er entfernt Importe, die vor ihrer Verwendung eingefügt wurden.
+# Ohne diesen Eintrag hörte er damit still auf (#159).
+ktlint_standard_no-unused-imports = enabled
+
 # Bewusst NICHT übernommen aus dem Kreditrechner-Projekt:
 #   argument-list-wrapping, discouraged-comment-location, no-multi-spaces
 # Sie wurden dort für konkrete Stellen abgeschaltet (zeilenweise gruppierte Argumente
