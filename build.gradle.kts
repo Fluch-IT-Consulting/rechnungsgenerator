@@ -17,6 +17,20 @@ application {
     mainClass = "de.fluchitconsulting.rechnungsgenerator.MainKt"
 }
 
+// logback steht allein im Klassenpfad von ktlintCheck und ktlintFormat, nie im
+// ausgelieferten Programm – ktlint 1.5.0 bringt 1.3.14 mit. Der 1.3-Zweig
+// bekommt die Fassungen nicht mehr, die die Advisories aus #158 nennen
+// (1.5.25, 1.5.33, 1.5.34), deshalb die 1.5-Reihe erzwungen.
+//
+// Die ktlint-Fassung selbst bleibt, wie das Plugin sie wählt: 1.8.0 formatiert
+// acht Hauptquellen um und verbietet KDoc im Block, beides ohne Bezug zur
+// Lücke. Der Sprung steht als #159.
+configurations.named("ktlint") {
+    resolutionStrategy {
+        force("ch.qos.logback:logback-classic:1.5.38", "ch.qos.logback:logback-core:1.5.38")
+    }
+}
+
 dependencies {
     implementation(libs.kaml)
     implementation(libs.clikt)
