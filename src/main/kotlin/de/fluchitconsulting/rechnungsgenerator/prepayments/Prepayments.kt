@@ -89,16 +89,16 @@ fun prepaymentsOf(abschlagsrechnungen: List<NamedInvoice>, config: SellerConfig)
     }
 
     // Exakt verglichen wie die Regel der Schlussrechnung (#53).
+    // Je Nummer ein Befund, mit ihrer Anzahl – wie in der Schlussrechnung (#152).
     abschlagsrechnungen
         .groupBy { it.invoice.number }
-        .values
-        .firstOrNull { it.size > 1 }
-        ?.let { duplicates ->
+        .filterValues { it.size > 1 }
+        .forEach { (nummer, duplicates) ->
             findings +=
                 Finding(
                     Rule.ABSCHLAGSRECHNUNG_DOPPELT,
-                    Subject.FromInvoice(duplicates.first().invoice.number, Subject.WholeInvoice),
-                    "ist zweimal angegeben.",
+                    Subject.FromInvoice(nummer, Subject.WholeInvoice),
+                    "ist ${duplicates.size}-mal angegeben.",
                 )
         }
 

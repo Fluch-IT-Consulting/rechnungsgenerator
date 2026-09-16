@@ -33,17 +33,21 @@ internal object FinalInvoiceRules {
             // Verglichen wird exakt (#53): Ob "r26-009" dasselbe Dokument meint wie
             // "R26-009", hängt am Nummernkreis des Rechnungsstellers, und den kennt
             // der Generator nicht.
+            // Jede mehrfach genannte Nummer bekommt ihren eigenen Befund (#152):
+            // Der Gegenstand am Befund ist eine Nummer, also heißt zwei Nummern
+            // auch zwei Befunde – vorher nannte firstOrNull nur die erste, und
+            // die zweite fiel erst im nächsten Lauf auf (ADR-0004). Die Meldung
+            // nennt die Anzahl: Wer "zweimal" liest, wo es drei sind, löscht
+            // eine Zeile und läuft in denselben Abbruch.
             invoice.prepayments
                 .groupBy { it.invoiceNumber }
                 .filterValues { it.size > 1 }
-                .values
-                .firstOrNull()
-                ?.let { duplicates ->
+                .forEach { (nummer, duplicates) ->
                     add(
                         Finding(
                             Rule.ABSCHLAG_DOPPELT,
-                            Subject.Prepayment(duplicates.first().invoiceNumber),
-                            "Der Abschlag steht zweimal in dieser Schlussrechnung.",
+                            Subject.Prepayment(nummer),
+                            "Der Abschlag steht ${duplicates.size}-mal in dieser Schlussrechnung.",
                         ),
                     )
                 }
