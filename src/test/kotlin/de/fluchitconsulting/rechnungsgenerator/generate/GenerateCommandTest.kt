@@ -226,7 +226,10 @@ class GenerateCommandTest : FunSpec({
             val ziel = eingaben.resolve("viewer-fehlt.pdf")
             val viewer = FakePdfViewer(result = ViewerResult.Failed("open endete mit Exitcode 1."))
 
-            // Keine Ausnahme heißt Exitcode 0: Übersetzt wird erst in execute().
+            // Hier zählt die Reihenfolge: Der Hinweis steht als letzte Zeile,
+            // also nach dem Ergebnis. Dass der Lauf dabei wirklich mit Exitcode 0
+            // endet und der Hinweis auf stdout landet, liest MainTest (#153) –
+            // von hier aus wäre es nur aus "keine Ausnahme" geraten.
             val ausgabe = lauf(FakeTypesetter(), "-o", ziel.toString(), "--oeffnen", viewer = viewer)
 
             ziel.exists() shouldBe true

@@ -1,5 +1,7 @@
 package de.fluchitconsulting.rechnungsgenerator
 
+import de.fluchitconsulting.rechnungsgenerator.generate.FakePdfViewer
+import de.fluchitconsulting.rechnungsgenerator.generate.ViewerResult
 import de.fluchitconsulting.rechnungsgenerator.generate.toolchain.FakeTypesetter
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
@@ -110,6 +112,30 @@ class MainTest : FunSpec({
 
         result.exitCode shouldBe 0
         result.out shouldContain "PDF/A-1b: gültig"
+        result.err shouldBe ""
+    }
+
+    test("scheitert das Öffnen, bleibt der Aufruf ein Erfolg, und der Hinweis steht auf stdout") {
+        // Ein Viewer, der nicht aufgeht, ist kein Grund, die Rechnung für
+        // gescheitert zu erklären: Das PDF liegt am Ziel (#144). Also Exitcode 0
+        // – und weil der Kanal dem Exitcode folgt, gehört der Hinweis auf stdout.
+        // Gelesen wird beides hier; GenerateCommandTest sieht nur die Reihenfolge.
+        val ziel = eingaben.resolve("viewer-fehlt.pdf")
+
+        val result =
+            runCli(
+                "erzeuge",
+                rechnung,
+                "-s",
+                stammdaten,
+                "-o",
+                ziel.toString(),
+                "--oeffnen",
+                viewer = FakePdfViewer(result = ViewerResult.Failed("open endete mit Exitcode 1.")),
+            )
+
+        result.exitCode shouldBe 0
+        result.out shouldContain "Hinweis: Das PDF konnte nicht geöffnet werden: open endete mit Exitcode 1."
         result.err shouldBe ""
     }
 
