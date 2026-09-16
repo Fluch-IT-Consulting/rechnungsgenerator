@@ -17,17 +17,20 @@ application {
     mainClass = "de.fluchitconsulting.rechnungsgenerator.MainKt"
 }
 
+ktlint {
+    // Welche ktlint-CLI läuft, steht hier und nicht beim Plugin: 14.2.0 wählte
+    // von sich aus 1.5.0. Die Fassung selbst kommt aus dem Versionskatalog, wie
+    // jede andere auch (#159).
+    version = libs.versions.ktlintCli.get()
+}
+
 // logback steht allein im Klassenpfad von ktlintCheck und ktlintFormat, nie im
-// ausgelieferten Programm – ktlint 1.5.0 bringt 1.3.14 mit. Der 1.3-Zweig
-// bekommt die Fassungen nicht mehr, die die Advisories aus #158 nennen
-// (1.5.25, 1.5.33, 1.5.34), deshalb eine gepflegte Reihe erzwungen. Welche das
-// gerade ist, hält Dependabot nach: zuerst 1.5.38, mit #165 die 1.6-Reihe. Sie
-// verlangt weiterhin nur JDK 11 und bringt SLF4J 2.0.18 mit – dieselbe Reihe,
-// die auch über ktlint hereinkommt.
-//
-// Die ktlint-Fassung selbst bleibt, wie das Plugin sie wählt: 1.8.0 formatiert
-// acht Hauptquellen um und verbietet KDoc im Block, beides ohne Bezug zur
-// Lücke. Der Sprung steht als #159.
+// ausgelieferten Programm – ktlint bringt es selbst mit, in einer Fassung des
+// 1.3-Zweigs. Der bekommt die Fassungen nicht mehr, die die Advisories aus #158
+// nennen (1.5.25, 1.5.33, 1.5.34), deshalb eine gepflegte Reihe erzwungen.
+// Welche das gerade ist, hält Dependabot nach: zuerst 1.5.38, mit #165 die
+// 1.6-Reihe. Sie verlangt weiterhin nur JDK 11 und bringt SLF4J 2.0.18 mit –
+// dieselbe Reihe, die auch über ktlint hereinkommt.
 configurations.named("ktlint") {
     resolutionStrategy {
         force("ch.qos.logback:logback-classic:1.6.3", "ch.qos.logback:logback-core:1.6.3")
