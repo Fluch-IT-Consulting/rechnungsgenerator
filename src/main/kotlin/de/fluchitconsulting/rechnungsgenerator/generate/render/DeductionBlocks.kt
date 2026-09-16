@@ -1,8 +1,8 @@
 package de.fluchitconsulting.rechnungsgenerator.generate.render
 
-import de.fluchitconsulting.rechnungsgenerator.calculation.Deduction
-import de.fluchitconsulting.rechnungsgenerator.calculation.InvoiceKind
 import de.fluchitconsulting.rechnungsgenerator.rules.AcceptedInvoice
+import de.fluchitconsulting.rechnungsgenerator.rules.Deduction
+import de.fluchitconsulting.rechnungsgenerator.rules.InvoiceKind
 
 /**
  * Die Absetzung der vereinnahmten Abschläge – der Block unter dem

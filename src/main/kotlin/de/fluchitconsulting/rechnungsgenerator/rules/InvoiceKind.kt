@@ -1,5 +1,6 @@
-package de.fluchitconsulting.rechnungsgenerator.calculation
+package de.fluchitconsulting.rechnungsgenerator.rules
 
+import de.fluchitconsulting.rechnungsgenerator.calculation.DeductedPrepayment
 import de.fluchitconsulting.rechnungsgenerator.model.CancelledInvoice
 import de.fluchitconsulting.rechnungsgenerator.values.InvoiceType
 import java.time.LocalDate

@@ -348,8 +348,8 @@ CV/Web-Auftritt des Autors), Validierung über veraPDF.
   (`generate.render`) und der Naht zu den Werkzeugen (`generate.toolchain`),
   `prepayments` mit dem Zusammentragen der Abschläge und dem YAML-Block.
   Darunter der gemeinsame Kern, in dem jede Kante nach unten zeigt: `rules`
-  (Befunde, Regelgruppen, `AcceptedInvoice.check`) → `calculation`
-  (`CalculatedInvoice`, `InvoiceKind`) → `model` (samt
+  (Befunde, Regelgruppen, `AcceptedInvoice.check`, `InvoiceKind`) →
+  `calculation` (`CalculatedInvoice`) → `model` (samt
   `YamlLoader`) → `values`. In der Wurzel steht nur `Main.kt`. Vorher war die
   Wurzel Kern und CLI zugleich, und daraus entstanden die beiden einzigen
   Zyklen des Projekts: Wurzel ↔ `rules` und Wurzel ↔ `render` (#107). Der
@@ -357,7 +357,8 @@ CV/Web-Auftritt des Autors), Validierung über veraPDF.
   der größere Teil. Die Grenze zwischen `rules` und `calculation` ist die aus
   ADR-0004: `CalculatedInvoice` rechnet nur, `check` prüft und urteilt. Deshalb liegt
   die `AcceptedInvoice` bei den Regeln, und der Renderer importiert aus
-  `rules`. Kotlin hält keine Paketgrenze (`internal` gilt pro Modul, nicht pro
+  `rules`. Aus demselben Grund liegt dort `InvoiceKind`: Die Rechnungsart ist
+  das Ergebnis der Prüfung, gebaut in `InvoiceKindRules` (#180). Kotlin hält keine Paketgrenze (`internal` gilt pro Modul, nicht pro
   Paket); `PackageStructureTest` hält sie stattdessen (#112): eine Tabelle, wer
   woher importieren darf, gegen die Importe aller Quellen unter `src/main`,
   gelesen mit Konsist. Ein neues Paket muss dort eingetragen werden. Derselbe
