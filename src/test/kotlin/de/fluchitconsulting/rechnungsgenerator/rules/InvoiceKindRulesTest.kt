@@ -1,7 +1,6 @@
 package de.fluchitconsulting.rechnungsgenerator.rules
 
 import de.fluchitconsulting.rechnungsgenerator.calculation.CalculatedInvoice
-import de.fluchitconsulting.rechnungsgenerator.calculation.InvoiceKind
 import de.fluchitconsulting.rechnungsgenerator.model.CancelledInvoice
 import de.fluchitconsulting.rechnungsgenerator.model.Invoice
 import de.fluchitconsulting.rechnungsgenerator.model.LineItem

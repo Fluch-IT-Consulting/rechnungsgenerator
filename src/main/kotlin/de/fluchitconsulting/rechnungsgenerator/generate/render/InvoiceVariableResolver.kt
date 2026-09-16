@@ -1,8 +1,8 @@
 package de.fluchitconsulting.rechnungsgenerator.generate.render
 
-import de.fluchitconsulting.rechnungsgenerator.calculation.InvoiceKind
 import de.fluchitconsulting.rechnungsgenerator.model.CancelledInvoice
 import de.fluchitconsulting.rechnungsgenerator.rules.AcceptedInvoice
+import de.fluchitconsulting.rechnungsgenerator.rules.InvoiceKind
 
 /**
  * Die Werte einer angenommenen Rechnung, die ein Text mit Platzhaltern
