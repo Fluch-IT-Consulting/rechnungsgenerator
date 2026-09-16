@@ -20,7 +20,10 @@ application {
 // logback steht allein im Klassenpfad von ktlintCheck und ktlintFormat, nie im
 // ausgelieferten Programm – ktlint 1.5.0 bringt 1.3.14 mit. Der 1.3-Zweig
 // bekommt die Fassungen nicht mehr, die die Advisories aus #158 nennen
-// (1.5.25, 1.5.33, 1.5.34), deshalb die 1.5-Reihe erzwungen.
+// (1.5.25, 1.5.33, 1.5.34), deshalb eine gepflegte Reihe erzwungen. Welche das
+// gerade ist, hält Dependabot nach: zuerst 1.5.38, mit #165 die 1.6-Reihe. Sie
+// verlangt weiterhin nur JDK 11 und bringt SLF4J 2.0.18 mit – dieselbe Reihe,
+// die auch über ktlint hereinkommt.
 //
 // Die ktlint-Fassung selbst bleibt, wie das Plugin sie wählt: 1.8.0 formatiert
 // acht Hauptquellen um und verbietet KDoc im Block, beides ohne Bezug zur
