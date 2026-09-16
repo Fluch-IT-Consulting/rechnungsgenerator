@@ -20,7 +20,9 @@ internal object PrepaymentRules {
             // (#97). `{}` heißt: nichts tun, weiter unten.
             when (invoice.type) {
                 InvoiceType.PREPAYMENT -> {}
-                InvoiceType.INVOICE, InvoiceType.FINAL, InvoiceType.PARTIAL, InvoiceType.CANCELLATION -> return@buildList
+                InvoiceType.INVOICE, InvoiceType.FINAL, InvoiceType.PARTIAL, InvoiceType.CANCELLATION -> {
+                    return@buildList
+                }
             }
             val vereinnahmt = invoice.receivedOn ?: return@buildList
 

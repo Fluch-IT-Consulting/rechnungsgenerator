@@ -92,8 +92,9 @@ internal object MetadataBlocks {
             // diese Stelle erst, wenn entschieden ist, ob sie eine Vereinnahmung
             // nennt (#128).
             when (kind) {
-                is InvoiceKind.PrepaymentInvoice ->
+                is InvoiceKind.PrepaymentInvoice -> {
                     kind.receivedOn?.let { add("Abschlag vereinnahmt am ".escapeLatex() + GermanFormat.date(it)) }
+                }
                 is InvoiceKind.Ordinary, is InvoiceKind.FinalInvoice, is InvoiceKind.Cancellation -> {}
             }
             invoice.customer.buyerReference?.let { add("Ihre Referenz: ".escapeLatex() + it.escapeLatex()) }
