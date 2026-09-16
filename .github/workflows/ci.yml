@@ -32,7 +32,7 @@ jobs:
           java-version: 21
 
       # Gradle-Cache und Wrapper-Prüfung.
-      - uses: gradle/actions/setup-gradle@v4
+      - uses: gradle/actions/setup-gradle@v6
 
       # Die Skripttests rufen die Python-Skripte wirklich auf; beide brauchen
       # PyYAML (siehe CLAUDE.md, Umgebung).
