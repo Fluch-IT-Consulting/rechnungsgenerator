@@ -139,11 +139,12 @@ CV/Web-Auftritt des Autors), Validierung über veraPDF.
   vielen; UStAE 14.5 Abs. 10 erlaubt Ziffern und Buchstaben und verlangt keine
   lückenlose Abfolge. Die Einmaligkeit (§14 Abs. 4 Satz 1 Nr. 4 UStG) prüft der
   Generator nicht – beim Erzeugen sieht er eine einzige Datei (ADR-0001). Die
-  Prüfung sitzt deshalb im `InvoiceCalculator` und nicht im Serialisierer: Ob
+  Prüfung sitzt deshalb in `InvoiceNumberRules` und nicht im Serialisierer: Ob
   eine Nummer gültig ist, hängt an zwei Dateien, und der sieht beim Einlesen
   immer nur eine. Leere Nummer und Leerraum am Rand brechen unabhängig vom
-  Muster ab, weil aus der Nummer auch der Dateiname entsteht – ebenso eine,
-  von der kein Dateiname übrig bleibt (#150). Den Namen leitet
+  Muster ab (`RECHNUNGSNUMMER_FEHLT`, `RECHNUNGSNUMMER_MIT_LEERRAUM`), weil aus
+  der Nummer auch der Dateiname entsteht – ebenso eine, von der kein Dateiname
+  übrig bleibt (`RECHNUNGSNUMMER_OHNE_DATEINAMEN`, #150). Den Namen leitet
   `CalculatedInvoice.fileBaseName` ab, die `AcceptedInvoice` trägt ihn sicher,
   und `erzeuge` hat keinen eigenen Abbruch mehr dafür. Die Nummern der
   abgesetzten Abschläge bleiben ungeprüft: Sie stammen aus früheren Rechnungen,
@@ -152,15 +153,17 @@ CV/Web-Auftritt des Autors), Validierung über veraPDF.
   Vorgabe S. Der Satz allein genügt nicht – ohne Kategorie lässt sich "0 %"
   nicht von "steuerbefreit" und nicht von "Steuerschuldnerschaft des
   Leistungsempfängers" unterscheiden. Die Folgeregeln (Satz 0 bei steuerfreien
-  Kategorien, Befreiungsgrund BT-120, USt-IdNr. des Kunden BT-48 bei AE und K)
-  prüft der `InvoiceCalculator`, nicht erst ein späterer Export: Eine
+  Kategorien `SATZ_MUSS_NULL_SEIN`, Befreiungsgrund BT-120
+  `BEFREIUNGSGRUND_FEHLT`, USt-IdNr. des Kunden BT-48 bei AE und K
+  `KUNDEN_UST_ID_FEHLT`) prüft `TaxCategoryRules`, nicht erst ein späterer
+  Export: Eine
   widersprüchliche Rechnung soll nicht als PDF hinausgehen. Gruppiert wird nach
   Kategorie **und** Satz, weil zwei Positionen mit 0 % steuerlich Verschiedenes
   bedeuten können.
 - **Bestätigungsabfrage**: Vor einer Rechnung ohne Umsatzsteuer muss die
   USt-IdNr. des Kunden geprüft und die Prüfung dokumentiert sein
-  (`kunde: ust-id-geprueft`). Der Calculator bricht sonst ab. Verschieden
-  streng, weil die Rechtslage es ist (Stand August 2026): bei K immer (§6a
+  (`kunde: ust-id-geprueft`). Sonst bricht der Lauf ab
+  (`BESTAETIGUNGSABFRAGE_FEHLT` in `VatIdCheckRules`). Verschieden streng, weil die Rechtslage es ist (Stand August 2026): bei K immer (§6a
   UStG), bei AE nur grenzüberschreitend in die EU (seit 1/2024 keine
   Voraussetzung des §13b mehr, aber Vertrauensschutz), bei Drittländern und im
   Inland gar nicht – VIES deckt nur Mitgliedstaaten ab, und das BZSt bestätigt
@@ -252,8 +255,8 @@ CV/Web-Auftritt des Autors), Validierung über veraPDF.
   Schlussrechnung liegen Monate, in denen Dateien in Jahresordner wandern; eine
   Rechnung, die beim Erzeugen fremde Dateien liest, ergibt nicht zweimal
   dasselbe PDF. Das Abtippen übernimmt `rechnungsgenerator abschlaege`
-  (ADR-0003): Es rechnet die Abschlagsrechnungen mit demselben Calculator wie
-  beim PDF und gibt den Block auf stdout aus – alles oder nichts, ohne Datum
+  (ADR-0003): Es rechnet die Abschlagsrechnungen zu derselben
+  `CalculatedInvoice` wie beim PDF und gibt den Block auf stdout aus – alles oder nichts, ohne Datum
   und Pfad, ein fehlendes `vereinnahmt-am` als leeres Feld. Das "alles oder
   nichts" hält der Typ: `prepaymentsOf` liefert ein versiegeltes
   `CollectedPrepayments`, vollständig oder abgelehnt, und die Einträge tragen
@@ -262,10 +265,12 @@ CV/Web-Auftritt des Autors), Validierung über veraPDF.
   Kommando filterte und paarte per `zip` – dieselbe Sorte Disziplin, die
   ADR-0007 beim Renderer abgeschafft hat. Eingefügt wird von
   Hand, und danach kann der Block geändert oder ganz von Hand geschrieben sein.
-  Deshalb bleiben die Abbruchregeln im `InvoiceCalculator` – darunter die
-  Prüfsumme `netto × satz = ust` und die Forderung, dass Kategorie und Satz in
-  der Schlussrechnung überhaupt vorkommen. Dieselbe Nummer zweimal fängt er
-  aber nur *innerhalb* einer Datei; dass zwei Schlussrechnungen denselben
+  Deshalb bleiben die Abbruchregeln bei der Schlussrechnung, in
+  `FinalInvoiceRules` – darunter die Prüfsumme `netto × satz = ust`
+  (`ABSCHLAG_PRUEFSUMME`) und die Forderung, dass Kategorie und Satz in der
+  Schlussrechnung überhaupt vorkommen (`ABSCHLAG_KOMBINATION_FEHLT`).
+  `ABSCHLAG_DOPPELT` fängt dieselbe Nummer zweimal aber nur *innerhalb* einer
+  Datei; dass zwei Schlussrechnungen denselben
   Abschlag absetzen, sieht allein `offene-abschlaege.py` (#67), weil nur es das
   Verzeichnis liest. Abgesetzt wird nur, was
   **vereinnahmt** ist (§14 Abs. 5 Satz 2 UStG); ein unbezahlter Abschlag ist
