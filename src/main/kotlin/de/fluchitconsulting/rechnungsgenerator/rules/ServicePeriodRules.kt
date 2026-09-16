@@ -8,8 +8,12 @@ import de.fluchitconsulting.rechnungsgenerator.calculation.CalculatedInvoice
  * Kein Zeitraum endet vor seinem Beginn – EN 16931 BR-29 für die Rechnung,
  * BR-30 für die Position. Und eine Rechnung über eine erbrachte Leistung
  * entsteht nicht, bevor die Leistung zu Ende ist: So definiert das Glossar
- * den Leistungszeitraum. Ausgenommen ist nur ein Zeitraum, der eine
- * Prognose ist – der der Abschlagsrechnung.
+ * den Leistungszeitraum.
+ *
+ * Zwei Arten sind davon ausgenommen, aus verschiedenen Gründen: die
+ * Abschlagsrechnung, weil ihr Zeitraum eine Prognose ist, und die
+ * Stornorechnung, weil sie gar nichts abrechnet (#151). Das Verdrehen eines
+ * Zeitraums bleibt für beide verboten.
  */
 internal object ServicePeriodRules {
     fun check(calculated: CalculatedInvoice): List<Finding> =
@@ -34,7 +38,15 @@ internal object ServicePeriodRules {
                         ),
                     )
                 }
-                if (!invoice.type.servicePeriodIsForecast && zeitraum.end.isAfter(invoice.issueDate)) {
+                // chargesForService schließt das Storno aus (#151): Sein
+                // Zeitraum stammt aus der Ursprungsrechnung und wurde dort
+                // geprüft. War die eine Abschlagsrechnung, ist er eine Prognose
+                // und endet nach dem Rechnungsdatum – das brach hier ab, mit
+                // dem Rat, es sei dann eine Abschlagsrechnung.
+                if (invoice.type.chargesForService &&
+                    !invoice.type.servicePeriodIsForecast &&
+                    zeitraum.end.isAfter(invoice.issueDate)
+                ) {
                     add(
                         Finding(
                             Rule.ZEITRAUM_NACH_RECHNUNGSDATUM,
