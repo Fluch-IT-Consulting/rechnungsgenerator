@@ -53,6 +53,16 @@ ktlint_standard_kdoc = disabled
 # Ohne diesen Eintrag hörte er damit still auf (#159).
 ktlint_standard_no-unused-imports = enabled
 
+# Setzt Leerzeilen zwischen die Zweige eines when. Die when-Blöcke dieses
+# Projekts sind aber Tabellen: die Zeichentabelle in escapeLatex, die
+# Fehlerübersetzung im YamlLoader, die Datumsfälle in GermanFormat, das Paar aus
+# "nichts tun" und "zurück" in den Regelgruppen. Auseinandergezogen liest sich
+# das schlechter – und ein Kommentar, der zu einem Zweig gehört, steht dann
+# zwischen zwei Leerzeilen und verliert seinen Bezug. Erst am Ergebnis
+# entschieden, nicht vorab (#159). when-entry-bracing aus demselben Satz
+# befördeter Regeln bleibt an: Klammern um mehrzeilige Zweige helfen.
+ktlint_standard_blank-line-between-when-conditions = disabled
+
 # Bewusst NICHT übernommen aus dem Kreditrechner-Projekt:
 #   argument-list-wrapping, discouraged-comment-location, no-multi-spaces
 # Sie wurden dort für konkrete Stellen abgeschaltet (zeilenweise gruppierte Argumente
