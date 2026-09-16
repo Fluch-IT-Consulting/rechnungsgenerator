@@ -8,7 +8,7 @@ import com.github.ajalt.clikt.parameters.options.default
 import com.github.ajalt.clikt.parameters.options.flag
 import com.github.ajalt.clikt.parameters.options.option
 import com.github.ajalt.clikt.parameters.types.path
-import de.fluchitconsulting.rechnungsgenerator.calculation.InvoiceCalculator
+import de.fluchitconsulting.rechnungsgenerator.calculation.CalculatedInvoice
 import de.fluchitconsulting.rechnungsgenerator.generate.render.InvoiceRenderer
 import de.fluchitconsulting.rechnungsgenerator.generate.toolchain.LuaLatexTypesetter
 import de.fluchitconsulting.rechnungsgenerator.generate.toolchain.ToolchainException
@@ -84,7 +84,7 @@ class GenerateCommand(
         // nimmt keine andere. Alle Abbrüche auf einmal: Wer fünf Fehler in der
         // Datei hat, soll nicht fünfmal starten müssen, um sie zu finden (#49).
         val acceptedInvoice =
-            when (val verdict = AcceptedInvoice.check(InvoiceCalculator.calculate(invoice, config))) {
+            when (val verdict = AcceptedInvoice.check(CalculatedInvoice(invoice, config))) {
                 is Verdict.Accepted -> verdict.invoice
                 is Verdict.Rejected -> throw RejectedException(verdict.aborts)
             }

@@ -1,6 +1,6 @@
 package de.fluchitconsulting.rechnungsgenerator.model
 
-import de.fluchitconsulting.rechnungsgenerator.calculation.InvoiceCalculator
+import de.fluchitconsulting.rechnungsgenerator.calculation.CalculatedInvoice
 import de.fluchitconsulting.rechnungsgenerator.values.InvoiceType
 import de.fluchitconsulting.rechnungsgenerator.values.Money
 import de.fluchitconsulting.rechnungsgenerator.values.Price
@@ -41,7 +41,7 @@ class YamlLoaderTest : FunSpec({
         // Nicht gesetzte Zusatzfelder bleiben null, statt zu einem leeren String zu werden.
         invoice.items.first().note shouldBe null
 
-        val totals = InvoiceCalculator.calculate(invoice, config)
+        val totals = CalculatedInvoice(invoice, config)
 
         // 86.5 × 95.00 = 8217.50, plus 120.00 Pauschale = 8337.50 netto;
         // 19 % darauf = 1584.125 -> 1584.13; brutto 9921.63.
@@ -92,7 +92,7 @@ class YamlLoaderTest : FunSpec({
             .single()
             .vat shouldBe Money("760.00")
 
-        val totals = InvoiceCalculator.calculate(invoice, config)
+        val totals = CalculatedInvoice(invoice, config)
 
         // 20.000 netto + 19 % = 23.800 brutto, abzüglich zweimal 4.760.
         totals.grossTotal shouldBe Money("23800.00")

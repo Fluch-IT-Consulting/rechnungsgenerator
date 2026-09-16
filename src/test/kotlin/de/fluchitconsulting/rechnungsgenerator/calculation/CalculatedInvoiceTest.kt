@@ -12,7 +12,7 @@ import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
 import java.time.LocalDate
 
-class InvoiceCalculatorTest : FunSpec({
+class CalculatedInvoiceTest : FunSpec({
 
     val config = testSellerConfig()
 
@@ -20,17 +20,16 @@ class InvoiceCalculatorTest : FunSpec({
         test("setzt sich aus Rechnungsart und -nummer zusammen") {
             // Im Ordner liegen die Dokumente eines Vorgangs nebeneinander; welches
             // der Abschlag ist, soll man am Namen sehen.
-            InvoiceCalculator
-                .calculate(testInvoice(number = "R26-009", type = InvoiceType.PREPAYMENT), config)
+            CalculatedInvoice(testInvoice(number = "R26-009", type = InvoiceType.PREPAYMENT), config)
                 .fileBaseName shouldBe "Abschlagsrechnung-R26-009"
         }
 
         test("ersetzt Zeichen außerhalb des portablen Zeichensatzes durch Bindestriche") {
-            InvoiceCalculator.calculate(testInvoice(number = "R26/009"), config).fileBaseName shouldBe "Rechnung-R26-009"
+            CalculatedInvoice(testInvoice(number = "R26/009"), config).fileBaseName shouldBe "Rechnung-R26-009"
         }
 
         test("gibt es nicht, wenn von der Nummer nichts übrig bleibt") {
-            InvoiceCalculator.calculate(testInvoice(number = "///"), config).fileBaseName shouldBe null
+            CalculatedInvoice(testInvoice(number = "///"), config).fileBaseName shouldBe null
         }
     }
 
@@ -38,7 +37,7 @@ class InvoiceCalculatorTest : FunSpec({
         // 1.25 × 98.99 = 123.7375 -> 123.74
         val invoice = testInvoice(items = listOf(testItem(quantity = "1.25", unitPrice = "98.99")))
 
-        val totals = InvoiceCalculator.calculate(invoice, config)
+        val totals = CalculatedInvoice(invoice, config)
 
         totals.lines.single().net shouldBe Money("123.74")
     }
@@ -49,7 +48,7 @@ class InvoiceCalculatorTest : FunSpec({
     test("Einzelpreis unter einem Cent wird erst nach der Multiplikation gerundet") {
         val invoice = testInvoice(items = listOf(testItem(quantity = "1000", unitPrice = "0.335")))
 
-        val totals = InvoiceCalculator.calculate(invoice, config)
+        val totals = CalculatedInvoice(invoice, config)
 
         totals.lines.single().net shouldBe Money("335.00")
         totals.grossTotal shouldBe Money("398.65")
@@ -58,7 +57,7 @@ class InvoiceCalculatorTest : FunSpec({
     // Die Summen gehören zur Rechnung, aus der sie entstanden – auch nach copy().
     // Ein Paar aus einer Rechnung und den Summen einer anderen soll nicht baubar sein.
     test("copy mit einer anderen Rechnung rechnet deren Summen") {
-        val calculated = InvoiceCalculator.calculate(testInvoice(items = listOf(testItem(quantity = "1", unitPrice = "100.00"))), config)
+        val calculated = CalculatedInvoice(testInvoice(items = listOf(testItem(quantity = "1", unitPrice = "100.00"))), config)
         val andere = testInvoice(items = listOf(testItem(quantity = "2", unitPrice = "100.00")))
 
         calculated.copy(invoice = andere).netTotal shouldBe Money("200.00")
@@ -76,7 +75,7 @@ class InvoiceCalculatorTest : FunSpec({
                         ),
                 )
 
-            val totals = InvoiceCalculator.calculate(invoice, config)
+            val totals = CalculatedInvoice(invoice, config)
 
             totals.vatGroups.size shouldBe 2
             val (vat19, vat7) = totals.vatGroups
@@ -91,20 +90,20 @@ class InvoiceCalculatorTest : FunSpec({
 
     context("Fälligkeit") {
         test("Standard-Zahlungsziel kommt aus den Stammdaten") {
-            val totals = InvoiceCalculator.calculate(testInvoice(), testSellerConfig(paymentTermDays = 14))
+            val totals = CalculatedInvoice(testInvoice(), testSellerConfig(paymentTermDays = 14))
 
             totals.dueDate shouldBe LocalDate.of(2026, 8, 28)
         }
 
         test("Override in der Rechnung gewinnt") {
-            val totals = InvoiceCalculator.calculate(testInvoice(paymentTermDaysOverride = 30), config)
+            val totals = CalculatedInvoice(testInvoice(paymentTermDaysOverride = 30), config)
 
             totals.dueDate shouldBe LocalDate.of(2026, 9, 13)
         }
 
         // Ein negatives Zahlungsziel lehnt PaymentTermRules ab, siehe den Test dort.
         test("null Tage heißen sofort") {
-            InvoiceCalculator.calculate(testInvoice(paymentTermDaysOverride = 0), config).dueDate shouldBe
+            CalculatedInvoice(testInvoice(paymentTermDaysOverride = 0), config).dueDate shouldBe
                 LocalDate.of(2026, 8, 14)
         }
     }
@@ -115,13 +114,13 @@ class InvoiceCalculatorTest : FunSpec({
         // Entscheidung.
 
         test("eine gewöhnliche Rechnung fordert zur Zahlung auf") {
-            InvoiceCalculator.calculate(testInvoice(), config).requestsPayment shouldBe true
+            CalculatedInvoice(testInvoice(), config).requestsPayment shouldBe true
         }
 
         test("eine Schlussrechnung ohne Restbetrag rechnet ab, fordert aber kein Geld") {
             // 4.000 € netto, 19 % USt.: 4.760 € brutto, genau der Abschlag.
             val calculated =
-                InvoiceCalculator.calculate(
+                CalculatedInvoice(
                     testInvoice(
                         type = InvoiceType.FINAL,
                         items = listOf(testItem(quantity = "1", unitPrice = "4000.00")),
@@ -138,7 +137,7 @@ class InvoiceCalculatorTest : FunSpec({
 
         test("eine Schlussrechnung mit Restbetrag ist nicht ausgeglichen") {
             val calculated =
-                InvoiceCalculator.calculate(
+                CalculatedInvoice(
                     testInvoice(
                         type = InvoiceType.FINAL,
                         items = listOf(testItem(quantity = "2", unitPrice = "4000.00")),
@@ -153,7 +152,7 @@ class InvoiceCalculatorTest : FunSpec({
 
         test("ohne Abschläge ist nichts ausgeglichen, auch bei Gesamtbetrag null") {
             val calculated =
-                InvoiceCalculator.calculate(
+                CalculatedInvoice(
                     testInvoice(items = listOf(testItem(quantity = "0", unitPrice = "1000.00"))),
                     config,
                 )
@@ -164,7 +163,7 @@ class InvoiceCalculatorTest : FunSpec({
 
         test("eine Stornorechnung fordert kein Geld") {
             val calculated =
-                InvoiceCalculator.calculate(
+                CalculatedInvoice(
                     testInvoice(
                         type = InvoiceType.CANCELLATION,
                         items = listOf(testItem(quantity = "-1", unitPrice = "1000.00")),
@@ -182,7 +181,7 @@ class InvoiceCalculatorTest : FunSpec({
             // sie ab. Dass sie kein Geld fordert, soll aber am Wert selbst hängen
             // und nicht an einer Regel in einer anderen Gruppe (#130).
             val calculated =
-                InvoiceCalculator.calculate(
+                CalculatedInvoice(
                     testInvoice(items = listOf(testItem(quantity = "-1", unitPrice = "1000.00"))),
                     config,
                 )
@@ -201,7 +200,7 @@ class InvoiceCalculatorTest : FunSpec({
         fun zwischen(steller: String, kunde: String): CalculatedInvoice {
             val invoice = testInvoice()
             val sellerConfig = testSellerConfig()
-            return InvoiceCalculator.calculate(
+            return CalculatedInvoice(
                 invoice.copy(customer = invoice.customer.copy(address = invoice.customer.address.copy(countryCode = CountryCode(kunde)))),
                 sellerConfig.copy(address = sellerConfig.address.copy(countryCode = CountryCode(steller))),
             )

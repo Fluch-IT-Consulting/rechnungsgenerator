@@ -1,6 +1,6 @@
 package de.fluchitconsulting.rechnungsgenerator.rules
 
-import de.fluchitconsulting.rechnungsgenerator.calculation.InvoiceCalculator
+import de.fluchitconsulting.rechnungsgenerator.calculation.CalculatedInvoice
 import de.fluchitconsulting.rechnungsgenerator.model.testInvoice
 import de.fluchitconsulting.rechnungsgenerator.model.testItem
 import de.fluchitconsulting.rechnungsgenerator.model.testSellerConfig
@@ -28,7 +28,7 @@ class PrepaymentRulesTest : FunSpec({
                 receivedOn = LocalDate.of(2026, 8, 10),
             )
 
-        val totals = InvoiceCalculator.calculate(invoice, config)
+        val totals = CalculatedInvoice(invoice, config)
 
         totals.netTotal shouldBe Money("4000.00")
         totals.grossTotal shouldBe Money("4760.00")
@@ -47,7 +47,7 @@ class PrepaymentRulesTest : FunSpec({
                 receivedOn = LocalDate.of(2026, 8, 15),
             )
 
-        val message = InvoiceCalculator.calculate(invoice, config).messageOf(Rule.VEREINNAHMUNG_NACH_RECHNUNGSDATUM)
+        val message = CalculatedInvoice(invoice, config).messageOf(Rule.VEREINNAHMUNG_NACH_RECHNUNGSDATUM)
 
         message shouldContain "2026-08-15"
     }
@@ -57,8 +57,8 @@ class PrepaymentRulesTest : FunSpec({
         // Eine Meldung über das Datum spräche von einer Vereinnahmung, die es
         // auf diesem Dokument nicht geben kann (#97). Verglichen wird mit
         // derselben Rechnung ohne das Feld: Hinzukommen darf nur der eine Befund.
-        val ohne = InvoiceCalculator.calculate(testInvoice(), config)
-        val mit = InvoiceCalculator.calculate(testInvoice(receivedOn = LocalDate.of(2026, 8, 15)), config)
+        val ohne = CalculatedInvoice(testInvoice(), config)
+        val mit = CalculatedInvoice(testInvoice(receivedOn = LocalDate.of(2026, 8, 15)), config)
 
         mit.rules() shouldContainExactlyInAnyOrder ohne.rules() + Rule.VEREINNAHMUNG_FALSCHE_ART
     }

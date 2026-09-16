@@ -1,6 +1,6 @@
 package de.fluchitconsulting.rechnungsgenerator.prepayments
 
-import de.fluchitconsulting.rechnungsgenerator.calculation.InvoiceCalculator
+import de.fluchitconsulting.rechnungsgenerator.calculation.CalculatedInvoice
 import de.fluchitconsulting.rechnungsgenerator.model.TaxShare
 import de.fluchitconsulting.rechnungsgenerator.model.YamlLoader
 import de.fluchitconsulting.rechnungsgenerator.model.testPrepayment
@@ -106,8 +106,7 @@ class PrepaymentBlockTest : FunSpec({
             YamlLoader.parseInvoice(finalInvoiceWith(PrepaymentBlock.render(listOf(vereinnahmt, nichtVereinnahmt))))
 
         val message =
-            InvoiceCalculator
-                .calculate(schlussrechnung, testSellerConfig())
+            CalculatedInvoice(schlussrechnung, testSellerConfig())
                 .messageOf(Rule.ABSCHLAG_OHNE_VEREINNAHMUNG)
 
         message shouldContain "Abschlag R26-011: ohne 'vereinnahmt-am' keine Absetzung"

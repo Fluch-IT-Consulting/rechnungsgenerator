@@ -1,6 +1,6 @@
 package de.fluchitconsulting.rechnungsgenerator.rules
 
-import de.fluchitconsulting.rechnungsgenerator.calculation.InvoiceCalculator
+import de.fluchitconsulting.rechnungsgenerator.calculation.CalculatedInvoice
 import de.fluchitconsulting.rechnungsgenerator.model.testInvoice
 import de.fluchitconsulting.rechnungsgenerator.model.testItem
 import de.fluchitconsulting.rechnungsgenerator.model.testSellerConfig
@@ -24,14 +24,14 @@ class PlausibilityHintsTest : FunSpec({
     test("eine Position mit Menge 0 bekommt einen Hinweis") {
         val invoice = testInvoice(items = listOf(testItem(), testItem(quantity = "0")))
 
-        val hint = InvoiceCalculator.calculate(invoice, config).messageOf(Rule.MENGE_NULL)
+        val hint = CalculatedInvoice(invoice, config).messageOf(Rule.MENGE_NULL)
 
         hint shouldContain "Position 2"
         hint shouldContain "Menge 0"
     }
 
     context("Rechnung mehr als sechs Monate nach der Leistung (§14 Abs. 2 UStG)") {
-        fun rechnungAm(datum: LocalDate) = InvoiceCalculator.calculate(testInvoice().copy(issueDate = datum), config)
+        fun rechnungAm(datum: LocalDate) = CalculatedInvoice(testInvoice().copy(issueDate = datum), config)
 
         test("danach gibt es einen Hinweis") {
             val hint = rechnungAm(LocalDate.of(2027, 2, 1)).messageOf(Rule.RECHNUNG_SPAET)
@@ -54,7 +54,7 @@ class PlausibilityHintsTest : FunSpec({
         test("bei einer Abschlagsrechnung nicht – ihr Zeitraum ist eine Prognose") {
             val abschlagsrechnung = testInvoice(type = InvoiceType.PREPAYMENT).copy(issueDate = LocalDate.of(2027, 2, 1))
 
-            InvoiceCalculator.calculate(abschlagsrechnung, config).hints().shouldBeEmpty()
+            CalculatedInvoice(abschlagsrechnung, config).hints().shouldBeEmpty()
         }
     }
 })

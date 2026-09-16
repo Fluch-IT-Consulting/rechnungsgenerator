@@ -78,25 +78,67 @@ data class DeductedPrepayment(
 )
 
 /**
- * Eine Rechnung, wie sie sich mit ihren Stammdaten ausrechnet: die Eingaben und
- * alles Abgeleitete in einem Wert.
+ * Eine Rechnung, wie sie sich mit ihren Stammdaten ausrechnet – und nicht
+ * geprüft: Das tun die Regelgruppen unter `rules`, jede gegen dieses Ergebnis
+ * (#71, ADR-0004).
  *
- * Vorher reisten Rechnung und Summen als Paar, das nichts zusammenhielt. Jeder
- * Verbraucher nahm beide entgegen und verließ sich darauf, dass sie zueinander
- * gehören; zwei Eingaben standen sicherheitshalber noch einmal in den Summen.
- * Jetzt ist ein Paar aus einer Rechnung und den Summen einer anderen nicht mehr
- * baubar – nicht bloß ungebaut, derselbe Zug wie beim Zahlungsziel.
+ * Im Konstruktor stehen nur die Eingaben, alles Weitere rechnet der Rumpf aus.
+ * Ein Paar aus einer Rechnung und den Summen einer anderen ist damit nicht
+ * baubar – auch nicht über `copy()`, denn das baut neu und rechnet neu. Vorher
+ * standen die Summen im Konstruktor, und dass sie zur Rechnung passten, hielt
+ * allein, dass nur `InvoiceCalculator.calculate` ihn aufrief (#172).
+ *
+ * Verworfen: ein privater Konstruktor wie bei `AcceptedInvoice`. `copy()`
+ * einer Data Class bleibt in Kotlin 2.4 trotzdem öffentlich, erst
+ * `@ConsistentCopyVisibility` schließt es. Und die Summen blieben gespeichert
+ * statt abgeleitet.
  */
 data class CalculatedInvoice(
     val invoice: Invoice,
     val config: SellerConfig,
-    val lines: List<CalculatedLine>,
-    val netTotal: Money,
-    val vatGroups: List<VatGroup>,
-    val grossTotal: Money,
-    /** Die abgesetzten Abschläge, in der Reihenfolge der Rechnungsdatei. */
-    val prepayments: List<DeductedPrepayment> = emptyList(),
 ) {
+    // Die Eigenschaften im Rumpf initialisiert Kotlin von oben nach unten, beim
+    // Bau und nur einmal. Liest eine davon direkt eine weiter unten stehende,
+    // ist das ein Compilerfehler; geht der Zugriff über eine Funktion, kommt
+    // zur Laufzeit `null` heraus.
+
+    // Erst pro Position runden, dann summieren – so stimmt die Summe mit dem
+    // überein, was der Leser auf der Rechnung nachrechnen kann.
+    //
+    // roundToAmount() ist die einzige Rundung dieser Klasse, und der Compiler
+    // erzwingt sie: unitPrice ist ein Price (exakt), net ein Money (zwei Stellen).
+    val lines: List<CalculatedLine> =
+        invoice.items.map { CalculatedLine(it, (it.unitPrice * it.quantity).roundToAmount()) }
+
+    val netTotal: Money = lines.sumOf { it.net }
+
+    // USt. je Gruppe auf die summierte Bemessungsgrundlage berechnen
+    // (nicht je Position!), so verlangt es EN 16931 (BG-23).
+    val vatGroups: List<VatGroup> =
+        lines
+            .groupBy { it.item.taxCategory to it.item.vatRate }
+            .map { (schluessel, group) ->
+                val (category, rate) = schluessel
+                val base = group.sumOf { it.net }
+                VatGroup(
+                    category = category,
+                    rate = rate,
+                    base = base,
+                    amount = base * rate,
+                    reasons = group.mapNotNull { it.item.taxExemptionReason }.toSet(),
+                )
+            }.sortedWith(compareBy({ it.category.ordinal }, { -it.rate.valueAsPercentage.toDouble() }))
+
+    val grossTotal: Money = netTotal + vatGroups.sumOf { it.amount }
+
+    /** Die abgesetzten Abschläge, in der Reihenfolge der Rechnungsdatei. */
+    val prepayments: List<DeductedPrepayment> =
+        invoice.prepayments.map { abschlag ->
+            val net = abschlag.taxShares.sumOf { it.net }
+            val vat = abschlag.taxShares.sumOf { it.vat }
+            DeductedPrepayment(abschlag, net = net, vat = vat, gross = net + vat)
+        }
+
     /**
      * Die vereinbarte Zahlungsfrist in Tagen: die der Rechnung, sonst die der
      * Stammdaten. Abgeleitet und nicht kopiert – als eigenes Feld wäre es
@@ -223,54 +265,4 @@ data class CalculatedInvoice(
             // takeIf gibt den Wert zurück, wenn die Bedingung gilt, sonst null.
             .takeIf { it.isNotEmpty() }
             ?.let { "${invoice.type.documentName}-$it" }
-}
-
-/**
- * Rechnet eine Rechnung aus – und prüft sie nicht.
- *
- * Geprüft wird in den Regelgruppen unter `rules`, jede gegen das fertige
- * Ergebnis (#71). Vorher stand beides hier ineinander: Vorzeichen und
- * Zahlungsziel wurden mitten zwischen den Rechenschritten geprüft, ein
- * Befund entstand als Seiteneffekt der Gruppierung, und die Datei war auf 920
- * Zeilen gewachsen, von denen ein Sechstel rechnete.
- */
-object InvoiceCalculator {
-    fun calculate(invoice: Invoice, config: SellerConfig): CalculatedInvoice {
-        // Erst pro Position runden, dann summieren – so stimmt die Summe mit dem
-        // überein, was der Leser auf der Rechnung nachrechnen kann.
-        //
-        // roundToAmount() ist die einzige Rundung in dieser Funktion, und der Compiler
-        // erzwingt sie: unitPrice ist ein Price (exakt), net ein Money (zwei Stellen).
-        val lines = invoice.items.map { CalculatedLine(it, (it.unitPrice * it.quantity).roundToAmount()) }
-
-        val netTotal = lines.sumOf { it.net }
-
-        // USt. je Gruppe auf die summierte Bemessungsgrundlage berechnen
-        // (nicht je Position!), so verlangt es EN 16931 (BG-23).
-        val vatGroups =
-            lines
-                .groupBy { it.item.taxCategory to it.item.vatRate }
-                .map { (schluessel, group) ->
-                    val (category, rate) = schluessel
-                    val base = group.sumOf { it.net }
-                    VatGroup(
-                        category = category,
-                        rate = rate,
-                        base = base,
-                        amount = base * rate,
-                        reasons = group.mapNotNull { it.item.taxExemptionReason }.toSet(),
-                    )
-                }.sortedWith(compareBy({ it.category.ordinal }, { -it.rate.valueAsPercentage.toDouble() }))
-
-        val grossTotal = netTotal + vatGroups.sumOf { it.amount }
-
-        val prepayments =
-            invoice.prepayments.map { abschlag ->
-                val net = abschlag.taxShares.sumOf { it.net }
-                val vat = abschlag.taxShares.sumOf { it.vat }
-                DeductedPrepayment(abschlag, net = net, vat = vat, gross = net + vat)
-            }
-
-        return CalculatedInvoice(invoice, config, lines, netTotal, vatGroups, grossTotal, prepayments)
-    }
 }

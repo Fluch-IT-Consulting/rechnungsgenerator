@@ -1,6 +1,6 @@
 package de.fluchitconsulting.rechnungsgenerator.generate.render
 
-import de.fluchitconsulting.rechnungsgenerator.calculation.InvoiceCalculator
+import de.fluchitconsulting.rechnungsgenerator.calculation.CalculatedInvoice
 import de.fluchitconsulting.rechnungsgenerator.model.testCancelled
 import de.fluchitconsulting.rechnungsgenerator.model.testInvoice
 import de.fluchitconsulting.rechnungsgenerator.model.testItem
@@ -18,18 +18,17 @@ class InvoiceVariableResolverTest : FunSpec({
 
     val storno =
         InvoiceVariableResolver(
-            InvoiceCalculator
-                .calculate(
-                    testInvoice(
-                        type = InvoiceType.CANCELLATION,
-                        items = listOf(testItem(quantity = "-1")),
-                        cancelled = testCancelled(invoiceNumber = "R26-042", issueDate = LocalDate.of(2026, 7, 15)),
-                    ),
-                    config,
-                ).accepted(),
+            CalculatedInvoice(
+                testInvoice(
+                    type = InvoiceType.CANCELLATION,
+                    items = listOf(testItem(quantity = "-1")),
+                    cancelled = testCancelled(invoiceNumber = "R26-042", issueDate = LocalDate.of(2026, 7, 15)),
+                ),
+                config,
+            ).accepted(),
         )
 
-    val invoice = InvoiceVariableResolver(InvoiceCalculator.calculate(testInvoice(), config).accepted())
+    val invoice = InvoiceVariableResolver(CalculatedInvoice(testInvoice(), config).accepted())
 
     test("auf einer Stornorechnung: Nummer und Datum der Ursprungsrechnung, je zusammengehalten") {
         storno.resolve("URSPRUNGSNUMMER").tex shouldBe "\\zusammen{R26-042}"

@@ -1,6 +1,6 @@
 package de.fluchitconsulting.rechnungsgenerator.rules
 
-import de.fluchitconsulting.rechnungsgenerator.calculation.InvoiceCalculator
+import de.fluchitconsulting.rechnungsgenerator.calculation.CalculatedInvoice
 import de.fluchitconsulting.rechnungsgenerator.model.Invoice
 import de.fluchitconsulting.rechnungsgenerator.model.LineItem
 import de.fluchitconsulting.rechnungsgenerator.model.Prepayment
@@ -39,7 +39,7 @@ class FinalInvoiceRulesTest : FunSpec({
     fun schlussrechnung(vararg prepayments: Prepayment) =
         testInvoice(type = InvoiceType.FINAL, items = gesamtleistung(), prepayments = prepayments.toList())
 
-    fun messageFor(invoice: Invoice, rule: Rule): String = InvoiceCalculator.calculate(invoice, config).messageOf(rule)
+    fun messageFor(invoice: Invoice, rule: Rule): String = CalculatedInvoice(invoice, config).messageOf(rule)
 
     context("die Abbruchregeln") {
         // Ob Abschläge dort stehen, wo sie hingehören, ob eine Schlussrechnung
@@ -92,7 +92,7 @@ class FinalInvoiceRulesTest : FunSpec({
                 )
 
             val doppelte =
-                InvoiceCalculator.calculate(invoice, config).aborts().filter { it.rule == Rule.ABSCHLAG_DOPPELT }
+                CalculatedInvoice(invoice, config).aborts().filter { it.rule == Rule.ABSCHLAG_DOPPELT }
 
             doppelte.size shouldBe 2
             doppelte.joinToString { it.describe() } shouldContain "R26-009"
@@ -117,7 +117,7 @@ class FinalInvoiceRulesTest : FunSpec({
                     testPrepayment(invoiceNumber = "R26-009 "),
                 )
 
-            InvoiceCalculator.calculate(invoice, config).prepayments.map { it.prepayment.invoiceNumber } shouldBe
+            CalculatedInvoice(invoice, config).prepayments.map { it.prepayment.invoiceNumber } shouldBe
                 listOf("R26-009", "r26-009", "R26-009 ")
         }
 
@@ -175,8 +175,8 @@ class FinalInvoiceRulesTest : FunSpec({
                     ),
                     testPrepayment(invoiceNumber = "R26-012", vatRate = "7", vat = "280.00"),
                 )
-            val ohne = InvoiceCalculator.calculate(testInvoice(items = gesamtleistung()), config)
-            val mit = InvoiceCalculator.calculate(testInvoice(items = gesamtleistung(), prepayments = abschlaege), config)
+            val ohne = CalculatedInvoice(testInvoice(items = gesamtleistung()), config)
+            val mit = CalculatedInvoice(testInvoice(items = gesamtleistung(), prepayments = abschlaege), config)
 
             mit.rules() shouldContainExactlyInAnyOrder ohne.rules() + Rule.ABSCHLAEGE_FALSCHE_ART
         }
@@ -190,7 +190,7 @@ class FinalInvoiceRulesTest : FunSpec({
                     testPrepayment(invoiceNumber = "R26-011", issueDate = LocalDate.of(2026, 7, 20)),
                 )
 
-            val totals = InvoiceCalculator.calculate(invoice, config)
+            val totals = CalculatedInvoice(invoice, config)
 
             totals.grossTotal shouldBe Money("23800.00")
             // Netto und Steuer bleiben getrennt (ADR-0002) – deshalb hier
@@ -223,7 +223,7 @@ class FinalInvoiceRulesTest : FunSpec({
                         ),
                 )
 
-            val totals = InvoiceCalculator.calculate(invoice, config)
+            val totals = CalculatedInvoice(invoice, config)
 
             totals.prepayments.single().net shouldBe Money("5000.00")
             totals.prepayments.single().vat shouldBe Money("830.00")
@@ -238,7 +238,7 @@ class FinalInvoiceRulesTest : FunSpec({
                     prepayments = listOf(testPrepayment()),
                 )
 
-            val totals = InvoiceCalculator.calculate(invoice, config)
+            val totals = CalculatedInvoice(invoice, config)
 
             totals.remainingAmount shouldBe Money.ZERO
             totals.prepaymentTotal shouldBe totals.grossTotal
@@ -248,7 +248,7 @@ class FinalInvoiceRulesTest : FunSpec({
         }
 
         test("ohne Abschläge bleibt der Restbetrag der Gesamtbetrag") {
-            val totals = InvoiceCalculator.calculate(testInvoice(items = gesamtleistung()), config)
+            val totals = CalculatedInvoice(testInvoice(items = gesamtleistung()), config)
 
             totals.prepayments.shouldBeEmpty()
             totals.remainingAmount shouldBe totals.grossTotal

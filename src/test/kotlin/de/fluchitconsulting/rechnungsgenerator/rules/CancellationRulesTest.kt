@@ -1,6 +1,6 @@
 package de.fluchitconsulting.rechnungsgenerator.rules
 
-import de.fluchitconsulting.rechnungsgenerator.calculation.InvoiceCalculator
+import de.fluchitconsulting.rechnungsgenerator.calculation.CalculatedInvoice
 import de.fluchitconsulting.rechnungsgenerator.model.Address
 import de.fluchitconsulting.rechnungsgenerator.model.CancelledInvoice
 import de.fluchitconsulting.rechnungsgenerator.model.CheckMethod
@@ -44,10 +44,10 @@ class CancellationRulesTest : FunSpec({
         cancelled = cancelled,
     )
 
-    fun messageFor(invoice: Invoice, rule: Rule): String = InvoiceCalculator.calculate(invoice, config).messageOf(rule)
+    fun messageFor(invoice: Invoice, rule: Rule): String = CalculatedInvoice(invoice, config).messageOf(rule)
 
     test("ein Storno mit Bezug und negativer Menge geht durch") {
-        val calculated = InvoiceCalculator.calculate(storno(), config)
+        val calculated = CalculatedInvoice(storno(), config)
 
         calculated.aborts().shouldBeEmpty()
         calculated.grossTotal shouldBe Money("-1190.00")
@@ -80,9 +80,9 @@ class CancellationRulesTest : FunSpec({
         // Meldungen über den Bezug sprächen von "der Stornorechnung" und "diesem
         // Storno", auf einem Blatt, das keines ist (#97). Der Bezug hier ist
         // doppelt falsch: eigene Nummer und später datiert.
-        val ohne = InvoiceCalculator.calculate(testInvoice(), config)
+        val ohne = CalculatedInvoice(testInvoice(), config)
         val mit =
-            InvoiceCalculator.calculate(
+            CalculatedInvoice(
                 testInvoice(cancelled = testCancelled(invoiceNumber = "R26-001", issueDate = LocalDate.of(2026, 9, 1))),
                 config,
             )
@@ -99,18 +99,17 @@ class CancellationRulesTest : FunSpec({
     test("ein Storno über null ebenso") {
         // "Nicht negativ" und nicht "positiv": Ein Storno über 0,00 hebt nichts
         // auf und wäre trotzdem durchgegangen, stünde hier isPositive().
-        InvoiceCalculator
-            .calculate(storno(quantity = "0"), config)
+        CalculatedInvoice(storno(quantity = "0"), config)
             .rules() shouldContain Rule.STORNO_NICHT_NEGATIV
     }
 
     test("die Regel gegen negative Gesamtbeträge gilt im Storno nicht") {
-        InvoiceCalculator.calculate(storno(), config).rules() shouldNotContain Rule.GESAMTBETRAG_NEGATIV
+        CalculatedInvoice(storno(), config).rules() shouldNotContain Rule.GESAMTBETRAG_NEGATIV
     }
 
     test("ein Storno hat keine Fälligkeit") {
         // Es fordert nicht zur Zahlung auf, sondern kündigt eine Erstattung an.
-        InvoiceCalculator.calculate(storno(), config).dueDate shouldBe null
+        CalculatedInvoice(storno(), config).dueDate shouldBe null
     }
 
     context("was ein Storno nicht abrechnet, mahnt es auch nicht an") {
@@ -127,7 +126,7 @@ class CancellationRulesTest : FunSpec({
                     servicePeriod = ServicePeriod(LocalDate.of(2026, 1, 1), LocalDate.of(2026, 1, 31)),
                 )
 
-            InvoiceCalculator.calculate(spaetesStorno, config).rules() shouldNotContain Rule.RECHNUNG_SPAET
+            CalculatedInvoice(spaetesStorno, config).rules() shouldNotContain Rule.RECHNUNG_SPAET
         }
 
         test("eine alternde Bestätigungsabfrage wird im Storno nicht gerügt") {
@@ -157,7 +156,7 @@ class CancellationRulesTest : FunSpec({
                         ),
                 )
 
-            InvoiceCalculator.calculate(alteAbfrage, config).rules() shouldNotContain Rule.ABFRAGE_ALT
+            CalculatedInvoice(alteAbfrage, config).rules() shouldNotContain Rule.ABFRAGE_ALT
         }
     }
 })

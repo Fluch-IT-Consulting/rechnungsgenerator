@@ -1,6 +1,6 @@
 package de.fluchitconsulting.rechnungsgenerator.rules
 
-import de.fluchitconsulting.rechnungsgenerator.calculation.InvoiceCalculator
+import de.fluchitconsulting.rechnungsgenerator.calculation.CalculatedInvoice
 import de.fluchitconsulting.rechnungsgenerator.model.testInvoice
 import de.fluchitconsulting.rechnungsgenerator.model.testItem
 import de.fluchitconsulting.rechnungsgenerator.model.testSellerConfig
@@ -53,7 +53,7 @@ class TaxCategoryRulesTest : FunSpec({
     }
 
     test("Regelsatz bleibt der Normalfall und braucht nichts weiter") {
-        val totals = InvoiceCalculator.calculate(testInvoice(), config)
+        val totals = CalculatedInvoice(testInvoice(), config)
 
         totals.vatGroups.single().category shouldBe TaxCategory.STANDARD
         totals.vatGroups.single().exemptionReason shouldBe null
@@ -66,7 +66,7 @@ class TaxCategoryRulesTest : FunSpec({
                 customerVatId = VatId("ATU12345678"),
             )
 
-        val totals = InvoiceCalculator.calculate(invoice, config)
+        val totals = CalculatedInvoice(invoice, config)
 
         totals.grossTotal shouldBe Money("1000.00")
         // §14a Abs. 5 UStG verlangt genau diesen Hinweis; ohne eigene Angabe
@@ -78,7 +78,7 @@ class TaxCategoryRulesTest : FunSpec({
         val invoice =
             testInvoice(items = listOf(testItem(vatRate = "0", taxCategory = TaxCategory.REVERSE_CHARGE)))
 
-        InvoiceCalculator.calculate(invoice, config).messageOf(Rule.KUNDEN_UST_ID_FEHLT) shouldContain
+        CalculatedInvoice(invoice, config).messageOf(Rule.KUNDEN_UST_ID_FEHLT) shouldContain
             "USt-IdNr. des Kunden"
     }
 
@@ -88,7 +88,7 @@ class TaxCategoryRulesTest : FunSpec({
                 items = listOf(testItem(vatRate = "19", taxCategory = TaxCategory.EXEMPT, taxExemptionReason = "Grund")),
             )
 
-        val message = InvoiceCalculator.calculate(invoice, config).messageOf(Rule.SATZ_MUSS_NULL_SEIN)
+        val message = CalculatedInvoice(invoice, config).messageOf(Rule.SATZ_MUSS_NULL_SEIN)
 
         message shouldContain "verlangt einen Steuersatz von 0"
         // Der Satz, der beanstandet wird, steht lesbar in der Meldung: "19%"
@@ -103,14 +103,14 @@ class TaxCategoryRulesTest : FunSpec({
         // oder so soll es niemand auf dem PDF lesen.
         val invoice = testInvoice(items = listOf(testItem(taxExemptionReason = "Steuerfrei nach §4 Nr. 21 UStG")))
 
-        InvoiceCalculator.calculate(invoice, config).messageOf(Rule.BEFREIUNGSGRUND_UNZULAESSIG) shouldContain
+        CalculatedInvoice(invoice, config).messageOf(Rule.BEFREIUNGSGRUND_UNZULAESSIG) shouldContain
             "keinen Steuerbefreiungsgrund"
     }
 
     test("Regelsatz mit 0 % weist auf die vermutlich gemeinte Kategorie hin") {
         val invoice = testInvoice(items = listOf(testItem(vatRate = "0")))
 
-        InvoiceCalculator.calculate(invoice, config).messageOf(Rule.REGELSATZ_MIT_NULL) shouldContain "vermutlich"
+        CalculatedInvoice(invoice, config).messageOf(Rule.REGELSATZ_MIT_NULL) shouldContain "vermutlich"
     }
 
     test("Steuerbefreiung ohne Grund wird abgelehnt, wenn die Kategorie keinen vorgibt") {
@@ -118,7 +118,7 @@ class TaxCategoryRulesTest : FunSpec({
         // vom Befreiungstatbestand ab und muss deshalb angegeben werden.
         val invoice = testInvoice(items = listOf(testItem(vatRate = "0", taxCategory = TaxCategory.EXEMPT)))
 
-        InvoiceCalculator.calculate(invoice, config).messageOf(Rule.BEFREIUNGSGRUND_FEHLT) shouldContain
+        CalculatedInvoice(invoice, config).messageOf(Rule.BEFREIUNGSGRUND_FEHLT) shouldContain
             "steuerbefreiungsgrund"
     }
 
@@ -133,7 +133,7 @@ class TaxCategoryRulesTest : FunSpec({
                     ),
             )
 
-        val calculated = InvoiceCalculator.calculate(invoice, config)
+        val calculated = CalculatedInvoice(invoice, config)
 
         calculated.messageOf(Rule.BEFREIUNGSGRUENDE_UNEINHEITLICH) shouldContain "zwei verschiedene"
         // Die Gruppe kennt beide Gründe und setzt keinen davon aufs PDF.
@@ -164,6 +164,6 @@ class TaxCategoryRulesTest : FunSpec({
                 customerVatId = VatId("ATU12345678"),
             )
 
-        InvoiceCalculator.calculate(invoice, config).vatGroups.size shouldBe 2
+        CalculatedInvoice(invoice, config).vatGroups.size shouldBe 2
     }
 })

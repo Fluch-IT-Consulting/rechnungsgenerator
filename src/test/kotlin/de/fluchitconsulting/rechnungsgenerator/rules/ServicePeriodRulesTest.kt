@@ -1,6 +1,6 @@
 package de.fluchitconsulting.rechnungsgenerator.rules
 
-import de.fluchitconsulting.rechnungsgenerator.calculation.InvoiceCalculator
+import de.fluchitconsulting.rechnungsgenerator.calculation.CalculatedInvoice
 import de.fluchitconsulting.rechnungsgenerator.model.Invoice
 import de.fluchitconsulting.rechnungsgenerator.model.ServicePeriod
 import de.fluchitconsulting.rechnungsgenerator.model.testCancelled
@@ -26,7 +26,7 @@ class ServicePeriodRulesTest : FunSpec({
 
     val config = testSellerConfig()
 
-    fun messageFor(invoice: Invoice, rule: Rule): String = InvoiceCalculator.calculate(invoice, config).messageOf(rule)
+    fun messageFor(invoice: Invoice, rule: Rule): String = CalculatedInvoice(invoice, config).messageOf(rule)
 
     context("Rechnungsdatum und Ende der Leistung") {
         test("eine Rechnung vor dem Ende ihres Leistungszeitraums wird abgelehnt") {
@@ -38,8 +38,7 @@ class ServicePeriodRulesTest : FunSpec({
         }
 
         test("am letzten Tag des Zeitraums darf sie entstehen") {
-            InvoiceCalculator
-                .calculate(testInvoice().copy(issueDate = LocalDate.of(2026, 7, 31)), config)
+            CalculatedInvoice(testInvoice().copy(issueDate = LocalDate.of(2026, 7, 31)), config)
                 .aborts()
                 .shouldBeEmpty()
         }
@@ -70,7 +69,7 @@ class ServicePeriodRulesTest : FunSpec({
             val abschlagsrechnung =
                 testInvoice(type = InvoiceType.PREPAYMENT, items = listOf(item)).copy(issueDate = LocalDate.of(2026, 6, 15))
 
-            InvoiceCalculator.calculate(abschlagsrechnung, config).aborts().shouldBeEmpty()
+            CalculatedInvoice(abschlagsrechnung, config).aborts().shouldBeEmpty()
         }
 
         test("das Storno einer Abschlagsrechnung darf den Zeitraum der Prognose tragen") {
@@ -89,7 +88,7 @@ class ServicePeriodRulesTest : FunSpec({
                     servicePeriod = ServicePeriod(LocalDate.of(2026, 6, 1), LocalDate.of(2026, 10, 31)),
                 )
 
-            InvoiceCalculator.calculate(storno, config).aborts().shouldBeEmpty()
+            CalculatedInvoice(storno, config).aborts().shouldBeEmpty()
         }
     }
 

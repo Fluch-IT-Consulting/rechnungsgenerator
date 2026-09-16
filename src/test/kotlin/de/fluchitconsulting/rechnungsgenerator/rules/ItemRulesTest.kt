@@ -1,6 +1,6 @@
 package de.fluchitconsulting.rechnungsgenerator.rules
 
-import de.fluchitconsulting.rechnungsgenerator.calculation.InvoiceCalculator
+import de.fluchitconsulting.rechnungsgenerator.calculation.CalculatedInvoice
 import de.fluchitconsulting.rechnungsgenerator.model.Invoice
 import de.fluchitconsulting.rechnungsgenerator.model.testInvoice
 import de.fluchitconsulting.rechnungsgenerator.model.testItem
@@ -21,7 +21,7 @@ class ItemRulesTest : FunSpec({
 
     val config = testSellerConfig()
 
-    fun messageFor(invoice: Invoice, rule: Rule): String = InvoiceCalculator.calculate(invoice, config).messageOf(rule)
+    fun messageFor(invoice: Invoice, rule: Rule): String = CalculatedInvoice(invoice, config).messageOf(rule)
 
     test("eine Rechnung ohne Position wird abgelehnt (BR-16)") {
         messageFor(testInvoice(items = emptyList()), Rule.KEINE_POSITION) shouldContain "mindestens eine Position"
@@ -36,8 +36,7 @@ class ItemRulesTest : FunSpec({
 
     test("ein Einzelpreis von null bleibt zulässig") {
         // Eine Leistung, die ohne Berechnung auf der Rechnung stehen soll.
-        InvoiceCalculator
-            .calculate(testInvoice(items = listOf(testItem(), testItem(unitPrice = "0.00"))), config)
+        CalculatedInvoice(testInvoice(items = listOf(testItem(), testItem(unitPrice = "0.00"))), config)
             .aborts()
             .shouldBeEmpty()
     }
@@ -46,7 +45,7 @@ class ItemRulesTest : FunSpec({
         // Mit dem Einzelpreis ist nur noch eine negative Menge übrig, die dahin
         // führt. Ein negativer Betrag gehört seit ADR-0006 in eine
         // Stornorechnung – auf jeder anderen Art bleibt er ein Abbruch.
-        val calculatedInvoice = InvoiceCalculator.calculate(testInvoice(items = listOf(testItem(quantity = "-1"))), config)
+        val calculatedInvoice = CalculatedInvoice(testInvoice(items = listOf(testItem(quantity = "-1"))), config)
         val message = calculatedInvoice.messageOf(Rule.GESAMTBETRAG_NEGATIV)
 
         message shouldContain "Gesamtbetrag"
@@ -68,6 +67,6 @@ class ItemRulesTest : FunSpec({
         val invoice =
             testInvoice(items = listOf(testItem(unitPrice = "100.00"), testItem(quantity = "-1", unitPrice = "30.00")))
 
-        InvoiceCalculator.calculate(invoice, config).grossTotal shouldBe Money("83.30")
+        CalculatedInvoice(invoice, config).grossTotal shouldBe Money("83.30")
     }
 })

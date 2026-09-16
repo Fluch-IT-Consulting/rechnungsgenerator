@@ -1,6 +1,6 @@
 package de.fluchitconsulting.rechnungsgenerator.rules
 
-import de.fluchitconsulting.rechnungsgenerator.calculation.InvoiceCalculator
+import de.fluchitconsulting.rechnungsgenerator.calculation.CalculatedInvoice
 import de.fluchitconsulting.rechnungsgenerator.model.testInvoice
 import de.fluchitconsulting.rechnungsgenerator.model.testItem
 import de.fluchitconsulting.rechnungsgenerator.model.testSellerConfig
@@ -21,7 +21,7 @@ class AcceptedInvoiceTest : FunSpec({
 
     test("eine Rechnung ohne Abbruch wird angenommen und trägt ihre Hinweise") {
         // Menge 0 ist zulässig, aber ein Hinweis (MENGE_NULL).
-        val calculated = InvoiceCalculator.calculate(testInvoice(items = listOf(testItem(quantity = "0"))), config)
+        val calculated = CalculatedInvoice(testInvoice(items = listOf(testItem(quantity = "0"))), config)
 
         val accepted = AcceptedInvoice.check(calculated).shouldBeInstanceOf<Verdict.Accepted>().invoice
 
@@ -35,7 +35,7 @@ class AcceptedInvoiceTest : FunSpec({
         // Regeln zur Rechnungsnummer (#150). Liefen beide auseinander, stünde
         // eine Ablehnung ohne einen einzigen Abbruch da.
         listOf("", "   ", "///", "ä").forAll { nummer ->
-            val calculated = InvoiceCalculator.calculate(testInvoice(number = nummer), config)
+            val calculated = CalculatedInvoice(testInvoice(number = nummer), config)
 
             calculated.fileBaseName shouldBe null
             AcceptedInvoice
@@ -53,7 +53,7 @@ class AcceptedInvoiceTest : FunSpec({
                 paymentTermDaysOverride = -5,
             )
 
-        val rejected = AcceptedInvoice.check(InvoiceCalculator.calculate(invoice, config)).shouldBeInstanceOf<Verdict.Rejected>()
+        val rejected = AcceptedInvoice.check(CalculatedInvoice(invoice, config)).shouldBeInstanceOf<Verdict.Rejected>()
 
         rejected.aborts.rules() shouldBe listOf(Rule.EINZELPREIS_NEGATIV, Rule.ZAHLUNGSZIEL_NEGATIV)
         // Die Regeltests lesen ihre Befunde auch von abgelehnten Rechnungen (#105).
