@@ -3,6 +3,7 @@ package de.fluchitconsulting.rechnungsgenerator.rules
 import de.fluchitconsulting.rechnungsgenerator.calculation.InvoiceCalculator
 import de.fluchitconsulting.rechnungsgenerator.model.Invoice
 import de.fluchitconsulting.rechnungsgenerator.model.ServicePeriod
+import de.fluchitconsulting.rechnungsgenerator.model.testCancelled
 import de.fluchitconsulting.rechnungsgenerator.model.testInvoice
 import de.fluchitconsulting.rechnungsgenerator.model.testItem
 import de.fluchitconsulting.rechnungsgenerator.model.testPrepayment
@@ -70,6 +71,25 @@ class ServicePeriodRulesTest : FunSpec({
                 testInvoice(type = InvoiceType.PREPAYMENT, items = listOf(item)).copy(issueDate = LocalDate.of(2026, 6, 15))
 
             InvoiceCalculator.calculate(abschlagsrechnung, config).aborts().shouldBeEmpty()
+        }
+
+        test("das Storno einer Abschlagsrechnung darf den Zeitraum der Prognose tragen") {
+            // Ein Storno rechnet nichts ab, es hebt auf (InvoiceType.chargesForService).
+            // Sein Zeitraum stammt aus der Ursprungsrechnung – war die eine
+            // Abschlagsrechnung, ist er eine Prognose und endet nach dem
+            // Rechnungsdatum des Stornos. Bis #151 brach das ab, mit dem Rat, es
+            // sei dann eine Abschlagsrechnung: Das war es ja gerade (#66).
+            val storno =
+                testInvoice(
+                    type = InvoiceType.CANCELLATION,
+                    items = listOf(testItem(quantity = "-1")),
+                    cancelled = testCancelled(invoiceNumber = "R26-009", issueDate = LocalDate.of(2026, 6, 15)),
+                ).copy(
+                    issueDate = LocalDate.of(2026, 6, 20),
+                    servicePeriod = ServicePeriod(LocalDate.of(2026, 6, 1), LocalDate.of(2026, 10, 31)),
+                )
+
+            InvoiceCalculator.calculate(storno, config).aborts().shouldBeEmpty()
         }
     }
 
