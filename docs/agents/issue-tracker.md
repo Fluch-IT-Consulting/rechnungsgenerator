@@ -121,11 +121,17 @@ Die Typwörter stammen aus Conventional Commits. Die Spezifikation schreibt nur
 | `refactor` | Umbau ohne Verhaltensänderung |
 | `docs` | README, Skills, CLAUDE.md, diese Anleitungen |
 | `test` | nur Tests, ohne Produktivcode |
+| `style` | nur Formatierung, kein Zeichen mit Bedeutung geändert |
 | `chore` | Werkzeug- und Ablagekram ohne Bezug zum Programm |
 | `build`, `ci` | Gradle-Aufbau, Pipelines – falls je gebraucht |
 
-`style` fehlt bewusst: ktlint formatiert automatisch, ein reiner
-Formatierungs-Commit entsteht hier nicht.
+`style` ist die seltene Ausnahme und entsteht nur aus einer Richtung: Im Alltag
+formatiert ktlint beim Speichern, ein reiner Formatierungs-Commit kommt gar
+nicht erst zustande. Ändert aber **ktlint selbst** seine Regeln, formatiert der
+erste Lauf danach vorhandenen Code um – beim Sprung auf 1.8.0 klammerte
+`when-entry-bracing` fünf Dateien (#159). Das gehört in einen eigenen Commit,
+getrennt von allem Inhaltlichen, und ist dann daran prüfbar, dass kein Test sich
+ändert.
 
 Zum **Issue-Typ**: `Bug` wird zu `fix`, `Feature` zu `feat`. Ein `Task`
 zerfällt in das, was tatsächlich getan wurde – meist `refactor` oder `docs`.
