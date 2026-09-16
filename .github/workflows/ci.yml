@@ -32,7 +32,18 @@ jobs:
           java-version: 21
 
       # Gradle-Cache und Wrapper-Prüfung.
+      #
+      # cache-provider: basic ist die MIT-lizenzierte Zwischenspeicherung über
+      # actions/cache. Die Vorgabe 'enhanced' lädt seit v6 die proprietäre
+      # Bibliothek gradle-actions-caching, deren Nutzung die Terms of Use von
+      # Gradle voraussetzt; mit 'basic' wird sie laut DISTRIBUTION.md gar nicht
+      # erst geladen. Für ein privates Repository ist 'enhanced' zudem nur eine
+      # Free Preview mit angekündigter Bepreisung, 'basic' dagegen dauerhaft
+      # frei. Der Preis ist ein gröberer Cache – dieselbe Strategie wie bei
+      # actions/setup-java mit cache: gradle.
       - uses: gradle/actions/setup-gradle@v6
+        with:
+          cache-provider: basic
 
       # Die Skripttests rufen die Python-Skripte wirklich auf; beide brauchen
       # PyYAML (siehe CLAUDE.md, Umgebung).
