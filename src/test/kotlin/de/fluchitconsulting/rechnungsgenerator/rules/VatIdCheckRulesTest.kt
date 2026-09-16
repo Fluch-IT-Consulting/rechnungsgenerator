@@ -23,7 +23,7 @@ import java.time.LocalDate
  * Ohne dokumentierte Bestätigungsabfrage keine Rechnung ohne Umsatzsteuer.
  *
  * Die Regeln sind absichtlich verschieden streng, weil die Rechtslage es ist –
- * die Begründung steht am InvoiceCalculator. Diese Tests halten fest, dass die
+ * die Begründung steht an `VatIdConfirmation`. Diese Tests halten fest, dass die
  * Unterscheidung zwischen EU und Drittland tatsächlich gemacht wird und nicht
  * bloß im Kommentar behauptet ist.
  */

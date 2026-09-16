@@ -12,7 +12,7 @@ import kotlinx.serialization.Serializable
 
 // Die rechnungsspezifischen Daten – eine YAML-Datei pro Rechnung.
 // Enthält bewusst nur Eingaben; alles Berechenbare (Summen, USt., Fälligkeit)
-// entsteht im InvoiceCalculator, damit es genau eine Quelle der Wahrheit gibt.
+// entsteht in der CalculatedInvoice, damit es genau eine Quelle der Wahrheit gibt.
 @Serializable
 data class Invoice(
     @SerialName("nummer") val number: String,
@@ -117,7 +117,7 @@ data class Customer(
     @SerialName("umsatzsteuer-id") val vatId: VatId? = null,
     // Der dokumentierte Nachweis der Bestätigungsabfrage. Pflicht, sobald ohne
     // Umsatzsteuer abgerechnet wird und der Kunde in der EU sitzt – siehe die
-    // Prüfung im InvoiceCalculator.
+    // Regelgruppe VatIdCheckRules.
     @SerialName("ust-id-geprueft") val vatIdCheck: VatIdCheck? = null,
 )
 
