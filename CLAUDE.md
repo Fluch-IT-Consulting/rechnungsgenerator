@@ -280,9 +280,14 @@ CV/Web-Auftritt des Autors), Validierung über veraPDF.
   den Restbetrag kennt: Eine voll abgesetzte Schlussrechnung rechnet ab, ohne
   Geld zu fordern (#94).
   `prepaymentTotal`, `remainingAmount` und das Zahlungsziel sind abgeleitet,
-  nicht gespeichert: `calculate` liefert eine `CalculatedInvoice`, die Rechnung,
-  Stammdaten und Ergebnis zusammen trägt – ein Paar aus einer Rechnung und den
-  Summen einer anderen ist damit nicht baubar.
+  nicht gespeichert, und seit #172 gilt das für alle Summen: Im Konstruktor der
+  `CalculatedInvoice` stehen nur Rechnung und Stammdaten, der Rumpf rechnet den
+  Rest aus. Ein Paar aus einer Rechnung und den Summen einer anderen ist damit
+  nicht baubar, auch nicht über `copy()`. Vorher standen die Summen im
+  Konstruktor, und das hielt nur, weil allein `InvoiceCalculator.calculate` ihn
+  aufrief. Verworfen: ein privater Konstruktor wie bei `AcceptedInvoice` – das
+  `copy()` einer Data Class bliebe trotzdem öffentlich, und die Summen blieben
+  gespeichert.
 - **ZUGFeRD-Vorbereitung**: Datenmodell enthält von Anfang an alle
   EN-16931-Pflichtfelder (Leistungsdatum, Steuerkategorie, Kennungen), damit
   ZUGFeRD (PDF/A-3 + XML) später ein zusätzlicher Ausgabemodus wird, kein Umbau.
@@ -294,7 +299,7 @@ CV/Web-Auftritt des Autors), Validierung über veraPDF.
   Position, Abschlag) und die Meldung; den Gegenstand nennt die Meldung nicht
   selbst, das tut die Ausgabe. Abgebrochen wird im Kommando – und dann stehen
   alle Gründe auf einmal da, statt dass fünf Fehler fünf Läufe brauchen.
-  `calculate` rechnet nur. Geprüft wird in Regelgruppen im Paket `rules`, je
+  `CalculatedInvoice` rechnet nur. Geprüft wird in Regelgruppen im Paket `rules`, je
   eine Datei neben ihrem gleichnamigen Test, jede gegen das fertig gerechnete
   Ergebnis (#71). Vorher standen Regeln zwischen den Rechenschritten, und weil
   zwei die Summen brauchten, entstand das Ergebnis zweimal. Den Prüflauf führt
@@ -342,13 +347,13 @@ CV/Web-Auftritt des Autors), Validierung über veraPDF.
   `prepayments` mit dem Zusammentragen der Abschläge und dem YAML-Block.
   Darunter der gemeinsame Kern, in dem jede Kante nach unten zeigt: `rules`
   (Befunde, Regelgruppen, `AcceptedInvoice.check`) → `calculation`
-  (`InvoiceCalculator`, `CalculatedInvoice`, `InvoiceKind`) → `model` (samt
+  (`CalculatedInvoice`, `InvoiceKind`) → `model` (samt
   `YamlLoader`) → `values`. In der Wurzel steht nur `Main.kt`. Vorher war die
   Wurzel Kern und CLI zugleich, und daraus entstanden die beiden einzigen
   Zyklen des Projekts: Wurzel ↔ `rules` und Wurzel ↔ `render` (#107). Der
   Schnitt trennt den Rand, nicht die Mitte – was beide Kommandos brauchen, ist
   der größere Teil. Die Grenze zwischen `rules` und `calculation` ist die aus
-  ADR-0004: `calculate` rechnet nur, `check` prüft und urteilt. Deshalb liegt
+  ADR-0004: `CalculatedInvoice` rechnet nur, `check` prüft und urteilt. Deshalb liegt
   die `AcceptedInvoice` bei den Regeln, und der Renderer importiert aus
   `rules`. Kotlin hält keine Paketgrenze (`internal` gilt pro Modul, nicht pro
   Paket); `PackageStructureTest` hält sie stattdessen (#112): eine Tabelle, wer

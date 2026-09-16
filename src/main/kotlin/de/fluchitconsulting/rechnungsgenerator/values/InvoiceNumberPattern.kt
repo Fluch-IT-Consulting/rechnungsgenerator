@@ -20,7 +20,7 @@ import java.util.regex.PatternSyntaxException
  *
  * Was dieser Typ **nicht** prüft, ist die Nummer: Ob eine Rechnung zum Muster
  * ihrer Stammdaten passt, hängt an zwei Dateien, und der Serialisierer sieht
- * beim Einlesen immer nur eine. Das erledigt der `InvoiceCalculator`. Hier
+ * beim Einlesen immer nur eine. Das erledigt `InvoiceNumberRules`. Hier
  * steht nur die Frage, ob der eingetragene Ausdruck überhaupt einer ist.
  */
 @Serializable(with = InvoiceNumberPatternSerializer::class)

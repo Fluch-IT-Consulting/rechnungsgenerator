@@ -59,8 +59,8 @@ class AcceptedInvoice private constructor(
          *
          * Einen Einstieg, der gleich aus Rechnung und Stammdaten ein [Verdict]
          * macht, gibt es bewusst nicht. Aufgerufen wird die Folge aus
-         * `InvoiceCalculator.calculate` und [check] nur zweimal, und die
-         * Regeltests brauchen `calculate` ohnehin einzeln: Sie rechnen gerade
+         * [CalculatedInvoice] und [check] nur zweimal, und die Regeltests
+         * brauchen die [CalculatedInvoice] ohnehin einzeln: Sie rechnen gerade
          * Rechnungen mit Abbruch und lesen deren Befunde (ADR-0004).
          */
         fun check(calculated: CalculatedInvoice): Verdict {

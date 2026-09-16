@@ -144,7 +144,7 @@ fun prepaymentsOf(abschlagsrechnungen: List<NamedInvoice>, config: SellerConfig)
  *
  * Die Steueranteile sind die Steueraufschlüsselung der Abschlagsrechnung,
  * Zeile für Zeile – dieselben Zahlen, die auf ihrem PDF stehen, weil sie aus
- * demselben [InvoiceCalculator] kommen.
+ * derselben [CalculatedInvoice] kommen.
  *
  * Nur eine [AcceptedInvoice]: Aus einer Abschlagsrechnung mit Abbruch wird kein
  * Abschlag, so wie aus ihr kein PDF wird (ADR-0007).

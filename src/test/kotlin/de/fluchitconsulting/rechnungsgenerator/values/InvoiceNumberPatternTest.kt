@@ -8,7 +8,7 @@ import io.kotest.matchers.string.shouldContain
 /**
  * Das Muster aus den Stammdaten (#54, ADR-0005). Geprüft wird hier nur, was
  * dieser Wert für sich weiß: ob der Ausdruck einer ist und wie er trifft.
- * Ob eine bestimmte Rechnung dazu passt, entscheidet der `InvoiceCalculator` –
+ * Ob eine bestimmte Rechnung dazu passt, entscheidet `InvoiceNumberRules` –
  * das hängt an zwei Dateien und steht in `InvoiceNumberRulesTest`.
  */
 class InvoiceNumberPatternTest : FunSpec({
