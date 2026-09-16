@@ -12,7 +12,7 @@ import de.fluchitconsulting.rechnungsgenerator.values.sumOf
 import java.time.LocalDate
 
 // Eine Rechnung samt allem, was sich aus ihr und den Stammdaten ausrechnet.
-// Unveränderlich; der Renderer bekommt nur noch dies.
+// Unveränderlich. Gesetzt wird sie erst als `AcceptedInvoice` (ADR-0007).
 
 data class CalculatedLine(
     val item: LineItem,
