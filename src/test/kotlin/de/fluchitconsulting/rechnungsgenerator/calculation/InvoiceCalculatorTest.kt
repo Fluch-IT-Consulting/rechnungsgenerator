@@ -55,6 +55,15 @@ class InvoiceCalculatorTest : FunSpec({
         totals.grossTotal shouldBe Money("398.65")
     }
 
+    // Die Summen gehören zur Rechnung, aus der sie entstanden – auch nach copy().
+    // Ein Paar aus einer Rechnung und den Summen einer anderen soll nicht baubar sein.
+    test("copy mit einer anderen Rechnung rechnet deren Summen") {
+        val calculated = InvoiceCalculator.calculate(testInvoice(items = listOf(testItem(quantity = "1", unitPrice = "100.00"))), config)
+        val andere = testInvoice(items = listOf(testItem(quantity = "2", unitPrice = "100.00")))
+
+        calculated.copy(invoice = andere).netTotal shouldBe Money("200.00")
+    }
+
     context("USt.-Gruppen") {
         test("je Satz auf die summierte Bemessungsgrundlage, absteigend sortiert") {
             val invoice =
