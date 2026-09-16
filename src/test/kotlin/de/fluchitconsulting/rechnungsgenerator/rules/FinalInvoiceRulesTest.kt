@@ -77,7 +77,34 @@ class FinalInvoiceRulesTest : FunSpec({
             val message = messageFor(schlussrechnung(testPrepayment(), testPrepayment()), Rule.ABSCHLAG_DOPPELT)
 
             message shouldContain "R26-009"
-            message shouldContain "zweimal"
+            message shouldContain "2-mal"
+        }
+
+        test("zwei verschiedene Nummern je doppelt geben zwei Befunde") {
+            // ADR-0004 will alle Gründe auf einmal. Bis #152 nannte firstOrNull
+            // nur die erste doppelte Nummer; die zweite fiel erst im nächsten Lauf auf.
+            val invoice =
+                schlussrechnung(
+                    testPrepayment(invoiceNumber = "R26-009"),
+                    testPrepayment(invoiceNumber = "R26-009"),
+                    testPrepayment(invoiceNumber = "R26-011"),
+                    testPrepayment(invoiceNumber = "R26-011"),
+                )
+
+            val doppelte =
+                InvoiceCalculator.calculate(invoice, config).aborts().filter { it.rule == Rule.ABSCHLAG_DOPPELT }
+
+            doppelte.size shouldBe 2
+            doppelte.joinToString { it.describe() } shouldContain "R26-009"
+            doppelte.joinToString { it.describe() } shouldContain "R26-011"
+        }
+
+        test("dreimal dieselbe Nummer nennt die Anzahl, nicht zweimal") {
+            // Wer "zweimal" liest und eine Zeile löscht, läuft in denselben Abbruch.
+            val message =
+                messageFor(schlussrechnung(testPrepayment(), testPrepayment(), testPrepayment()), Rule.ABSCHLAG_DOPPELT)
+
+            message shouldContain "3-mal"
         }
 
         test("zweimal dieselbe Nummer heißt: exakt gleich geschrieben") {

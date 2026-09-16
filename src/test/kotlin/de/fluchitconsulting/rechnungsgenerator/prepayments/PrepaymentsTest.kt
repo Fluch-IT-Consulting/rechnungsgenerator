@@ -136,7 +136,29 @@ class PrepaymentsTest : FunSpec({
                 .messageOf(Rule.ABSCHLAGSRECHNUNG_DOPPELT)
 
         message shouldContain "R26-001"
-        message shouldContain "zweimal"
+        message shouldContain "2-mal"
+    }
+
+    test("zwei verschiedene Nummern je doppelt geben zwei Befunde") {
+        // Wie in der Schlussrechnung (#152): firstOrNull nannte nur die erste.
+        val zweite = abschlagsrechnung.copy(number = "R26-009")
+
+        val doppelte =
+            prepaymentsOf(named(abschlagsrechnung, abschlagsrechnung, zweite, zweite), config)
+                .rejected()
+                .aborts
+                .filter { it.rule == Rule.ABSCHLAGSRECHNUNG_DOPPELT }
+
+        doppelte.size shouldBe 2
+        doppelte.joinToString { it.describe() } shouldContain "R26-001"
+        doppelte.joinToString { it.describe() } shouldContain "R26-009"
+    }
+
+    test("dreimal dieselbe Nummer nennt die Anzahl, nicht zweimal") {
+        prepaymentsOf(named(abschlagsrechnung, abschlagsrechnung, abschlagsrechnung), config)
+            .rejected()
+            .aborts
+            .messageOf(Rule.ABSCHLAGSRECHNUNG_DOPPELT) shouldContain "3-mal"
     }
 
     test("anders geschriebene Nummern sind verschiedene Abschlagsrechnungen") {
