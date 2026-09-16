@@ -27,7 +27,7 @@ application {
 // Lücke. Der Sprung steht als #159.
 configurations.named("ktlint") {
     resolutionStrategy {
-        force("ch.qos.logback:logback-classic:1.5.38", "ch.qos.logback:logback-core:1.5.38")
+        force("ch.qos.logback:logback-classic:1.6.3", "ch.qos.logback:logback-core:1.6.3")
     }
 }
 
