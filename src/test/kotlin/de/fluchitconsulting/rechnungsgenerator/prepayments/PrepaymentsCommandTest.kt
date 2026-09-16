@@ -1,6 +1,6 @@
 package de.fluchitconsulting.rechnungsgenerator.prepayments
 
-import de.fluchitconsulting.rechnungsgenerator.calculation.InvoiceCalculator
+import de.fluchitconsulting.rechnungsgenerator.calculation.CalculatedInvoice
 import de.fluchitconsulting.rechnungsgenerator.model.YamlLoader
 import de.fluchitconsulting.rechnungsgenerator.runCli
 import io.kotest.core.spec.style.FunSpec
@@ -51,7 +51,7 @@ class PrepaymentsCommandTest : FunSpec({
 
         generated.prepayments shouldBe YamlLoader.parseInvoice(handwritten).prepayments
         // Und die Schlussrechnung rechnet damit durch, alle neun Regeln inklusive.
-        InvoiceCalculator.calculate(generated, YamlLoader.parseSellerConfig(Path.of(stammdaten).readText()))
+        CalculatedInvoice(generated, YamlLoader.parseSellerConfig(Path.of(stammdaten).readText()))
     }
 
     test("zweimal derselbe Aufruf ergibt zeichengleich dieselbe Ausgabe") {

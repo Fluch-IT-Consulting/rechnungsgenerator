@@ -1,6 +1,6 @@
 package de.fluchitconsulting.rechnungsgenerator.rules
 
-import de.fluchitconsulting.rechnungsgenerator.calculation.InvoiceCalculator
+import de.fluchitconsulting.rechnungsgenerator.calculation.CalculatedInvoice
 import de.fluchitconsulting.rechnungsgenerator.calculation.InvoiceKind
 import de.fluchitconsulting.rechnungsgenerator.model.CancelledInvoice
 import de.fluchitconsulting.rechnungsgenerator.model.Invoice
@@ -34,9 +34,9 @@ class InvoiceKindRulesTest : FunSpec({
 
     val config = testSellerConfig()
 
-    fun messageFor(invoice: Invoice, rule: Rule): String = InvoiceCalculator.calculate(invoice, config).messageOf(rule)
+    fun messageFor(invoice: Invoice, rule: Rule): String = CalculatedInvoice(invoice, config).messageOf(rule)
 
-    fun kindOf(invoice: Invoice): InvoiceKind = InvoiceCalculator.calculate(invoice, config).accepted().kind
+    fun kindOf(invoice: Invoice): InvoiceKind = CalculatedInvoice(invoice, config).accepted().kind
 
     // Das Gegenstück zur Ursprungsrechnung: dieselbe Position, negative Menge.
     fun storno(
@@ -121,8 +121,7 @@ class InvoiceKindRulesTest : FunSpec({
 
         test("vereinnahmt-am gehört nur auf eine Abschlagsrechnung") {
             val message =
-                InvoiceCalculator
-                    .calculate(testInvoice(receivedOn = LocalDate.of(2026, 8, 10)), config)
+                CalculatedInvoice(testInvoice(receivedOn = LocalDate.of(2026, 8, 10)), config)
                     .messageOf(Rule.VEREINNAHMUNG_FALSCHE_ART)
 
             message shouldContain "abschlagsrechnung"
@@ -131,8 +130,7 @@ class InvoiceKindRulesTest : FunSpec({
 
         test("die Meldung nennt das Dokument, auf dem die Angabe steht") {
             val message =
-                InvoiceCalculator
-                    .calculate(testInvoice(type = InvoiceType.FINAL, receivedOn = LocalDate.of(2026, 8, 10)), config)
+                CalculatedInvoice(testInvoice(type = InvoiceType.FINAL, receivedOn = LocalDate.of(2026, 8, 10)), config)
                     .messageOf(Rule.VEREINNAHMUNG_FALSCHE_ART)
 
             message shouldContain "Schlussrechnung"
@@ -177,7 +175,7 @@ class InvoiceKindRulesTest : FunSpec({
         test("ohne gebaute Rechnungsart wird nicht angenommen") {
             // Die Voraussetzung von ADR-0008: Eine AcceptedInvoice ohne kind
             // gibt es nicht, also auch keine Stornorechnung ohne Bezug im Renderer.
-            val verdict = AcceptedInvoice.check(InvoiceCalculator.calculate(storno(cancelled = null), config))
+            val verdict = AcceptedInvoice.check(CalculatedInvoice(storno(cancelled = null), config))
 
             verdict.shouldBeInstanceOf<Verdict.Rejected>().aborts.rules() shouldContain Rule.STORNO_OHNE_BEZUG
         }
@@ -189,7 +187,7 @@ class InvoiceKindRulesTest : FunSpec({
             unbaubar().forEach { invoice ->
                 val notBuilt =
                     InvoiceKindRules
-                        .build(InvoiceCalculator.calculate(invoice, config))
+                        .build(CalculatedInvoice(invoice, config))
                         .shouldBeInstanceOf<InvoiceKindRules.Result.NotBuilt>()
                 notBuilt.findings.forEach { finding ->
                     withClue(
@@ -208,7 +206,7 @@ class InvoiceKindRulesTest : FunSpec({
             // in der Liste der Regelgruppen. Gebaut wird hier eigens, damit
             // der Test nicht mitliest, was check selbst gebaut hat.
             unbaubar().forEach { invoice ->
-                val calculated = InvoiceCalculator.calculate(invoice, config)
+                val calculated = CalculatedInvoice(invoice, config)
                 val notBuilt = InvoiceKindRules.build(calculated).shouldBeInstanceOf<InvoiceKindRules.Result.NotBuilt>()
 
                 val rejected = AcceptedInvoice.check(calculated).shouldBeInstanceOf<Verdict.Rejected>()

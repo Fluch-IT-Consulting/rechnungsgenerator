@@ -1,6 +1,6 @@
 package de.fluchitconsulting.rechnungsgenerator.prepayments
 
-import de.fluchitconsulting.rechnungsgenerator.calculation.InvoiceCalculator
+import de.fluchitconsulting.rechnungsgenerator.calculation.CalculatedInvoice
 import de.fluchitconsulting.rechnungsgenerator.calculation.InvoiceKind
 import de.fluchitconsulting.rechnungsgenerator.model.Invoice
 import de.fluchitconsulting.rechnungsgenerator.model.Prepayment
@@ -124,7 +124,7 @@ fun prepaymentsOf(abschlagsrechnungen: List<NamedInvoice>, config: SellerConfig)
                 return@mapNotNull null
             }
 
-            when (val verdict = AcceptedInvoice.check(InvoiceCalculator.calculate(abschlagsrechnung, config))) {
+            when (val verdict = AcceptedInvoice.check(CalculatedInvoice(abschlagsrechnung, config))) {
                 is Verdict.Accepted -> {
                     CollectedPrepayment(name, prepaymentOf(verdict.invoice))
                 }

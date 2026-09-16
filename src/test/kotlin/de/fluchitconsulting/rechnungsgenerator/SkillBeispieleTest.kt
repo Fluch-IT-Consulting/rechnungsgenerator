@@ -1,6 +1,6 @@
 package de.fluchitconsulting.rechnungsgenerator
 
-import de.fluchitconsulting.rechnungsgenerator.calculation.InvoiceCalculator
+import de.fluchitconsulting.rechnungsgenerator.calculation.CalculatedInvoice
 import de.fluchitconsulting.rechnungsgenerator.model.YamlLoader
 import de.fluchitconsulting.rechnungsgenerator.rules.aborts
 import de.fluchitconsulting.rechnungsgenerator.values.InvoiceType
@@ -57,13 +57,13 @@ class SkillBeispieleTest : FunSpec({
             listOf(InvoiceType.INVOICE, InvoiceType.PREPAYMENT, InvoiceType.CANCELLATION, InvoiceType.FINAL)
 
         val schlussrechnung = invoices.last()
-        val totals = InvoiceCalculator.calculate(schlussrechnung, config)
+        val totals = CalculatedInvoice(schlussrechnung, config)
         totals.aborts().shouldBeEmpty()
         totals.grossTotal shouldBe Money("23800.00")
         totals.remainingAmount shouldBe Money("19040.00")
 
         // Und die beiden anderen wenigstens durchrechnen lassen: Auch eine
         // gültige Datei kann eine widersprüchliche Rechnung beschreiben.
-        invoices.dropLast(1).forEach { InvoiceCalculator.calculate(it, config).aborts().shouldBeEmpty() }
+        invoices.dropLast(1).forEach { CalculatedInvoice(it, config).aborts().shouldBeEmpty() }
     }
 })
