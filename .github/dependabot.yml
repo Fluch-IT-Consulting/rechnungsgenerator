@@ -1,0 +1,26 @@
+# Dependabot: meldet veraltete Abhängigkeiten als Pull Request, statt sie nur
+# beim Push als Warnung auf stderr zu nennen (#158). Wer nicht selbst pusht,
+# sieht die Warnungen sonst nie.
+version: 2
+
+updates:
+  # Gradle: liest auch den Version Catalog in gradle/libs.versions.toml, aus dem
+  # dieses Projekt seine Versionen bezieht.
+  - package-ecosystem: gradle
+    directory: "/"
+    schedule:
+      interval: weekly
+    # Ein Lernprojekt soll nicht in Pull Requests ertrinken.
+    open-pull-requests-limit: 5
+    commit-message:
+      prefix: build
+
+  # Die Actions in .github/workflows/ci.yml – checkout, setup-java, setup-gradle.
+  # Ohne diesen Eintrag blieben sie von Hand nachzuziehen.
+  - package-ecosystem: github-actions
+    directory: "/"
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 5
+    commit-message:
+      prefix: ci
