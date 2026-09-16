@@ -125,7 +125,9 @@ fun prepaymentsOf(abschlagsrechnungen: List<NamedInvoice>, config: SellerConfig)
             }
 
             when (val verdict = AcceptedInvoice.check(InvoiceCalculator.calculate(abschlagsrechnung, config))) {
-                is Verdict.Accepted -> CollectedPrepayment(name, prepaymentOf(verdict.invoice))
+                is Verdict.Accepted -> {
+                    CollectedPrepayment(name, prepaymentOf(verdict.invoice))
+                }
                 is Verdict.Rejected -> {
                     findings += verdict.aborts.map { it.copy(subject = Subject.FromInvoice(abschlagsrechnung.number, it.subject)) }
                     null

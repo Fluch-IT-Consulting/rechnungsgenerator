@@ -26,7 +26,9 @@ internal object CancellationRules {
             // Nur auf einer Stornorechnung; warum, steht bei InvoiceKindRules (#97).
             when (invoice.type) {
                 InvoiceType.CANCELLATION -> {}
-                InvoiceType.INVOICE, InvoiceType.PREPAYMENT, InvoiceType.FINAL, InvoiceType.PARTIAL -> return@buildList
+                InvoiceType.INVOICE, InvoiceType.PREPAYMENT, InvoiceType.FINAL, InvoiceType.PARTIAL -> {
+                    return@buildList
+                }
             }
             // Ohne Bezug gibt es nichts zu prüfen; dass er fehlt, meldet
             // InvoiceKindRules.
@@ -65,7 +67,7 @@ internal object CancellationRules {
         val invoice = calculated.invoice
         val grossTotal = calculated.grossTotal
         return when (invoice.type) {
-            InvoiceType.CANCELLATION ->
+            InvoiceType.CANCELLATION -> {
                 if (grossTotal.isNegative()) {
                     emptyList()
                 } else {
@@ -78,7 +80,8 @@ internal object CancellationRules {
                         ),
                     )
                 }
-            InvoiceType.INVOICE, InvoiceType.PREPAYMENT, InvoiceType.FINAL, InvoiceType.PARTIAL ->
+            }
+            InvoiceType.INVOICE, InvoiceType.PREPAYMENT, InvoiceType.FINAL, InvoiceType.PARTIAL -> {
                 if (!grossTotal.isNegative()) {
                     emptyList()
                 } else {
@@ -91,6 +94,7 @@ internal object CancellationRules {
                         ),
                     )
                 }
+            }
         }
     }
 }

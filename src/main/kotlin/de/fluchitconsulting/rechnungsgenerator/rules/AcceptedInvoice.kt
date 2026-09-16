@@ -79,7 +79,9 @@ class AcceptedInvoice private constructor(
                         Verdict.Accepted(AcceptedInvoice(calculated, built.kind, fileBaseName, findings))
                     }
                 }
-                is InvoiceKindRules.Result.NotBuilt -> Verdict.Rejected(findings)
+                is InvoiceKindRules.Result.NotBuilt -> {
+                    Verdict.Rejected(findings)
+                }
             }
         }
     }
