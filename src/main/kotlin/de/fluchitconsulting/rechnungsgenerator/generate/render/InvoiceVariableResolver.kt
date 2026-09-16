@@ -27,14 +27,20 @@ internal class InvoiceVariableResolver(private val accepted: AcceptedInvoice) : 
             else -> error("Unbekannte Variable <<$variable>>.")
         }
 
-    // `as?` ist der sichere Cast: null statt ClassCastException, wenn die Art
-    // eine andere ist – und `?:` macht daraus die Meldung.
+    // Ein `when` ohne `else` über alle Arten: Eine neue Art muss hier entscheiden,
+    // ob sie eine Ursprungsrechnung hat – etwa eine Korrekturrechnung mit Bezug.
     private fun cancelled(variable: String): CancelledInvoice =
-        (accepted.kind as? InvoiceKind.Cancellation)?.cancelled
-            ?: error(
-                "<<$variable>> gibt es nur auf einer Stornorechnung, " +
-                    "nicht auf einer ${accepted.calculated.invoice.type.documentName}.",
-            )
+        when (val kind = accepted.kind) {
+            is InvoiceKind.Cancellation -> {
+                kind.cancelled
+            }
+            is InvoiceKind.Ordinary, is InvoiceKind.PrepaymentInvoice, is InvoiceKind.FinalInvoice -> {
+                error(
+                    "<<$variable>> gibt es nur auf einer Stornorechnung, " +
+                        "nicht auf einer ${accepted.calculated.invoice.type.documentName}.",
+                )
+            }
+        }
 
     private fun together(value: Latex): Latex = Latex.macro(TemplateMacro.ZUSAMMEN, listOf(value))
 }
