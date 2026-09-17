@@ -40,6 +40,7 @@ internal object InvoiceRules {
             PrepaymentRules.check(calculated),
             FinalInvoiceRules.check(calculated),
             PaymentTermRules.check(calculated),
+            SkontoRules.check(calculated),
             PlausibilityHints.check(calculated),
             VatIdCheckRules.check(calculated),
         ).flatten()
