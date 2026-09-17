@@ -64,7 +64,7 @@ object GermanFormat {
     }
 
     /** Betrag mit Währung und geschütztem Leerzeichen: `8.337,50 €` */
-    fun amountWithCurrency(money: Money): Latex = "${exact(money.value, minFraction = 2)} €".escapeLatex()
+    fun amountWithCurrency(money: Money): Latex = "${exact(money.value, minFraction = 2)}\u00A0€".escapeLatex()
 
     /**
      * Einzelpreis mit Währung: mindestens zwei, höchstens so viele
@@ -72,7 +72,7 @@ object GermanFormat {
      * haben als Money (EN 16931 BT-146), und die sollen auf der Rechnung auch
      * sichtbar sein: `0,3350 €` statt `0,34 €`.
      */
-    fun priceWithCurrency(price: Price): Latex = "${exact(price.value, minFraction = 2)} €".escapeLatex()
+    fun priceWithCurrency(price: Price): Latex = "${exact(price.value, minFraction = 2)}\u00A0€".escapeLatex()
 
     /** Menge ohne überflüssige Nullen: `86,5`, `1`, `1000` */
     fun quantity(quantity: BigDecimal): Latex = exact(quantity, minFraction = 0).escapeLatex()
@@ -84,7 +84,7 @@ object GermanFormat {
      * nacktes `%` kommentiert in LaTeX den Rest der Zeile aus, samt
      * Spaltentrenner und Zeilenumbruch.
      */
-    fun percent(percent: Percent): Latex = "${exact(percent.valueAsPercentage, minFraction = 0)} %".escapeLatex()
+    fun percent(percent: Percent): Latex = "${exact(percent.valueAsPercentage, minFraction = 0)}\u00A0%".escapeLatex()
 
     /**
      * Ausgeschriebenes Datum: `14. August 2026`.
@@ -95,18 +95,18 @@ object GermanFormat {
      * Satzabstand setzt, eine Lücke wie nach einem Satz (#143). Nebenbei bricht
      * das Datum nicht mehr zwischen Tag und Monat um.
      *
-     * Nicht f\u00FCr die XMP-Metadaten, dort gilt [dateInMetadata].
+     * Nicht für die XMP-Metadaten, dort gilt [dateInMetadata].
      */
     fun date(date: LocalDate): Latex =
         DateTimeFormatter.ofPattern("d.\u00A0MMMM yyyy", Locale.GERMANY).format(date).escapeLatex()
 
     /**
-     * Dasselbe Datum mit gew\u00F6hnlichem Leerzeichen, f\u00FCr die .xmpdata-Datei.
+     * Dasselbe Datum mit gewöhnlichem Leerzeichen, für die .xmpdata-Datei.
      *
-     * pdfx liest die Felder dort als Text und nicht als Satz: Ein `~` k\u00E4me als
+     * pdfx liest die Felder dort als Text und nicht als Satz: Ein `~` käme als
      * Tilde in die Dokumenteigenschaften des PDF ("vom 14.~August 2026").
-     * Nachgemessen mit pdfinfo; veraPDF bem\u00E4ngelt das nicht, es ist ja g\u00FCltiger
-     * Text \u2013 nur eben der falsche.
+     * Nachgemessen mit pdfinfo; veraPDF bemängelt das nicht, es ist ja gültiger
+     * Text – nur eben der falsche.
      */
     fun dateInMetadata(date: LocalDate): Latex =
         DateTimeFormatter.ofPattern("d. MMMM yyyy", Locale.GERMANY).format(date).escapeLatex()
