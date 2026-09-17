@@ -90,6 +90,23 @@ Was nach der Absetzung vom Bruttobetrag der Schlussrechnung noch zu zahlen ist.
 Null ist zulässig, negativ nicht.
 _Vermeiden_: Zahlbetrag, offener Betrag, Saldo, Differenz
 
+**Skonto**:
+Eine im Voraus vereinbarte Minderung des Entgelts für den Fall, dass der Kunde
+innerhalb einer Frist zahlt. Auf der Rechnung steht die Bedingung, nicht der
+geminderte Betrag; ob der Kunde sie nutzt, zeigt erst seine Zahlung. Eine
+Rechnung kann mehrere Skontostufen nennen.
+_Vermeiden_: Rabatt (mindert sofort und ohne Bedingung), Nachlass, Abzug
+
+**Skontostufe**:
+Eine Bedingung des Skontos: ein Skontosatz und die Skontofrist, bis zu der er
+gilt.
+_Vermeiden_: Skontostaffel (für eine einzelne Stufe), Skontozeile
+
+**Skontosatz**:
+Der Prozentsatz, um den sich das Entgelt bei Zahlung innerhalb der Skontofrist
+mindert.
+_Vermeiden_: Skontoprozent, Skontorate
+
 **Steueraufschlüsselung**:
 Die Aufstellung der Bemessungsgrundlagen und Steuerbeträge, gruppiert nach
 Steuerkategorie und Steuersatz.
@@ -111,6 +128,17 @@ _Vermeiden_: Abrechnungszeitraum, Leistungsdatum
 Der erwartete Zeitraum auf einer Abschlagsrechnung. Eine Prognose, keine
 Tatsache; der Kalendermonat genügt.
 _Vermeiden_: geplanter Zeitraum, Lieferdatum
+
+**Zahlungsziel**:
+Die Frist ab Rechnungsdatum, bis zu der ohne Abzug zu zahlen ist. Ein Dokument,
+das nicht zur Zahlung auffordert, hat keines.
+_Vermeiden_: Zahlungsfrist, Zahlungsbedingung (das ist Zahlungsziel und Skonto
+zusammen)
+
+**Skontofrist**:
+Die Frist ab Rechnungsdatum, innerhalb derer eine Zahlung den Skontosatz einer
+Skontostufe abziehen darf. Sie endet vor dem Zahlungsziel.
+_Vermeiden_: Skontotage, Skontoziel
 
 ## Orte
 
