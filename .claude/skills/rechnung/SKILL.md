@@ -87,6 +87,9 @@ Was du dir selbst beschaffen kannst, solltest du auch selbst beschaffen:
 - **Leistungszeitraum**: Wird ein Monat genannt ("August"), nimm den ganzen
   Monat. Frage nach, wenn gar kein Zeitraum genannt wurde.
 - **Zahlungsziel**: kommt aus den Stammdaten, nur bei Abweichung angeben.
+- **Skonto**: nur, was mit dem Kunden vereinbart ist. Trägt die letzte Rechnung
+  an denselben Kunden `skonto` und nennt der Nutzer keines, frag, ob es weiter
+  gilt. Sonst bleibt das Feld weg.
 
 Nutze für die Rückfragen ein strukturiertes Frageformat, wenn es mehrere offene
 Punkte gibt – das ist angenehmer als eine Kette von Einzelfragen.
@@ -156,6 +159,9 @@ positionen:
       von: 2026-07-01
       bis: 2026-07-31
 zahlungsziel-tage: 30               # optional, sonst aus den Stammdaten
+skonto:                             # optional, nur rechnung und teilrechnung
+  - satz: 2                         # Prozent, höchstens zwei Nachkommastellen
+    tage: 10                        # ab Rechnungsdatum, vor dem Zahlungsziel
 bemerkung: …                        # optional, ersetzt den Schlusssatz
 ```
 
@@ -343,7 +349,9 @@ Hinweis weiter.
 
 Sprich es an, wenn einer dieser Fälle auftaucht, statt etwas Falsches zu bauen:
 
-- **Skonto und andere Entgeltminderungen**: kein Feld vorhanden.
+- **Skonto auf Abschlags-, Schluss- und Stornorechnungen**: bricht ab. Auf dem
+  Blatt steht außerdem nur die Bedingung, nie ein Skontobetrag.
+- **Andere Entgeltminderungen** (Rabatt, Bonus): kein Feld vorhanden.
 - **Rechnungskorrektur**: Eine Rechnung teilweise berichtigen, statt sie ganz
   zu stornieren, geht nicht. Das Storno gibt es (siehe oben), die Korrektur
   nicht.
