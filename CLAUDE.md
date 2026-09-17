@@ -293,6 +293,24 @@ CV/Web-Auftritt des Autors), Validierung über veraPDF.
   aufrief. Verworfen: ein privater Konstruktor wie bei `AcceptedInvoice` – das
   `copy()` einer Data Class bliebe trotzdem öffentlich, und die Summen blieben
   gespeichert.
+- **Skonto**: Ein im Voraus vereinbartes Skonto (§14 Abs. 4 Satz 1 Nr. 7 UStG)
+  steht als Liste von Skontostufen unter `skonto`, je `satz` und `tage` ab
+  Rechnungsdatum (#183). Auf dem Blatt nennt es ein Satz unter den Summen, nach
+  der Absetzung; der Kopf behält "Zahlbar ohne Abzug bis …". Kein Datum steht
+  doppelt, weil jede Skontofrist vor dem Zahlungsziel endet
+  (`SKONTOFRIST_NICHT_VOR_ZAHLUNGSZIEL`). Geprüft wird in `SkontoRules` und
+  nicht in `InvoiceKindRules`: Skonto ist keine Angabe einer Rechnungsart
+  (ADR-0008). Bewusst **nicht**:
+  - kein Skontobetrag und kein Zahlbetrag. UStAE 14.5 Abs. 19 lässt die
+    Bedingung genügen; ein Betrag müsste bei mehreren Steuersätzen aufgeteilt
+    werden und sähe neben dem Gesamtbetrag wie eine zweite Forderung aus.
+  - keine Vorgabe in den Stammdaten: Vereinbart wird mit dem Kunden, eine
+    Vorgabe landete still auf jeder Rechnung.
+  - nur Rechnung und Teilrechnung (`SKONTO_AUF_DIESER_ART_NICHT_MOEGLICH`). Auf
+    der Abschlagsrechnung änderte ein Abzug, was vereinnahmt wird, und damit
+    den Block `abschlaege` der Schlussrechnung; auf der Schlussrechnung wäre
+    die Grundlage der Restbetrag, eine eigene Frage; das Storno fordert kein
+    Geld.
 - **ZUGFeRD-Vorbereitung**: Datenmodell enthält von Anfang an alle
   EN-16931-Pflichtfelder (Leistungsdatum, Steuerkategorie, Kennungen), damit
   ZUGFeRD (PDF/A-3 + XML) später ein zusätzlicher Ausgabemodus wird, kein Umbau.
