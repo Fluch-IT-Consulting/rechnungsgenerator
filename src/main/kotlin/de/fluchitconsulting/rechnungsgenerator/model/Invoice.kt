@@ -30,6 +30,10 @@ data class Invoice(
     @SerialName("vereinnahmt-am") val receivedOn: IsoDate? = null,
     // Überschreibt bei Bedarf das Zahlungsziel aus den Stammdaten.
     @SerialName("zahlungsziel-tage") val paymentTermDaysOverride: Int? = null,
+    // §14 Abs. 4 Satz 1 Nr. 7 UStG: ein im Voraus vereinbartes Skonto. Nur in
+    // der Rechnung und nie in den Stammdaten – vereinbart wird es mit dem
+    // Kunden, und eine Vorgabe landete still auf jeder Rechnung.
+    @SerialName("skonto") val skonto: List<SkontoTier> = emptyList(),
     // Die vereinnahmten Abschläge, die diese Schlussrechnung absetzt. Nur dort;
     // sobald abgesetzt wird, *ist* das Dokument eine Schlussrechnung.
     @SerialName("abschlaege") val prepayments: List<Prepayment> = emptyList(),
@@ -97,6 +101,20 @@ data class TaxShare(
     // Redundant zu netto × satz – und genau deshalb da: Der Calculator rechnet
     // nach und findet den Zahlendreher (ADR-0001).
     @SerialName("ust") val vat: Money,
+)
+
+/**
+ * Eine Skontostufe: Wer innerhalb von [days] Tagen ab Rechnungsdatum zahlt,
+ * darf [rate] abziehen.
+ *
+ * Auf der Rechnung steht nur diese Bedingung, kein Skontobetrag. Die Frist in
+ * Tagen und nicht als Datum, wie beim Zahlungsziel: Verschiebt sich das
+ * Rechnungsdatum, bleibt sie richtig.
+ */
+@Serializable
+data class SkontoTier(
+    @SerialName("satz") val rate: Percent,
+    @SerialName("tage") val days: Int,
 )
 
 @Serializable

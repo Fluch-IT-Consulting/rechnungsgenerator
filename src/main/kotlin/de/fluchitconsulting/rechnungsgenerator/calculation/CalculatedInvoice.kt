@@ -4,6 +4,7 @@ import de.fluchitconsulting.rechnungsgenerator.model.Invoice
 import de.fluchitconsulting.rechnungsgenerator.model.LineItem
 import de.fluchitconsulting.rechnungsgenerator.model.Prepayment
 import de.fluchitconsulting.rechnungsgenerator.model.SellerConfig
+import de.fluchitconsulting.rechnungsgenerator.model.SkontoTier
 import de.fluchitconsulting.rechnungsgenerator.values.EuMemberStates
 import de.fluchitconsulting.rechnungsgenerator.values.Money
 import de.fluchitconsulting.rechnungsgenerator.values.Percent
@@ -145,6 +146,13 @@ data class CalculatedInvoice(
      * dieselbe Angabe ein zweites Mal, und die zweite kann abweichen.
      */
     val paymentTermDays: Int get() = invoice.paymentTermDaysOverride ?: config.paymentTermDays
+
+    /**
+     * Die Skontostufen, nach der Skontofrist sortiert. Die Datei darf sie in
+     * beliebiger Reihenfolge nennen; sortiert wird hier einmal, damit Regeln
+     * und Satz dieselbe Liste lesen.
+     */
+    val skonto: List<SkontoTier> get() = invoice.skonto.sortedBy { it.days }
 
     // Abgeleitet statt gespeichert: Zwei Felder, die dasselbe sagen wie die
     // Liste, könnten von ihr abweichen.

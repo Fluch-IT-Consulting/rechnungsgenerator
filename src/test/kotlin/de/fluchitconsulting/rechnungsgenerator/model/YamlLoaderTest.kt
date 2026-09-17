@@ -3,6 +3,7 @@ package de.fluchitconsulting.rechnungsgenerator.model
 import de.fluchitconsulting.rechnungsgenerator.calculation.CalculatedInvoice
 import de.fluchitconsulting.rechnungsgenerator.values.InvoiceType
 import de.fluchitconsulting.rechnungsgenerator.values.Money
+import de.fluchitconsulting.rechnungsgenerator.values.Percent
 import de.fluchitconsulting.rechnungsgenerator.values.Price
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.FunSpec
@@ -74,6 +75,21 @@ class YamlLoaderTest : FunSpec({
             YamlLoader.parseInvoice(resource("rechnung.yaml").replace("nummer:", "art: anzahlung\nnummer:"))
         }
     }
+    test("skonto liest die Skontostufen in der Reihenfolge der Datei") {
+        val yaml =
+            resource("rechnung.yaml").replace(
+                "positionen:",
+                "skonto:\n  - satz: 1.5\n    tage: 10\n  - satz: 2\n    tage: 7\npositionen:",
+            )
+
+        YamlLoader.parseInvoice(yaml).skonto shouldBe
+            listOf(SkontoTier(rate = Percent("1.5"), days = 10), SkontoTier(rate = Percent("2"), days = 7))
+    }
+
+    test("eine Rechnungsdatei ohne skonto hat keine Skontostufen") {
+        YamlLoader.parseInvoice(resource("rechnung.yaml")).skonto shouldBe emptyList()
+    }
+
     test("die Abschlagsrechnung bringt Art und Vereinnahmung mit") {
         val invoice = YamlLoader.parseInvoice(resource("abschlagsrechnung.yaml"))
 
