@@ -16,6 +16,11 @@ import de.fluchitconsulting.rechnungsgenerator.values.Money
 internal fun rowSeparator(macro: TemplateMacro): Latex = Latex.raw(" ") + Latex.macro(macro) + Latex.raw("\n")
 
 /**
+ * Hält eine Angabe auf einer Zeile zusammen – ein Datum, einen Prozentsatz.
+ */
+internal fun together(value: Latex): Latex = Latex.macro(TemplateMacro.ZUSAMMEN, listOf(value))
+
+/**
  * Die fette Zeile unter dem Strich, mit der ein Betragsblock endet – der
  * Gesamtbetrag der Summen, der Restbetrag der Absetzung.
  *

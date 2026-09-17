@@ -6,6 +6,7 @@ import de.fluchitconsulting.rechnungsgenerator.model.LineItem
 import de.fluchitconsulting.rechnungsgenerator.model.Prepayment
 import de.fluchitconsulting.rechnungsgenerator.model.SellerConfig
 import de.fluchitconsulting.rechnungsgenerator.model.ServicePeriod
+import de.fluchitconsulting.rechnungsgenerator.model.SkontoTier
 import de.fluchitconsulting.rechnungsgenerator.model.YamlLoader
 import de.fluchitconsulting.rechnungsgenerator.model.testInvoice
 import de.fluchitconsulting.rechnungsgenerator.model.testItem
@@ -14,6 +15,7 @@ import de.fluchitconsulting.rechnungsgenerator.model.testSellerConfig
 import de.fluchitconsulting.rechnungsgenerator.rules.accepted
 import de.fluchitconsulting.rechnungsgenerator.values.CountryCode
 import de.fluchitconsulting.rechnungsgenerator.values.InvoiceType
+import de.fluchitconsulting.rechnungsgenerator.values.Percent
 import de.fluchitconsulting.rechnungsgenerator.values.TaxCategory
 import de.fluchitconsulting.rechnungsgenerator.values.VatId
 import io.kotest.assertions.throwables.shouldThrow
@@ -415,6 +417,40 @@ class InvoiceRendererTest : FunSpec({
 
         test("eine gewöhnliche Rechnung bekommt keine Absetzung") {
             renderMit(testItem()) shouldNotContain "Abzüglich"
+        }
+    }
+
+    context("Skonto") {
+        // Rechnungsdatum 14.08.2026, Zahlungsziel 14 Tage.
+        fun mitSkonto(vararg stufen: SkontoTier): String =
+            InvoiceRenderer.render(CalculatedInvoice(testInvoice(skonto = stufen.toList()), config).accepted())
+
+        test("eine Stufe wird ein Satz unter den Summen") {
+            val tex = mitSkonto(SkontoTier(rate = Percent("2"), days = 7))
+
+            tex shouldContain
+                "\\hinweisabsatz{Bei Zahlung bis~\\zusammen{21.~August 2026} können 2~\\% " +
+                "Skonto abgezogen werden.}"
+            tex.indexOf("Skonto abgezogen") shouldBeGreaterThan tex.indexOf("Gesamtbetrag")
+        }
+
+        test("weitere Stufen hängen sich nach der Frist sortiert an") {
+            val tex = mitSkonto(SkontoTier(rate = Percent("1.5"), days = 10), SkontoTier(rate = Percent("2"), days = 7))
+
+            tex shouldContain
+                "\\hinweisabsatz{Bei Zahlung bis~\\zusammen{21.~August 2026} können 2~\\% " +
+                "Skonto abgezogen werden, bei Zahlung bis~\\zusammen{24.~August 2026} 1,5~\\%.}"
+        }
+
+        test("das Zahlungsziel im Kopf bleibt, wie es ist") {
+            // Kein Datum steht doppelt: Jede Skontofrist endet vor dem
+            // Zahlungsziel, das SKONTOFRIST_NICHT_VOR_ZAHLUNGSZIEL hält.
+            mitSkonto(SkontoTier(rate = Percent("2"), days = 7)) shouldContain
+                "Zahlbar ohne Abzug bis 28.~August 2026"
+        }
+
+        test("ohne Skonto kein Satz") {
+            renderMit(testItem()) shouldNotContain "Skonto"
         }
     }
 

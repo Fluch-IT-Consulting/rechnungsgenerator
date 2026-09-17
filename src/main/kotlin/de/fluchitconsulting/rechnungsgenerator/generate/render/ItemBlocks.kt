@@ -2,12 +2,13 @@ package de.fluchitconsulting.rechnungsgenerator.generate.render
 
 import de.fluchitconsulting.rechnungsgenerator.calculation.CalculatedInvoice
 import de.fluchitconsulting.rechnungsgenerator.model.LineItem
+import de.fluchitconsulting.rechnungsgenerator.model.SkontoTier
 import de.fluchitconsulting.rechnungsgenerator.rules.AcceptedInvoice
 import de.fluchitconsulting.rechnungsgenerator.values.InvoiceType
 
 /**
- * Positionstabelle, Summenblock und die Hinweise darunter: Steuerbefreiungen
- * und der Pflichtsatz der Rechnungsart. Artabhängig sind hier nur
+ * Positionstabelle, Summenblock und die Hinweise darunter: Steuerbefreiungen,
+ * der Pflichtsatz der Rechnungsart und das Skonto. Artabhängig sind hier nur
  * Beschriftungen und der Pflichtsatz, beides über [InvoiceType] – ein `when`
  * über die Rechnungsart gibt es in diesen Blöcken nicht.
  */
@@ -87,6 +88,44 @@ internal object ItemBlocks {
         acceptedInvoice.calculated.invoice.type.mandatoryNote
             ?.let { Latex.macro(TemplateMacro.HINWEISABSATZ, listOf(it.escapeLatex(InvoiceVariableResolver(acceptedInvoice)))) }
             ?: Latex.EMPTY
+
+    /**
+     * Das Skonto als ein Satz unter den Summen, eine Stufe je Satzteil, nach der
+     * Skontofrist sortiert: "Bei Zahlung bis 21. August 2026 können 2 % Skonto
+     * abgezogen werden, bei Zahlung bis 24. August 2026 1 %."
+     *
+     * Ein Satz und keine Zeilen im Kopf (#183): Dort steht weiter "Zahlbar ohne
+     * Abzug bis …", als Gegenstück. Kein Datum steht doppelt, weil jede
+     * Skontofrist vor dem Zahlungsziel endet (SKONTOFRIST_NICHT_VOR_ZAHLUNGSZIEL).
+     * Den Skontobetrag nennt der Satz bewusst nicht.
+     *
+     * Zwischen "bis" und dem Datum ein geschütztes Leerzeichen, das [escapeLatex]
+     * zu `~` macht: Ein Zeilenende dort ließe "bis" allein am Zeilenende stehen.
+     *
+     * Ob Skonto auf dieser Rechnungsart stehen darf, fragt der Renderer nicht
+     * noch einmal: Eine angenommene Rechnung mit Skonto ist eine Rechnung oder
+     * Teilrechnung, die zur Zahlung auffordert (SKONTO_AUF_DIESER_ART_NICHT_MOEGLICH,
+     * SKONTO_OHNE_ZAHLUNGSAUFFORDERUNG).
+     */
+    fun skontoNote(calculatedInvoice: CalculatedInvoice): Latex {
+        val stufen = calculatedInvoice.skonto
+        if (stufen.isEmpty()) return Latex.EMPTY
+
+        fun frist(stufe: SkontoTier): Latex = together(GermanFormat.date(calculatedInvoice.skontoUntil(stufe)))
+
+        val erste = stufen.first()
+        val satz =
+            "Bei Zahlung bis\u00A0".escapeLatex() + frist(erste) + " können ".escapeLatex() +
+                GermanFormat.percent(erste.rate) + " Skonto abgezogen werden".escapeLatex() +
+                stufen
+                    .drop(1)
+                    .map { stufe ->
+                        ", bei Zahlung bis\u00A0".escapeLatex() + frist(stufe) + " ".escapeLatex() +
+                            GermanFormat.percent(stufe.rate)
+                    }.joinToLatex() +
+                ".".escapeLatex()
+        return Latex.macro(TemplateMacro.HINWEISABSATZ, listOf(satz))
+    }
 
     /**
      * Die Begründungen für Positionen ohne Umsatzsteuer – EN 16931 BT-120.

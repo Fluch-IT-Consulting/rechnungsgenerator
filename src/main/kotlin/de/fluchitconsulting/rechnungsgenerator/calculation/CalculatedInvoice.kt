@@ -154,6 +154,9 @@ data class CalculatedInvoice(
      */
     val skonto: List<SkontoTier> get() = invoice.skonto.sortedBy { it.days }
 
+    /** Der letzte Tag, an dem eine Zahlung den Skontosatz dieser Stufe abziehen darf. */
+    fun skontoUntil(stufe: SkontoTier): LocalDate = invoice.issueDate.plusDays(stufe.days.toLong())
+
     // Abgeleitet statt gespeichert: Zwei Felder, die dasselbe sagen wie die
     // Liste, könnten von ihr abweichen.
     val prepaymentTotal: Money get() = prepayments.sumOf { it.gross }
