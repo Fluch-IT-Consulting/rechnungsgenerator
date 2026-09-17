@@ -86,6 +86,7 @@ fun testInvoice(
     receivedOn: LocalDate? = null,
     prepayments: List<Prepayment> = emptyList(),
     cancelled: CancelledInvoice? = null,
+    skonto: List<SkontoTier> = emptyList(),
 ) = Invoice(
     number = number,
     issueDate = LocalDate.of(2026, 8, 14),
@@ -102,4 +103,5 @@ fun testInvoice(
     prepayments = prepayments,
     cancelled = cancelled,
     paymentTermDaysOverride = paymentTermDaysOverride,
+    skonto = skonto,
 )

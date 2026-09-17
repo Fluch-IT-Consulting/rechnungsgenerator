@@ -1,5 +1,6 @@
 package de.fluchitconsulting.rechnungsgenerator.calculation
 
+import de.fluchitconsulting.rechnungsgenerator.model.SkontoTier
 import de.fluchitconsulting.rechnungsgenerator.model.testCancelled
 import de.fluchitconsulting.rechnungsgenerator.model.testInvoice
 import de.fluchitconsulting.rechnungsgenerator.model.testItem
@@ -8,6 +9,7 @@ import de.fluchitconsulting.rechnungsgenerator.model.testSellerConfig
 import de.fluchitconsulting.rechnungsgenerator.values.CountryCode
 import de.fluchitconsulting.rechnungsgenerator.values.InvoiceType
 import de.fluchitconsulting.rechnungsgenerator.values.Money
+import de.fluchitconsulting.rechnungsgenerator.values.Percent
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
 import java.time.LocalDate
@@ -105,6 +107,15 @@ class CalculatedInvoiceTest : FunSpec({
         test("null Tage heißen sofort") {
             CalculatedInvoice(testInvoice(paymentTermDaysOverride = 0), config).dueDate shouldBe
                 LocalDate.of(2026, 8, 14)
+        }
+    }
+
+    context("Skonto") {
+        test("die Skontostufen stehen nach der Skontofrist sortiert") {
+            val kurz = SkontoTier(rate = Percent("2"), days = 7)
+            val lang = SkontoTier(rate = Percent("1"), days = 10)
+
+            CalculatedInvoice(testInvoice(skonto = listOf(lang, kurz)), config).skonto shouldBe listOf(kurz, lang)
         }
     }
 
