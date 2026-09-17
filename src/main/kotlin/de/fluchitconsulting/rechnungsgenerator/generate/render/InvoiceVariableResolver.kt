@@ -41,6 +41,4 @@ internal class InvoiceVariableResolver(private val accepted: AcceptedInvoice) : 
                 )
             }
         }
-
-    private fun together(value: Latex): Latex = Latex.macro(TemplateMacro.ZUSAMMEN, listOf(value))
 }

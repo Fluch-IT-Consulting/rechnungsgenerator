@@ -57,6 +57,7 @@ object InvoiceRenderer {
                 "ABSETZUNG" to DeductionBlocks.deductionBlock(acceptedInvoice),
                 "ARTHINWEIS" to ItemBlocks.typeNote(acceptedInvoice),
                 "STEUERHINWEISE" to ItemBlocks.taxNotes(calculatedInvoice),
+                "SKONTO" to ItemBlocks.skontoNote(calculatedInvoice),
                 "SCHLUSSSATZ" to (invoice.note ?: config.closingLine).escapeLatex(),
                 "BANKVERBINDUNG" to SellerBlocks.bankDetails(calculatedInvoice),
                 "FUSSZEILE_OBEN" to SellerBlocks.footerCompanyLine(config),

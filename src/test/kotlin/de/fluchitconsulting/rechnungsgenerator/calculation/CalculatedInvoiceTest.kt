@@ -117,6 +117,12 @@ class CalculatedInvoiceTest : FunSpec({
 
             CalculatedInvoice(testInvoice(skonto = listOf(lang, kurz)), config).skonto shouldBe listOf(kurz, lang)
         }
+
+        test("die Skontofrist endet so viele Tage nach dem Rechnungsdatum") {
+            // Rechnungsdatum 14.08.2026, wie beim Zahlungsziel oben.
+            CalculatedInvoice(testInvoice(), config).skontoUntil(SkontoTier(rate = Percent("2"), days = 7)) shouldBe
+                LocalDate.of(2026, 8, 21)
+        }
     }
 
     context("Zahlungsaufforderung") {
