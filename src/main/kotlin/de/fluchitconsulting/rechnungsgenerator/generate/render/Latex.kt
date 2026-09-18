@@ -46,7 +46,7 @@ value class Latex private constructor(val tex: String) {
         fun raw(tex: String): Latex = Latex(tex)
 
         /**
-         * Ein Makro der Vorlage: `\positionszeile{a}{b}{c}{d}{e}`.
+         * Ein Makro der Vorlage: `\summenzeile{a}{b}`.
          *
          * Der einzige Weg zu einem Makroaufruf. Der Name steht nicht als
          * Zeichenkette da, sondern als [TemplateMacro] – und damit ist er

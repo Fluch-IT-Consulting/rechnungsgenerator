@@ -2,6 +2,7 @@ package de.fluchitconsulting.rechnungsgenerator.generate.render
 
 import de.fluchitconsulting.rechnungsgenerator.calculation.CalculatedInvoice
 import de.fluchitconsulting.rechnungsgenerator.model.Address
+import de.fluchitconsulting.rechnungsgenerator.model.SellerConfig
 import de.fluchitconsulting.rechnungsgenerator.rules.AcceptedInvoice
 import de.fluchitconsulting.rechnungsgenerator.rules.InvoiceKind
 
@@ -50,30 +51,22 @@ internal object MetadataBlocks {
         }
 
     /**
-     * Der Block rechts neben dem Empfängerfeld: Vertretung und die Angaben zur
-     * Rechnung. Beides stand vorher an zwei verschiedenen Stellen – die
-     * Rechnungsangaben unter dem Balken, die Vertretung hier. Zusammengefasst
-     * bleibt der Bereich unter dem Balken frei für die Positionen.
-     *
-     * "Geschäftsführung" statt "Geschäftsführer": Die Bezeichnung steht neben
-     * einem Namen, dessen Geschlecht die Konfiguration nicht kennt.
+     * Die Vertretung – nur, wenn die Stammdaten eine Geschäftsführung führen.
+     * Überschrift und Abstand stehen in der Vorlage (`\vertretung`), ebenso,
+     * wo sie steht: neben dem Empfänger oder im Fuß (#188).
      */
-    fun recipientSideBlock(acceptedInvoice: AcceptedInvoice): Latex =
-        buildList {
-            val config = acceptedInvoice.calculated.config
-            config.managingDirector?.let {
-                add("Geschäftsführung".escapeLatex() + Latex.macro(TemplateMacro.ZEILENWECHSEL) + it.escapeLatex())
-            }
-            add(metadata(acceptedInvoice))
-        }.joinToLatex(Latex.macro(TemplateMacro.BLOCKTRENNER))
+    fun representation(config: SellerConfig): Latex =
+        config.managingDirector
+            ?.let { Latex.macro(TemplateMacro.VERTRETUNG, listOf(it.escapeLatex())) }
+            ?: Latex.EMPTY
 
     /**
-     * Die Angaben, die weder in den Balken noch in die Tabelle passen. Bewusst
-     * als schlichte "Label: Wert"-Zeilen statt als beschriftete Spalte – der
-     * frühere Block mit gesperrten Versalien hat oben rechts zu viel Unruhe
-     * erzeugt. Das Rechnungsdatum steht jetzt im Titelbalken.
+     * Die Angaben zur Rechnung, die weder Nummer noch Datum sind – die haben
+     * eigene Platzhalter, weil ein Design sie in den Titel setzt. Jede ist ein
+     * `\kopfangabe{Beschriftung}{Wert}`; wie das aussieht, als Zeile oder als
+     * Tabellenzeile, entscheidet die Vorlage (#188).
      */
-    private fun metadata(acceptedInvoice: AcceptedInvoice): Latex =
+    fun headerDetails(acceptedInvoice: AcceptedInvoice): Latex =
         buildList {
             val calculatedInvoice = acceptedInvoice.calculated
             val invoice = calculatedInvoice.invoice
@@ -83,7 +76,7 @@ internal object MetadataBlocks {
             // \zusammen: Die Zeile darf hinter dem Doppelpunkt umbrechen, der
             // Zeitraum selbst nicht – warum, steht in der Vorlage.
             val zeitraum = Latex.macro(TemplateMacro.ZUSAMMEN, listOf(servicePeriod(invoice.servicePeriod, invoice.type)))
-            add("${invoice.type.servicePeriodLabel}: ".escapeLatex() + zeitraum)
+            add(headerDetail("${invoice.type.servicePeriodLabel}:", zeitraum))
             // BT-7: Steht der Zeitpunkt der Vereinnahmung fest, gehört er zu
             // den Pflichtangaben – deshalb hier und nicht in den Fließtext.
             //
@@ -93,17 +86,20 @@ internal object MetadataBlocks {
             // nennt (#128).
             when (kind) {
                 is InvoiceKind.PrepaymentInvoice -> {
-                    kind.receivedOn?.let { add("Abschlag vereinnahmt am ".escapeLatex() + GermanFormat.date(it)) }
+                    kind.receivedOn?.let { add(headerDetail("Abschlag vereinnahmt am", GermanFormat.date(it))) }
                 }
                 is InvoiceKind.Ordinary, is InvoiceKind.FinalInvoice, is InvoiceKind.Cancellation -> {}
             }
-            invoice.customer.buyerReference?.let { add("Ihre Referenz: ".escapeLatex() + it.escapeLatex()) }
+            invoice.customer.buyerReference?.let { add(headerDetail("Ihre Referenz:", it.escapeLatex())) }
             // "ohne Abzug" stand bisher im Zahlungssatz unter den Summen. Der Satz
             // ist entfallen, weil er das Fälligkeitsdatum ein zweites Mal nannte –
             // der Hinweis, dass kein Skonto gewährt wird, gehört aber erhalten.
             //
             // Ob es ein Zahlungsziel gibt, entscheidet der Calculator; hier wird
             // nur gesetzt, was dasteht.
-            calculatedInvoice.dueDate?.let { add("Zahlbar ohne Abzug bis ".escapeLatex() + GermanFormat.date(it)) }
+            calculatedInvoice.dueDate?.let { add(headerDetail("Zahlbar ohne Abzug bis", GermanFormat.date(it))) }
         }.joinToLatex(Latex.macro(TemplateMacro.ZEILENWECHSEL))
+
+    private fun headerDetail(label: String, value: Latex): Latex =
+        Latex.macro(TemplateMacro.KOPFANGABE, listOf(label.escapeLatex(), value))
 }

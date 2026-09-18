@@ -61,11 +61,21 @@ CV/Web-Auftritt des Autors), Validierung über veraPDF.
   Zeile, die mit `[` begann, las LaTeX als Abstandsangabe und brach ab – das
   `{}`, das `Latex.macro` hinter ein Makro ohne Argument setzt, verhindert das.
   Beim Setzen prüft `checkLineBreaks`, dass kein Wert ein `\\` enthält.
-  **Nicht** umgestellt wurden die Trenner ` · ` im Fuß und in den
-  Zusatzzeilen: Sie sind Satzbild und werden mit dem zweiten Design fällig,
-  wenn feststeht, welche dort anders sind. Die Tabellenzeilen sind
-  Makros (`\positionszeile` mit
-  fünf Argumenten) – damit steht die Spaltenzahl nur an einer Stelle, statt in
+  Für das zweite Design liefert der Renderer Kopf und Fuß als einzelne Werte
+  statt als fertige Zeilen (#188): die Angaben zur Rechnung als
+  `\kopfangabe{Beschriftung}{Wert}`, die Geschäftsführung als `\vertretung`,
+  den Fuß als ein `\fuss` mit allen neun Werten. Welche davon ein Design
+  zeigt, wo und mit welchem Trenner, steht in dessen Vorlage; ein leerer Wert
+  kommt als leeres Argument, und die Vorlage fragt mit `\IfBlankF`. Das ist
+  keine fachliche Entscheidung, die in die Vorlage wandert – nur die Frage, ob
+  die Stammdaten den Wert führen. Verworfen: die Werte nach Gruppen auf
+  mehrere Platzhalter zu verteilen, mit Makros, die ihren Trenner selbst
+  mitbringen. Die Designs gruppieren verschieden (das Registergericht steht
+  einmal bei der Firma, einmal bei den Steuerangaben), und ein Makro mit allen
+  Werten hält die Entscheidung an einer Stelle. **Nicht** umgestellt wurden
+  die Trenner ` · ` in den Zusatzzeilen einer Position. Die Tabellenzeilen
+  sind Makros (`\positionszeile` mit sechs Argumenten, das erste die laufende
+  Nummer) – damit steht die Spaltenzahl nur an einer Stelle, statt in
   Vorlage und Kotlin getrennt getroffen zu werden. Welche Makros der Renderer
   aufruft, zählt das Enum `TemplateMacro` auf; beim Setzen wird geprüft, dass die
   Vorlage jedes davon mit derselben Stelligkeit kennt. Vorher fiel ein vertippter

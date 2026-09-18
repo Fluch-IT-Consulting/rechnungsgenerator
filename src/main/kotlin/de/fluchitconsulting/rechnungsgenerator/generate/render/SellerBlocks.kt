@@ -72,42 +72,33 @@ internal object SellerBlocks {
                     .escapeLatex(),
         ).joinToLatex(Latex.macro(TemplateMacro.ZEILENWECHSEL))
 
-    /** Erste Fußzeile: Firmierung, Sitz und die Angaben nach §35a GmbHG. */
-    fun footerCompanyLine(config: SellerConfig): Latex =
-        buildList {
-            add(config.companyName.escapeLatex())
-            add("${config.address.street}, ${config.address.postalCode} ${config.address.city}".escapeLatex())
-            // Die Geschäftsführung steht oben neben dem Empfänger, nicht hier:
-            // Sonst bricht diese Zeile um, und §35a GmbHG verlangt nur, dass die
-            // Angabe auf dem Geschäftsbrief steht – nicht, dass sie im Fuß steht.
-            config.registerCourt?.let { court ->
-                val number = config.registerNumber?.let { ", ".escapeLatex() + it.escapeLatex() } ?: Latex.EMPTY
-                add("Registergericht ".escapeLatex() + court.escapeLatex() + number)
-            }
-        }.joinToLatex(" · ")
-
     /**
-     * Zweite Fußzeile: steuerliche Angaben und Bankverbindung, wie bisher gewohnt.
+     * Der Fuß: alle Werte, die ein Design dort zeigen könnte, als Argumente
+     * von `\fuss` (#188). Welche davon es zeigt, wo und mit welchem Trenner,
+     * steht in der Vorlage. Vorher lieferte diese Datei zwei fertige Zeilen mit
+     * ` · ` dazwischen, und ein Design mit drei Spalten hätte sie nicht
+     * auseinandernehmen können.
      *
-     * Bewusst OHNE Steuernummer: §14 Abs. 4 Nr. 2 UStG verlangt die Steuernummer
-     * ODER die USt-IdNr., nicht beides. Mit beiden wurde die Zeile 178 mm breit
-     * und passte nicht mehr in die 165 mm Textbreite. Die Steuernummer bleibt in
-     * der Konfiguration – für eine spätere Kleinunternehmer-Variante ohne USt-IdNr.
+     * Ein fehlender Wert kommt als leeres Argument; die Vorlage fragt mit
+     * `\IfBlankF` danach. Das ist keine fachliche Entscheidung, die dorthin
+     * wandert – nur die Frage, ob die Stammdaten den Wert führen.
      */
-    fun footerTaxAndBankLine(config: SellerConfig): Latex =
-        buildList {
-            add("USt-IdNr. ".escapeLatex() + config.vatId.formatted().escapeLatex())
-            add(config.bank.bankName.escapeLatex())
-            add(
-                "BIC ".escapeLatex() +
-                    config.bank.bic.value
-                        .escapeLatex(),
-            )
-            add(
-                "IBAN ".escapeLatex() +
-                    config.bank.iban
-                        .formatted()
-                        .escapeLatex(),
-            )
-        }.joinToLatex(" · ")
+    fun footer(config: SellerConfig): Latex =
+        Latex.macro(
+            TemplateMacro.FUSS,
+            listOf(
+                config.companyName.escapeLatex(),
+                "${config.address.street}, ${config.address.postalCode} ${config.address.city}".escapeLatex(),
+                config.registerCourt?.escapeLatex() ?: Latex.EMPTY,
+                config.registerNumber?.escapeLatex() ?: Latex.EMPTY,
+                config.vatId.formatted().escapeLatex(),
+                config.taxNumber?.value?.escapeLatex() ?: Latex.EMPTY,
+                config.bank.bankName.escapeLatex(),
+                config.bank.bic.value
+                    .escapeLatex(),
+                config.bank.iban
+                    .formatted()
+                    .escapeLatex(),
+            ),
+        )
 }

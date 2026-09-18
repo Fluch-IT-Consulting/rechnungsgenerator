@@ -35,8 +35,14 @@ enum class TemplateMacro(val macroName: String, val arity: Int) {
     ABSETZUNGSTABELLE("absetzungstabelle", 1),
     ABSETZUNGSDETAIL("absetzungsdetail", 1),
     POSITIONSDETAIL("positionsdetail", 1),
-    POSITIONSZEILE("positionszeile", 5),
+    POSITIONSZEILE("positionszeile", 6),
     SUMMENZEILE("summenzeile", 2),
     ABSCHLUSSZEILE("abschlusszeile", 2),
     BANKBLOCK("bankblock", 1),
+
+    // Kopf und Fuß als einzelne Werte (#188): Welche davon ein Design zeigt,
+    // wo und mit welchem Trenner, entscheidet die Vorlage.
+    VERTRETUNG("vertretung", 1),
+    KOPFANGABE("kopfangabe", 2),
+    FUSS("fuss", 9),
 }

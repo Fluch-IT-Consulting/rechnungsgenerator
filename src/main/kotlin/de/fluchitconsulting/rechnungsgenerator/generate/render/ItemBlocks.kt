@@ -18,11 +18,14 @@ internal object ItemBlocks {
     // leere Extrazeile.
     fun lineItems(calculatedInvoice: CalculatedInvoice): Latex =
         calculatedInvoice.lines
-            .map { line ->
+            .mapIndexed { index, line ->
                 val item = line.item
                 Latex.macro(
                     TemplateMacro.POSITIONSZEILE,
                     listOf(
+                        // Die laufende Nummer, ab 1. Ob ein Design sie zeigt,
+                        // steht in der Vorlage (#188).
+                        (index + 1).toString().escapeLatex(),
                         describeItem(item, calculatedInvoice.invoice.type),
                         GermanFormat.quantity(item.quantity),
                         item.unit.label.escapeLatex(),

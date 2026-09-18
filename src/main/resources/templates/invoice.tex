@@ -126,6 +126,25 @@
 %% hinter \\ aus demselben Grund wie beim Aufruf von \zeilenwechsel.
 \newcommand{\kopfperson}[1]{\\{}#1}
 
+%% Die Vertretung im Block rechts neben dem Empfänger: Überschrift, Name und
+%% der Abstand zu den Angaben darunter. Ob sie dasteht, entscheidet der
+%% Renderer (nur mit Geschäftsführung in den Stammdaten); deshalb bringt sie
+%% ihren Abstand selbst mit, sonst begänne der Block ohne sie mit einem
+%% Zeilenende. "Geschäftsführung" statt "Geschäftsführer": Die Bezeichnung
+%% steht neben einem Namen, dessen Geschlecht die Stammdaten nicht kennen.
+\newcommand{\vertretung}[1]{Geschäftsführung\zeilenwechsel{}#1\blocktrenner}
+
+%% Eine Angabe zur Rechnung im selben Block: Beschriftung und Wert, wie
+%% "Leistungszeitraum: Juli 2026". Die Beschriftung liefert der Renderer samt
+%% Doppelpunkt, denn nicht jede hat einen ("Zahlbar ohne Abzug bis …"). Der
+%% Renderer verbindet die Angaben mit \zeilenwechsel.
+%%
+%% Bewusst als schlichte Zeile statt als beschriftete Spalte: Der frühere
+%% Block mit gesperrten Versalien erzeugte oben rechts zu viel Unruhe.
+%% Vertretung und Angaben stehen zusammen in einem Block, damit der Bereich
+%% unter dem Balken frei bleibt für die Positionen.
+\newcommand{\kopfangabe}[2]{#1 #2}
+
 %% Diese Angabe bricht nicht um. Im schmalen Block oben rechts bräche
 %% "Juni bis Oktober 2026" sonst hinter dem "bis" und läse sich wie zwei Angaben.
 \newcommand{\zusammen}[1]{\mbox{#1}}
@@ -175,7 +194,11 @@
 %% Eine Zeile der Positionstabelle. Damit steht die Zahl der Spalten nur noch
 %% hier: Vorher zählte die Vorlage fünf und der Renderer verband fünf Zellen mit
 %% kaufmännischem Und, ohne dass etwas die beiden Zahlen verglich.
-\newcommand{\positionszeile}[5]{#1 & #2 & #3 & #4 & #5}
+%%
+%% #1 laufende Nummer, #2 Beschreibung, #3 Menge, #4 Einheit, #5 Einzelpreis,
+%% #6 Betrag. Die Nummer setzt dieses Design nicht: Bei zwei, drei Positionen
+%% nummeriert sie nichts, was das Auge nicht ohnehin sieht (#188).
+\newcommand{\positionszeile}[6]{#2 & #3 & #4 & #5 & #6}
 
 %% Eine Zeile im Summen- oder Absetzungsblock: Bezeichnung links, Betrag rechts.
 \newcommand{\summenzeile}[2]{#1 & #2}
@@ -187,6 +210,24 @@
 %% nie als erste (#147). Ein Trenner vor ihr ginge nicht: Der Renderer schreibt
 %% ihn als \name{}, und ein {} vor \midrule ist ein "Misplaced \noalign".
 \newcommand{\abschlusszeile}[2]{\\\midrule\textbf{#1} & \textbf{#2}}
+
+%% Die Fußzeilen. Der Renderer übergibt alle Werte, dieses Design wählt aus
+%% (#188): #1 Firmierung, #2 "Straße, PLZ Ort", #3 Registergericht,
+%% #4 Handelsregisternummer, #5 USt-IdNr., #6 Steuernummer, #7 Bank, #8 BIC,
+%% #9 IBAN. #3, #4 und #6 können leer sein.
+%%
+%% Nicht gesetzt werden hier die Steuernummer und die Geschäftsführung.
+%% §14 Abs. 4 Nr. 2 UStG verlangt Steuernummer ODER USt-IdNr., und mit beiden
+%% wurde die zweite Zeile 178 mm breit, bei 165 mm Satzspiegel. Die
+%% Geschäftsführung steht bei diesem Design rechts neben dem Empfänger
+%% (\vertretung); §35a GmbHG verlangt sie auf dem Geschäftsbrief, nicht im Fuß.
+%% Die Handelsregisternummer nur zusammen mit dem Gericht: Allein wäre sie
+%% keine Angabe, die jemand nachschlagen kann.
+%%
+%% Die % am Zeilenende verhindern Leerzeichen, die sonst im Satz landen.
+\newcommand{\fuss}[9]{%
+  #1 · #2\IfBlankF{#3}{ · Registergericht #3\IfBlankF{#4}{, #4}}\\%
+  USt-IdNr. #5 · #7 · BIC #8 · IBAN #9}
 
 \begin{document}
 
@@ -211,7 +252,7 @@
 \hfill
 \begin{minipage}[t]{0.44\linewidth}
   \raggedleft\small\color{gedaempft}
-  <<EMPFAENGER_RECHTS>>
+  <<VERTRETUNG>><<KOPFANGABEN>>
 \end{minipage}
 
 \vspace{14mm}
@@ -303,7 +344,6 @@ Mit freundlichen Grüßen\\[7mm]
 %% Beide Zeilen passen in den Satzspiegel (nachgemessen 152 mm bzw. 138 mm bei
 %% 165 mm Breite), deshalb ohne den früheren Trick mit negativem \hspace.
 {\centering\scriptsize\color{gedaempft}
-<<FUSSZEILE_OBEN>>\\
-<<FUSSZEILE_UNTEN>>\par}
+<<FUSS>>\par}
 
 \end{document}

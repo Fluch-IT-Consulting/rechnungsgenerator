@@ -48,7 +48,8 @@ object InvoiceRenderer {
                 "KOPF_PERSON" to SellerBlocks.letterheadPerson(config),
                 "ABSENDER_KONTAKT" to SellerBlocks.senderContact(config),
                 "EMPFAENGER" to MetadataBlocks.recipient(calculatedInvoice),
-                "EMPFAENGER_RECHTS" to MetadataBlocks.recipientSideBlock(acceptedInvoice),
+                "VERTRETUNG" to MetadataBlocks.representation(config),
+                "KOPFANGABEN" to MetadataBlocks.headerDetails(acceptedInvoice),
                 "DOKUMENTART" to invoice.type.documentName.escapeLatex(),
                 "RECHNUNGSNUMMER" to invoice.number.escapeLatex(),
                 "RECHNUNGSDATUM" to GermanFormat.date(invoice.issueDate),
@@ -60,8 +61,7 @@ object InvoiceRenderer {
                 "SKONTO" to ItemBlocks.skontoNote(calculatedInvoice),
                 "SCHLUSSSATZ" to (invoice.note ?: config.closingLine).escapeLatex(),
                 "BANKVERBINDUNG" to SellerBlocks.bankDetails(calculatedInvoice),
-                "FUSSZEILE_OBEN" to SellerBlocks.footerCompanyLine(config),
-                "FUSSZEILE_UNTEN" to SellerBlocks.footerTaxAndBankLine(config),
+                "FUSS" to SellerBlocks.footer(config),
             )
 
         checkMacros(template)

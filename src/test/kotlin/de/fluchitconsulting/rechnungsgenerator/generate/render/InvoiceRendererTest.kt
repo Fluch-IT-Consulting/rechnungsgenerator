@@ -17,6 +17,7 @@ import de.fluchitconsulting.rechnungsgenerator.values.CountryCode
 import de.fluchitconsulting.rechnungsgenerator.values.InvoiceType
 import de.fluchitconsulting.rechnungsgenerator.values.Percent
 import de.fluchitconsulting.rechnungsgenerator.values.TaxCategory
+import de.fluchitconsulting.rechnungsgenerator.values.TaxNumber
 import de.fluchitconsulting.rechnungsgenerator.values.VatId
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.assertions.withClue
@@ -297,7 +298,7 @@ class InvoiceRendererTest : FunSpec({
             val seller = YamlLoader.parseSellerConfig(resource("stammdaten.yaml"))
 
             InvoiceRenderer.render(CalculatedInvoice(invoice, seller).accepted()) shouldContain
-                "Voraussichtlicher Leistungszeitraum: \\zusammen{Juni bis Oktober 2026}"
+                "\\kopfangabe{Voraussichtlicher Leistungszeitraum:}{\\zusammen{Juni bis Oktober 2026}}"
         }
 
         test("der Zeitraum ist der voraussichtliche") {
@@ -305,7 +306,7 @@ class InvoiceRendererTest : FunSpec({
             // eine Prognose. Als "Leistungszeitraum" beschriftet, behauptete er,
             // die Leistung sei erbracht.
             abschlag() shouldContain "Voraussichtlicher Leistungszeitraum:"
-            renderMit(testItem()) shouldContain "Leistungszeitraum: \\zusammen{Juli 2026}"
+            renderMit(testItem()) shouldContain "\\kopfangabe{Leistungszeitraum:}{\\zusammen{Juli 2026}}"
             renderMit(testItem()) shouldNotContain "Voraussichtlich"
         }
 
@@ -332,7 +333,7 @@ class InvoiceRendererTest : FunSpec({
         }
 
         test("die Vereinnahmung wird genannt, sobald sie feststeht") {
-            abschlag(LocalDate.of(2026, 8, 10)) shouldContain "Abschlag vereinnahmt am 10.~August 2026"
+            abschlag(LocalDate.of(2026, 8, 10)) shouldContain "\\kopfangabe{Abschlag vereinnahmt am}{10.~August 2026}"
             abschlag() shouldNotContain "vereinnahmt"
         }
 
@@ -446,7 +447,7 @@ class InvoiceRendererTest : FunSpec({
             // Kein Datum steht doppelt: Jede Skontofrist endet vor dem
             // Zahlungsziel, das SKONTOFRIST_NICHT_VOR_ZAHLUNGSZIEL hält.
             mitSkonto(SkontoTier(rate = Percent("2"), days = 7)) shouldContain
-                "Zahlbar ohne Abzug bis 28.~August 2026"
+                "\\kopfangabe{Zahlbar ohne Abzug bis}{28.~August 2026}"
         }
 
         test("ohne Skonto kein Satz") {
@@ -458,6 +459,14 @@ class InvoiceRendererTest : FunSpec({
         // Keine dieser Angaben stand bis #95 in einem Test oder einer der
         // Vergleichsdateien: Deren Stammdaten haben alles, und keine ihrer
         // Rechnungen ist steuerfrei. Geprüft wird am Inhalt, nicht am Makro.
+
+        // Die Argumente des \fuss-Aufrufs. Die Testdaten enthalten keine
+        // geschweiften Klammern, deshalb genügt das Zerlegen an "}{".
+        fun fussArgumente(tex: String): List<String> =
+            tex
+                .substringAfter("\\fuss{")
+                .substringBefore("}\\par")
+                .split("}{")
 
         fun render(invoice: Invoice, stammdaten: SellerConfig = config): String =
             InvoiceRenderer.render(CalculatedInvoice(invoice, stammdaten).accepted())
@@ -509,17 +518,19 @@ class InvoiceRendererTest : FunSpec({
 
             val ohne = render(testInvoice(), stammdaten)
             briefkopf(ohne) shouldContain "}\\kopfperson{Ina Inhaberin}"
-            ohne shouldNotContain "Geschäftsführung"
+            ohne shouldNotContain "\\vertretung{"
 
             val mit = render(testInvoice(), stammdaten.copy(managingDirector = "Gero Geschäftsführer"))
             briefkopf(mit) shouldNotContain "Ina Inhaberin"
-            mit shouldContain "Geschäftsführung\\zeilenwechsel{}Gero Geschäftsführer"
+            mit shouldContain "\\vertretung{Gero Geschäftsführer}"
         }
 
         test("Telefon, Registergericht und Referenz stehen nur da, wenn sie angegeben sind") {
             val ohne = render(testInvoice())
             ohne shouldNotContain "Tel."
-            ohne shouldNotContain "Registergericht"
+            // Registergericht und HRB-Nummer sind das dritte und vierte
+            // Argument von \fuss; die Vorlage setzt nur, was nicht leer ist.
+            fussArgumente(ohne).subList(2, 4) shouldBe listOf("", "")
             ohne shouldNotContain "Ihre Referenz"
 
             val basis = testInvoice()
@@ -527,8 +538,36 @@ class InvoiceRendererTest : FunSpec({
             val stammdaten = config.copy(phone = "+49 931 000000", registerCourt = "Würzburg", registerNumber = "HRB 1")
             val mit = render(mitReferenz, stammdaten)
             mit shouldContain "Tel. +49 931 000000"
-            mit shouldContain "Registergericht Würzburg, HRB 1"
-            mit shouldContain "Ihre Referenz: Bestellung 4711"
+            fussArgumente(mit).subList(2, 4) shouldBe listOf("Würzburg", "HRB 1")
+            mit shouldContain "\\kopfangabe{Ihre Referenz:}{Bestellung 4711}"
+        }
+
+        test("der Fuß bekommt alle Werte, auch die, die ein Design nicht zeigt") {
+            // Welche davon auf dem Blatt stehen, entscheidet die Vorlage (#188) –
+            // das heutige Design lässt die Steuernummer weg. Die Reihenfolge
+            // ist die Belegung von #1 bis #9, die über \fuss in der Vorlage steht.
+            val stammdaten =
+                config.copy(registerCourt = "Würzburg", registerNumber = "HRB 1", taxNumber = TaxNumber("257/123/45678"))
+
+            fussArgumente(render(testInvoice(), stammdaten)) shouldBe
+                listOf(
+                    "Muster IT-Consulting",
+                    "Beispielweg 42, 97070 Würzburg",
+                    "Würzburg",
+                    "HRB 1",
+                    "DE 123 456 788",
+                    "257/123/45678",
+                    "Musterbank",
+                    "MUSTDEFFXXX",
+                    "DE89 3704 0044 0532 0130 00",
+                )
+        }
+
+        test("die Positionen tragen ihre laufende Nummer, ab 1") {
+            val tex = renderMit(testItem(), testItem())
+
+            tex shouldContain "\\positionszeile{1}{"
+            tex shouldContain "\\positionszeile{2}{"
         }
     }
 
