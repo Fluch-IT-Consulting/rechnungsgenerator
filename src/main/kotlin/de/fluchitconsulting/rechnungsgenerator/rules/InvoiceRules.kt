@@ -28,11 +28,11 @@ internal object InvoiceRules {
      * Reihenfolge – nicht als Eintrag, der in einer Liste fehlen könnte, ohne dass
      * es jemand merkt (#105).
      */
-    fun check(calculated: CalculatedInvoice, kind: InvoiceKindRules.Result): List<Finding> =
+    fun check(calculated: CalculatedInvoice, kindCheck: InvoiceKindRules.Result): List<Finding> =
         // `flatten` macht aus der Liste von Listen eine einzige.
         listOf(
             InvoiceNumberRules.check(calculated),
-            kind.findings,
+            kindCheck.findings,
             CancellationRules.check(calculated),
             ItemRules.check(calculated),
             TaxCategoryRules.check(calculated),
