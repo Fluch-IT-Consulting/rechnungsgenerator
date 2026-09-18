@@ -189,6 +189,17 @@ class ToolchainIntegrationTest : FunSpec({
     }
 
     /**
+     * Ein tagesgenauer Zeitraum steht als Text im PDF. Das schmale Leerzeichen
+     * um den Strich kennt TeX Gyre Heros nicht; roh durchgereicht las
+     * `pdftotext` an seiner Stelle zweimal U+FFFD (#192).
+     */
+    test("ein tagesgenauer Leistungszeitraum steht als Text im PDF") {
+        val (pdf, _) = erzeuge("schlussrechnung", zielname = "zeitraum")
+
+        textOf(pdf) shouldContain "Leistungszeitraum: 01.06.2026 – 31.10.2026"
+    }
+
+    /**
      * Sieht aus wie ein Doppelgänger von `PdfAValidatorTest`, ist aber das
      * Gegenstück dazu: Der schnelle Test beweist, dass wir einen
      * aufgezeichneten Bericht richtig lesen. Dieser hier beweist, dass die

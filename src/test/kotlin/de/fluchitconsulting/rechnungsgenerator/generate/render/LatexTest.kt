@@ -31,6 +31,10 @@ class LatexTest : FunSpec({
         }
     }
 
+    test("das schmale Leerzeichen wird zu \\, – die Schrift hat dafür kein Zeichen (#192)") {
+        "01.06.2026\u2009–\u200931.08.2026".escapeLatex().tex shouldBe "01.06.2026\\,–\\,31.08.2026"
+    }
+
     test("Umlaute und das Eurozeichen bleiben unangetastet") {
         // LuaLaTeX liest UTF-8 direkt – hier darf nichts passieren.
         "Würzburg 95,00 € Größe".escapeLatex().tex shouldBe "Würzburg 95,00 € Größe"
