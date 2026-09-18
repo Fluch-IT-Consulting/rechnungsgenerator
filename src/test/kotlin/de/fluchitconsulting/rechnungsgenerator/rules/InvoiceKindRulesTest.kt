@@ -186,7 +186,7 @@ class InvoiceKindRulesTest : FunSpec({
             unbaubar().forEach { invoice ->
                 val notBuilt =
                     InvoiceKindRules
-                        .build(CalculatedInvoice(invoice, config))
+                        .check(CalculatedInvoice(invoice, config))
                         .shouldBeInstanceOf<InvoiceKindRules.Result.NotBuilt>()
                 notBuilt.findings.forEach { finding ->
                     withClue(
@@ -203,10 +203,10 @@ class InvoiceKindRulesTest : FunSpec({
             // Das Gegenstück zum Test davor: Abbruch sein genügt nicht, der Befund
             // muss auch in der Ablehnung ankommen. Bis #105 hing das an einem Eintrag
             // in der Liste der Regelgruppen. Gebaut wird hier eigens, damit
-            // der Test nicht mitliest, was check selbst gebaut hat.
+            // der Test nicht mitliest, was AcceptedInvoice.check selbst gebaut hat.
             unbaubar().forEach { invoice ->
                 val calculated = CalculatedInvoice(invoice, config)
-                val notBuilt = InvoiceKindRules.build(calculated).shouldBeInstanceOf<InvoiceKindRules.Result.NotBuilt>()
+                val notBuilt = InvoiceKindRules.check(calculated).shouldBeInstanceOf<InvoiceKindRules.Result.NotBuilt>()
 
                 val rejected = AcceptedInvoice.check(calculated).shouldBeInstanceOf<Verdict.Rejected>()
 

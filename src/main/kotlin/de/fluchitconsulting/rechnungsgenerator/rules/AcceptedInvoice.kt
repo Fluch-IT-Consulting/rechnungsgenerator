@@ -63,10 +63,10 @@ class AcceptedInvoice private constructor(
          * Rechnungen mit Abbruch und lesen deren Befunde (ADR-0004).
          */
         fun check(calculated: CalculatedInvoice): Verdict {
-            val built = InvoiceKindRules.build(calculated)
-            val findings = InvoiceRules.check(calculated, built)
+            val kindCheck = InvoiceKindRules.check(calculated)
+            val findings = InvoiceRules.check(calculated, kindCheck)
             val hasAbort = findings.any { it.severity == Severity.ABORT }
-            return when (built) {
+            return when (kindCheck) {
                 is InvoiceKindRules.Result.Built -> {
                     // Eine lokale val, damit der Compiler nach der Prüfung auf
                     // null weiß, dass sie ein String ist (Smart Cast). Bei
@@ -75,7 +75,7 @@ class AcceptedInvoice private constructor(
                     if (hasAbort || fileBaseName == null) {
                         Verdict.Rejected(findings)
                     } else {
-                        Verdict.Accepted(AcceptedInvoice(calculated, built.kind, fileBaseName, findings))
+                        Verdict.Accepted(AcceptedInvoice(calculated, kindCheck.kind, fileBaseName, findings))
                     }
                 }
                 is InvoiceKindRules.Result.NotBuilt -> {

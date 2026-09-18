@@ -51,7 +51,7 @@ internal object InvoiceKindRules {
         data class NotBuilt(override val findings: List<Finding>) : Result
     }
 
-    fun build(calculated: CalculatedInvoice): Result {
+    fun check(calculated: CalculatedInvoice): Result {
         val invoice = calculated.invoice
         val fremd = foreignFields(invoice)
 
