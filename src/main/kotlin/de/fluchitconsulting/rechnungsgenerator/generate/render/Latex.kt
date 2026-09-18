@@ -111,6 +111,12 @@ fun String.escapeLatex(): Latex =
                     // Flattersatz dieser Vorlage fällt das nicht auf; in einem
                     // Block, dem jemand den Flattersatz vergisst, schon.
                     '\u00A0' -> append('~')
+                    // Das schmale Leerzeichen (im Zeitraum um den Strich) wird
+                    // zu \, – aus demselben Grund wie oben Markup statt
+                    // Zeichen, hier aber zwingend: TeX Gyre Heros hat kein
+                    // U+2009. Der Abstand erschien zwar, doch pdftotext las
+                    // an seiner Stelle U+FFFD (#192).
+                    '\u2009' -> append("\\,")
                     else -> append(char)
                 }
             }

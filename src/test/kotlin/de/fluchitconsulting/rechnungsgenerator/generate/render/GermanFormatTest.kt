@@ -65,9 +65,9 @@ class GermanFormatTest : FunSpec({
             GermanFormat.servicePeriod(LocalDate.of(2026, 2, 1), LocalDate.of(2026, 2, 28)).tex shouldBe "Februar 2026"
             // Teilmonat und monatsübergreifend bleiben ein Datumsbereich.
             GermanFormat.servicePeriod(LocalDate.of(2026, 7, 1), LocalDate.of(2026, 7, 15)).tex shouldBe
-                "01.07.2026\u2009–\u200915.07.2026"
+                "01.07.2026\\,–\\,15.07.2026"
             GermanFormat.servicePeriod(LocalDate.of(2026, 7, 1), LocalDate.of(2026, 8, 31)).tex shouldBe
-                "01.07.2026\u2009–\u200931.08.2026"
+                "01.07.2026\\,–\\,31.08.2026"
         }
     }
 
@@ -114,7 +114,7 @@ class GermanFormatTest : FunSpec({
             // Angebrochene Randmonate bleiben datiert – sonst wäre die Angabe
             // nicht gröber, sondern eine andere.
             GermanFormat.monthPeriod(LocalDate.of(2026, 6, 15), LocalDate.of(2026, 10, 20)).tex shouldBe
-                "15.06.2026\u2009–\u200920.10.2026"
+                "15.06.2026\\,–\\,20.10.2026"
         }
     }
 })
