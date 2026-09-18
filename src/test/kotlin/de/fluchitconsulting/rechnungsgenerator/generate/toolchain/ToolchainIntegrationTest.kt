@@ -1,21 +1,15 @@
 package de.fluchitconsulting.rechnungsgenerator.generate.toolchain
 
-import com.github.ajalt.clikt.core.context
-import com.github.ajalt.clikt.core.parse
-import de.fluchitconsulting.rechnungsgenerator.RechnungsgeneratorCommand
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.assertions.withClue
 import io.kotest.core.Tag
 import io.kotest.core.spec.style.FunSpec
-import io.kotest.matchers.collections.shouldContain
 import io.kotest.matchers.collections.shouldNotBeEmpty
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.string.shouldContain
 import java.nio.file.Path
 import java.time.LocalDate
-import java.util.concurrent.TimeUnit
 import kotlin.io.path.createTempDirectory
-import kotlin.io.path.exists
 import kotlin.io.path.fileSize
 import kotlin.io.path.readBytes
 import kotlin.io.path.readText
@@ -30,95 +24,22 @@ import kotlin.io.path.writeText
 object Toolchain : Tag()
 
 /**
- * Der Integrationstest, der die Zusage des Projekts einlöst: Ohne gültiges
- * PDF/A gibt es keinen grünen Build. Er ruft LuaLaTeX und veraPDF wirklich auf –
- * fehlen sie, schlägt er fehl, statt sich stillschweigend zu überspringen.
+ * Die Annahmen über die echten Werkzeuge: Reproduzierbarkeit, Text, der
+ * unverändert im PDF ankommt, und wie LuaLaTeX und veraPDF Fehler melden. Er
+ * ruft beide wirklich auf – fehlen sie, schlägt er fehl, statt sich
+ * stillschweigend zu überspringen.
+ *
+ * Dass jede Rechnungsart ein gültiges PDF/A ergibt, prüft `PflichtangabenTest`
+ * gleich mit (#187); die drei Tests dafür, die hier standen, gibt es nicht mehr.
  */
 class ToolchainIntegrationTest : FunSpec({
     tags(Toolchain)
 
     val workDir = createTempDirectory("rechnungsgenerator-test")
-
-    /**
-     * Erzeugt eine Rechnung mit den echten Werkzeugen – über dasselbe Kommando,
-     * das auch ein Mensch aufruft.
-     *
-     * Nicht über die Einzelteile: Rechnen, Setzen und Prüfen stehen genau
-     * einmal zusammen, nämlich im Kommando. Baute dieser Test sie noch einmal
-     * nach, gäbe es die Abfolge an zwei Stellen, und die zweite wäre die, die
-     * niemand pflegt.
-     *
-     * Die Ausgaben werden eingesammelt, damit die Meldung von veraPDF im
-     * Testbericht landet – sonst stünde dort nur "expected true but was false".
-     */
-    fun erzeuge(
-        rechnung: String,
-        zielname: String = rechnung,
-        eingabe: Path = Path.of("src/test/resources/$rechnung.yaml"),
-    ): Pair<Path, List<String>> {
-        val ziel = workDir.resolve("$zielname.pdf")
-        val ausgabe = mutableListOf<String>()
-        val command = RechnungsgeneratorCommand()
-        command.context { echoMessage = { _, message, _, _ -> ausgabe += message.toString() } }
-
-        val fehler =
-            runCatching {
-                command.parse(
-                    arrayOf(
-                        "erzeuge",
-                        eingabe.toString(),
-                        "-s",
-                        "src/test/resources/stammdaten.yaml",
-                        "-o",
-                        ziel.toString(),
-                    ),
-                )
-            }.exceptionOrNull()
-
-        withClue(ausgabe.joinToString("\n")) { fehler shouldBe null }
-        return ziel to ausgabe
-    }
-
-    /**
-     * Der Text eines PDF, wie `pdftotext` ihn liest – für die Frage, ob etwas
-     * wirklich so gesetzt wurde, wie es in der Eingabe steht.
-     */
-    fun textOf(pdf: Path): String {
-        // Die Ausgabe in eine Datei, nicht in einen Stream – aus demselben
-        // Grund wie bei den Werkzeugen des Programms (siehe ProcessRunner).
-        val text = workDir.resolve("${pdf.fileName}.txt")
-        val prozess =
-            ProcessBuilder("pdftotext", "-enc", "UTF-8", pdf.toString(), text.toString())
-                .redirectErrorStream(true)
-                .redirectOutput(workDir.resolve("pdftotext.log").toFile())
-                .start()
-        prozess.waitFor(30, TimeUnit.SECONDS) shouldBe true
-        prozess.exitValue() shouldBe 0
-        return text.readText()
-    }
+    val run = ToolchainRun(workDir)
 
     test("die benötigten Werkzeuge sind vorhanden") {
         LuaLatexTypesetter.checkAvailable()
-    }
-
-    test("erzeugt aus den Beispieldaten ein gültiges PDF/A-1b") {
-        val (pdf, ausgabe) = erzeuge("rechnung")
-
-        pdf.exists() shouldBe true
-        pdf.fileSize() shouldBe pdf.fileSize().coerceAtLeast(1000)
-        withClue(ausgabe.joinToString("\n")) { ausgabe shouldContain "PDF/A-1b: gültig" }
-    }
-
-    test("erzeugt aus einer Abschlagsrechnung ein gültiges PDF/A-1b") {
-        val (_, ausgabe) = erzeuge("abschlagsrechnung")
-
-        withClue(ausgabe.joinToString("\n")) { ausgabe shouldContain "PDF/A-1b: gültig" }
-    }
-
-    test("erzeugt aus einer Schlussrechnung ein gültiges PDF/A-1b") {
-        val (_, ausgabe) = erzeuge("schlussrechnung")
-
-        withClue(ausgabe.joinToString("\n")) { ausgabe shouldContain "PDF/A-1b: gültig" }
     }
 
     /**
@@ -131,8 +52,8 @@ class ToolchainIntegrationTest : FunSpec({
      * wirklich aus dem übernimmt, was es bekommt, zeigt nur ein echter Lauf.
      */
     test("zwei Läufe über dieselbe Datei ergeben dasselbe PDF, datiert auf das Rechnungsdatum") {
-        val (erster, _) = erzeuge("rechnung", "reproduzierbar-1")
-        val (zweiter, _) = erzeuge("rechnung", "reproduzierbar-2")
+        val (erster, _) = run.erzeuge("rechnung", "reproduzierbar-1")
+        val (zweiter, _) = run.erzeuge("rechnung", "reproduzierbar-2")
 
         val bytes = erster.readBytes()
         withClue("${erster.fileSize()} und ${zweiter.fileSize()} Bytes") {
@@ -165,9 +86,9 @@ class ToolchainIntegrationTest : FunSpec({
         val eingabe = workDir.resolve("ligaturen.yaml")
         eingabe.writeText(beispiel.substringBefore("positionen:") + "positionen:\n" + positionen)
 
-        val (pdf, _) = erzeuge("ligaturen", eingabe = eingabe)
+        val (pdf, _) = run.erzeuge("ligaturen", eingabe = eingabe)
 
-        val gesetzt = textOf(pdf)
+        val gesetzt = run.textOf(pdf)
         bezeichnungen.forEach { gesetzt shouldContain it }
     }
 
@@ -183,9 +104,9 @@ class ToolchainIntegrationTest : FunSpec({
         val eingabe = workDir.resolve("klammer.yaml")
         eingabe.writeText(beispiel.replace("strasse: Industriestraße 1", "strasse: \"$strasse\""))
 
-        val (pdf, _) = erzeuge("klammer", eingabe = eingabe)
+        val (pdf, _) = run.erzeuge("klammer", eingabe = eingabe)
 
-        textOf(pdf) shouldContain strasse
+        run.textOf(pdf) shouldContain strasse
     }
 
     /**
@@ -194,9 +115,9 @@ class ToolchainIntegrationTest : FunSpec({
      * `pdftotext` an seiner Stelle zweimal U+FFFD (#192).
      */
     test("ein tagesgenauer Leistungszeitraum steht als Text im PDF") {
-        val (pdf, _) = erzeuge("schlussrechnung", zielname = "zeitraum")
+        val (pdf, _) = run.erzeuge("schlussrechnung", zielname = "zeitraum")
 
-        textOf(pdf) shouldContain "Leistungszeitraum: 01.06.2026 – 31.10.2026"
+        run.textOf(pdf) shouldContain "Leistungszeitraum: 01.06.2026 – 31.10.2026"
     }
 
     /**
