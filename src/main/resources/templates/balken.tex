@@ -290,6 +290,12 @@
 
 \vspace{9mm}
 
+%% --------------------------------------------------------------- Einleitung
+%% Der Satz aus der Rechnungsdatei, der sagt, worum es geht (#209). Er kommt aus
+%% den Eingabedaten und steht deshalb nicht in \hinweisabsatz (#143). Ohne
+%% Einleitung steht hier nichts, und der Abstand zur Tabelle bleibt derselbe.
+\ifblank{<<EINLEITUNG>>}{}{\noindent <<EINLEITUNG>>\par\vspace{6mm}}
+
 %% --------------------------------------------------------------- Positionen
 \begin{tabularx}{\linewidth}{@{}>{\raggedright\arraybackslash}X r@{\hspace{1.5mm}}l r r@{}}
   %% \mbox um jeden Spaltenkopf: In der X-Spalte ist der Inhalt sonst ein Absatz,

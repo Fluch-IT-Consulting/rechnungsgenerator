@@ -106,6 +106,8 @@ enum class Rule(val severity: Severity) {
     KUNDENNUMMER_MIT_LEERRAUM(Severity.ABORT),
     AUFTRAGSNUMMER_LEER(Severity.ABORT),
     AUFTRAGSNUMMER_MIT_LEERRAUM(Severity.ABORT),
+    EINLEITUNG_LEER(Severity.ABORT),
+    EINLEITUNG_MIT_LEERRAUM(Severity.ABORT),
 
     // Positionen und Steuerkategorie
     KEINE_POSITION(Severity.ABORT),

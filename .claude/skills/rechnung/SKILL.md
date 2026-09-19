@@ -100,6 +100,12 @@ Was du dir selbst beschaffen kannst, solltest du auch selbst beschaffen:
   eintragen, wenn der Nutzer sie nennt oder die Rechnung auf ein Angebot mit
   Nummer zurückgeht; sonst bleibt das Feld weg. Nicht mit `kunde: referenz`
   verwechseln – das ist eine Angabe des Kunden.
+- **Einleitung**: ein Satz über den Positionen, der den Anlass nennt ("Für den
+  Workshop … am … in … berechnen wir Folgendes:"). Nur eintragen, wenn der
+  Nutzer einen Anlass nennt oder die letzte Rechnung an denselben Kunden eine
+  Einleitung hat. Dann frag, ob sie angepasst werden soll: Ein Anlass wiederholt
+  sich selten wörtlich. Schreib sie als `>-`, nicht als `|`. Der Zeilenumbruch
+  am Ende eines `|`-Blocks bricht den Lauf ab (`EINLEITUNG_MIT_LEERRAUM`).
 - **Ansprechpartner**: Nennt die letzte Rechnung an denselben Kunden einen,
   übernimm ihn. Sonst bleibt das Feld weg, frag nicht eigens danach. Er steht
   wörtlich unter dem Kundennamen: Das Programm setzt weder "z. Hd." noch eine
@@ -167,6 +173,9 @@ kunde:
     plz: "90402"                    # Text, keine Zahl – führende Nullen bleiben
     ort: Nürnberg
   referenz: BST-2026-0815           # optional, Referenz des Kunden (BT-10), etwa eine Leitweg-ID
+einleitung: >-                      # optional, Satz über den Positionen; >- und nicht |
+  Für den Workshop „Kotlin für Einsteiger“ am 04.08.2026 in Würzburg
+  berechnen wir Folgendes:
 positionen:
   - bezeichnung: IT-Beratungsleistungen      # Pflicht: die Art der Leistung
     beschreibung: Arbeitspaket Nord 26.3     # optional: ihr Umfang

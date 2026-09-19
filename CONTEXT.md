@@ -162,6 +162,14 @@ VIES-Abfrage noch eine Bestätigung durch das BZSt; die Unternehmereigenschaft
 muss anders nachgewiesen werden, etwa durch eine Unternehmerbescheinigung.
 _Vermeiden_: Nicht-EU-Land, Ausland (für diesen Fall)
 
+## Texte
+
+**Einleitung**:
+Der Satz über den Positionen, der sagt, worum es geht: welcher Auftrag, welcher
+Anlass, welcher Ort. Er steht nur in der Rechnungsdatei und nie in den
+Stammdaten, und er ist keine Pflichtangabe.
+_Vermeiden_: Betreff, Anschreiben, Vorspann
+
 ## Prüfung
 
 **Befund**:

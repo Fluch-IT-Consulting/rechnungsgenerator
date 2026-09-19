@@ -68,6 +68,11 @@ enum class TemplateValue(
     KUNDENREFERENZ(true),
     ZAHLUNGSZIEL(true),
 
+    // Der Satz über den Positionen, aus der Rechnungsdatei (einleitung). Eine
+    // einzelne Angabe, auch wenn sie ein Satz ist: Er kommt aus den Daten und
+    // nicht aus Kotlin, und ob er dasteht, heißt nur leer oder nicht.
+    EINLEITUNG(true),
+
     // Wiederholtes und fachliche Sätze: Makroaufrufe oder nichts.
     POSITIONEN(true),
     SUMMEN(true),

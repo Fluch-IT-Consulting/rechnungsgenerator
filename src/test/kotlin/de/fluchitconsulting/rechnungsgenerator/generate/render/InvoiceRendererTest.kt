@@ -550,6 +550,14 @@ class InvoiceRendererTest : FunSpec({
             wert(TemplateValue.AUFTRAGSNUMMER) shouldBe ""
         }
 
+        test("die Einleitung kommt maskiert, und ohne sie ist der Wert leer") {
+            // #209. Leer heißt: Die Vorlage setzt über der Tabelle nichts, und
+            // der Abstand bleibt der von vorher.
+            wert(TemplateValue.EINLEITUNG, testInvoice(introduction = "Für Projekt A & B:")) shouldBe
+                "Für Projekt A \\& B:"
+            wert(TemplateValue.EINLEITUNG) shouldBe ""
+        }
+
         test("Geschäftsführung, Telefon, Registergericht und Referenz sind leer, wenn sie fehlen") {
             // Die Beschriftungen stehen seit #188 in der Vorlage, ebenso die
             // Regel "die Person im Kopf nur ohne Geschäftsführung". Hier bleibt
