@@ -196,4 +196,8 @@ data class LineItem(
     // BT-120: Warum keine Steuer anfällt. Für die meisten Kategorien Pflicht;
     // fehlt er, setzt der Calculator den vorgesehenen Wortlaut ein.
     @SerialName("steuerbefreiungsgrund") val taxExemptionReason: String? = null,
+    // BG-27, BT-138: Der Rabatt mindert den Positionsbetrag, nicht den
+    // Einzelpreis – der bleibt so stehen, wie er vereinbart ist. Nur als
+    // Prozentsatz; ohne Eintrag kein Rabatt.
+    @SerialName("rabatt") val discount: Percent? = null,
 )

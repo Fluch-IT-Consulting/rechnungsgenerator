@@ -56,6 +56,77 @@ class CalculatedInvoiceTest : FunSpec({
         totals.grossTotal shouldBe Money("398.65")
     }
 
+    // Der Rabatt mindert den Positionsbetrag, nicht den Einzelpreis (EN 16931
+    // BG-27): Basis (BT-137) und Rabattbetrag (BT-136) sind je auf Cent
+    // gerundet, das Netto (BT-131) ist ihre Differenz.
+    context("Rabatt") {
+        test("mindert das Positionsnetto um den Rabattbetrag") {
+            val invoice = testInvoice(items = listOf(testItem(quantity = "1", unitPrice = "800.00", discount = "30")))
+
+            val line = CalculatedInvoice(invoice, config).lines.single()
+
+            line.base shouldBe Money("800.00")
+            line.discountAmount shouldBe Money("240.00")
+            line.net shouldBe Money("560.00")
+        }
+
+        // 50 % von 10,05 sind 5,025. Gerundet wird der Rabattbetrag (5,03), das
+        // Netto ist der Rest (5,02) – nicht Basis × 50 % gerundet, das wären
+        // ebenfalls 5,03, und Rabatt und Netto ergäben zusammen 10,06.
+        test("rundet den Rabattbetrag, das Netto ist der Rest") {
+            val invoice = testInvoice(items = listOf(testItem(quantity = "1", unitPrice = "10.05", discount = "50")))
+
+            val line = CalculatedInvoice(invoice, config).lines.single()
+
+            line.discountAmount shouldBe Money("5.03")
+            line.net shouldBe Money("5.02")
+        }
+
+        // Ein Storno rechnet mit negativer Menge (ADR-0006). Hebt es die
+        // Ursprungsrechnung auf den Cent genau auf, muss auch die Rundung des
+        // Rabattbetrags spiegelbildlich sein.
+        test("rundet bei negativer Menge spiegelbildlich") {
+            val invoice = testInvoice(items = listOf(testItem(quantity = "-1", unitPrice = "10.05", discount = "50")))
+
+            val line = CalculatedInvoice(invoice, config).lines.single()
+
+            line.discountAmount shouldBe Money("-5.03")
+            line.net shouldBe Money("-5.02")
+        }
+
+        test("100 % ergeben ein Netto von null") {
+            val invoice = testInvoice(items = listOf(testItem(quantity = "1", unitPrice = "800.00", discount = "100")))
+
+            CalculatedInvoice(invoice, config).lines.single().net shouldBe Money("0.00")
+        }
+
+        test("ohne Rabatt gibt es keinen Rabattbetrag, und das Netto ist die Basis") {
+            val invoice = testInvoice(items = listOf(testItem(quantity = "1", unitPrice = "800.00")))
+
+            val line = CalculatedInvoice(invoice, config).lines.single()
+
+            line.discountAmount shouldBe null
+            line.net shouldBe Money("800.00")
+        }
+
+        test("die Umsatzsteuer rechnet mit dem geminderten Netto") {
+            val invoice =
+                testInvoice(
+                    items =
+                        listOf(
+                            testItem(quantity = "1", unitPrice = "800.00", discount = "30"),
+                            testItem(quantity = "1", unitPrice = "200.00"),
+                        ),
+                )
+
+            val calculated = CalculatedInvoice(invoice, config)
+
+            calculated.netTotal shouldBe Money("760.00")
+            calculated.vatGroups.single().amount shouldBe Money("144.40")
+            calculated.grossTotal shouldBe Money("904.40")
+        }
+    }
+
     // Die Summen gehören zur Rechnung, aus der sie entstanden – auch nach copy().
     // Ein Paar aus einer Rechnung und den Summen einer anderen soll nicht baubar sein.
     test("copy mit einer anderen Rechnung rechnet deren Summen") {

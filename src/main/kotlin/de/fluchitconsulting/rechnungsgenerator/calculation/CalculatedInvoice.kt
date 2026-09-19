@@ -17,9 +17,25 @@ import java.time.LocalDate
 
 data class CalculatedLine(
     val item: LineItem,
-    // Netto der Position: Menge × Einzelpreis. Das Runden auf Cent macht Money selbst.
-    val net: Money,
-)
+) {
+    // Wie bei CalculatedInvoice steht im Konstruktor nur die Eingabe, die
+    // Beträge rechnet der Rumpf: Eine Zeile mit dem Netto einer anderen
+    // Position ist so nicht baubar.
+
+    // Menge × Einzelpreis (BT-137, Basis des Rabatts). roundToAmount() ist die
+    // einzige Rundung vom Price zum Money, und der Compiler erzwingt sie:
+    // unitPrice ist ein Price (exakt), base ein Money (zwei Stellen).
+    val base: Money = (item.unitPrice * item.quantity).roundToAmount()
+
+    // BT-136, ohne Rabatt null. Money × Percent rundet HALF_UP, also weg von der
+    // Null – bei negativer Menge im Storno damit spiegelbildlich.
+    val discountAmount: Money? = item.discount?.let { base * it }
+
+    // BT-131. Die Differenz und nicht Basis × (1 − Satz): Sonst würden
+    // Rabattbetrag und Netto je für sich gerundet und ergäben zusammen
+    // nicht immer die Basis.
+    val net: Money = discountAmount?.let { base - it } ?: base
+}
 
 /**
  * Eine Zeile der Steueraufschlüsselung – EN 16931 BG-23.
@@ -104,12 +120,9 @@ data class CalculatedInvoice(
     // zur Laufzeit `null` heraus.
 
     // Erst pro Position runden, dann summieren – so stimmt die Summe mit dem
-    // überein, was der Leser auf der Rechnung nachrechnen kann.
-    //
-    // roundToAmount() ist die einzige Rundung dieser Klasse, und der Compiler
-    // erzwingt sie: unitPrice ist ein Price (exakt), net ein Money (zwei Stellen).
-    val lines: List<CalculatedLine> =
-        invoice.items.map { CalculatedLine(it, (it.unitPrice * it.quantity).roundToAmount()) }
+    // überein, was der Leser auf der Rechnung nachrechnen kann. Gerundet wird in
+    // CalculatedLine.
+    val lines: List<CalculatedLine> = invoice.items.map(::CalculatedLine)
 
     val netTotal: Money = lines.sumOf { it.net }
 
