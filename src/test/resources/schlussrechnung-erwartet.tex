@@ -8,6 +8,7 @@
 \usepackage{booktabs}  %% \midrule bringt die vertikalen Abstände selbst mit
 \usepackage{tabularx}
 \usepackage{array}
+\usepackage{etoolbox}  %% \ifblank für die Angaben, die leer sein dürfen
 
 \setmainfont{texgyreheros}[
   Ligatures      = TeXOff,
@@ -58,6 +59,8 @@
 
 \newcommand{\kopfperson}[1]{\\{}#1}
 
+\newcommand{\kopfangabe}[2]{\ifblank{#2}{}{#1 #2\par}}
+
 \newcommand{\zusammen}[1]{\mbox{#1}}
 
 \newcommand{\rubrik}[1]{{\footnotesize\color{gedaempft}\addfontfeature{LetterSpace=14}\MakeUppercase{#1}}}
@@ -67,7 +70,11 @@
 
 \newcommand{\absetzungskopf}[1]{\par\vspace{6mm}\noindent #1\par\vspace{1.5mm}}
 
-\newcommand{\bankblock}[1]{\vspace{9mm}\noindent{\bfseries Bankverbindung}\\[1.5mm]#1}
+\newcommand{\bankblock}{\vspace{9mm}\noindent{\bfseries Bankverbindung}\\[1.5mm]%
+  Kontoinhaber: Muster IT-Consulting UG (haftungsbeschränkt)\\
+  Institut: Musterbank Würzburg\\
+  IBAN: DE89 3704 0044 0532 0130 00\\
+  BIC: MUSTDEFFXXX}
 
 \newcommand{\absetzungstabelle}[1]{%
   \begin{tabularx}{\linewidth}{@{}>{\raggedright\arraybackslash}X r@{}}#1\end{tabularx}}
@@ -76,7 +83,7 @@
 
 \newcommand{\positionsdetail}[1]{\newline{\footnotesize\color{gedaempft} #1}}
 
-\newcommand{\positionszeile}[5]{#1 & #2 & #3 & #4 & #5}
+\newcommand{\positionszeile}[6]{#2 & #3 & #4 & #5 & #6}
 
 \newcommand{\summenzeile}[2]{#1 & #2}
 
@@ -85,18 +92,22 @@
 \begin{document}
 
 {\raggedleft\small\color{gedaempft}
-  {\bfseries\color{haupttext}Muster IT-Consulting UG (haftungsbeschränkt)}\\
-  Beispielweg 42 · 97070 Würzburg\zeilenwechsel{}Tel. +49 931 1234567\zeilenwechsel{}rechnung@muster-it-consulting.example\par}
+  {\bfseries\color{haupttext}Muster IT-Consulting UG (haftungsbeschränkt)}\ifblank{Dr. Erika Musterfrau}{\kopfperson{Dr. Erika Musterfrau}}{}\\
+  Beispielweg 42 · 97070 Würzburg\ifblank{+49 931 1234567}{}{\zeilenwechsel{}Tel. +49 931 1234567}\zeilenwechsel{}rechnung@muster-it-consulting.example\par}
 
 \vspace{18mm}
 
 \begin{minipage}[t]{0.52\linewidth}\raggedright
-  Beispiel Software GmbH\zeilenwechsel{}Industriestraße 1\zeilenwechsel{}90402 Nürnberg
+  Beispiel Software GmbH\zeilenwechsel{}Industriestraße 1\zeilenwechsel{}90402 Nürnberg\ifblank{}{}{\ustidtrenner{}USt-IdNr. }
 \end{minipage}%
 \hfill
 \begin{minipage}[t]{0.44\linewidth}
   \raggedleft\small\color{gedaempft}
-  Geschäftsführung\zeilenwechsel{}Dr. Erika Musterfrau\blocktrenner{}Leistungszeitraum: \zusammen{01.06.2026\,–\,31.10.2026}\zeilenwechsel{}Zahlbar ohne Abzug bis 19.~November 2026
+  \ifblank{Dr. Erika Musterfrau}{}{Geschäftsführung\\Dr. Erika Musterfrau\blocktrenner{}}
+  \kopfangabe{Leistungszeitraum:}{\zusammen{01.06.2026\,–\,31.10.2026}}
+  \kopfangabe{Abschlag vereinnahmt am}{}
+  \kopfangabe{Ihre Referenz:}{}
+  \kopfangabe{Zahlbar ohne Abzug bis}{19.~November 2026}
 \end{minipage}
 
 \vspace{14mm}
@@ -113,7 +124,7 @@
 \begin{tabularx}{\linewidth}{@{}>{\raggedright\arraybackslash}X r@{\hspace{1.5mm}}l r r@{}}
   \mbox{\rubrik{Beschreibung}} & \mbox{\rubrik{Menge}} & & \mbox{\rubrik{Einzelpreis}} & \mbox{\rubrik{Betrag}} \\[1.5mm]
   \midrule
-\positionszeile{Projekt Nord, Gesamtleistung}{1}{pauschal}{20.000,00~€}{20.000,00~€}
+\positionszeile{1}{Projekt Nord, Gesamtleistung}{1}{pauschal}{20.000,00~€}{20.000,00~€}
 \end{tabularx}
 
 \vspace{5mm}
@@ -149,12 +160,12 @@ Ich bedanke mich für das Vertrauen und die angenehme Zusammenarbeit.
 Mit freundlichen Grüßen\\[7mm]
 Dr. Erika Musterfrau
 
-\bankblock{Kontoinhaber: Muster IT-Consulting UG (haftungsbeschränkt)\zeilenwechsel{}Institut: Musterbank Würzburg\zeilenwechsel{}IBAN: DE89 3704 0044 0532 0130 00\zeilenwechsel{}BIC: MUSTDEFFXXX}
+\bankblock{}
 
 \vfill
 
 {\centering\scriptsize\color{gedaempft}
-Muster IT-Consulting UG (haftungsbeschränkt) · Beispielweg 42, 97070 Würzburg · Registergericht Würzburg, HRB 12345\\
+Muster IT-Consulting UG (haftungsbeschränkt) · Beispielweg 42, 97070 Würzburg\ifblank{Würzburg}{}{ · Registergericht Würzburg\ifblank{HRB 12345}{}{, HRB 12345}}\\
 USt-IdNr. DE 123 456 788 · Musterbank Würzburg · BIC MUSTDEFFXXX · IBAN DE89 3704 0044 0532 0130 00\par}
 
 \end{document}

@@ -12,20 +12,22 @@ package de.fluchitconsulting.rechnungsgenerator.generate.render
  *
  * Der Renderer ruft kein anderes Makro auf, auch keines von LaTeX selbst: Wo er
  * früher `\mbox` oder `\\[\positionsabstand]` schrieb, stehen heute `ZUSAMMEN`
- * und die Trenner (#76), wo er `\\` schrieb, `ZEILENWECHSEL`, `KOPFPERSON` und
- * das Zeilenende in `ABSCHLUSSZEILE` (#147). Dass keines mehr hineinkommt,
+ * und die Trenner (#76), wo er `\\` schrieb, `ZEILENWECHSEL` und das
+ * Zeilenende in `ABSCHLUSSZEILE` (#147). Dass keines mehr hineinkommt,
  * prüft `InvoiceRenderer.checkLineBreaks`. Einzige Ausnahme sind die Felder
  * der pdfx-Metadaten – sie gehören in die .xmpdata-Datei und nicht in diese
  * Vorlage.
+ *
+ * Die Vorlage darf mehr Makros definieren und nutzen, als hier stehen. Seit
+ * #188 setzt sie Briefkopf, Fuß und Kopfangaben selbst aus einzelnen Werten
+ * ([TemplateValue]) zusammen; `\kopfperson`, `\blocktrenner` und
+ * `\ustidtrenner` ruft seitdem nur noch sie auf.
  */
 enum class TemplateMacro(val macroName: String, val arity: Int) {
     POSITIONSTRENNER("positionstrenner", 0),
     SUMMENTRENNER("summentrenner", 0),
-    BLOCKTRENNER("blocktrenner", 0),
-    USTIDTRENNER("ustidtrenner", 0),
     ZEILENWECHSEL("zeilenwechsel", 0),
     ZUSAMMEN("zusammen", 1),
-    KOPFPERSON("kopfperson", 1),
 
     // Nur für Sätze aus dem Quelltext: Allein hier setzt die Vorlage nach einem
     // Satzende den breiten Abstand, und in Eingabedaten bekäme ihn auch eine
@@ -35,8 +37,13 @@ enum class TemplateMacro(val macroName: String, val arity: Int) {
     ABSETZUNGSTABELLE("absetzungstabelle", 1),
     ABSETZUNGSDETAIL("absetzungsdetail", 1),
     POSITIONSDETAIL("positionsdetail", 1),
-    POSITIONSZEILE("positionszeile", 5),
+
+    // Das erste Argument ist die laufende Nummer der Position.
+    POSITIONSZEILE("positionszeile", 6),
     SUMMENZEILE("summenzeile", 2),
     ABSCHLUSSZEILE("abschlusszeile", 2),
-    BANKBLOCK("bankblock", 1),
+
+    // Ohne Argument: Den Inhalt setzt die Vorlage aus den Werten der Bank, der
+    // Renderer entscheidet nur, ob der Block dasteht.
+    BANKBLOCK("bankblock", 0),
 }

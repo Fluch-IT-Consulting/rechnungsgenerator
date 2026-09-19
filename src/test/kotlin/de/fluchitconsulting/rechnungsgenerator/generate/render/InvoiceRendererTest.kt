@@ -46,6 +46,18 @@ class InvoiceRendererTest : FunSpec({
         return InvoiceRenderer.render(CalculatedInvoice(invoice, config).accepted())
     }
 
+    /**
+     * Der Wert eines Platzhalters, wie der Renderer ihn liefert. Seit #188
+     * stehen die Beschriftungen ("Tel.", "Zahlbar ohne Abzug bis") in der
+     * Vorlage, also in jedem gesetzten Text. Ob eine Angabe dasteht, zeigt
+     * deshalb ihr Wert: leer oder nicht.
+     */
+    fun wert(
+        key: TemplateValue,
+        invoice: Invoice = testInvoice(),
+        stammdaten: SellerConfig = config,
+    ): String = InvoiceRenderer.values(CalculatedInvoice(invoice, stammdaten).accepted()).getValue(key).tex
+
     test("eine Position ohne Zusatzangaben bleibt einzeilig") {
         val tex = renderMit(testItem())
 
@@ -55,6 +67,15 @@ class InvoiceRendererTest : FunSpec({
         // Nicht bloß "positionsdetail": Die Vorlage definiert das Makro, das
         // Wort steht also ohnehin im Text. Gemeint ist der Aufruf dahinter.
         tex shouldNotContain "Testposition\\positionsdetail"
+    }
+
+    test("jede Position trägt ihre laufende Nummer, beginnend bei 1") {
+        // Das erste Argument von \positionszeile. Ob ein Design sie setzt,
+        // entscheidet die Vorlage; balken setzt sie nicht (#188).
+        val tex = renderMit(testItem().copy(name = "Erste"), testItem().copy(name = "Zweite"))
+
+        tex shouldContain "\\positionszeile{1}{Erste}"
+        tex shouldContain "\\positionszeile{2}{Zweite}"
     }
 
     test("die Beschreibung wird zur zweiten Zeile, klein und gedämpft") {
@@ -139,50 +160,63 @@ class InvoiceRendererTest : FunSpec({
             // einwandfreies PDF/A – es ist ja eines.
             val fehler =
                 shouldThrow<IllegalStateException> {
-                    InvoiceRenderer.fillIn("\\textbf{<<FIRMA>>} <<SUMMEN>>", mapOf("FIRMA" to "Muster".escapeLatex()))
+                    InvoiceRenderer.fillIn(
+                        "\\textbf{<<FIRMA>>} <<SUMMEN>>",
+                        mapOf(TemplateValue.FIRMA to "Muster".escapeLatex()),
+                    )
                 }
 
             fehler.message!! shouldContain "<<SUMMEN>>"
             fehler.message!! shouldContain "keinen Wert"
         }
 
-        test("ein Wert ohne Platzhalter bricht ebenfalls ab") {
-            // Der häufigere Fall, und der mit der besseren Meldung: Wer sich
-            // beim Schlüssel verschreibt, erfährt hier, welcher Schlüssel
-            // gemeint war – nicht bloß, welcher Platzhalter stehen blieb.
+        test("ein Platzhalter, den der Renderer nicht kennt, bricht ebenfalls ab") {
+            // Ein vertippter Name in der Vorlage: Im Renderer übersetzt er nicht
+            // mehr, seit die Schlüssel TemplateValue sind – in der Vorlage schon.
             val fehler =
                 shouldThrow<IllegalStateException> {
-                    InvoiceRenderer.fillIn("<<FIRMA>>", mapOf("FIRMA" to "Muster".escapeLatex(), "FRIMA" to Latex.EMPTY))
+                    InvoiceRenderer.fillIn("<<FRIMA>>", mapOf(TemplateValue.FIRMA to "Muster".escapeLatex()))
                 }
 
             fehler.message!! shouldContain "<<FRIMA>>"
         }
 
+        test("ein Wert ohne Platzhalter ist erlaubt") {
+            // Ein Design muss nicht jede Angabe setzen: balken setzt weder
+            // Webseite noch Steuernummer (#188).
+            InvoiceRenderer.fillIn(
+                "<<FIRMA>>",
+                mapOf(TemplateValue.FIRMA to "Muster".escapeLatex(), TemplateValue.WEBSEITE to "muster.example".escapeLatex()),
+            ) shouldBe "Muster"
+        }
+
         test("passen beide zusammen, kommt der gefüllte Text heraus") {
-            InvoiceRenderer.fillIn("<<A>> und <<B>>", mapOf("A" to "eins".escapeLatex(), "B" to "zwei".escapeLatex())) shouldBe
-                "eins und zwei"
+            InvoiceRenderer.fillIn(
+                "<<FIRMA>> und <<ORT>>",
+                mapOf(TemplateValue.FIRMA to "eins".escapeLatex(), TemplateValue.ORT to "zwei".escapeLatex()),
+            ) shouldBe "eins und zwei"
         }
 
         // Die Werte stammen aus den Eingabedaten, und ein Kundenname darf
         // spitze Klammern enthalten. Eingesetzter Text ist Inhalt, nicht Vorlage.
         test("ein Wert, der wie ein späterer Platzhalter aussieht, bleibt stehen") {
             InvoiceRenderer.fillIn(
-                "<<A>> und <<B>>",
-                mapOf("A" to "Kunde <<B>>".escapeLatex(), "B" to "zwei".escapeLatex()),
-            ) shouldBe "Kunde <<B>> und zwei"
+                "<<FIRMA>> und <<ORT>>",
+                mapOf(TemplateValue.FIRMA to "Kunde <<ORT>>".escapeLatex(), TemplateValue.ORT to "zwei".escapeLatex()),
+            ) shouldBe "Kunde <<ORT>> und zwei"
         }
 
         test("ein Wert, der wie ein früherer Platzhalter aussieht, gilt nicht als Lücke der Vorlage") {
             InvoiceRenderer.fillIn(
-                "<<A>> und <<B>>",
-                mapOf("A" to "eins".escapeLatex(), "B" to "Kunde <<A>>".escapeLatex()),
-            ) shouldBe "eins und Kunde <<A>>"
+                "<<FIRMA>> und <<ORT>>",
+                mapOf(TemplateValue.FIRMA to "eins".escapeLatex(), TemplateValue.ORT to "Kunde <<FIRMA>>".escapeLatex()),
+            ) shouldBe "eins und Kunde <<FIRMA>>"
         }
 
         test("Backslash und Dollar im Wert werden wörtlich eingesetzt") {
             // Beim Ersetzen per regulärem Ausdruck deuten manche Schnittstellen
             // "\" und "$1" im Ersatztext als Rückverweis – LaTeX besteht aus beidem.
-            InvoiceRenderer.fillIn("<<A>>", mapOf("A" to Latex.raw("\\textbf{\$1}"))) shouldBe "\\textbf{\$1}"
+            InvoiceRenderer.fillIn("<<FIRMA>>", mapOf(TemplateValue.FIRMA to Latex.raw("\\textbf{\$1}"))) shouldBe "\\textbf{\$1}"
         }
 
         test("ein rohes Zeilenende in einem Wert bricht ab und nennt den Platzhalter") {
@@ -190,7 +224,7 @@ class InvoiceRendererTest : FunSpec({
             // die mit "[" beginnt, als Abstandsangabe.
             val fehler =
                 shouldThrow<IllegalStateException> {
-                    InvoiceRenderer.checkLineBreaks(mapOf("EMPFAENGER" to Latex.raw("Muster GmbH\\\\Musterweg 1")))
+                    InvoiceRenderer.checkLineBreaks(mapOf(TemplateValue.EMPFAENGER to Latex.raw("Muster GmbH\\\\Musterweg 1")))
                 }
 
             fehler.message!! shouldContain "<<EMPFAENGER>>"
@@ -199,13 +233,45 @@ class InvoiceRendererTest : FunSpec({
         test("ein Zeilenwechsel über das Makro der Vorlage besteht die Prüfung") {
             val anschrift = "Muster GmbH".escapeLatex() + Latex.macro(TemplateMacro.ZEILENWECHSEL) + "Musterweg 1".escapeLatex()
 
-            InvoiceRenderer.checkLineBreaks(mapOf("EMPFAENGER" to anschrift))
+            InvoiceRenderer.checkLineBreaks(mapOf(TemplateValue.EMPFAENGER to anschrift))
         }
 
         test("zwei Backslashes aus den Eingabedaten sind kein Zeilenende") {
             // escapeLatex macht aus jedem einzelnen \textbackslash{} – deshalb
             // kann keine Rechnungsdatei die Prüfung auslösen.
-            InvoiceRenderer.checkLineBreaks(mapOf("SCHLUSSSATZ" to "Ablage unter \\\\server\\rechnungen".escapeLatex()))
+            InvoiceRenderer.checkLineBreaks(mapOf(TemplateValue.SCHLUSSSATZ to "Ablage unter \\\\server\\rechnungen".escapeLatex()))
+        }
+    }
+
+    context("Welche Platzhalter jede Vorlage setzen muss") {
+        // Die Gegenrichtung zu fillIn, aber nur für die Platzhalter, deren
+        // Inhalt an Rechnungsart oder Rechnung hängt (#188).
+
+        fun vorlageMit(platzhalter: List<TemplateValue>) = platzhalter.joinToString("\n") { it.placeholder }
+
+        val pflicht = TemplateValue.entries.filter { it.required }
+
+        test("fehlt einer, den keine Vorlage weglassen darf, wird er benannt") {
+            // Der teure Fall: Ein Design ohne <<SKONTO>> ließe das Skonto
+            // weg, und keines der Beispiele hat eines.
+            val fehler =
+                shouldThrow<IllegalStateException> {
+                    InvoiceRenderer.checkPlaceholders(vorlageMit(pflicht - TemplateValue.SKONTO))
+                }
+
+            fehler.message!! shouldContain "<<SKONTO>>"
+        }
+
+        test("die Angaben der Stammdaten darf eine Vorlage weglassen") {
+            // "Steuernummer oder USt-IdNr." lässt sich als Kennzeichen nicht
+            // ausdrücken; das prüft das Netz aus #187 am fertigen PDF.
+            InvoiceRenderer.checkPlaceholders(vorlageMit(pflicht))
+        }
+
+        test("die echte Vorlage setzt jeden, den sie setzen muss") {
+            InvoiceRenderer.checkPlaceholders(
+                checkNotNull(InvoiceRenderer::class.java.getResource("/templates/invoice.tex")).readText(),
+            )
         }
     }
 
@@ -237,7 +303,7 @@ class InvoiceRendererTest : FunSpec({
 
     context("Das Land in der Anschrift") {
 
-        /** Die eine Zeile, in der die Anschrift des Kunden steht. */
+        /** Der Block, in dem die Anschrift des Kunden steht. */
         fun anschrift(kundenland: String, stellerland: String): String {
             val basis = testInvoice()
             val invoice =
@@ -248,8 +314,7 @@ class InvoiceRendererTest : FunSpec({
                         ),
                 )
             val stammdaten = config.copy(address = config.address.copy(countryCode = CountryCode(stellerland)))
-            val tex = InvoiceRenderer.render(CalculatedInvoice(invoice, stammdaten).accepted())
-            return tex.lines().first { it.contains("Nürnberg") }.trim()
+            return wert(TemplateValue.EMPFAENGER, invoice, stammdaten)
         }
 
         test("ein kleingeschriebenes Land ist dasselbe Land") {
@@ -296,17 +361,20 @@ class InvoiceRendererTest : FunSpec({
             val invoice = YamlLoader.parseInvoice(resource("abschlagsrechnung.yaml"))
             val seller = YamlLoader.parseSellerConfig(resource("stammdaten.yaml"))
 
-            InvoiceRenderer.render(CalculatedInvoice(invoice, seller).accepted()) shouldContain
-                "Voraussichtlicher Leistungszeitraum: \\zusammen{Juni bis Oktober 2026}"
+            wert(TemplateValue.LEISTUNGSZEITRAUM, invoice, seller) shouldBe "Juni bis Oktober 2026"
         }
 
         test("der Zeitraum ist der voraussichtliche") {
             // UStAE 14.8 Abs. 1: Auf einer Abschlagsrechnung ist der Zeitraum
             // eine Prognose. Als "Leistungszeitraum" beschriftet, behauptete er,
             // die Leistung sei erbracht.
-            abschlag() shouldContain "Voraussichtlicher Leistungszeitraum:"
-            renderMit(testItem()) shouldContain "Leistungszeitraum: \\zusammen{Juli 2026}"
-            renderMit(testItem()) shouldNotContain "Voraussichtlich"
+            //
+            // Deshalb kommt diese Beschriftung vom Renderer und nicht aus der
+            // Vorlage: Sie trägt eine fachliche Aussage (#188).
+            wert(TemplateValue.ZEITRAUM_BESCHRIFTUNG, testInvoice(type = InvoiceType.PREPAYMENT)) shouldBe
+                "Voraussichtlicher Leistungszeitraum"
+            wert(TemplateValue.ZEITRAUM_BESCHRIFTUNG) shouldBe "Leistungszeitraum"
+            wert(TemplateValue.LEISTUNGSZEITRAUM) shouldBe "Juli 2026"
         }
 
         test("der Pflichtsatz steht unter den Summen") {
@@ -332,8 +400,10 @@ class InvoiceRendererTest : FunSpec({
         }
 
         test("die Vereinnahmung wird genannt, sobald sie feststeht") {
-            abschlag(LocalDate.of(2026, 8, 10)) shouldContain "Abschlag vereinnahmt am 10.~August 2026"
-            abschlag() shouldNotContain "vereinnahmt"
+            val vereinnahmt = testInvoice(type = InvoiceType.PREPAYMENT, receivedOn = LocalDate.of(2026, 8, 10))
+
+            wert(TemplateValue.VEREINNAHMT_AM, vereinnahmt) shouldBe "10.~August 2026"
+            wert(TemplateValue.VEREINNAHMT_AM, testInvoice(type = InvoiceType.PREPAYMENT)) shouldBe ""
         }
 
         test("die Metadaten des PDF tragen dieselbe Bezeichnung") {
@@ -392,7 +462,7 @@ class InvoiceRendererTest : FunSpec({
             tex shouldContain "\\abschlusszeile{Restbetrag}{19.040,00~€}"
             // Der Aufruf und nicht bloß der Name: Die Vorlage definiert
             // \bankblock, das Wort steht also in jedem erzeugten .tex.
-            tex shouldContain "\\bankblock{Kontoinhaber"
+            tex shouldContain "\\bankblock{}"
         }
 
         test("ein Restbetrag von null bekommt einen Satz statt einer Zahl") {
@@ -404,15 +474,20 @@ class InvoiceRendererTest : FunSpec({
             // "\textbf{Restbetrag}" – das schreibt der Renderer seit #76 nirgends,
             // die Zeile bestand also immer.
             tex shouldNotContain "\\abschlusszeile{Restbetrag}"
-            // Die Gegenprobe steht bei den Angaben oben rechts: Eine
-            // gewöhnliche Rechnung nennt sehr wohl ein Zahlungsziel.
-            renderMit(testItem()) shouldContain "Zahlbar ohne Abzug bis"
             // Und kein Zahlungsziel daneben: Das wäre die zweite, andere
-            // Aussage desselben Blattes.
-            tex shouldNotContain "Zahlbar ohne Abzug"
+            // Aussage desselben Blattes. Die Gegenprobe: Eine gewöhnliche
+            // Rechnung nennt sehr wohl eines.
+            val gedeckt =
+                testInvoice(
+                    type = InvoiceType.FINAL,
+                    items = listOf(testItem(quantity = "1", unitPrice = "4000.00")),
+                    prepayments = listOf(testPrepayment()),
+                )
+            wert(TemplateValue.ZAHLUNGSZIEL, gedeckt) shouldBe ""
+            wert(TemplateValue.ZAHLUNGSZIEL) shouldBe "28.~August 2026"
             // Ebenso wenig ein Konto: Wer nichts zu zahlen hat, bekommt keines
             // genannt (#94). Die IBAN in der Fußzeile bleibt.
-            tex shouldNotContain "\\bankblock{"
+            wert(TemplateValue.BANKVERBINDUNG, gedeckt) shouldBe ""
         }
 
         test("eine gewöhnliche Rechnung bekommt keine Absetzung") {
@@ -445,8 +520,8 @@ class InvoiceRendererTest : FunSpec({
         test("das Zahlungsziel im Kopf bleibt, wie es ist") {
             // Kein Datum steht doppelt: Jede Skontofrist endet vor dem
             // Zahlungsziel, das SKONTOFRIST_NICHT_VOR_ZAHLUNGSZIEL hält.
-            mitSkonto(SkontoTier(rate = Percent("2"), days = 7)) shouldContain
-                "Zahlbar ohne Abzug bis 28.~August 2026"
+            wert(TemplateValue.ZAHLUNGSZIEL, testInvoice(skonto = listOf(SkontoTier(rate = Percent("2"), days = 7)))) shouldBe
+                "28.~August 2026"
         }
 
         test("ohne Skonto kein Satz") {
@@ -491,44 +566,44 @@ class InvoiceRendererTest : FunSpec({
         }
 
         test("die USt-IdNr. des Kunden steht unter seiner Anschrift, wenn er eine hat") {
-            // §14a UStG. Geprüft wird der Aufruf samt Nummer: Die Fußzeile trägt
-            // ohnehin die USt-IdNr. des Rechnungsstellers, das Wort allein stünde
-            // also immer da.
+            // §14a UStG. Wo sie steht, entscheidet die Vorlage; hier nur, ob.
             val kundenId = VatId("ATU12345678")
 
-            render(testInvoice(customerVatId = kundenId)) shouldContain "\\ustidtrenner{}USt-IdNr. ${kundenId.formatted()}"
-            render(testInvoice()) shouldNotContain "\\ustidtrenner{}"
+            wert(TemplateValue.KUNDE_USTID, testInvoice(customerVatId = kundenId)) shouldBe kundenId.formatted()
+            wert(TemplateValue.KUNDE_USTID) shouldBe ""
         }
 
-        test("der Inhaber steht im Briefkopf nur, wenn es keine Geschäftsführung gibt") {
-            // Unter der Grußformel steht er immer (<<INHABER>>), deshalb wird die
-            // Zeile des Briefkopfs selbst verglichen.
-            val stammdaten = config.copy(ownerName = "Ina Inhaberin")
-
-            fun briefkopf(tex: String) = tex.lines().first { it.contains("Muster IT-Consulting}") }
-
-            val ohne = render(testInvoice(), stammdaten)
-            briefkopf(ohne) shouldContain "}\\kopfperson{Ina Inhaberin}"
-            ohne shouldNotContain "Geschäftsführung"
-
-            val mit = render(testInvoice(), stammdaten.copy(managingDirector = "Gero Geschäftsführer"))
-            briefkopf(mit) shouldNotContain "Ina Inhaberin"
-            mit shouldContain "Geschäftsführung\\zeilenwechsel{}Gero Geschäftsführer"
-        }
-
-        test("Telefon, Registergericht und Referenz stehen nur da, wenn sie angegeben sind") {
-            val ohne = render(testInvoice())
-            ohne shouldNotContain "Tel."
-            ohne shouldNotContain "Registergericht"
-            ohne shouldNotContain "Ihre Referenz"
+        test("Geschäftsführung, Telefon, Registergericht und Referenz sind leer, wenn sie fehlen") {
+            // Die Beschriftungen stehen seit #188 in der Vorlage, ebenso die
+            // Regel "die Person im Kopf nur ohne Geschäftsführung". Hier bleibt
+            // die Frage, ob der Renderer eine fehlende Angabe leer liefert und
+            // eine vorhandene so, wie sie in der Eingabe steht.
+            wert(TemplateValue.GESCHAEFTSFUEHRUNG) shouldBe ""
+            wert(TemplateValue.TELEFON) shouldBe ""
+            wert(TemplateValue.REGISTERGERICHT) shouldBe ""
+            wert(TemplateValue.REGISTERNUMMER) shouldBe ""
+            wert(TemplateValue.KUNDENREFERENZ) shouldBe ""
 
             val basis = testInvoice()
             val mitReferenz = basis.copy(customer = basis.customer.copy(buyerReference = "Bestellung 4711"))
-            val stammdaten = config.copy(phone = "+49 931 000000", registerCourt = "Würzburg", registerNumber = "HRB 1")
-            val mit = render(mitReferenz, stammdaten)
-            mit shouldContain "Tel. +49 931 000000"
-            mit shouldContain "Registergericht Würzburg, HRB 1"
-            mit shouldContain "Ihre Referenz: Bestellung 4711"
+            val stammdaten =
+                config.copy(
+                    managingDirector = "Gero Geschäftsführer",
+                    phone = "+49 931 000000",
+                    registerCourt = "Würzburg",
+                    registerNumber = "HRB 1",
+                )
+            wert(TemplateValue.GESCHAEFTSFUEHRUNG, mitReferenz, stammdaten) shouldBe "Gero Geschäftsführer"
+            wert(TemplateValue.TELEFON, mitReferenz, stammdaten) shouldBe "+49 931 000000"
+            wert(TemplateValue.REGISTERGERICHT, mitReferenz, stammdaten) shouldBe "Würzburg"
+            wert(TemplateValue.REGISTERNUMMER, mitReferenz, stammdaten) shouldBe "HRB 1"
+            wert(TemplateValue.KUNDENREFERENZ, mitReferenz, stammdaten) shouldBe "Bestellung 4711"
+        }
+
+        test("die Angaben der Stammdaten kommen maskiert") {
+            // Einzeln statt als fertige Zeile, aber genauso maskiert: Ein & in
+            // der Firmierung zerlegte sonst den Fuß.
+            wert(TemplateValue.FIRMA, stammdaten = config.copy(companyName = "Meier & Söhne")) shouldBe "Meier \\& Söhne"
         }
     }
 

@@ -1,8 +1,13 @@
 %% Rechnungsvorlage – wird vom InvoiceRenderer gefüllt.
-%% Platzhalter haben die Form <<...>> und werden vollständig ersetzt.
-%% (In diesem Kommentar bewusst mit Punkten statt Großbuchstaben: Die Namen
-%% werden nur in Versalien geschrieben, und InvoiceRenderer.fillIn bricht ab,
-%% wenn nach dem Ersetzen noch einer dieser Namen dasteht.)
+%% Platzhalter haben die Form <<...>> und werden vollständig ersetzt. Welche es
+%% gibt, zählt TemplateValue auf. Die Vorlage muss nicht jeden setzen, aber
+%% jeden, der an Rechnungsart oder Rechnung hängt (#188).
+%%
+%% Jede einzelne Angabe kommt als eigener Platzhalter und darf leer sein. Ob sie
+%% dasteht, entscheidet der Renderer, indem er sie leer lässt oder nicht; wo und
+%% mit welcher Beschriftung, entscheidet diese Vorlage. Sie fragt dafür nur
+%% \ifblank und nichts sonst: Was an der Rechnungsart hängt, soll nicht in
+%% jedem Design neu entschieden werden, ohne Compiler.
 %%
 %% Gestaltungsprinzip: EIN Blickfang (der Titelbalken), sonst ruhiger Textfluss.
 %% Linien gibt es nur dort, wo sie Zahlen gliedern – nicht als Seitenraster.
@@ -23,6 +28,7 @@
 \usepackage{booktabs}  %% \midrule bringt die vertikalen Abstände selbst mit
 \usepackage{tabularx}
 \usepackage{array}
+\usepackage{etoolbox}  %% \ifblank für die Angaben, die leer sein dürfen
 
 %% Dieselbe Schrift wie im Lebenslauf – dadurch passen die Dokumente zusammen.
 %%
@@ -106,14 +112,15 @@
 %% Die Zeilenwechsel, die diese Abstände tragen (#76). Der Renderer ruft nur das
 %% Makro auf und kennt die Länge nicht. Vorher schrieb er \\[\positionsabstand]
 %% selbst, und ein vertippter Längenname fiel erst LuaLaTeX auf – ein Makro prüft
-%% das Setzen, eine Länge nicht.
+%% das Setzen, eine Länge nicht. \blocktrenner und \ustidtrenner ruft seit #188
+%% nur noch diese Vorlage selbst auf.
 \newcommand{\positionstrenner}{\\[\positionsabstand]}
 \newcommand{\summentrenner}{\\[\summenabstand]}
 \newcommand{\blocktrenner}{\\[\blockabstand]}
 \newcommand{\ustidtrenner}{\\[\ustidabstand]}
 
-%% Der schlichte Zeilenwechsel ohne Abstand: zwischen den Zeilen von Anschrift,
-%% Kontakt, Bankverbindung, Steuerhinweisen und dem Block oben rechts (#147).
+%% Der schlichte Zeilenwechsel ohne Abstand: zwischen den Zeilen der Anschrift,
+%% der Steuerhinweise und im Briefkopf (#147).
 %% Eines für alle Blöcke, solange es ein Design gibt – teilt ein zweites sie
 %% auf, kostet das einen Eintrag in TemplateMacro.
 %%
@@ -121,10 +128,18 @@
 %% nächste Zeile: Beginnt sie mit "[", läse \\ sie sonst als Abstandsangabe.
 \newcommand{\zeilenwechsel}{\\}
 
-%% Die Person unter der Firmierung im Briefkopf (#147). Ob sie dasteht,
-%% entscheidet der Renderer; wo und in welcher Zeile, diese Vorlage. Das {}
-%% hinter \\ aus demselben Grund wie beim Aufruf von \zeilenwechsel.
+%% Die Person unter der Firmierung im Briefkopf (#147). Das {} hinter \\ aus
+%% demselben Grund wie beim Aufruf von \zeilenwechsel.
 \newcommand{\kopfperson}[1]{\\{}#1}
+
+%% Eine Zeile im Block oben rechts: Beschriftung und Wert. Ist der Wert leer,
+%% entfällt die ganze Zeile, samt Beschriftung – sonst stünde auf einer
+%% Stornorechnung "Zahlbar ohne Abzug bis" ohne Datum.
+%%
+%% Jede Zeile beendet sich selbst mit \par. Das ist, was \\ in einem Block mit
+%% \raggedleft ohnehin tut (latex.ltx, \@centercr); ein \\ hinter der letzten
+%% Zeile ließe dagegen eine leere Zeile zurück.
+\newcommand{\kopfangabe}[2]{\ifblank{#2}{}{#1 #2\par}}
 
 %% Diese Angabe bricht nicht um. Im schmalen Block oben rechts bräche
 %% "Juni bis Oktober 2026" sonst hinter dem "bis" und läse sich wie zwei Angaben.
@@ -153,9 +168,14 @@
 %% Die Bankverbindung mitsamt ihrer Überschrift. Als Makro und nicht als fester
 %% Text, weil sie nur auf Dokumenten steht, die zur Zahlung auffordern: Eine
 %% Stornorechnung kündigt eine Erstattung an, und eine Überschrift ohne Konto
-%% darunter wäre schlimmer als keine. Der Abstand darüber gehört deshalb ins
-%% Makro, wie bei \hinweisabsatz.
-\newcommand{\bankblock}[1]{\vspace{9mm}\noindent{\bfseries Bankverbindung}\\[1.5mm]#1}
+%% darunter wäre schlimmer als keine. Ob es dasteht, entscheidet der Renderer,
+%% indem er es aufruft oder nicht; was darin steht, diese Vorlage. Der Abstand
+%% darüber gehört deshalb ins Makro, wie bei \hinweisabsatz.
+\newcommand{\bankblock}{\vspace{9mm}\noindent{\bfseries Bankverbindung}\\[1.5mm]%
+  Kontoinhaber: <<KONTOINHABER>>\\
+  Institut: <<INSTITUT>>\\
+  IBAN: <<IBAN>>\\
+  BIC: <<BIC>>}
 
 %% Die Tabelle der abgesetzten Abschläge: links die Rechnung, rechts der Betrag.
 %% Dieselbe Spaltenaufteilung wie beim Summenblock, nur über die volle Breite –
@@ -175,7 +195,10 @@
 %% Eine Zeile der Positionstabelle. Damit steht die Zahl der Spalten nur noch
 %% hier: Vorher zählte die Vorlage fünf und der Renderer verband fünf Zellen mit
 %% kaufmännischem Und, ohne dass etwas die beiden Zahlen verglich.
-\newcommand{\positionszeile}[5]{#1 & #2 & #3 & #4 & #5}
+%%
+%% Das erste Argument ist die laufende Nummer der Position. Dieses Design setzt
+%% sie nicht.
+\newcommand{\positionszeile}[6]{#2 & #3 & #4 & #5 & #6}
 
 %% Eine Zeile im Summen- oder Absetzungsblock: Bezeichnung links, Betrag rechts.
 \newcommand{\summenzeile}[2]{#1 & #2}
@@ -194,9 +217,16 @@
 %% Alles rechtsbündig in einem Block, wie auf der bisherigen Rechnung: die
 %% Firmierung fett, darunter Anschrift und Kontakt in derselben Schriftgröße.
 %% Links bleibt frei – der Balken weiter unten ist der einzige Blickfang.
+%%
+%% Die Person steht unter der Firmierung nur, wenn es keine Geschäftsführung
+%% gibt: Die steht rechts neben dem Empfänger, und bei einer UG sind beide
+%% meist dieselbe Person. Für Einzelunternehmen bleibt der Name hier stehen,
+%% §14 Abs. 4 Nr. 1 UStG verlangt ihn. Die Webseite steht bewusst nicht im
+%% Kopf – sie wiederholte nur die Domain der E-Mail. Die E-Mail gehört hierher:
+%% Rückfragen zu einer Rechnung kommen meist schriftlich.
 {\raggedleft\small\color{gedaempft}
-  {\bfseries\color{haupttext}<<FIRMA>>}<<KOPF_PERSON>>\\
-  <<ABSENDER_KONTAKT>>\par}
+  {\bfseries\color{haupttext}<<FIRMA>>}\ifblank{<<GESCHAEFTSFUEHRUNG>>}{\kopfperson{<<INHABER>>}}{}\\
+  <<STRASSE>> · <<PLZ>> <<ORT>>\ifblank{<<TELEFON>>}{}{\zeilenwechsel{}Tel. <<TELEFON>>}\zeilenwechsel{}<<EMAIL>>\par}
 
 \vspace{18mm}
 
@@ -205,13 +235,31 @@
 %% Fensterumschlag. Rechts daneben die Vertretung und die Angaben zur
 %% Rechnung. 0.44 der Breite = 72,6 mm; nachgemessen braucht die längste
 %% Zeile ("Leistungszeitraum: 01.07.2026 – 31.08.2026") 69,8 mm.
+%%
+%% Die USt-IdNr. des Kunden unter seiner Anschrift (BT-48): Bei Reverse Charge
+%% und innergemeinschaftlicher Lieferung verlangt §14a UStG die USt-IdNr. beider
+%% Seiten, die eigene steht im Fuß. Sie hängt ohne Leerraum an der Anschrift,
+%% sonst stünde ohne sie ein Leerzeichen am Ende des Blocks.
 \begin{minipage}[t]{0.52\linewidth}\raggedright
-  <<EMPFAENGER>>
+  <<EMPFAENGER>>\ifblank{<<KUNDE_USTID>>}{}{\ustidtrenner{}USt-IdNr. <<KUNDE_USTID>>}
 \end{minipage}%
 \hfill
+%% Die Geschäftsführung steht hier und nicht im Fuß, sonst bräche die erste
+%% Fußzeile um. "Geschäftsführung" statt "Geschäftsführer": Die Bezeichnung
+%% steht neben einem Namen, dessen Geschlecht die Stammdaten nicht kennen.
+%%
+%% Nummer und Datum der Rechnung stehen im Balken, nicht hier. Die Beschriftung
+%% des Zeitraums kommt vom Renderer, weil sie an der Rechnungsart hängt
+%% ("Voraussichtlicher Leistungszeitraum", UStAE 14.8). Der Zeitraum bricht
+%% nicht um: Im schmalen Block bräche "Juni bis Oktober 2026" sonst hinter dem
+%% "bis" und läse sich wie zwei Angaben.
 \begin{minipage}[t]{0.44\linewidth}
   \raggedleft\small\color{gedaempft}
-  <<EMPFAENGER_RECHTS>>
+  \ifblank{<<GESCHAEFTSFUEHRUNG>>}{}{Geschäftsführung\\<<GESCHAEFTSFUEHRUNG>>\blocktrenner{}}
+  \kopfangabe{<<ZEITRAUM_BESCHRIFTUNG>>:}{\zusammen{<<LEISTUNGSZEITRAUM>>}}
+  \kopfangabe{Abschlag vereinnahmt am}{<<VEREINNAHMT_AM>>}
+  \kopfangabe{Ihre Referenz:}{<<KUNDENREFERENZ>>}
+  \kopfangabe{Zahlbar ohne Abzug bis}{<<ZAHLUNGSZIEL>>}
 \end{minipage}
 
 \vspace{14mm}
@@ -302,8 +350,12 @@ Mit freundlichen Grüßen\\[7mm]
 %% dann die steuerlichen und die Bankverbindung.
 %% Beide Zeilen passen in den Satzspiegel (nachgemessen 152 mm bzw. 138 mm bei
 %% 165 mm Breite), deshalb ohne den früheren Trick mit negativem \hspace.
+%%
+%% Bewusst OHNE Steuernummer: §14 Abs. 4 Nr. 2 UStG verlangt die Steuernummer
+%% ODER die USt-IdNr., nicht beides. Mit beiden wurde die zweite Zeile 178 mm
+%% breit und passte nicht mehr in die 165 mm Textbreite.
 {\centering\scriptsize\color{gedaempft}
-<<FUSSZEILE_OBEN>>\\
-<<FUSSZEILE_UNTEN>>\par}
+<<FIRMA>> · <<STRASSE>>, <<PLZ>> <<ORT>>\ifblank{<<REGISTERGERICHT>>}{}{ · Registergericht <<REGISTERGERICHT>>\ifblank{<<REGISTERNUMMER>>}{}{, <<REGISTERNUMMER>>}}\\
+USt-IdNr. <<USTID>> · <<INSTITUT>> · BIC <<BIC>> · IBAN <<IBAN>>\par}
 
 \end{document}
