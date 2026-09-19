@@ -582,6 +582,13 @@ class InvoiceRendererTest : FunSpec({
                 """Beispiel Software GmbH\zeilenwechsel{}Industriestraße 1\zeilenwechsel{}90402 Nürnberg"""
         }
 
+        test("die Kundennummer kommt maskiert, und ohne sie ist der Wert leer") {
+            // BT-46 (#190). Leer heißt: balken lässt die Zeile samt "Kundennr."
+            // weg. Das & zeigt, dass sie wie jeder Freitext maskiert wird.
+            wert(TemplateValue.KUNDENNUMMER, testInvoice(buyerIdentifier = "K-17 & Co")) shouldBe "K-17 \\& Co"
+            wert(TemplateValue.KUNDENNUMMER) shouldBe ""
+        }
+
         test("Geschäftsführung, Telefon, Registergericht und Referenz sind leer, wenn sie fehlen") {
             // Die Beschriftungen stehen seit #188 in der Vorlage, ebenso die
             // Regel "die Person im Kopf nur ohne Geschäftsführung". Hier bleibt

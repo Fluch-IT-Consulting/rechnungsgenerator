@@ -3,11 +3,13 @@ package de.fluchitconsulting.rechnungsgenerator.rules
 import de.fluchitconsulting.rechnungsgenerator.calculation.CalculatedInvoice
 
 /**
- * Die Freitextangaben zum Kunden (#196).
+ * Die Freitextangaben zum Kunden: Ansprechpartner (#196) und Kundennummer
+ * (#190).
  *
  * Geprüft wird nur, was jeder Freitext erfüllen muss: Steht der Schlüssel da,
- * nennt er etwas, und zwar ohne Leerraum am Rand. Ein Muster gibt es nicht –
- * wie ein Kunde seine Abteilungen nennt, weiß nur er.
+ * nennt er etwas, und zwar ohne Leerraum am Rand. Ein Muster gibt es nicht:
+ * Kundennummern vergibt jeder Rechnungssteller anders, und wie ein Kunde seine
+ * Abteilungen nennt, weiß nur er.
  *
  * Leerraum am Rand sieht man im PDF nicht, aber er stünde später wörtlich im
  * ZUGFeRD-XML. Tragen kann ihn ohnehin nur ein gequoteter YAML-Wert, und dann
@@ -15,14 +17,25 @@ import de.fluchitconsulting.rechnungsgenerator.calculation.CalculatedInvoice
  * `RECHNUNGSNUMMER_MIT_LEERRAUM`.
  */
 internal object CustomerRules {
-    fun check(calculated: CalculatedInvoice): List<Finding> =
-        freeText(
-            calculated.invoice.customer.contactPoint,
-            key = "kunde: ansprechpartner",
-            designation = "Der Ansprechpartner",
-            blank = Rule.ANSPRECHPARTNER_LEER,
-            padded = Rule.ANSPRECHPARTNER_MIT_LEERRAUM,
-        )
+    fun check(calculated: CalculatedInvoice): List<Finding> {
+        val customer = calculated.invoice.customer
+        return listOf(
+            freeText(
+                customer.contactPoint,
+                key = "kunde: ansprechpartner",
+                designation = "Der Ansprechpartner",
+                blank = Rule.ANSPRECHPARTNER_LEER,
+                padded = Rule.ANSPRECHPARTNER_MIT_LEERRAUM,
+            ),
+            freeText(
+                customer.buyerIdentifier,
+                key = "kunde: kundennummer",
+                designation = "Die Kundennummer",
+                blank = Rule.KUNDENNUMMER_LEER,
+                padded = Rule.KUNDENNUMMER_MIT_LEERRAUM,
+            ),
+        ).flatten()
+    }
 
     /**
      * Ein optionaler Freitext: fehlt er, ist nichts zu prüfen. Leer ist etwas

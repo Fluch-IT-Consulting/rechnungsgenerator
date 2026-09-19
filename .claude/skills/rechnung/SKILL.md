@@ -86,6 +86,9 @@ Was du dir selbst beschaffen kannst, solltest du auch selbst beschaffen:
 - **Rechnungsdatum**: heute, sofern nichts anderes gesagt wird.
 - **Leistungszeitraum**: Wird ein Monat genannt ("August"), nimm den ganzen
   Monat. Frage nach, wenn gar kein Zeitraum genannt wurde.
+- **Kundennummer**: Steht in der letzten Rechnung an denselben Kunden, dann
+  übernimm sie. Sonst bleibt das Feld weg – erfinde keine, und frag nur, wenn
+  der Nutzer von einer Kundennummer spricht.
 - **Ansprechpartner**: Nennt die letzte Rechnung an denselben Kunden einen,
   übernimm ihn. Sonst bleibt das Feld weg, frag nicht eigens danach. Er steht
   wörtlich unter dem Kundennamen: Das Programm setzt weder "z. Hd." noch eine
@@ -146,6 +149,7 @@ leistungszeitraum:
 kunde:
   name: Beispiel Software GmbH
   ansprechpartner: Herrn Max Beispiel   # optional, Person oder Abteilung, wörtlich
+  kundennummer: K-17                    # optional, Text – führende Nullen bleiben nur gequotet
   anschrift:
     strasse: Industriestraße 1
     plz: "90402"                    # Text, keine Zahl – führende Nullen bleiben

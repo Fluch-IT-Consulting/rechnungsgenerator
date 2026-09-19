@@ -88,6 +88,7 @@ fun testInvoice(
     cancelled: CancelledInvoice? = null,
     skonto: List<SkontoTier> = emptyList(),
     contactPoint: String? = null,
+    buyerIdentifier: String? = null,
 ) = Invoice(
     number = number,
     issueDate = LocalDate.of(2026, 8, 14),
@@ -98,6 +99,7 @@ fun testInvoice(
         Customer(
             name = "Beispiel Software GmbH",
             contactPoint = contactPoint,
+            buyerIdentifier = buyerIdentifier,
             address = Address(street = "Industriestraße 1", postalCode = "90402", city = "Nürnberg"),
             vatId = customerVatId,
         ),
