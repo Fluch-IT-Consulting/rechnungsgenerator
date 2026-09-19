@@ -112,6 +112,7 @@ enum class Rule(val severity: Severity) {
     // Positionen und Steuerkategorie
     KEINE_POSITION(Severity.ABORT),
     EINZELPREIS_NEGATIV(Severity.ABORT),
+    RABATT_AUSSERHALB_BEREICH(Severity.ABORT),
     SATZ_MUSS_NULL_SEIN(Severity.ABORT),
     REGELSATZ_MIT_NULL(Severity.ABORT),
     BEFREIUNGSGRUND_UNZULAESSIG(Severity.ABORT),
