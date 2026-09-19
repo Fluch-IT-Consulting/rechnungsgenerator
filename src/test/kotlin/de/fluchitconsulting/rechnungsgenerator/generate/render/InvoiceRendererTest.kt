@@ -151,30 +151,14 @@ class InvoiceRendererTest : FunSpec({
     }
 
     /**
-     * Dasselbe für die anderen Arten. Sie tragen das meiste Markup –
-     * Absetzungstabelle, Makros, Pflichtsatz, der Bezug auf die
-     * Ursprungsrechnung –, also gerade das, was ein Umbau an der Maskierung
-     * durcheinanderbringen könnte.
-     */
-    test("die übrigen Rechnungsarten werden gesetzt wie festgehalten") {
-        val seller = YamlLoader.parseSellerConfig(resource("stammdaten.yaml"))
-
-        listOf("abschlagsrechnung", "schlussrechnung", "stornorechnung").forEach { name ->
-            val invoice = YamlLoader.parseInvoice(resource("$name.yaml"))
-
-            withClue(name) {
-                InvoiceRenderer.render(CalculatedInvoice(invoice, seller).accepted()).sources.tex shouldBe
-                    resource("$name-erwartet.tex")
-            }
-        }
-    }
-
-    /**
      * Je Art der Inhalt, je Design das Satzbild (#204). Die Werte hängen nicht
      * am Design, eine Datei gilt also für jedes; den Volltext sichert je Design
      * allein die gewöhnliche Rechnung. Die übrigen Arten tragen ihr Markup –
      * Absetzungstabelle, Pflichtsatz, Bezug – als Makroaufrufe in den Werten,
      * und wie ein Design diese Makros definiert, steht in dessen Volltext.
+     * Eine Änderung am Satzbild berührt so eine Datei je Design statt eine je
+     * Art, und wird der Volltext rot, zeigt die Inhalts-Datei, ob sich der
+     * Inhalt geändert hat oder nur das Satzbild.
      *
      * Ohne Logo: Es ist ein Schalter und keine Angabe der Rechnungsart; das
      * Logo sichert die Volltext-Datei von raster.
@@ -198,9 +182,9 @@ class InvoiceRendererTest : FunSpec({
 
     /**
      * Das Satzbild von raster, gesichert an der Rechnung (ADR-0011). Die
-     * übrigen Arten schützt in raster nur das Netz aus #187: Die fachlichen
-     * Sätze sind dieselben wie in balken und dort schon gesichert, und eine
-     * Vergleichsdatei je Design und Art änderte sich mit jeder Vorlage.
+     * übrigen Arten sichern hier wie in balken ihre Inhalts-Dateien und das
+     * Netz aus #187; eine Vergleichsdatei je Design und Art änderte sich mit
+     * jeder Vorlage.
      */
     test("eine Rechnung im Design raster wird gesetzt wie festgehalten") {
         // Mit Logo (#198): Das zeigt raster, und ohne Logo stünde in der
