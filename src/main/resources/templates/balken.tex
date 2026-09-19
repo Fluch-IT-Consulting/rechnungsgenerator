@@ -124,8 +124,11 @@
 %% Eines für alle Blöcke, solange es ein Design gibt – teilt ein zweites sie
 %% auf, kostet das einen Eintrag in TemplateMacro.
 %%
-%% Der Renderer ruft es als \zeilenwechsel{} auf, und das leere Paar schützt die
-%% nächste Zeile: Beginnt sie mit "[", läse \\ sie sonst als Abstandsangabe.
+%% Aufgerufen wird es als \zeilenwechsel{}, vom Renderer wie von dieser Vorlage,
+%% und das leere Paar schützt die nächste Zeile: Beginnt sie mit "[", läse \\
+%% sie sonst als Abstandsangabe. Ein rohes \\ steht deshalb nur vor festem
+%% Text, nie vor einem Platzhalter – auch nicht über ein Zeilenende hinweg,
+%% denn \\ überliest den Leerraum bis zum nächsten Zeichen.
 \newcommand{\zeilenwechsel}{\\}
 
 %% Die Person unter der Firmierung im Briefkopf (#147). Das {} hinter \\ aus
@@ -225,7 +228,7 @@
 %% Kopf – sie wiederholte nur die Domain der E-Mail. Die E-Mail gehört hierher:
 %% Rückfragen zu einer Rechnung kommen meist schriftlich.
 {\raggedleft\small\color{gedaempft}
-  {\bfseries\color{haupttext}<<FIRMA>>}\ifblank{<<GESCHAEFTSFUEHRUNG>>}{\kopfperson{<<INHABER>>}}{}\\
+  {\bfseries\color{haupttext}<<FIRMA>>}\ifblank{<<GESCHAEFTSFUEHRUNG>>}{\kopfperson{<<INHABER>>}}{}\zeilenwechsel{}%
   <<STRASSE>> · <<PLZ>> <<ORT>>\ifblank{<<TELEFON>>}{}{\zeilenwechsel{}Tel. <<TELEFON>>}\zeilenwechsel{}<<EMAIL>>\par}
 
 \vspace{18mm}
@@ -256,7 +259,7 @@
 %% "bis" und läse sich wie zwei Angaben.
 \begin{minipage}[t]{0.44\linewidth}
   \raggedleft\small\color{gedaempft}
-  \ifblank{<<GESCHAEFTSFUEHRUNG>>}{}{Geschäftsführung\\<<GESCHAEFTSFUEHRUNG>>\blocktrenner{}}
+  \ifblank{<<GESCHAEFTSFUEHRUNG>>}{}{Geschäftsführung\zeilenwechsel{}<<GESCHAEFTSFUEHRUNG>>\blocktrenner{}}
   \kopfangabe{Kundennr.:}{<<KUNDENNUMMER>>}
   \kopfangabe{Unsere Auftragsnr.:}{<<AUFTRAGSNUMMER>>}
   \kopfangabe{<<ZEITRAUM_BESCHRIFTUNG>>:}{\zusammen{<<LEISTUNGSZEITRAUM>>}}
