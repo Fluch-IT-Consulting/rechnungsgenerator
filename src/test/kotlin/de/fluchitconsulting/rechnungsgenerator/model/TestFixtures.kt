@@ -111,3 +111,19 @@ fun testInvoice(
     skonto = skonto,
     salesOrderReference = salesOrderReference,
 )
+
+/**
+ * Die Beispielrechnung je Rechnungsart, als Name ohne Endung: `rechnung` steht
+ * für `rechnung.yaml` unter `src/test/resources` und für die Dateien, die davon
+ * abgeleitet sind. Einmal hier, damit das Pflichtangaben-Netz und die
+ * Inhalts-Dateien des Renderers dieselben Beispiele meinen (#204). Dass keine
+ * Art fehlt, prüft `InvoiceRendererTest`, der auch ohne die Werkzeuge läuft.
+ */
+val exampleInvoices =
+    mapOf(
+        InvoiceType.INVOICE to "rechnung",
+        InvoiceType.PARTIAL to "teilrechnung",
+        InvoiceType.PREPAYMENT to "abschlagsrechnung",
+        InvoiceType.FINAL to "schlussrechnung",
+        InvoiceType.CANCELLATION to "stornorechnung",
+    )

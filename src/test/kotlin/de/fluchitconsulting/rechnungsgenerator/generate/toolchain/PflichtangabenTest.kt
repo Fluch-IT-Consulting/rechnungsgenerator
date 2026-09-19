@@ -2,7 +2,7 @@ package de.fluchitconsulting.rechnungsgenerator.generate.toolchain
 
 import de.fluchitconsulting.rechnungsgenerator.calculation.CalculatedInvoice
 import de.fluchitconsulting.rechnungsgenerator.model.YamlLoader
-import de.fluchitconsulting.rechnungsgenerator.values.InvoiceType
+import de.fluchitconsulting.rechnungsgenerator.model.exampleInvoices
 import de.fluchitconsulting.rechnungsgenerator.values.Money
 import de.fluchitconsulting.rechnungsgenerator.values.Percent
 import io.kotest.assertions.assertSoftly
@@ -112,20 +112,6 @@ class PflichtangabenTest : FunSpec({
                 .map { it.label }
     }
 
-    // Eine Datei je Rechnungsart. Dass keine fehlt, prüft der erste Test.
-    val arten =
-        mapOf(
-            InvoiceType.INVOICE to "rechnung",
-            InvoiceType.PARTIAL to "teilrechnung",
-            InvoiceType.PREPAYMENT to "abschlagsrechnung",
-            InvoiceType.FINAL to "schlussrechnung",
-            InvoiceType.CANCELLATION to "stornorechnung",
-        )
-
-    test("jede Rechnungsart hat eine Beispieldatei") {
-        arten.keys shouldBe InvoiceType.entries.toSet()
-    }
-
     // Setzt eine Beispieldatei mit den echten Werkzeugen und prüft das Blatt.
     fun setzeUndPruefe(
         datei: String,
@@ -145,7 +131,7 @@ class PflichtangabenTest : FunSpec({
     }
 
     for (design in designs) {
-        for ((art, datei) in arten) {
+        for ((art, datei) in exampleInvoices) {
             test("$datei im Design ${design.name}: gültiges PDF/A-1b mit allen Pflichtangaben") {
                 val calculated = setzeUndPruefe(datei, design, design.stammdaten, zielname = "${design.name}-$datei")
                 calculated.invoice.type shouldBe art
