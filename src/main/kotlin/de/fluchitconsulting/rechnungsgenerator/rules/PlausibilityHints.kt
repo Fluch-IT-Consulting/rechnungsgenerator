@@ -1,10 +1,12 @@
 package de.fluchitconsulting.rechnungsgenerator.rules
 
 import de.fluchitconsulting.rechnungsgenerator.calculation.CalculatedInvoice
+import de.fluchitconsulting.rechnungsgenerator.values.InvoiceType
 
 /**
  * Hinweise, die den Lauf nicht abbrechen: Angaben, die zulässig sind, aber
- * selten gemeint. Die Hinweise zur Bestätigungsabfrage stehen bei ihr, in
+ * selten gemeint – eine Menge oder ein Gesamtbetrag von null, eine späte
+ * Rechnung. Die Hinweise zur Bestätigungsabfrage stehen bei ihr, in
  * [VatIdCheckRules].
  */
 internal object PlausibilityHints {
@@ -23,6 +25,27 @@ internal object PlausibilityHints {
                         ),
                     )
                 }
+            }
+
+            // Ein Dokument über null kann gewollt sein – eine Leistung, die ganz
+            // erlassen ist –, meist ist es aber ein vergessener Einzelpreis oder
+            // ein Rabatt von 100 statt 10 (#214). Die Abschlagsrechnung bricht
+            // dann ab (ABSCHLAGSRECHNUNG_OHNE_BETRAG), Schlussrechnung und Storno
+            // scheitern schon an ihren Regeln zum Betrag. Ein `when` ohne `else`,
+            // damit eine neue Art hier entscheidet (#121).
+            val hintsOnZero =
+                when (invoice.type) {
+                    InvoiceType.INVOICE, InvoiceType.PARTIAL -> true
+                    InvoiceType.PREPAYMENT, InvoiceType.FINAL, InvoiceType.CANCELLATION -> false
+                }
+            if (hintsOnZero && calculated.grossTotal.isZero()) {
+                add(
+                    Finding(
+                        Rule.GESAMTBETRAG_NULL,
+                        Subject.WholeInvoice,
+                        "Gesamtbetrag 0,00 € – das Dokument fordert nichts. Ist das gewollt?",
+                    ),
+                )
             }
 
             // §14 Abs. 2 UStG verlangt die Rechnung innerhalb von sechs Monaten nach
