@@ -84,7 +84,10 @@ CV/Web-Auftritt des Autors), Validierung über veraPDF.
   fragt dafür nur `\ifblank` aus etoolbox. Der Vorlage ist gleich, warum ein
   Wert leer ist. **Wiederholtes und fachliche Sätze** (Positionen, Summen,
   Absetzung, Pflichtsatz, Skonto, der Bankblock) kommen wie bisher als
-  Makroaufrufe oder gar nicht, und das "ob" liegt beim Renderer. Eine
+  Makroaufrufe oder gar nicht, und das "ob" liegt beim Renderer. Die Zeilen
+  des Summenblocks beschriftet seit #217 die Vorlage (`\nettozeile`,
+  `\steuerzeile`, `\gesamtzeile`), Kotlin liefert Satz und Beträge; die
+  Absetzung behält ihre Wörter, "Restbetrag" steht im Glossar. Eine
   Beschriftung kommt trotzdem aus Kotlin, `ZEITRAUM_BESCHRIFTUNG`: Ein Wortlaut,
   der eine fachliche Aussage trägt ("Voraussichtlicher Leistungszeitraum"),
   ist kein Satzbild. `EMPFAENGER` bleibt ein Block, weil die Landzeile an

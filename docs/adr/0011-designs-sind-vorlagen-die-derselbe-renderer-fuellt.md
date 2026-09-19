@@ -118,3 +118,22 @@ bringt genau eine Vergleichsdatei mit. Die übrigen Arten verlieren dafür in
 Pflichtsatz, Bezug – steht als Makroaufrufe in den Werten, und wie ein Design
 diese Makros definiert, steht wortgleich in dessen Volltext. Dass sie auf dem
 Blatt richtig erscheinen, prüft weiter allein das Netz aus #187.
+
+## Nachtrag vom 19.09.2026: Die Vorlage beschriftet die Summen
+
+`raster` sollte den Summenblock anders benennen als `balken`: "Zwischensumme
+(netto)" und "Umsatzsteuer 19 %" statt "Nettobetrag" und "zzgl. 19 % USt.".
+Das Vokabular aus #188 hatte dafür kein Wort, die Beschriftungen kamen fertig
+aus Kotlin. Also stellte sich die Frage aus #188 neu (#217).
+
+Die Antwort: Die Wörter sind Satzbild. Beide Fassungen sagen fachlich
+dasselbe, und die Regel "feste Texte gehören zum Design" gilt. Die Vorlage
+definiert drei Makros, `\nettozeile{betrag}`, `\steuerzeile{satz}{betrag}`
+und `\gesamtzeile{betrag}`, gebaut aus ihren eigenen `\summenzeile` und
+`\abschlusszeile`. Makros und keine Platzhalter für die Beschriftung, weil
+der Satz je Design an anderer Stelle im Wortlaut steht.
+
+Nicht mitgewandert ist die Absetzung der Schlussrechnung: "Restbetrag" ist ein
+Begriff aus dem Glossar, und die Zeile je Abschlag nennt Nummer, Datum und
+Vereinnahmung – ein Satz mit fachlicher Aussage. Ebenso hängt keine
+Beschriftung an der Rechnungsart; das bliebe eine Entscheidung je Design.
