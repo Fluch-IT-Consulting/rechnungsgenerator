@@ -201,8 +201,12 @@
 %% kaufmännischem Und, ohne dass etwas die beiden Zahlen verglich.
 %%
 %% Das erste Argument ist die laufende Nummer der Position. Dieses Design setzt
-%% sie nicht.
-\newcommand{\positionszeile}[6]{#2 & #3 & #4 & #5 & #6}
+%% sie nicht. Das sechste ist der Rabatt; seine Spalte steht nur, wenn eine
+%% Position einen hat (#213): \mitrabatt setzt sein Argument nur dann, R ist
+%% die Spalte oder nichts.
+\newcommand{\mitrabatt}[1]{\ifblank{<<RABATTSPALTE>>}{}{#1}}
+\ifblank{<<RABATTSPALTE>>}{\newcolumntype{R}{}}{\newcolumntype{R}{r}}
+\newcommand{\positionszeile}[7]{#2 & #3 & #4 & #5\mitrabatt{ & #6} & #7}
 
 %% Eine Zeile im Summen- oder Absetzungsblock: Bezeichnung links, Betrag rechts.
 \newcommand{\summenzeile}[2]{#1 & #2}
@@ -297,10 +301,10 @@
 \ifblank{<<EINLEITUNG>>}{}{\noindent <<EINLEITUNG>>\par\vspace{6mm}}
 
 %% --------------------------------------------------------------- Positionen
-\begin{tabularx}{\linewidth}{@{}>{\raggedright\arraybackslash}X r@{\hspace{1.5mm}}l r r@{}}
+\begin{tabularx}{\linewidth}{@{}>{\raggedright\arraybackslash}X r@{\hspace{1.5mm}}l r R r@{}}
   %% \mbox um jeden Spaltenkopf: In der X-Spalte ist der Inhalt sonst ein Absatz,
   %% dessen erste Zeile tiefer sitzt als die Grundlinie der r-/l-Spalten.
-  \mbox{\rubrik{Beschreibung}} & \mbox{\rubrik{Menge}} & & \mbox{\rubrik{Einzelpreis}} & \mbox{\rubrik{Betrag}} \\[1.5mm]
+  \mbox{\rubrik{Beschreibung}} & \mbox{\rubrik{Menge}} & & \mbox{\rubrik{Einzelpreis}}\mitrabatt{ & \mbox{\rubrik{Rabatt}}} & \mbox{\rubrik{Betrag}} \\[1.5mm]
   \midrule
 <<POSITIONEN>>
 \end{tabularx}

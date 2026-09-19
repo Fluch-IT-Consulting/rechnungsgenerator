@@ -298,7 +298,7 @@ class InvoiceRendererTest : FunSpec({
         // – die Summe stimmte, aber der Einzelpreis war gerundet.
         val tex = renderMit(testItem(quantity = "10000", unitPrice = "0.00001"))
 
-        tex shouldContain "{10.000}{Std.}{0,00001~€}{0,10~€}"
+        tex shouldContain "{10.000}{Std.}{0,00001~€}{}{0,10~€}"
     }
 
     context("Abschlagsrechnung") {

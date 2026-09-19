@@ -89,10 +89,15 @@
 \newcommand{\positionsdetail}[1]{\newline{\normalfont\small #1}}
 \newcommand{\absetzungsdetail}[1]{\newline{\small #1}}
 
-%% Eine Zeile der Positionstabelle, sechs Spalten wie das Gitter: laufende
-%% Nummer, Bezeichnung (fett, die Beschreibung darunter), Menge, Einheit,
-%% Einzelpreis, Gesamt.
-\newcommand{\positionszeile}[6]{#1 & \textbf{#2} & #3 & #4 & #5 & #6}
+%% Die Rabattspalte steht nur, wenn eine Position einen Rabatt hat (#213).
+%% \mitrabatt setzt sein Argument nur dann, R ist die Spalte oder nichts.
+\newcommand{\mitrabatt}[1]{\ifblank{<<RABATTSPALTE>>}{}{#1}}
+\ifblank{<<RABATTSPALTE>>}{\newcolumntype{R}{}}{\newcolumntype{R}{>{\raggedleft\arraybackslash}p{14mm}|}}
+
+%% Eine Zeile der Positionstabelle, Spalten wie das Gitter: laufende Nummer,
+%% Bezeichnung (fett, die Beschreibung darunter), Menge, Einheit, Einzelpreis,
+%% Rabatt, Gesamt.
+\newcommand{\positionszeile}[7]{#1 & \textbf{#2} & #3 & #4 & #5\mitrabatt{ & #6} & #7}
 
 \newcommand{\summenzeile}[2]{#1 & #2}
 
@@ -177,9 +182,9 @@
 
 %% --------------------------------------------------------------- Positionen
 \noindent
-\begin{tabularx}{\linewidth}{|>{\centering\arraybackslash}p{7mm}|>{\raggedright\arraybackslash}X|>{\raggedleft\arraybackslash}p{13mm}|>{\raggedright\arraybackslash}p{15mm}|>{\raggedleft\arraybackslash}p{22mm}|B|}
+\begin{tabularx}{\linewidth}{|>{\centering\arraybackslash}p{7mm}|>{\raggedright\arraybackslash}X|>{\raggedleft\arraybackslash}p{13mm}|>{\raggedright\arraybackslash}p{15mm}|>{\raggedleft\arraybackslash}p{22mm}|RB|}
   \hline
-  \textbf{Pos.} & \textbf{Bezeichnung} & \textbf{Menge} & \textbf{Einheit} & \textbf{Einzelpreis} & \textbf{Gesamt}\\
+  \textbf{Pos.} & \textbf{Bezeichnung} & \textbf{Menge} & \textbf{Einheit} & \textbf{Einzelpreis}\mitrabatt{ & \textbf{Rabatt}} & \textbf{Gesamt}\\
   \hline
 <<POSITIONEN>>\\
   \hline

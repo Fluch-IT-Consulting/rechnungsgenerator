@@ -31,10 +31,19 @@ internal object ItemBlocks {
                         GermanFormat.quantity(item.quantity),
                         item.unit.label.escapeLatex(),
                         GermanFormat.priceWithCurrency(item.unitPrice),
+                        item.discount?.let(GermanFormat::percent) ?: Latex.EMPTY,
                         GermanFormat.amountWithCurrency(line.net),
                     ),
                 )
             }.joinToLatex(rowSeparator(TemplateMacro.POSITIONSTRENNER))
+
+    /**
+     * Der Schalter für die Rabattspalte: nicht leer, sobald eine Position einen
+     * Rabatt hat. Welches Wort darin steht, ist gleich – die Vorlage fragt nur
+     * `\ifblank`.
+     */
+    fun discountColumn(calculatedInvoice: CalculatedInvoice): Latex =
+        if (calculatedInvoice.invoice.items.any { it.discount != null }) "rabatt".escapeLatex() else Latex.EMPTY
 
     /**
      * Die Beschreibungsspalte einer Position: Bezeichnung, darunter – falls
