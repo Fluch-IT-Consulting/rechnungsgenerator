@@ -147,6 +147,7 @@ enum class Rule(val severity: Severity) {
 
     // Beträge und Fristen der Rechnung
     GESAMTBETRAG_NEGATIV(Severity.ABORT),
+    ABSCHLAGSRECHNUNG_OHNE_BETRAG(Severity.ABORT),
     ZAHLUNGSZIEL_NEGATIV(Severity.ABORT),
 
     // Skonto (#183)

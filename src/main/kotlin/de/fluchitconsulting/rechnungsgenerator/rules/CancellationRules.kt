@@ -6,7 +6,8 @@ import de.fluchitconsulting.rechnungsgenerator.values.InvoiceType
 
 /**
  * Das Storno: sein Bezug auf die Ursprungsrechnung und das Vorzeichen des
- * Gesamtbetrags (ADR-0006).
+ * Gesamtbetrags (ADR-0006) – und mit ihm, welcher Gesamtbetrag zu welcher Art
+ * passt, auch null (#214).
  *
  * Ob ein Storno überhaupt einen Bezug trägt – und ein anderes Dokument keinen –,
  * prüft [InvoiceKindRules]: Ohne Bezug gibt es keine Stornorechnung als Typ
@@ -62,6 +63,11 @@ internal object CancellationRules {
      * Das Vorzeichen des Gesamtbetrags. Vor #47 schlug hier erst
      * RESTBETRAG_NEGATIV zu, mit einer Meldung über Abschläge, die eine
      * gewöhnliche Rechnung gar nicht hat.
+     *
+     * Null ist für die Abschlagsrechnung zu wenig (#214): Sie fordert eine
+     * Vorauszahlung, und über null stünde sie später als leerer Abschlag in der
+     * Schlussrechnung. Einer Rechnung über null gilt nur ein Hinweis
+     * (GESAMTBETRAG_NULL), sie kann gewollt sein.
      */
     private fun sign(calculated: CalculatedInvoice): List<Finding> {
         val invoice = calculated.invoice
@@ -81,20 +87,37 @@ internal object CancellationRules {
                     )
                 }
             }
-            InvoiceType.INVOICE, InvoiceType.PREPAYMENT, InvoiceType.FINAL, InvoiceType.PARTIAL -> {
-                if (!grossTotal.isNegative()) {
-                    emptyList()
-                } else {
+            InvoiceType.PREPAYMENT -> {
+                if (grossTotal.isZero()) {
                     listOf(
                         Finding(
-                            Rule.GESAMTBETRAG_NEGATIV,
+                            Rule.ABSCHLAGSRECHNUNG_OHNE_BETRAG,
                             Subject.WholeInvoice,
-                            "Der Gesamtbetrag wäre $grossTotal. Ein negativer Betrag gehört in eine Stornorechnung " +
-                                "(art: stornorechnung), nicht in eine ${invoice.type.documentName}.",
+                            "Der Gesamtbetrag ist 0.00. Eine Abschlagsrechnung über null fordert nichts und stünde " +
+                                "später als leerer Abschlag in der Schlussrechnung.",
                         ),
                     )
+                } else {
+                    notNegative(calculated)
                 }
             }
+            InvoiceType.INVOICE, InvoiceType.FINAL, InvoiceType.PARTIAL -> {
+                notNegative(calculated)
+            }
         }
+    }
+
+    /** Jede Art außer dem Storno: kein negativer Gesamtbetrag. */
+    private fun notNegative(calculated: CalculatedInvoice): List<Finding> {
+        val grossTotal = calculated.grossTotal
+        if (!grossTotal.isNegative()) return emptyList()
+        return listOf(
+            Finding(
+                Rule.GESAMTBETRAG_NEGATIV,
+                Subject.WholeInvoice,
+                "Der Gesamtbetrag wäre $grossTotal. Ein negativer Betrag gehört in eine Stornorechnung " +
+                    "(art: stornorechnung), nicht in eine ${calculated.invoice.type.documentName}.",
+            ),
+        )
     }
 }
