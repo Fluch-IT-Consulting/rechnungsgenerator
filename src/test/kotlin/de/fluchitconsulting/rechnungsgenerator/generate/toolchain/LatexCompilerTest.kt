@@ -1,6 +1,7 @@
 package de.fluchitconsulting.rechnungsgenerator.generate.toolchain
 
 import io.kotest.assertions.throwables.shouldThrow
+import io.kotest.assertions.withClue
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.ints.shouldBeLessThan
@@ -128,6 +129,19 @@ class LatexCompilerTest : FunSpec({
             }
             shouldThrow<IllegalArgumentException> {
                 setzen(FakeProcessRunner(erfolgreicherLauf()), files = mapOf("rechnung.tex" to logo))
+            }
+        }
+
+        test("die Namen der Verzeichnisse selbst und ein leerer Name werden abgelehnt") {
+            // Path.of("..").fileName ist wieder "..": Die Prüfung auf einen
+            // schlichten Namen allein ließe sie durch, und geschrieben würde
+            // ins Verzeichnis darüber oder auf das Arbeitsverzeichnis selbst.
+            listOf(".", "..", "", " ").forEach { name ->
+                withClue("'$name'") {
+                    shouldThrow<IllegalArgumentException> {
+                        setzen(FakeProcessRunner(erfolgreicherLauf()), files = mapOf(name to logo))
+                    }
+                }
             }
         }
     }
