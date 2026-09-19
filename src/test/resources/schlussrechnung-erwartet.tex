@@ -92,7 +92,7 @@
 \begin{document}
 
 {\raggedleft\small\color{gedaempft}
-  {\bfseries\color{haupttext}Muster IT-Consulting UG (haftungsbeschränkt)}\ifblank{Dr. Erika Musterfrau}{\kopfperson{Dr. Erika Musterfrau}}{}\\
+  {\bfseries\color{haupttext}Muster IT-Consulting UG (haftungsbeschränkt)}\ifblank{Dr. Erika Musterfrau}{\kopfperson{Dr. Erika Musterfrau}}{}\zeilenwechsel{}%
   Beispielweg 42 · 97070 Würzburg\ifblank{+49 931 1234567}{}{\zeilenwechsel{}Tel. +49 931 1234567}\zeilenwechsel{}rechnung@muster-it-consulting.example\par}
 
 \vspace{18mm}
@@ -103,7 +103,7 @@
 \hfill
 \begin{minipage}[t]{0.44\linewidth}
   \raggedleft\small\color{gedaempft}
-  \ifblank{Dr. Erika Musterfrau}{}{Geschäftsführung\\Dr. Erika Musterfrau\blocktrenner{}}
+  \ifblank{Dr. Erika Musterfrau}{}{Geschäftsführung\zeilenwechsel{}Dr. Erika Musterfrau\blocktrenner{}}
   \kopfangabe{Kundennr.:}{}
   \kopfangabe{Unsere Auftragsnr.:}{}
   \kopfangabe{Leistungszeitraum:}{\zusammen{01.06.2026\,–\,31.10.2026}}
