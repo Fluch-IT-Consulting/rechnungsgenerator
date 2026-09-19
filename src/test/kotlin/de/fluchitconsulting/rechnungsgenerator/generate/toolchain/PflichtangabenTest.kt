@@ -48,10 +48,14 @@ private data class Design(
  * mit den echten Werkzeugen, veraPDF bestätigt PDF/A-1b, und `pdftotext` liest
  * zurück, ob die Pflichtangaben auf dem Blatt stehen.
  *
- * `rechnung-erwartet.tex` und die anderen Vergleichsdateien schützen den
- * Wortlaut eines Designs. Dieser Test fragt etwas anderes: ob auf dem Blatt
- * steht, was dort stehen muss – §14 Abs. 4 und 5 UStG, §35a GmbHG, der
- * Pflichtsatz der Art. Deshalb kennt er keine Schreibweise eines Designs:
+ * Die Vergleichsdateien im `InvoiceRendererTest` schützen Zeichen, nicht das
+ * Blatt: je Rechnungsart die Werte, die in die Vorlage gehen
+ * (`<art>-inhalt.tex`), und je Design den ganzen Text der gewöhnlichen
+ * Rechnung (`rechnung-erwartet.tex`, `raster-rechnung-erwartet.tex`, #204).
+ * Wie ein Design die übrigen Arten setzt, steht in keiner davon wörtlich.
+ * Dieser Test fragt etwas anderes: ob auf dem Blatt steht, was dort stehen
+ * muss – §14 Abs. 4 und 5 UStG, §35a GmbHG, der Pflichtsatz der Art. Deshalb
+ * kennt er keine Schreibweise eines Designs:
  *
  *  - Die erwarteten Werte kommen aus der gerechneten Rechnung und den
  *    Stammdaten, nicht als abgeschriebene Zeichenketten.

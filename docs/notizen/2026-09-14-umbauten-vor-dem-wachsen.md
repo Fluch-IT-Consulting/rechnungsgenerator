@@ -47,6 +47,15 @@ zwei Ränder bedient.
 > Vergleichsdateien blieb dabei, wie er war – `raster` sichert eine einzige
 > Datei, die übrigen Arten schützt das Pflichtangaben-Netz aus #187.
 
+> **Nachtrag vom 19.09.2026, später:** Der Zuschnitt ist doch gekommen, als
+> eigener Schritt und nicht mit dem Design (#204, Nachtrag zu ADR-0011). Die
+> innere Naht aus #201 – `InvoiceRenderer.values()` liefert den Inhalt je
+> Platzhalter – reichte dafür, das Einsetzen blieb, wo es war. Je Art hält
+> eine `<art>-inhalt.tex` die Werte, je Design ein Volltext der gewöhnlichen
+> Rechnung das Satzbild. Die offene Frage, was dann die Vorlage schützt, hat
+> #187 beantwortet: das Pflichtangaben-Netz am fertigen PDF. Die
+> Reihenfolge-Tests blieben beim Renderer.
+
 ## 1. Gradle-Module statt `PackageStructureTest`
 
 Die Schichtung `values → model → calculation → rules` und die beiden

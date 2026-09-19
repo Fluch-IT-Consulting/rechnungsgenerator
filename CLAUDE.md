@@ -144,11 +144,15 @@ CV/Web-Auftritt des Autors), Validierung über veraPDF.
   `TemplateValue` nicht haben, stellt die Frage aus #188 neu und baut nicht am
   Renderer vorbei. Feste Texte gehören zum Design, ein Wortlaut mit fachlicher
   Aussage kommt aus Kotlin, auch als Beschriftung. Die Bank steht in `raster`
-  nur im Fuß, `\bankblock` ist dort leer. Die Vergleichsdateien sind
-  asymmetrisch: `balken` sichern vier `*-erwartet.tex`, `raster` nur
-  `raster-rechnung-erwartet.tex`, die übrigen Arten dort allein das
-  Pflichtangaben-Netz (`PflichtangabenTest`, je Design und Art). Ein neues
-  Design ist eine Vorlage, ein Eintrag in `Design` und eine Zeile im Netz.
+  nur im Fuß, `\bankblock` ist dort leer. Die Vergleichsdateien sind seit
+  #204 symmetrisch, je Art der Inhalt, je Design das Satzbild: fünf
+  `<art>-inhalt.tex` mit den Werten aus `values()`, für jedes Design gleich,
+  und je Design ein Volltext der gewöhnlichen Rechnung
+  (`rechnung-erwartet.tex`, `raster-rechnung-erwartet.tex`). Wie die übrigen
+  Arten auf dem Blatt stehen, prüft das Pflichtangaben-Netz
+  (`PflichtangabenTest`, je Design und Art). Ein neues Design ist eine
+  Vorlage, ein Eintrag in `Design`, eine Vergleichsdatei und eine Zeile im
+  Netz.
 - **Logo** (ADR-0012): Die Stammdaten nennen es als Datei, `logo: logo.tex`,
   relativ zu ihrem Verzeichnis; ohne Eintrag kein Logo. Die Datei definiert
   `\logozeichnung` (Pflicht, der Rumpf einer `tikzpicture`) und
@@ -302,10 +306,15 @@ CV/Web-Auftritt des Autors), Validierung über veraPDF.
   Vorlage ändert die Trailer-ID, aber nicht das Satzbild. Kommentarzeilen der
   Vorlage kommen gar nicht erst im `.tex` an: Der Renderer streicht ganze
   `%`-Zeilen vor den Prüfungen, nachgestellte Kommentare bleiben, weil ein `%`
-  am Zeilenende in LaTeX Bedeutung hat (#149). Den Schnitt zwischen Inhalt und
-  Vorlage, der die Vergleichsdateien vom Design lösen sollte (Notiz vom
-  14.09.), hat das zweite Design nicht gebraucht: `raster` sichert eine
-  einzige Datei (ADR-0011).
+  am Zeilenende in LaTeX Bedeutung hat (#149). Die übrigen Arten sichert
+  daneben je eine Inhalts-Datei, `<art>-inhalt.tex`: nur die nicht leeren
+  Werte der Vorlage, je Wert `<<NAME>>` und darunter der Wert (#204, Nachtrag
+  zu ADR-0011). Eine Änderung am Satzbild berührt dann eine Datei je Design
+  statt eine je Art, und wird der Volltext rot, zeigt die Inhalts-Datei, ob
+  sich der Inhalt geändert hat oder nur das Satzbild. Für sie gilt dasselbe:
+  eine Frage, keine Aufgabe, und keinen Schalter zum Neu-Erzeugen. Welche
+  Beispieldatei zu welcher Art gehört, steht einmal in `exampleInvoices`
+  (`model/TestFixtures.kt`).
 - **Storno**: Eine falsche Rechnung wird nicht überschrieben, sondern
   aufgehoben – `art: stornorechnung` mit eigener Nummer, dem Bezug auf die
   Ursprungsrechnung unter `storniert` (EN 16931 BG-3, Pflicht) und den

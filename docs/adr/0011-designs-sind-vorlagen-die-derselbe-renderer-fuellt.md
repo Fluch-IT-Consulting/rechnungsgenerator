@@ -91,3 +91,30 @@ am fertigen Satzbild.
 - **Die Build-Zeit wächst** mit jedem Design um fünf LuaLaTeX-Läufe im Netz.
 
 Umgesetzt in #189, vorbereitet in #187 und #188.
+
+## Nachtrag vom 19.09.2026: je Art der Inhalt, je Design das Satzbild
+
+Die Asymmetrie der Vergleichsdateien hatte einen Preis, den diese Entscheidung
+nicht ansah: Jede `*-erwartet.tex` enthielt die ganze Vorlage, und eine
+Änderung am Satzbild von `balken` änderte vier Dateien wortgleich. Von den
+150 Commits davor änderten 14 drei oder vier davon zugleich (#204).
+
+Seither gilt:
+
+- **Je Rechnungsart eine Inhalts-Datei**, `<art>-inhalt.tex`, unabhängig vom
+  Design: die nicht leeren Werte aus `InvoiceRenderer.values()`, je Wert
+  `<<NAME>>` und darunter der Wert. Es sind fünf, die Teilrechnung hatte
+  vorher gar keine. Die Werte hängen nicht am Design, deshalb gilt eine Datei
+  für jedes; entstanden sind sie mit den Stammdaten ohne Logo.
+- **Je Design ein Volltext**, an der gewöhnlichen Rechnung:
+  `rechnung-erwartet.tex` für `balken`, `raster-rechnung-erwartet.tex` für
+  `raster` (mit Logo). Die übrigen drei Volltext-Dateien von `balken` sind
+  entfallen.
+
+Das kippt die Entscheidung nicht, es ergänzt die Konsequenz. Die Asymmetrie
+ist aufgehoben: Beide Designs sichern dasselbe, und ein weiteres Design
+bringt genau eine Vergleichsdatei mit. Die übrigen Arten verlieren dafür in
+`balken` den zeichengleichen Volltext. Ihr Markup – Absetzungstabelle,
+Pflichtsatz, Bezug – steht als Makroaufrufe in den Werten, und wie ein Design
+diese Makros definiert, steht wortgleich in dessen Volltext. Dass sie auf dem
+Blatt richtig erscheinen, prüft weiter allein das Netz aus #187.
