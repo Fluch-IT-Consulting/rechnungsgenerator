@@ -35,9 +35,9 @@ value class Latex private constructor(val tex: String) {
          * Markup, das der Renderer selbst schreibt: die Klammern eines
          * Makroaufrufs, Leerraum und Umbrüche, die das erzeugte .tex lesbar
          * halten. Zeilenenden von LaTeX gehören nicht dazu, sie stehen als Makro
-         * in der Vorlage (#147) – und [InvoiceRenderer.checkLineBreaks] bricht
-         * ab, wenn doch eines hier hereinkommt. Der Name ist die Warnung – wer
-         * hier Daten hineinreicht, umgeht die Maskierung.
+         * in der Vorlage (#147) – und [Template.fillIn] bricht ab, wenn doch
+         * eines hier hereinkommt. Der Name ist die Warnung – wer hier Daten
+         * hineinreicht, umgeht die Maskierung.
          *
          * Für den häufigsten Fall gibt es [macro]; sonst stünde diese Warnung
          * an zwanzig Stellen, von denen siebzehn nur Klammern setzen, und wäre

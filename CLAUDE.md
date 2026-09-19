@@ -60,7 +60,7 @@ CV/Web-Auftritt des Autors), Validierung über veraPDF.
   setzt `\kopfperson`. Vorher schrieb der Renderer das rohe `\\`, und eine
   Zeile, die mit `[` begann, las LaTeX als Abstandsangabe und brach ab – das
   `{}`, das `Latex.macro` hinter ein Makro ohne Argument setzt, verhindert das.
-  Beim Setzen prüft `checkLineBreaks`, dass kein Wert ein `\\` enthält.
+  Beim Füllen prüft `Template.fillIn`, dass kein Wert ein `\\` enthält.
 
   Wer was entscheidet (#188): Eine **einzelne Angabe** – jede Angabe der
   Stammdaten, jede Kopfangabe wie Zahlungsziel oder Referenz – kommt als eigener
@@ -82,19 +82,30 @@ CV/Web-Auftritt des Autors), Validierung über veraPDF.
   Schlüssel, und gefüllt wird sie in einem `when` ohne `else`. `fillIn`
   verlangt nur noch eine Richtung: Jeder Platzhalter der Vorlage bekommt einen
   Wert. Die Gegenrichtung hätte verboten, dass ein Design einen Wert nicht
-  setzt. Stattdessen verlangt `checkPlaceholders` die Platzhalter, die an
+  setzt. Stattdessen verlangt der Bau der Vorlage die Platzhalter, die an
   Rechnungsart oder Rechnung hängen (`TemplateValue.required`), von jeder
   Vorlage. Für die Stammdaten gibt es keine solche Pflicht – "Steuernummer
   oder USt-IdNr." ist kein Kennzeichen –, das prüft `PflichtangabenTest` am
   fertigen PDF, je Design und Rechnungsart (#187).
+
+  Die Vorlage ist ein eigener Typ, `Template` (#201), mit privatem
+  Konstruktor – derselbe Zug wie bei der `AcceptedInvoice`: Was ungeprüft ist,
+  lässt sich nicht bauen. `Template.of` streicht die Kommentarzeilen und prüft
+  dann Makros und Pflicht-Platzhalter, `fillIn` füllt und prüft die Werte,
+  `uses` beantwortet, ob die Vorlage einen Platzhalter setzt. Der Renderer
+  liefert nur die Werte (`values()`, die innere Naht) und fragt die Vorlage.
+  Vorher waren das fünf `internal`-Funktionen, die `template: String`
+  herumreichten, und die Reihenfolge "erst streichen, dann prüfen" kannte
+  nur `render`; ein Test, der sie nicht einhielt, prüfte die Vorlage mit
+  Kommentaren. Auch die Tests mit kaputten Vorlagen gehen durch `Template.of`.
 
   Die Tabellenzeilen sind
   Makros (`\positionszeile` mit
   sechs Argumenten, das erste die laufende Nummer) – damit steht die
   Spaltenzahl nur an einer Stelle, statt in
   Vorlage und Kotlin getrennt getroffen zu werden. Welche Makros der Renderer
-  aufruft, zählt das Enum `TemplateMacro` auf; beim Setzen wird geprüft, dass die
-  Vorlage jedes davon mit derselben Stelligkeit kennt. Vorher fiel ein vertippter
+  aufruft, zählt das Enum `TemplateMacro` auf; beim Bau der Vorlage wird geprüft, dass sie
+  jedes davon mit derselben Stelligkeit kennt. Vorher fiel ein vertippter
   Name erst im LuaLaTeX-Lauf auf, also im Integrationstest. Die Vorlage darf
   weitere Makros für sich behalten (`\kopfperson`, `\blocktrenner`). **Nicht** eingeebnet
   wurde dabei der Unterschied im Einzug zwischen der gedämpften Zweitzeile einer

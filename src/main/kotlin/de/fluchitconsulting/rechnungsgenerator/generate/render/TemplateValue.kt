@@ -12,9 +12,9 @@ package de.fluchitconsulting.rechnungsgenerator.generate.render
  * Reihenfolge und Beschriftung entscheidet die Vorlage, mit `\ifblank`.
  *
  * [required] heißt: Keine Vorlage darf diesen Platzhalter weglassen, das prüft
- * `InvoiceRenderer.checkPlaceholders`. Das sind die, deren Inhalt an
- * Rechnungsart oder Rechnung hängt – ließe ein Design sie weg, fehlte auf einem
- * Teil der Rechnungen eine Angabe, und kein Beispiel zeigte es. Für die
+ * der Bau eines [Template]. Das sind die, deren Inhalt an Rechnungsart oder
+ * Rechnung hängt – ließe ein Design sie weg, fehlte auf einem Teil der
+ * Rechnungen eine Angabe, und kein Beispiel zeigte es. Für die
  * Stammdaten gibt es keine solche Pflicht: "Steuernummer **oder** USt-IdNr."
  * lässt sich als Kennzeichen nicht ausdrücken. Das prüft das Netz aus #187 am
  * fertigen PDF.
