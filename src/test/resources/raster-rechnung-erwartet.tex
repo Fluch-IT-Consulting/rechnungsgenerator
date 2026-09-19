@@ -63,12 +63,14 @@
 
 \newlength{\logohoehe}\setlength{\logohoehe}{12mm}
 \newlength{\versalhoehe}
+\ifblank{logo}{}{\input{logo}}
+\providecommand{\logoskalierung}{1}
 
 \begin{document}
 
 \settoheight{\versalhoehe}{\LARGE\bfseries M}%
 \noindent\ifblank{logo}{}{\raisebox{\dimexpr\versalhoehe-\height\relax}[0pt][0pt]{%
-  \resizebox{!}{\logohoehe}{\begin{tikzpicture}\input{logo}\end{tikzpicture}}}}%
+  \resizebox{!}{\logoskalierung\logohoehe}{\begin{tikzpicture}\logozeichnung\end{tikzpicture}}}}%
 \hfill
 \begin{tabular}[t]{@{}r@{\hspace{3mm}}l@{}}
   \multicolumn{2}{@{}r@{}}{\LARGE\bfseries Rechnung}\\[2mm]

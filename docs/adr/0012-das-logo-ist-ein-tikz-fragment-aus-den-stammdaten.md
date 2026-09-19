@@ -2,7 +2,7 @@
 
 Die Stammdaten nennen das Logo als Datei: `logo: logo.tex`, ein relativer Pfad
 gilt ab dem Verzeichnis der Stammdaten. Ohne Eintrag gibt es kein Logo. Die
-Datei ist ein LaTeX-Fragment, der Rumpf einer `tikzpicture`.
+Datei ist ein LaTeX-Fragment, das die Zeichnung als Makro definiert.
 
 Der Weg ins PDF:
 
@@ -14,12 +14,28 @@ Der Weg ins PDF:
   Vorlage `<<LOGO>>` enthält.
 - `LatexCompiler` legt die Datei neben die `.tex`, und sie geht mit Namen und
   Inhalt in die Trailer-ID ein.
-- Die Vorlage bindet sie mit `\input` in eine `tikzpicture` ein und bestimmt
-  Ort und Höhe. `raster` setzt das Logo, `balken` übergeht es.
+- Die Vorlage liest sie mit `\input` in der Präambel, setzt die Zeichnung in
+  eine `tikzpicture` und bestimmt Ort und Höhe. `raster` setzt das Logo,
+  `balken` übergeht es.
 
-Der Vertrag des Fragments: Es zeichnet in TikZ und bringt alles andere selbst
-mit, Farben (`\definecolor`) wie Schrift (`\newfontfamily`). Die Vorlage sichert
-nur zu, dass TikZ, fontspec und xcolor geladen sind.
+Der Vertrag des Fragments (seit #199):
+
+```latex
+\newfontfamily{\markenschrift}{…}[…]     % Schrift und Farben selbst
+\definecolor{markenblau}{HTML}{…}
+\newcommand{\logoskalierung}{1.2}        % optional, Vorgabe 1
+\newcommand{\logozeichnung}{…}           % Pflicht: der Rumpf der tikzpicture
+```
+
+- `\logozeichnung` zeichnet in TikZ.
+- `\logoskalierung` ist ein Faktor auf die Höhe, die das Design einem Logo
+  gibt: `1.2` heißt 20 % größer. Er ist relativ und damit vom Design
+  unabhängig. Ohne ihn gilt 1 (`\providecommand` in der Vorlage).
+- Farben (`\definecolor`) und Schrift (`\newfontfamily`) bringt das Fragment
+  selbst mit. Die Vorlage sichert nur zu, dass TikZ, fontspec und xcolor
+  geladen sind.
+- Eigene Hilfsmakros benennt es so, dass sie nicht mit der Vorlage
+  kollidieren. Ein doppelt definierter Name bricht laut ab, nicht still.
 
 ## Warum
 
@@ -51,6 +67,16 @@ Vorlage bekommt einen Wert, aber keine Vorlage muss jeden Wert setzen. Eine
 Vorlage ohne `<<LOGO>>` bekommt die Datei gar nicht erst. So ergibt `balken`
 mit und ohne Logo-Eintrag Byte für Byte dasselbe PDF.
 
+**Der Faktor steht in der Logodatei (#199).** Die Vorlage bringt jedes Logo
+auf dieselbe Höhe, und ein breites wird dabei klein: Eine Wortmarke, dreimal so
+breit wie hoch, behält in `raster` gut 46 mm, und ihre Unterzeile ist kaum
+lesbar. Wie breit ein Logo ist, kann die Vorlage nicht wissen – das gehört zum
+Logo und nicht zum Design, also auch der Faktor. Er braucht so keinen Schlüssel
+in den Stammdaten, keinen Platzhalter und keine Zahl mit Punkt statt deutschem
+Komma aus dem Renderer. Und die Definitionen stehen in der Präambel, wo
+`\newfontfamily` hingehört. Bis #199 war die ganze Datei der Rumpf der
+`tikzpicture` und lief darin.
+
 **`\directlua` läuft auch ohne `--shell-escape`.** Wer das Fragment schreibt,
 kann damit Code ausführen. Das ist hinnehmbar: Stammdaten und Fragment gehören
 demselben Menschen, der das Programm aufruft, und er könnte dasselbe auch ohne
@@ -76,6 +102,16 @@ den Umweg.
   Dateien gibt es erst danach.
 - **`erzeuge` sucht im `.tex` nach `\input{logo}`.** Das Kommando wüsste dann,
   wie Vorlagen ein Logo einbinden.
+- **Ein Schlüssel `logo-skalierung` in den Stammdaten** (#199). `YamlLoader`
+  hätte den Bereich prüfen können, aber der Faktor gehörte dann nicht zum
+  Logo, und der Renderer bräuchte einen Platzhalter mit englischem
+  Dezimalpunkt.
+- **Der Faktor in der Rechnungsdatei.** Alle Rechnungen eines
+  Rechnungsstellers sehen gleich aus (ADR-0011).
+- **Eine Begrenzung des Faktors in der Vorlage** mit `\ifdim`: Rechnen in TeX
+  für einen Fehler, den man sofort am Blatt sieht. Die Grenze nennt der
+  Kommentar der Vorlage – in `raster` gut 2, dann reicht das Logo bis zur
+  letzten Kopfangabe.
 - **Eine Probe des Fragments in einem eigenen LuaLaTeX-Lauf.** Ein zweiter
   Satzweg bei jedem Aufruf. Stattdessen nennt die Meldung eines gescheiterten
   Satzes oder eines ungültigen PDF/A das Logo samt Pfad.
@@ -92,8 +128,10 @@ den Umweg.
 - **`SellerConfig` trägt den Pfad zweimal**: `logoFile`, wie er in der YAML
   steht, und `logo`, gelesen. Eine eigene Klasse nur für die YAML hätte das
   vermieden, um den Preis eines Umbaus aller Stammdaten-Felder für eines.
-- **Die Vergleichsdateien zeigen das Logo nicht**, nur `\input{logo}`. Ob es
-  richtig gesetzt wird, prüfen `PflichtangabenTest` (raster mit Logo, jede Art)
-  und `ToolchainIntegrationTest`.
+- **Die Vergleichsdateien zeigen das Logo nicht**, nur `\input{logo}` und
+  `\logozeichnung`. Ob es richtig gesetzt wird, prüfen `PflichtangabenTest`
+  (raster mit Logo, jede Art) und `ToolchainIntegrationTest`, der auch misst,
+  dass der Faktor ankommt.
 
-Umgesetzt in #198, vorbereitet in #197.
+Umgesetzt in #198, vorbereitet in #197; der Vertrag mit Makro und Faktor
+seit #199.

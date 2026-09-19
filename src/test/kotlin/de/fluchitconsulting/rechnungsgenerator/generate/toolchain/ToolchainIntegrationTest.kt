@@ -4,7 +4,9 @@ import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.assertions.withClue
 import io.kotest.core.Tag
 import io.kotest.core.spec.style.FunSpec
+import io.kotest.matchers.collections.shouldContain
 import io.kotest.matchers.collections.shouldNotBeEmpty
+import io.kotest.matchers.doubles.plusOrMinus
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.string.shouldContain
 import java.nio.file.Path
@@ -12,6 +14,7 @@ import java.time.LocalDate
 import kotlin.io.path.createTempDirectory
 import kotlin.io.path.fileSize
 import kotlin.io.path.readBytes
+import kotlin.io.path.readLines
 import kotlin.io.path.readText
 import kotlin.io.path.writeText
 
@@ -81,6 +84,46 @@ class ToolchainIntegrationTest : FunSpec({
 
         erster.readBytes().contentEquals(zweiter.readBytes()) shouldBe true
         run.textOf(erster) shouldContain "MUSTERIT"
+    }
+
+    /**
+     * Der Faktor der Logodatei kommt an (#199): Derselbe Kreis, einmal mit
+     * `\logoskalierung` 1.2 und einmal ohne, steht im Bild 20 % höher.
+     * Gemessen an den Zeilen mit blauen Pixeln im oberen Drittel der Seite –
+     * dort steht sonst nur schwarzer Text.
+     */
+    test("der Skalierungsfaktor der Logodatei setzt das Logo größer") {
+        val skaliert = Path.of("src/test/resources/logo-skaliert.tex")
+        val ohneFaktor =
+            workDir.resolve("logo-ohne-faktor.tex").also { datei ->
+                datei.writeText(skaliert.readLines().filterNot { "logoskalierung" in it }.joinToString("\n"))
+            }
+
+        fun logoHoehe(logo: Path): Int {
+            val stammdaten =
+                workDir.resolve("stammdaten-${logo.fileName}.yaml").also {
+                    it.writeText(
+                        Path.of("src/test/resources/stammdaten.yaml").readText() +
+                            "design: raster\nlogo: ${logo.toAbsolutePath()}\n",
+                    )
+                }
+            val (pdf, ausgabe) = run.erzeuge("rechnung", "hoehe-${logo.fileName}", stammdaten = stammdaten)
+            withClue(ausgabe.joinToString("\n")) { ausgabe shouldContain "PDF/A-1b: gültig" }
+
+            val bild = run.imageOf(pdf)
+            return (0 until bild.height / 3).count { y ->
+                (0 until bild.width).any { x ->
+                    val rgb = bild.getRGB(x, y)
+                    val rot = (rgb shr 16) and 0xFF
+                    val blau = rgb and 0xFF
+                    blau - rot > 80
+                }
+            }
+        }
+
+        val verhaeltnis = logoHoehe(skaliert).toDouble() / logoHoehe(ohneFaktor)
+
+        verhaeltnis shouldBe (1.2 plusOrMinus 0.03)
     }
 
     /**
