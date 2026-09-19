@@ -16,13 +16,17 @@ internal object ItemBlocks {
     // Die Zeilen werden mit \positionstrenner VERBUNDEN, nicht damit
     // abgeschlossen: Ein Umbruch hinter der letzten Zeile erzeugt in LaTeX eine
     // leere Extrazeile.
+    //
+    // Die laufende Nummer beginnt bei 1. Ob ein Design sie setzt, entscheidet
+    // die Vorlage (#188); `mapIndexed` liefert zum Element seinen Index.
     fun lineItems(calculatedInvoice: CalculatedInvoice): Latex =
         calculatedInvoice.lines
-            .map { line ->
+            .mapIndexed { index, line ->
                 val item = line.item
                 Latex.macro(
                     TemplateMacro.POSITIONSZEILE,
                     listOf(
+                        "${index + 1}".escapeLatex(),
                         describeItem(item, calculatedInvoice.invoice.type),
                         GermanFormat.quantity(item.quantity),
                         item.unit.label.escapeLatex(),

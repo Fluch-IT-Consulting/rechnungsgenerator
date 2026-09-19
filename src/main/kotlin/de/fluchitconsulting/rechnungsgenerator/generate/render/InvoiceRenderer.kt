@@ -33,40 +33,84 @@ object InvoiceRenderer {
     private val NEWCOMMAND = Regex("""\\newcommand\{\\([a-zA-Z]+)}(?:\[(\d+)])?""")
 
     fun render(acceptedInvoice: AcceptedInvoice): String {
-        val calculatedInvoice = acceptedInvoice.calculated
-        val invoice = calculatedInvoice.invoice
-        val config = calculatedInvoice.config
         val template =
             withoutCommentLines(
                 checkNotNull(javaClass.getResource(TEMPLATE_PATH)) { "Vorlage $TEMPLATE_PATH fehlt" }.readText(),
             )
-
-        val values =
-            mapOf(
-                "FIRMA" to config.companyName.escapeLatex(),
-                "INHABER" to config.ownerName.escapeLatex(),
-                "KOPF_PERSON" to SellerBlocks.letterheadPerson(config),
-                "ABSENDER_KONTAKT" to SellerBlocks.senderContact(config),
-                "EMPFAENGER" to MetadataBlocks.recipient(calculatedInvoice),
-                "EMPFAENGER_RECHTS" to MetadataBlocks.recipientSideBlock(acceptedInvoice),
-                "DOKUMENTART" to invoice.type.documentName.escapeLatex(),
-                "RECHNUNGSNUMMER" to invoice.number.escapeLatex(),
-                "RECHNUNGSDATUM" to GermanFormat.date(invoice.issueDate),
-                "POSITIONEN" to ItemBlocks.lineItems(calculatedInvoice),
-                "SUMMEN" to ItemBlocks.totalsBlock(calculatedInvoice),
-                "ABSETZUNG" to DeductionBlocks.deductionBlock(acceptedInvoice),
-                "ARTHINWEIS" to ItemBlocks.typeNote(acceptedInvoice),
-                "STEUERHINWEISE" to ItemBlocks.taxNotes(calculatedInvoice),
-                "SKONTO" to ItemBlocks.skontoNote(calculatedInvoice),
-                "SCHLUSSSATZ" to (invoice.note ?: config.closingLine).escapeLatex(),
-                "BANKVERBINDUNG" to SellerBlocks.bankDetails(calculatedInvoice),
-                "FUSSZEILE_OBEN" to SellerBlocks.footerCompanyLine(config),
-                "FUSSZEILE_UNTEN" to SellerBlocks.footerTaxAndBankLine(config),
-            )
+        val values = values(acceptedInvoice)
 
         checkMacros(template)
+        checkPlaceholders(template)
         checkLineBreaks(values)
         return fillIn(template, values)
+    }
+
+    /**
+     * Die Werte aller Platzhalter. Eigens abrufbar, damit ein Test fragen kann,
+     * was der Renderer entschieden hat – ob eine Angabe leer ist –, ohne das
+     * aus dem gesetzten Text einer bestimmten Vorlage herauszulesen.
+     */
+    internal fun values(acceptedInvoice: AcceptedInvoice): Map<TemplateValue, Latex> =
+        TemplateValue.entries.associateWith { value(it, acceptedInvoice) }
+
+    /**
+     * Der Wert eines Platzhalters. Ein `when` über alle [TemplateValue] ohne
+     * `else`: Kommt ein Platzhalter dazu, übersetzt diese Stelle erst, wenn
+     * entschieden ist, was er enthält.
+     *
+     * Eine Angabe, die nicht dasteht, ist leer ([Latex.EMPTY]) und nicht
+     * abwesend. Der Vorlage ist es gleich, warum: weil die Eingabe sie nicht
+     * nennt oder weil ein `when` hier so entschieden hat.
+     */
+    private fun value(
+        key: TemplateValue,
+        acceptedInvoice: AcceptedInvoice,
+    ): Latex {
+        val calculatedInvoice = acceptedInvoice.calculated
+        val invoice = calculatedInvoice.invoice
+        val config = calculatedInvoice.config
+        val address = config.address
+        val bank = config.bank
+        val taxNumber = config.taxNumber
+        // `orEmpty()` macht aus null eine leere Zeichenkette: Eine fehlende
+        // Angabe der Stammdaten wird ein leerer Wert.
+        return when (key) {
+            TemplateValue.FIRMA -> config.companyName.escapeLatex()
+            TemplateValue.INHABER -> config.ownerName.escapeLatex()
+            TemplateValue.STRASSE -> address.street.escapeLatex()
+            TemplateValue.PLZ -> address.postalCode.escapeLatex()
+            TemplateValue.ORT -> address.city.escapeLatex()
+            TemplateValue.EMAIL -> config.email.escapeLatex()
+            TemplateValue.TELEFON -> config.phone.orEmpty().escapeLatex()
+            TemplateValue.WEBSEITE -> config.website.orEmpty().escapeLatex()
+            TemplateValue.USTID -> config.vatId.formatted().escapeLatex()
+            TemplateValue.STEUERNUMMER -> taxNumber?.value.orEmpty().escapeLatex()
+            TemplateValue.REGISTERGERICHT -> config.registerCourt.orEmpty().escapeLatex()
+            TemplateValue.REGISTERNUMMER -> config.registerNumber.orEmpty().escapeLatex()
+            TemplateValue.GESCHAEFTSFUEHRUNG -> config.managingDirector.orEmpty().escapeLatex()
+            TemplateValue.KONTOINHABER -> bank.accountHolder.escapeLatex()
+            TemplateValue.INSTITUT -> bank.bankName.escapeLatex()
+            TemplateValue.IBAN -> bank.iban.formatted().escapeLatex()
+            TemplateValue.BIC -> bank.bic.value.escapeLatex()
+            TemplateValue.DOKUMENTART -> invoice.type.documentName.escapeLatex()
+            TemplateValue.RECHNUNGSNUMMER -> invoice.number.escapeLatex()
+            TemplateValue.RECHNUNGSDATUM -> GermanFormat.date(invoice.issueDate)
+            TemplateValue.EMPFAENGER -> MetadataBlocks.recipient(calculatedInvoice)
+            TemplateValue.KUNDE_USTID -> MetadataBlocks.customerVatId(calculatedInvoice)
+            TemplateValue.ZEITRAUM_BESCHRIFTUNG -> MetadataBlocks.servicePeriodLabel(calculatedInvoice)
+            TemplateValue.LEISTUNGSZEITRAUM -> MetadataBlocks.servicePeriodValue(calculatedInvoice)
+            TemplateValue.VEREINNAHMT_AM -> MetadataBlocks.receivedOn(acceptedInvoice)
+            TemplateValue.KUNDENREFERENZ -> MetadataBlocks.buyerReference(calculatedInvoice)
+            TemplateValue.ZAHLUNGSZIEL -> MetadataBlocks.dueDate(calculatedInvoice)
+            TemplateValue.POSITIONEN -> ItemBlocks.lineItems(calculatedInvoice)
+            TemplateValue.SUMMEN -> ItemBlocks.totalsBlock(calculatedInvoice)
+            TemplateValue.ARTHINWEIS -> ItemBlocks.typeNote(acceptedInvoice)
+            TemplateValue.STEUERHINWEISE -> ItemBlocks.taxNotes(calculatedInvoice)
+            TemplateValue.ABSETZUNG -> DeductionBlocks.deductionBlock(acceptedInvoice)
+            TemplateValue.SKONTO -> ItemBlocks.skontoNote(calculatedInvoice)
+            TemplateValue.BANKVERBINDUNG -> SellerBlocks.bankDetails(calculatedInvoice)
+            TemplateValue.SCHLUSSSATZ -> (invoice.note ?: config.closingLine).escapeLatex()
+        }
     }
 
     /**
@@ -110,12 +154,12 @@ object InvoiceRenderer {
      *
      * [check] wie bei [checkMacros]: Keine Rechnungsdatei kann das auslösen.
      */
-    internal fun checkLineBreaks(values: Map<String, Latex>) {
+    internal fun checkLineBreaks(values: Map<TemplateValue, Latex>) {
         // `(key, value)` zerlegt jeden Eintrag der Map in seine zwei Teile
         // ("destructuring"), statt it.key und it.value zu schreiben.
         values.forEach { (key, value) ->
             check("\\\\" !in value.tex) {
-                "Der Renderer liefert für <<$key>> ein rohes \\\\. Zeilenwechsel stehen in der Vorlage, " +
+                "Der Renderer liefert für ${key.placeholder} ein rohes \\\\. Zeilenwechsel stehen in der Vorlage, " +
                     "der Renderer ruft sie als Makro aus TemplateMacro auf."
             }
         }
@@ -152,8 +196,31 @@ object InvoiceRenderer {
     }
 
     /**
-     * Setzt die Werte in die Vorlage – und prüft, dass beide Seiten
-     * zusammenpassen.
+     * Prüft, dass die Vorlage jeden Platzhalter enthält, den keine Vorlage
+     * weglassen darf ([TemplateValue.required]) – die, deren Inhalt an
+     * Rechnungsart oder Rechnung hängt.
+     *
+     * Die Gegenrichtung zu [fillIn], aber nur für diese Platzhalter: Ein Design
+     * darf eine Angabe der Stammdaten weglassen, `balken` etwa setzt weder
+     * Webseite noch Steuernummer. Ließe es den Pflichtsatz der Art weg, fehlte
+     * er dagegen genau auf den Rechnungen, die keines der Beispiele zeigt.
+     * Diese Prüfung deckt ab, was kein Beispiel enthält (Skonto,
+     * Befreiungsgrund); ob die Angaben der Stammdaten dastehen, prüft das Netz
+     * aus #187 am fertigen PDF.
+     *
+     * [check] wie bei [checkMacros]: Keine Rechnungsdatei kann das auslösen.
+     */
+    internal fun checkPlaceholders(template: String) {
+        TemplateValue.entries.filter { it.required }.forEach { key ->
+            check(key.placeholder in template) {
+                "Die Vorlage setzt ${key.placeholder} nicht, und das darf keine Vorlage weglassen."
+            }
+        }
+    }
+
+    /**
+     * Setzt die Werte in die Vorlage – und prüft, dass jeder Platzhalter der
+     * Vorlage einen Wert bekommt.
      *
      * Hier – und nur hier – wird aus Fragmenten wieder Text. Ersetzt wird in
      * einem Durchgang über die Vorlage: Die Werte stammen aus den Eingabedaten,
@@ -162,34 +229,36 @@ object InvoiceRenderer {
      * Die Variante von `Regex.replace` mit Lambda setzt dessen Ergebnis
      * wörtlich ein; `\` und `$1` sind dort keine Rückverweise.
      *
-     * Die zwei Prüfungen drumherum fangen einen Fehler ab, den sonst niemand
-     * bemerkt. Verschreibt sich jemand bei einem Schlüssel, oder bekommt die
+     * Die Prüfung fängt einen Fehler ab, den sonst niemand bemerkt: Bekommt die
      * Vorlage einen Platzhalter ohne Gegenstück, dann steht die Zeichenkette
-     * `<<XYZ>>` am Ende **gesetzt im PDF**: Der Compiler kennt die Schlüssel
-     * nicht, LuaLaTeX übersetzt sie klaglos, und veraPDF bestätigt ein
-     * einwandfreies PDF/A – es ist ja eines. Aufgefallen wäre es bisher nur
-     * mittelbar, als Unterschied in einer der Vergleichsdateien, und dort als
-     * Diff statt als benannte Meldung.
+     * `<<XYZ>>` am Ende **gesetzt im PDF**. LuaLaTeX übersetzt sie klaglos, und
+     * veraPDF bestätigt ein einwandfreies PDF/A – es ist ja eines (#30).
+     *
+     * Nur diese eine Richtung (#188). Bis dahin verlangte `fillIn` auch, dass
+     * jeder Wert einen Platzhalter hat. Einen vertippten Schlüssel fing das
+     * nicht besser als die erste Richtung, und seit die Schlüssel [TemplateValue]
+     * sind, übersetzt ein vertippter gar nicht mehr. Verboten hätte die zweite
+     * Richtung aber, dass ein Design einen Wert nicht setzt. Welche Platzhalter
+     * jede Vorlage setzen muss, prüft [checkPlaceholders].
      *
      * [check] und nicht eine Ausnahme für den Benutzer: Keine Rechnungsdatei
      * kann das auslösen. Wenn Vorlage und Renderer auseinanderlaufen, ist das
-     * ein Fehler im Programm, so wie die fehlende Vorlage eine Zeile weiter
-     * oben.
+     * ein Fehler im Programm, so wie die fehlende Vorlage.
      */
-    internal fun fillIn(template: String, values: Map<String, Latex>): String {
-        values.keys.forEach { key ->
-            check(template.contains("<<$key>>")) {
-                "Der Renderer liefert einen Wert für <<$key>>, aber die Vorlage hat dort keinen Platzhalter."
-            }
-        }
+    internal fun fillIn(
+        template: String,
+        values: Map<TemplateValue, Latex>,
+    ): String {
+        // Die Werte nach dem Namen ihres Platzhalters, so wie die Vorlage ihn schreibt.
+        val byName = values.mapKeys { (key, _) -> key.name }
 
         // Geprüft wird die Vorlage, nicht das Ergebnis: Im Ergebnis kann ein
         // Platzhalter als Inhalt stehen.
-        PLACEHOLDER.findAll(template).firstOrNull { it.groupValues[1] !in values }?.let {
+        PLACEHOLDER.findAll(template).firstOrNull { it.groupValues[1] !in byName }?.let {
             error("Die Vorlage enthält ${it.value}, aber der Renderer liefert dafür keinen Wert.")
         }
 
-        return PLACEHOLDER.replace(template) { values.getValue(it.groupValues[1]).tex }
+        return PLACEHOLDER.replace(template) { byName.getValue(it.groupValues[1]).tex }
     }
 
     /**

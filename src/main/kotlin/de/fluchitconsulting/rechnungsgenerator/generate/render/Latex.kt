@@ -60,7 +60,7 @@ value class Latex private constructor(val tex: String) {
          *
          * Ein Makro ohne Argument bekommt ein leeres `{}`. Ohne es fräße TeX
          * den Leerraum dahinter, oder – schlimmer – ein folgender Buchstabe
-         * verlängerte den Namen: `\ustidtrennerUSt-IdNr.` ist ein unbekanntes
+         * verlängerte den Namen: `\zeilenwechselMusterweg` ist ein unbekanntes
          * Makro, und das sähe erst LuaLaTeX.
          */
         fun macro(macro: TemplateMacro, arguments: List<Latex> = emptyList()): Latex {

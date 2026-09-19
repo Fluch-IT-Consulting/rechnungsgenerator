@@ -61,15 +61,42 @@ CV/Web-Auftritt des Autors), Validierung über veraPDF.
   Zeile, die mit `[` begann, las LaTeX als Abstandsangabe und brach ab – das
   `{}`, das `Latex.macro` hinter ein Makro ohne Argument setzt, verhindert das.
   Beim Setzen prüft `checkLineBreaks`, dass kein Wert ein `\\` enthält.
-  **Nicht** umgestellt wurden die Trenner ` · ` im Fuß und in den
-  Zusatzzeilen: Sie sind Satzbild und werden mit dem zweiten Design fällig,
-  wenn feststeht, welche dort anders sind. Die Tabellenzeilen sind
+
+  Wer was entscheidet (#188): Eine **einzelne Angabe** – jede Angabe der
+  Stammdaten, jede Kopfangabe wie Zahlungsziel oder Referenz – kommt als eigener
+  Platzhalter und darf leer sein. Ob sie dasteht, entscheidet der Renderer
+  über leer oder nicht leer; Ort, Reihenfolge, Beschriftung und Trenner
+  (` · `, "Tel.", "Zahlbar ohne Abzug bis") entscheidet die Vorlage, und sie
+  fragt dafür nur `\ifblank` aus etoolbox. Der Vorlage ist gleich, warum ein
+  Wert leer ist. **Wiederholtes und fachliche Sätze** (Positionen, Summen,
+  Absetzung, Pflichtsatz, Skonto, der Bankblock) kommen wie bisher als
+  Makroaufrufe oder gar nicht, und das "ob" liegt beim Renderer. Eine
+  Beschriftung kommt trotzdem aus Kotlin, `ZEITRAUM_BESCHRIFTUNG`: Ein Wortlaut,
+  der eine fachliche Aussage trägt ("Voraussichtlicher Leistungszeitraum"),
+  ist kein Satzbild. `EMPFAENGER` bleibt ein Block, weil die Landzeile an
+  `isDomestic` hängt. Verworfen: Bedingungen in der Vorlage über `\ifblank`
+  hinaus – was an der Rechnungsart hängt, würde sonst je Design neu
+  entschieden, ohne Compiler.
+
+  Die Platzhalter zählt das Enum `TemplateValue` auf, die Werte-Map hat es als
+  Schlüssel, und gefüllt wird sie in einem `when` ohne `else`. `fillIn`
+  verlangt nur noch eine Richtung: Jeder Platzhalter der Vorlage bekommt einen
+  Wert. Die Gegenrichtung hätte verboten, dass ein Design einen Wert nicht
+  setzt. Stattdessen verlangt `checkPlaceholders` die Platzhalter, die an
+  Rechnungsart oder Rechnung hängen (`TemplateValue.required`), von jeder
+  Vorlage. Für die Stammdaten gibt es keine solche Pflicht – "Steuernummer
+  oder USt-IdNr." ist kein Kennzeichen –, das prüft `PflichtangabenTest` am
+  fertigen PDF, je Design und Rechnungsart (#187).
+
+  Die Tabellenzeilen sind
   Makros (`\positionszeile` mit
-  fünf Argumenten) – damit steht die Spaltenzahl nur an einer Stelle, statt in
+  sechs Argumenten, das erste die laufende Nummer) – damit steht die
+  Spaltenzahl nur an einer Stelle, statt in
   Vorlage und Kotlin getrennt getroffen zu werden. Welche Makros der Renderer
   aufruft, zählt das Enum `TemplateMacro` auf; beim Setzen wird geprüft, dass die
   Vorlage jedes davon mit derselben Stelligkeit kennt. Vorher fiel ein vertippter
-  Name erst im LuaLaTeX-Lauf auf, also im Integrationstest. **Nicht** eingeebnet
+  Name erst im LuaLaTeX-Lauf auf, also im Integrationstest. Die Vorlage darf
+  weitere Makros für sich behalten (`\kopfperson`, `\blocktrenner`). **Nicht** eingeebnet
   wurde dabei der Unterschied im Einzug zwischen der gedämpften Zweitzeile einer
   Position und der eines Abschlags: Das ist Satzbild und gehört vor Augen, nicht
   in einen Umbau.

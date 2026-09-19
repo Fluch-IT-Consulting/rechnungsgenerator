@@ -45,10 +45,10 @@ class LatexTest : FunSpec({
     }
 
     test("ein Makro ohne Argument endet mit {}, damit der folgende Text nicht zum Namen wird") {
-        // Ohne {} stünde hier \ustidtrennerUSt-IdNr. – ein unbekanntes Makro,
+        // Ohne {} stünde hier \zeilenwechselMusterweg – ein unbekanntes Makro,
         // das erst LuaLaTeX bemerkte (#76).
-        (Latex.macro(TemplateMacro.USTIDTRENNER) + "USt-IdNr.".escapeLatex()).tex shouldBe
-            "\\ustidtrenner{}USt-IdNr."
+        (Latex.macro(TemplateMacro.ZEILENWECHSEL) + "Musterweg".escapeLatex()).tex shouldBe
+            "\\zeilenwechsel{}Musterweg"
     }
 
     context("Text mit Platzhaltern") {
