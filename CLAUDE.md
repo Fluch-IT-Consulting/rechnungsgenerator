@@ -115,7 +115,8 @@ CV/Web-Auftritt des Autors), Validierung über veraPDF.
 
   Die Tabellenzeilen sind
   Makros (`\positionszeile` mit
-  sechs Argumenten, das erste die laufende Nummer) – damit steht die
+  sieben Argumenten, das erste die laufende Nummer, das sechste der Rabatt)
+  – damit steht die
   Spaltenzahl nur an einer Stelle, statt in
   Vorlage und Kotlin getrennt getroffen zu werden. Welche Makros der Renderer
   aufruft, zählt das Enum `TemplateMacro` auf; beim Bau der Vorlage wird geprüft, dass sie
@@ -411,6 +412,17 @@ CV/Web-Auftritt des Autors), Validierung über veraPDF.
     den Block `abschlaege` der Schlussrechnung; auf der Schlussrechnung wäre
     die Grundlage der Restbetrag, eine eigene Frage; das Storno fordert kein
     Geld.
+- **Rabatt** (ADR-0013): Eine Position trägt ihn als Prozentsatz,
+  `rabatt: 30`, und er mindert den Positionsbetrag, nicht den Einzelpreis –
+  EN 16931 BG-27 und nicht BT-147. Basis und Rabattbetrag sind je auf Cent
+  gerundet, das Netto ist ihre Differenz; `CalculatedLine` rechnet das im
+  Rumpf und kennt im Konstruktor nur die Position (#213). Zulässig über 0 bis
+  100 % (`RABATT_AUSSERHALB_BEREICH`), auf jeder Art. Die Spalte steht nur,
+  wenn eine Position einen Rabatt hat: Der Renderer liefert den Satz als
+  siebtes Argument von `\positionszeile` und den Schalter `RABATTSPALTE`,
+  die Vorlage entscheidet mit `\ifblank` (`\mitrabatt`, Spaltentyp `R`).
+  Bewusst **nicht**: ein fester Betrag, eine Rabattzeile im Summenblock (sähe
+  aus wie BG-20), ein Freitextgrund – der Export setzt später Code 95.
 - **ZUGFeRD-Vorbereitung**: Datenmodell enthält von Anfang an alle
   EN-16931-Pflichtfelder (Leistungsdatum, Steuerkategorie, Kennungen), damit
   ZUGFeRD (PDF/A-3 + XML) später ein zusätzlicher Ausgabemodus wird, kein Umbau.

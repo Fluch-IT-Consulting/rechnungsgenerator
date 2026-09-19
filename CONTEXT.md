@@ -90,6 +90,14 @@ Was nach der Absetzung vom Bruttobetrag der Schlussrechnung noch zu zahlen ist.
 Null ist zulässig, negativ nicht.
 _Vermeiden_: Zahlbetrag, offener Betrag, Saldo, Differenz
 
+**Rabatt**:
+Eine Minderung des Positionsbetrags um einen Prozentsatz, sofort und ohne
+Bedingung. Der Einzelpreis bleibt, wie er vereinbart ist; gemindert wird, was
+die Position kostet. Anders als das Skonto steht auf der Rechnung schon der
+geminderte Betrag.
+_Vermeiden_: Nachlass, Preisnachlass (für einen geminderten Einzelpreis),
+Abzug
+
 **Skonto**:
 Eine im Voraus vereinbarte Minderung des Entgelts für den Fall, dass der Kunde
 innerhalb einer Frist zahlt. Auf der Rechnung steht die Bedingung, nicht der

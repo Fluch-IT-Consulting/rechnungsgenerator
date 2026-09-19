@@ -183,6 +183,7 @@ positionen:
     menge: 86.5
     einheit: Std.                   # geschlossene Liste, siehe unten
     einzelpreis: 95.00
+    rabatt: 30                      # optional, Prozent über 0 bis 100; mindert den Positionsbetrag
     ust-satz: 19                    # optional, Vorgabe 19
     steuerkategorie: S              # optional, Vorgabe S (Regelsatz)
     positions-leistungszeitraum:    # optional, nur bei Abweichung
