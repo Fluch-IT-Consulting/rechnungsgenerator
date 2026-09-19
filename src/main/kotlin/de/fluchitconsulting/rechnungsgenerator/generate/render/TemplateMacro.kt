@@ -14,8 +14,8 @@ package de.fluchitconsulting.rechnungsgenerator.generate.render
  * früher `\mbox` oder `\\[\positionsabstand]` schrieb, stehen heute `ZUSAMMEN`
  * und die Trenner (#76), wo er `\\` schrieb, `ZEILENWECHSEL` und das
  * Zeilenende in `ABSCHLUSSZEILE` (#147). Dass keines mehr hineinkommt,
- * prüft `InvoiceRenderer.checkLineBreaks`. Einzige Ausnahme sind die Felder
- * der pdfx-Metadaten – sie gehören in die .xmpdata-Datei und nicht in diese
+ * prüft [Template.fillIn]. Einzige Ausnahme sind die Felder der
+ * pdfx-Metadaten – sie gehören in die .xmpdata-Datei und nicht in diese
  * Vorlage.
  *
  * Die Vorlage darf mehr Makros definieren und nutzen, als hier stehen. Seit
