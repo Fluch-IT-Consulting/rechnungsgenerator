@@ -21,3 +21,10 @@ positionen:
     menge: 1
     einheit: pauschal
     einzelpreis: 6500.00
+  # Ein Rabatt (#213): Die Spalte steht, und die Position ohne Rabatt lässt
+  # ihre Zelle leer.
+  - bezeichnung: Einführungsworkshop
+    menge: 1
+    einheit: Stück
+    einzelpreis: 800.00
+    rabatt: 30
