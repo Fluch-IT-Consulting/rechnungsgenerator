@@ -106,9 +106,11 @@
 \newcommand{\abschlusszeile}[2]{\\\hline\textbf{#1} & \textbf{#2}}
 
 %% Die Zeilen des Summenblocks mit ihren Beschriftungen (#217). Die Wörter
-%% gehören zum Design; Kotlin liefert nur Satz und Beträge.
-\newcommand{\nettozeile}[1]{\summenzeile{Nettobetrag}{#1}}
-\newcommand{\steuerzeile}[2]{\summenzeile{zzgl. #1 USt.}{#2}}
+%% gehören zum Design; Kotlin liefert nur Satz und Beträge. raster nennt die
+%% Steuer ausgeschrieben und den Satz dahinter, wie auf der bisherigen
+%% Rechnung dieses Designs.
+\newcommand{\nettozeile}[1]{\summenzeile{Zwischensumme (netto)}{#1}}
+\newcommand{\steuerzeile}[2]{\summenzeile{Umsatzsteuer #1}{#2}}
 \newcommand{\gesamtzeile}[1]{\abschlusszeile{Gesamtbetrag}{#1}}
 
 %% Die Bankverbindung setzt raster nicht als eigenen Block: Sie steht im Fuß,
