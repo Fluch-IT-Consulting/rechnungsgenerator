@@ -58,6 +58,18 @@ class YamlLoaderTest : FunSpec({
         }
     }
 
+    test("ansprechpartner liest die Kontaktstelle des Kunden, wörtlich") {
+        // BT-56. Wörtlich heißt: Das Programm setzt kein "z. Hd." davor.
+        val yaml =
+            resource("rechnung.yaml").replace(
+                "  name: Beispiel Software GmbH",
+                "  name: Beispiel Software GmbH\n  ansprechpartner: Kreditorenbuchhaltung",
+            )
+
+        YamlLoader.parseInvoice(yaml).customer.contactPoint shouldBe "Kreditorenbuchhaltung"
+        YamlLoader.parseInvoice(resource("rechnung.yaml")).customer.contactPoint shouldBe null
+    }
+
     test("eine Rechnungsdatei ohne art ist eine gewöhnliche Rechnung") {
         // Der negative Test dieses Schritts: Bestehende Dateien kennen den
         // Schlüssel nicht und sollen sich trotzdem verhalten wie bisher.

@@ -126,6 +126,11 @@ data class ServicePeriod(
 @Serializable
 data class Customer(
     @SerialName("name") val name: String,
+    // EN 16931 BT-56, die Kontaktstelle des Käufers: eine Person oder eine
+    // Abteilung ("Einkauf"). Freitext, und das Programm setzt nichts davor –
+    // kein "z. Hd.", keine Anrede, denn das Geschlecht einer Person kennt die
+    // Rechnungsdatei nicht.
+    @SerialName("ansprechpartner") val contactPoint: String? = null,
     @SerialName("anschrift") val address: Address,
     // EN 16931 BT-10: z. B. Bestellnummer oder Leitweg-ID des Kunden.
     @SerialName("referenz") val buyerReference: String? = null,

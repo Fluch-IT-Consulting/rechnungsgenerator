@@ -99,6 +99,10 @@ enum class Rule(val severity: Severity) {
     RECHNUNGSNUMMER_OHNE_DATEINAMEN(Severity.ABORT),
     RECHNUNGSNUMMER_PASST_NICHT(Severity.ABORT),
 
+    // Freitext zum Kunden
+    ANSPRECHPARTNER_LEER(Severity.ABORT),
+    ANSPRECHPARTNER_MIT_LEERRAUM(Severity.ABORT),
+
     // Positionen und Steuerkategorie
     KEINE_POSITION(Severity.ABORT),
     EINZELPREIS_NEGATIV(Severity.ABORT),
