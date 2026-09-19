@@ -70,6 +70,19 @@ class YamlLoaderTest : FunSpec({
         YamlLoader.parseInvoice(resource("rechnung.yaml")).customer.contactPoint shouldBe null
     }
 
+    test("kundennummer liest die Kundennummer, als Text") {
+        // BT-46. Als Text, auch wenn sie nur aus Ziffern besteht: Eine führende
+        // Null gehört zur Nummer.
+        val yaml =
+            resource("rechnung.yaml").replace(
+                "  name: Beispiel Software GmbH",
+                "  name: Beispiel Software GmbH\n  kundennummer: \"0017\"",
+            )
+
+        YamlLoader.parseInvoice(yaml).customer.buyerIdentifier shouldBe "0017"
+        YamlLoader.parseInvoice(resource("rechnung.yaml")).customer.buyerIdentifier shouldBe null
+    }
+
     test("eine Rechnungsdatei ohne art ist eine gewöhnliche Rechnung") {
         // Der negative Test dieses Schritts: Bestehende Dateien kennen den
         // Schlüssel nicht und sollen sich trotzdem verhalten wie bisher.

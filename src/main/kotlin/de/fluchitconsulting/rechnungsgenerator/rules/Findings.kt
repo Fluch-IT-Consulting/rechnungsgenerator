@@ -102,6 +102,8 @@ enum class Rule(val severity: Severity) {
     // Freitext zum Kunden
     ANSPRECHPARTNER_LEER(Severity.ABORT),
     ANSPRECHPARTNER_MIT_LEERRAUM(Severity.ABORT),
+    KUNDENNUMMER_LEER(Severity.ABORT),
+    KUNDENNUMMER_MIT_LEERRAUM(Severity.ABORT),
 
     // Positionen und Steuerkategorie
     KEINE_POSITION(Severity.ABORT),

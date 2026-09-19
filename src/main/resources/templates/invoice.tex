@@ -248,7 +248,8 @@
 %% Fußzeile um. "Geschäftsführung" statt "Geschäftsführer": Die Bezeichnung
 %% steht neben einem Namen, dessen Geschlecht die Stammdaten nicht kennen.
 %%
-%% Nummer und Datum der Rechnung stehen im Balken, nicht hier. Die Beschriftung
+%% Nummer und Datum der Rechnung stehen im Balken, nicht hier. Die
+%% Kundennummer steht als erste Kopfangabe, gleich neben dem Kunden. Die Beschriftung
 %% des Zeitraums kommt vom Renderer, weil sie an der Rechnungsart hängt
 %% ("Voraussichtlicher Leistungszeitraum", UStAE 14.8). Der Zeitraum bricht
 %% nicht um: Im schmalen Block bräche "Juni bis Oktober 2026" sonst hinter dem
@@ -256,6 +257,7 @@
 \begin{minipage}[t]{0.44\linewidth}
   \raggedleft\small\color{gedaempft}
   \ifblank{<<GESCHAEFTSFUEHRUNG>>}{}{Geschäftsführung\\<<GESCHAEFTSFUEHRUNG>>\blocktrenner{}}
+  \kopfangabe{Kundennr.:}{<<KUNDENNUMMER>>}
   \kopfangabe{<<ZEITRAUM_BESCHRIFTUNG>>:}{\zusammen{<<LEISTUNGSZEITRAUM>>}}
   \kopfangabe{Abschlag vereinnahmt am}{<<VEREINNAHMT_AM>>}
   \kopfangabe{Ihre Referenz:}{<<KUNDENREFERENZ>>}

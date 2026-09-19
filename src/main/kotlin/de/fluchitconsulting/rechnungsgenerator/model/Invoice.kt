@@ -132,6 +132,10 @@ data class Customer(
     // Rechnungsdatei nicht.
     @SerialName("ansprechpartner") val contactPoint: String? = null,
     @SerialName("anschrift") val address: Address,
+    // EN 16931 BT-46, die Kennung des Käufers, vom Verkäufer vergeben: die
+    // Kundennummer. Freitext ohne Muster; eine Kundendatei gibt es nicht, die
+    // Nummer steht in jeder Rechnungsdatei.
+    @SerialName("kundennummer") val buyerIdentifier: String? = null,
     // EN 16931 BT-10: z. B. Bestellnummer oder Leitweg-ID des Kunden.
     @SerialName("referenz") val buyerReference: String? = null,
     // BT-48: Pflicht, sobald die Steuerschuld übergeht (Kategorie AE) oder

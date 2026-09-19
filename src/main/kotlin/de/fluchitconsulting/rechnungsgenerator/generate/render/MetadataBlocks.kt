@@ -94,6 +94,11 @@ internal object MetadataBlocks {
             is InvoiceKind.Ordinary, is InvoiceKind.FinalInvoice, is InvoiceKind.Cancellation -> Latex.EMPTY
         }
 
+    /** BT-46, die Kundennummer, leer, wenn die Rechnung keine nennt. */
+    fun buyerIdentifier(calculatedInvoice: CalculatedInvoice): Latex =
+        calculatedInvoice.invoice.customer.buyerIdentifier
+            ?.escapeLatex() ?: Latex.EMPTY
+
     /** BT-10, die Referenz des Kunden, leer, wenn er keine nennt. */
     fun buyerReference(calculatedInvoice: CalculatedInvoice): Latex =
         calculatedInvoice.invoice.customer.buyerReference
