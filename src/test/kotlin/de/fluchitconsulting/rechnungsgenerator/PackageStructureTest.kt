@@ -34,7 +34,12 @@ class PackageStructureTest : FunSpec({
             root to setOf("$root.generate", "$root.generate.toolchain", "$root.prepayments", "$root.rules", "$root.model"),
             "$root.generate" to
                 setOf("$root.generate.render", "$root.generate.toolchain", "$root.rules", "$root.calculation", "$root.model"),
-            "$root.generate.render" to setOf("$root.rules", "$root.calculation", "$root.model", "$root.values"),
+            // generate.toolchain für PdfSources: Der Renderer liefert die
+            // Quellen des PDF im Eingabetyp der Werkzeuge (#202). Die Kante
+            // zeigt nach unten auf ein Blatt – toolchain selbst importiert
+            // nichts aus dem Projekt.
+            "$root.generate.render" to
+                setOf("$root.generate.toolchain", "$root.rules", "$root.calculation", "$root.model", "$root.values"),
             "$root.generate.toolchain" to emptySet(),
             "$root.prepayments" to setOf("$root.rules", "$root.calculation", "$root.model", "$root.values"),
             "$root.rules" to setOf("$root.calculation", "$root.model", "$root.values"),

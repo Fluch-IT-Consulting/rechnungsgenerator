@@ -119,16 +119,10 @@ class GenerateCommand(
         try {
             val typesetPdf =
                 try {
-                    typesetter.typeset(
-                        workingDir = workDir,
-                        jobName = jobName,
-                        texSource = rendered.tex,
-                        xmpMetadata = InvoiceRenderer.renderMetadata(acceptedInvoice),
-                        // Das Rechnungsdatum und nicht die Uhr: Eine neu erzeugte
-                        // Rechnung soll nicht jünger aussehen als die verschickte.
-                        creationDate = invoice.issueDate,
-                        files = rendered.files,
-                    )
+                    // Die Quellen kommen vollständig vom Renderer (#202): Das
+                    // Kommando setzt sie nicht mehr aus vier Stellen zusammen,
+                    // es sagt nur, wohin gesetzt wird.
+                    typesetter.typeset(workingDir = workDir, jobName = jobName, sources = rendered.sources)
                 } catch (e: ToolchainException) {
                     throw ToolchainException(e.message + logoNote, e)
                 }

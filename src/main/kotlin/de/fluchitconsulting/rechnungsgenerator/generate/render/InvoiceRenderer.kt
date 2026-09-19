@@ -1,5 +1,6 @@
 package de.fluchitconsulting.rechnungsgenerator.generate.render
 
+import de.fluchitconsulting.rechnungsgenerator.generate.toolchain.PdfSources
 import de.fluchitconsulting.rechnungsgenerator.rules.AcceptedInvoice
 import de.fluchitconsulting.rechnungsgenerator.values.Logo
 
@@ -39,8 +40,15 @@ object InvoiceRenderer {
         // das eine aus dem anderen: Kommt eine zweite Datei dazu, stimmt die
         // Auskunft weiter (#203).
         return RenderedInvoice(
-            tex = template.fillIn(values(acceptedInvoice)),
-            files = logo?.let { mapOf("$LOGO_NAME.${it.extension}" to it.content) }.orEmpty(),
+            sources =
+                PdfSources(
+                    tex = template.fillIn(values(acceptedInvoice)),
+                    xmpMetadata = renderMetadata(acceptedInvoice),
+                    // Das Rechnungsdatum und nicht die Uhr: Eine neu erzeugte
+                    // Rechnung soll nicht jünger aussehen als die verschickte.
+                    creationDate = acceptedInvoice.calculated.invoice.issueDate,
+                    files = logo?.let { mapOf("$LOGO_NAME.${it.extension}" to it.content) }.orEmpty(),
+                ),
             includesLogo = logo != null,
         )
     }
@@ -147,7 +155,7 @@ object InvoiceRenderer {
      * Auch hier maskierte Werte: Ein `&` im Firmennamen zerlegte sonst die
      * Metadaten, und ohne gültige Metadaten gibt es kein PDF/A.
      */
-    fun renderMetadata(acceptedInvoice: AcceptedInvoice): String {
+    private fun renderMetadata(acceptedInvoice: AcceptedInvoice): String {
         val calculatedInvoice = acceptedInvoice.calculated
         val invoice = calculatedInvoice.invoice
         val document = invoice.type.documentName.escapeLatex() + " ".escapeLatex() + invoice.number.escapeLatex()

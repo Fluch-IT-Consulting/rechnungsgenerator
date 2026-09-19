@@ -1,7 +1,6 @@
 package de.fluchitconsulting.rechnungsgenerator.generate.toolchain
 
 import java.nio.file.Path
-import java.time.LocalDate
 import kotlin.io.path.writeText
 
 /**
@@ -18,25 +17,22 @@ class FakeTypesetter(
 ) : Typesetter {
     var workingDir: Path? = null
     var jobName: String? = null
-    var texSource: String? = null
-    var creationDate: LocalDate? = null
-    var files: Map<String, ByteArray>? = null
+
+    // Die Quellen als Ganzes (#202): Vorher merkte er sich fünf von sechs
+    // Parametern, und ausgerechnet die Metadaten fehlten – dass das Kommando
+    // sie weiterreicht, prüfte allein der Lauf mit den echten Werkzeugen.
+    var sources: PdfSources? = null
 
     override fun checkAvailable() = Unit
 
     override fun typeset(
         workingDir: Path,
         jobName: String,
-        texSource: String,
-        xmpMetadata: String,
-        creationDate: LocalDate,
-        files: Map<String, ByteArray>,
+        sources: PdfSources,
     ): TypesetPdf {
         this.workingDir = workingDir
         this.jobName = jobName
-        this.texSource = texSource
-        this.creationDate = creationDate
-        this.files = files
+        this.sources = sources
         if (failure != null) throw ToolchainException(failure)
         val pdf = workingDir.resolve("$jobName.pdf").also { it.writeText("%PDF-1.7 kein echtes PDF") }
         val violations =

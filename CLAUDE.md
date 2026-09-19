@@ -49,6 +49,20 @@ CV/Web-Auftritt des Autors), Validierung über veraPDF.
   prüfbar, ohne dass ein fremdes Programm läuft. Der Integrationstest mit den
   echten Werkzeugen bleibt daneben bestehen – ohne gültiges PDF/A kein grüner
   Build.
+
+  Durch die Naht geht ein Wert und keine Parameterliste: `PdfSources` mit
+  Quelltext, Metadaten, eingebundenen Dateien und Erstellungsdatum (#202).
+  "Dieselben Quellen ergeben dasselbe PDF" gilt damit wörtlich für einen Wert –
+  was darin steht, bestimmt die Bytes, was nicht darin steht, nicht. Deshalb
+  gehört das Datum dazu (`SOURCE_DATE_EPOCH`) und das Arbeitsverzeichnis nicht:
+  Es sagt, *wohin* gesetzt wird, und bleibt mit dem Jobnamen beim Kommando.
+  Gebaut wird der Wert im Renderer, nicht im Kommando – vorher setzte das
+  Kommando sechs Argumente aus vier Quellen zusammen, und die Metadaten kamen
+  über einen zweiten Aufruf. Der Preis ist die Kante `generate.render →
+  generate.toolchain` in `PackageStructureTest`: Der Renderer kennt den
+  Eingabetyp der Werkzeuge. Sie zeigt nach unten auf ein Blatt, `toolchain`
+  bleibt frei vom Projekt. Verworfen: zwei Typen mit einer Abbildung im
+  Kommando – das verlegt das Durchreichen nur.
 - **Satz nur in der Vorlage**: Abstände, Schriftgrad, Farbe und Linien stehen in
   der Vorlage des Designs (`templates/balken.tex`, `templates/raster.tex`). Der Renderer liefert Inhalt und Makroaufrufe und entscheidet
   weiter, *ob* etwas dasteht. Die Millimeter sind benannte Längen, die

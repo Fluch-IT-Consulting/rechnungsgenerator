@@ -45,7 +45,11 @@ class LatexCompilerTest : FunSpec({
         dir: java.nio.file.Path = arbeitsverzeichnis(),
         tex: String = "\\documentclass{article}",
         files: Map<String, ByteArray> = emptyMap(),
-    ) = LatexCompiler(runner).compile(dir, "rechnung", tex, "\\Title{Test}", LocalDate.of(2026, 8, 14), files)
+    ) = LatexCompiler(runner).compile(
+        dir,
+        "rechnung",
+        PdfSources(tex = tex, xmpMetadata = "\\Title{Test}", creationDate = LocalDate.of(2026, 8, 14), files = files),
+    )
 
     /** Die Trailer-ID aus dem Aufruf, mit dem LuaLaTeX gestartet wurde. */
     fun trailerIdVon(
