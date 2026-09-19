@@ -203,6 +203,22 @@ class InvoiceRendererTest : FunSpec({
                 withClue(design) { gesetzt(design, null).files shouldBe emptyMap() }
             }
         }
+
+        // Ob das Blatt das Logo zeigt, sagt der Renderer ausdrücklich – das
+        // Kommando nennt es danach in einer Fehlermeldung (#203).
+        test("raster mit Logo zeigt es") {
+            gesetzt(Design.RASTER, beispielLogo).includesLogo shouldBe true
+        }
+
+        test("balken mit Logo zeigt es nicht") {
+            gesetzt(Design.BALKEN, beispielLogo).includesLogo shouldBe false
+        }
+
+        test("ohne Logo in den Stammdaten zeigt es kein Design, auch wenn die Vorlage den Platzhalter trägt") {
+            Design.entries.forEach { design ->
+                withClue(design) { gesetzt(design, null).includesLogo shouldBe false }
+            }
+        }
     }
 
     context("Die Kommentarzeilen der Vorlage") {
