@@ -72,21 +72,28 @@ internal object ItemBlocks {
     }
 
     /**
-     * Der Summenblock. Gruppen ohne Steuerbetrag erscheinen hier NICHT als
+     * Der Summenblock: Beträge und Sätze, die Beschriftungen setzt die Vorlage
+     * (#217). Gruppen ohne Steuerbetrag erscheinen hier NICHT als
      * "zzgl. 0 % USt. 0,00 €" – das sähe aus wie ein Rechenfehler oder eine
      * vergessene Zeile. Warum keine Steuer anfällt, sagt [taxNotes] darunter.
      */
     fun totalsBlock(calculatedInvoice: CalculatedInvoice): Latex =
         buildList {
-            add("Nettobetrag".escapeLatex() to GermanFormat.amountWithCurrency(calculatedInvoice.netTotal))
+            add(Latex.macro(TemplateMacro.NETTOZEILE, listOf(GermanFormat.amountWithCurrency(calculatedInvoice.netTotal))))
             calculatedInvoice.vatGroups.filterNot { it.amount.isZero() }.forEach { group ->
                 // Das Prozentzeichen ist maskiert, bevor es hier ankommt –
                 // GermanFormat.percent liefert ein fertiges Fragment.
-                val label = "zzgl. ".escapeLatex() + GermanFormat.percent(group.rate) + " USt.".escapeLatex()
-                add(label to GermanFormat.amountWithCurrency(group.amount))
+                add(
+                    Latex.macro(
+                        TemplateMacro.STEUERZEILE,
+                        listOf(GermanFormat.percent(group.rate), GermanFormat.amountWithCurrency(group.amount)),
+                    ),
+                )
             }
-        }.map { (label, value) -> Latex.raw("  ") + Latex.macro(TemplateMacro.SUMMENZEILE, listOf(label, value)) }
-            .joinToLatex(rowSeparator(TemplateMacro.SUMMENTRENNER)) + summaryRow("Gesamtbetrag", calculatedInvoice.grossTotal)
+        }.map { Latex.raw("  ") + it }
+            .joinToLatex(rowSeparator(TemplateMacro.SUMMENTRENNER)) +
+            Latex.raw("\n  ") +
+            Latex.macro(TemplateMacro.GESAMTZEILE, listOf(GermanFormat.amountWithCurrency(calculatedInvoice.grossTotal)))
 
     /**
      * Der Pflichtsatz der Rechnungsart, unter den Summen. Ob eine Art einen hat

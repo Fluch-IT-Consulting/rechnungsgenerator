@@ -338,7 +338,7 @@ class InvoiceRendererTest : FunSpec({
             // Nicht nur, DASS er dasteht: Über der Positionstabelle wäre der
             // Satz eine Ankündigung, unter dem Gesamtbetrag ist er der Vorbehalt
             // zu genau dieser Summe.
-            tex.indexOf("Die Leistung ist noch nicht erbracht.") shouldBeGreaterThan tex.indexOf("Gesamtbetrag")
+            tex.indexOf("Die Leistung ist noch nicht erbracht.") shouldBeGreaterThan tex.indexOf("\\gesamtzeile{")
             renderMit(testItem()) shouldNotContain "noch nicht erbracht"
         }
 
@@ -383,7 +383,7 @@ class InvoiceRendererTest : FunSpec({
             // ausgewiesene Umsatzsteuer.
             val tex = schlussrechnung(gesamtleistung, testPrepayment())
 
-            tex.indexOf("R26-009") shouldBeGreaterThan tex.indexOf("Gesamtbetrag")
+            tex.indexOf("R26-009") shouldBeGreaterThan tex.indexOf("\\gesamtzeile{")
         }
 
         test("jeder Abschlag steht einzeln, mit Netto und Steuer") {
@@ -460,7 +460,7 @@ class InvoiceRendererTest : FunSpec({
             tex shouldContain
                 "\\hinweisabsatz{Bei Zahlung bis~\\zusammen{21.~August 2026} können 2~\\% " +
                 "Skonto abgezogen werden.}"
-            tex.indexOf("Skonto abgezogen") shouldBeGreaterThan tex.indexOf("Gesamtbetrag")
+            tex.indexOf("Skonto abgezogen") shouldBeGreaterThan tex.indexOf("\\gesamtzeile{")
         }
 
         test("weitere Stufen hängen sich nach der Frist sortiert an") {
@@ -552,8 +552,8 @@ class InvoiceRendererTest : FunSpec({
             // Steuer anfällt, sagt der Hinweis darunter.
             val tex = render(mitReverseCharge())
 
-            tex shouldContain "zzgl. 19~\\% USt."
-            tex shouldNotContain "zzgl. 0"
+            tex shouldContain "\\steuerzeile{19~\\%}"
+            tex shouldNotContain "\\steuerzeile{0"
         }
 
         test("die USt-IdNr. des Kunden steht unter seiner Anschrift, wenn er eine hat") {

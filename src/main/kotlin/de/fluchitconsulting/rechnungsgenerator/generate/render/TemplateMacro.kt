@@ -44,6 +44,15 @@ enum class TemplateMacro(val macroName: String, val arity: Int) {
     SUMMENZEILE("summenzeile", 2),
     ABSCHLUSSZEILE("abschlusszeile", 2),
 
+    // Die Zeilen des Summenblocks, ohne Beschriftung: Die setzt die Vorlage
+    // (#217), "Nettobetrag" und "Zwischensumme (netto)" sagen fachlich
+    // dasselbe. Die Steuerzeile bekommt den Satz, weil ihn jedes Design an
+    // einer anderen Stelle seines Wortlauts nennt. Die Gesamtzeile beendet wie
+    // ABSCHLUSSZEILE die Zeile davor selbst.
+    NETTOZEILE("nettozeile", 1),
+    STEUERZEILE("steuerzeile", 2),
+    GESAMTZEILE("gesamtzeile", 1),
+
     // Ohne Argument: Den Inhalt setzt die Vorlage aus den Werten der Bank, der
     // Renderer entscheidet nur, ob der Block dasteht.
     BANKBLOCK("bankblock", 0),
