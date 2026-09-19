@@ -41,6 +41,12 @@ zwei Ränder bedient.
 > Teil, der schon heute wehtat: Die Vorlage kommt ohne Kommentarzeilen im
 > `.tex` an.
 
+> **Nachtrag vom 19.09.2026:** Das zweite Design ist da, entschieden in
+> ADR-0011 (#189). Die Treppe hat auf der ersten Stufe gehalten: eine zweite
+> Vorlage, derselbe Renderer, kein neues Vokabular. Der Zuschnitt der
+> Vergleichsdateien blieb dabei, wie er war – `raster` sichert eine einzige
+> Datei, die übrigen Arten schützt das Pflichtangaben-Netz aus #187.
+
 ## 1. Gradle-Module statt `PackageStructureTest`
 
 Die Schichtung `values → model → calculation → rules` und die beiden

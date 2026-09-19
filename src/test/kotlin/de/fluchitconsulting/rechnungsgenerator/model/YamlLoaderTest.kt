@@ -1,6 +1,7 @@
 package de.fluchitconsulting.rechnungsgenerator.model
 
 import de.fluchitconsulting.rechnungsgenerator.calculation.CalculatedInvoice
+import de.fluchitconsulting.rechnungsgenerator.values.Design
 import de.fluchitconsulting.rechnungsgenerator.values.InvoiceType
 import de.fluchitconsulting.rechnungsgenerator.values.Money
 import de.fluchitconsulting.rechnungsgenerator.values.Percent
@@ -28,6 +29,22 @@ class YamlLoaderTest : FunSpec({
         // Das Muster der Rechnungsnummern (ADR-0005): geprüft wird die Nummer
         // erst im Calculator, gelesen wird sie hier.
         checkNotNull(config.invoiceNumberPattern).matches("R26-042") shouldBe true
+    }
+
+    test("ohne design gilt balken, mit design das genannte") {
+        // ADR-0011: Die Wahl steht in den Stammdaten, Vorgabe ist das heutige Design.
+        YamlLoader.parseSellerConfig(resource("stammdaten.yaml")).design shouldBe Design.BALKEN
+        YamlLoader.parseSellerConfig(resource("stammdaten.yaml") + "design: raster\n").design shouldBe Design.RASTER
+    }
+
+    test("ein unbekanntes design bricht ab und nennt die bekannten") {
+        val fehler =
+            shouldThrow<Exception> {
+                YamlLoader.parseSellerConfig(resource("stammdaten.yaml") + "design: gitter\n")
+            }
+
+        fehler.message!! shouldContain "gitter"
+        fehler.message!! shouldContain "balken, raster"
     }
 
     test("liest die Rechnung und rechnet End-to-End") {

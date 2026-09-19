@@ -14,6 +14,7 @@ import de.fluchitconsulting.rechnungsgenerator.model.testPrepayment
 import de.fluchitconsulting.rechnungsgenerator.model.testSellerConfig
 import de.fluchitconsulting.rechnungsgenerator.rules.accepted
 import de.fluchitconsulting.rechnungsgenerator.values.CountryCode
+import de.fluchitconsulting.rechnungsgenerator.values.Design
 import de.fluchitconsulting.rechnungsgenerator.values.InvoiceType
 import de.fluchitconsulting.rechnungsgenerator.values.Percent
 import de.fluchitconsulting.rechnungsgenerator.values.TaxCategory
@@ -149,6 +150,20 @@ class InvoiceRendererTest : FunSpec({
         }
     }
 
+    /**
+     * Das Satzbild von raster, gesichert an der Rechnung (ADR-0011). Die
+     * übrigen Arten schützt in raster nur das Netz aus #187: Die fachlichen
+     * Sätze sind dieselben wie in balken und dort schon gesichert, und eine
+     * Vergleichsdatei je Design und Art änderte sich mit jeder Vorlage.
+     */
+    test("eine Rechnung im Design raster wird gesetzt wie festgehalten") {
+        val seller = YamlLoader.parseSellerConfig(resource("stammdaten.yaml")).copy(design = Design.RASTER)
+        val invoice = YamlLoader.parseInvoice(resource("rechnung.yaml"))
+
+        InvoiceRenderer.render(CalculatedInvoice(invoice, seller).accepted()) shouldBe
+            resource("raster-rechnung-erwartet.tex")
+    }
+
     context("Vorlage und Werte müssen zusammenpassen") {
         // Diese Prüfung kann keine Rechnungsdatei auslösen – sie schlägt zu,
         // wenn Vorlage und Renderer auseinanderlaufen. Deshalb wird fillIn hier
@@ -268,15 +283,15 @@ class InvoiceRendererTest : FunSpec({
             InvoiceRenderer.checkPlaceholders(vorlageMit(pflicht))
         }
 
-        test("die echte Vorlage setzt jeden, den sie setzen muss") {
-            InvoiceRenderer.checkPlaceholders(
-                checkNotNull(InvoiceRenderer::class.java.getResource("/templates/invoice.tex")).readText(),
-            )
+        test("jede echte Vorlage setzt jeden, den sie setzen muss") {
+            Design.entries.forEach { design ->
+                withClue(design) { InvoiceRenderer.checkPlaceholders(InvoiceRenderer.templateOf(design)) }
+            }
         }
     }
 
     context("Die Kommentarzeilen der Vorlage") {
-        // #149: Die Kommentare erklären invoice.tex, im erzeugten .tex liest
+        // #149: Die Kommentare erklären die Vorlage, im erzeugten .tex liest
         // sie niemand – und eine geänderte Kommentarzeile soll keinen Test rot
         // machen.
 
@@ -678,11 +693,14 @@ class InvoiceRendererTest : FunSpec({
             fehler.message!! shouldContain "positionszeile"
         }
 
-        test("die echte Vorlage passt zum Renderer") {
+        test("jede echte Vorlage passt zum Renderer") {
             // Der Positivfall, damit die Prüfung nicht nur beim Kaputten greift.
-            InvoiceRenderer.checkMacros(
-                checkNotNull(InvoiceRenderer::class.java.getResource("/templates/invoice.tex")).readText(),
-            )
+            // Ohne Kommentarzeilen, so wie render sie prüft.
+            Design.entries.forEach { design ->
+                withClue(design) {
+                    InvoiceRenderer.checkMacros(InvoiceRenderer.withoutCommentLines(InvoiceRenderer.templateOf(design)))
+                }
+            }
         }
     }
 })

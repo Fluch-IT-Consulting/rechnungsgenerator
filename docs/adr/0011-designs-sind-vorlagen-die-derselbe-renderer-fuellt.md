@@ -1,0 +1,93 @@
+# Designs sind Vorlagen, die derselbe Renderer füllt
+
+Die Stammdaten wählen das Design der Rechnung: `design: balken` oder
+`design: raster`, ohne Eintrag `balken`. Jedes Design ist eine Vorlage im
+Programm, `templates/balken.tex` und `templates/raster.tex`. Beide füllt
+derselbe Renderer mit denselben Werten und Makroaufrufen.
+
+Wer was entscheidet:
+
+- **Eine einzelne Angabe** – eine Angabe der Stammdaten, eine Kopfangabe wie
+  Zahlungsziel oder Kundennummer – liefert der Renderer als Platzhalter, leer
+  erlaubt. Ob sie dasteht, entscheidet er über leer oder nicht leer.
+- **Ort, Reihenfolge, Beschriftung und Trenner** entscheidet die Vorlage. Als
+  einzige Bedingung kennt sie `\ifblank`.
+- **Wiederholtes und fachliche Sätze** – Positionen, Summen, Absetzung,
+  Pflichtsatz, Skonto, der Aufruf des Bankblocks – bleiben Makroaufrufe des
+  Renderers oder fehlen ganz.
+- **Welche Platzhalter keine Vorlage weglassen darf**, hält `checkPlaceholders`
+  (#188): die, deren Inhalt an Rechnungsart oder Rechnung hängt.
+
+## Warum
+
+Der Generator soll auch für andere Rechnungssteller taugen, und nicht jeder
+will aussehen wie der Lebenslauf des Autors. Die Rechnungsarten bleiben dabei
+die geschlossene Menge, die jedes Design vollständig beantwortet (Notiz vom
+14.09.2026): Was an der Art hängt, entscheidet einmal Kotlin, in den `when`
+ohne `else`, und nicht jedes Design für sich ohne Compiler.
+
+Die Treppe aus der Notiz hat auf der ersten Stufe gehalten. `raster` kommt mit
+dem Vokabular aus, das #188 für `balken` geschnitten hat – kein neuer Eintrag
+in `TemplateMacro` oder `TemplateValue`, kein zweiter Renderer.
+
+**Feste Texte gehören zum Design.** Ob es "Rechnungsnr." heißt oder
+"Rechnungsnummer", "Zahlbar ohne Abzug bis" oder "Zahlbar bis", entscheidet die
+Vorlage. Ein Wortlaut mit fachlicher Aussage kommt dagegen aus Kotlin, auch
+wenn er als Beschriftung dasteht: `ZEITRAUM_BESCHRIFTUNG` sagt auf einer
+Abschlagsrechnung "Voraussichtlicher Leistungszeitraum" (UStAE 14.8), und eine
+Vorlage, die fest "Leistungszeitraum" schriebe, wäre dort falsch. Dasselbe gilt
+für die Wörter im Summenblock und in der Absetzung: Sie stehen in jedem Design
+gleich da.
+
+**Die Bankverbindung in `raster`** steht nur im Fuß, auf jedem Dokument, als
+Angabe des Briefbogens und nicht als Zahlungsaufforderung. So hält es `balken`
+schon mit der IBAN in seiner Fußzeile. `\bankblock` ist in `raster` definiert
+und leer, der Renderer ruft ihn weiter nur bei `requestsPayment` auf. Ob ein
+Dokument zur Zahlung auffordert, zeigt dort allein das Zahlungsziel. Entschieden
+am fertigen Satzbild.
+
+## Verworfen
+
+- **Mitgebrachte Designs**, eine Vorlage als Datei neben den Stammdaten. Sie
+  bestünde `checkMacros` und `checkPlaceholders`, aber niemand hätte gesehen, ob
+  sie jede Rechnungsart vollständig setzt – das prüft nur das Netz aus #187, und
+  das läuft im Build dieses Projekts, nicht beim Benutzer.
+- **Die Wahl per Schalter oder je Rechnung.** Alle Rechnungen eines
+  Rechnungsstellers sehen gleich aus; ein Schalter am Kommando müsste bei jedem
+  Aufruf richtig gesetzt werden, und zwei Rechnungen derselben Reihe sähen
+  verschieden aus, nur weil einer ihn vergaß.
+- **Ein zweiter Renderer je Design.** Er wiederholte jede Entscheidung über die
+  Rechnungsarten, und die `when` ohne `else` hielten nur die Rechnungsarten
+  zusammen, nicht die Designs untereinander.
+- Aus #188, am selben Maßstab:
+  - **Werte als `\newcommand` statt Platzhalter.** Namensregeln, Kollisionen
+    und Expansionsfallen; die Prüfungen aus `fillIn` wären neu zu bauen.
+  - **Fertige Fußblöcke** (Anschrift, Steuer, Bank). `balken` verteilt dieselben
+    Angaben anders auf zwei Zeilen als `raster` auf drei Spalten; der Renderer
+    müsste das Design kennen.
+  - **Kopfangaben als Folge aus dem Renderer.** Reihenfolge und Beschriftung
+    lägen in Kotlin.
+  - **Bedingungen in der Vorlage über `\ifblank` hinaus.** Was an der
+    Rechnungsart hängt, würde je Design neu entschieden, ohne Compiler.
+- **Die Bank in `raster` als dritte Fußspalte nur bei `requestsPayment`.** Auf
+  dem Storno hätte der Fuß ein Loch. Ebenso verworfen: ein Bankblock im
+  Textfluss zusätzlich zum Fuß – dann stünde die Bank zweimal auf dem Blatt.
+
+## Konsequenzen
+
+- **Die Vergleichsdateien sind asymmetrisch.** `balken` sichern vier
+  `*-erwartet.tex`, eine je Rechnungsart mit eigenem Markup. `raster` sichert
+  nur `raster-rechnung-erwartet.tex`. Die übrigen Arten in `raster` schützt
+  bewusst allein das Netz aus #187: Ihre fachlichen Sätze sind dieselben wie in
+  `balken` und dort schon gesichert, und eine Datei je Design und Art änderte
+  sich mit jeder Vorlage. Ein Fehler im Satzbild einer Art, den das Netz nicht
+  sieht, fällt in `raster` erst am PDF auf.
+- **Das Netz aus #187 kennt jedes Design.** Ein Test verlangt, dass jedes
+  `Design` darin steht. Zum Design gehören dort die Wörter, deren Abwesenheit
+  geprüft wird; `raster` hat keine Bank-Überschrift.
+- **Ein drittes Design** ist eine Vorlage, ein Eintrag in `Design` und eine Zeile
+  im Netz. Braucht es ein Wort, das das Vokabular nicht hat, ist das die Frage
+  aus #188 – nicht ein Makro am Renderer vorbei.
+- **Die Build-Zeit wächst** mit jedem Design um fünf LuaLaTeX-Läufe im Netz.
+
+Umgesetzt in #189, vorbereitet in #187 und #188.

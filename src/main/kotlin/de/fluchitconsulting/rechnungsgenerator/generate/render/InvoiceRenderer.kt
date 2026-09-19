@@ -1,6 +1,7 @@
 package de.fluchitconsulting.rechnungsgenerator.generate.render
 
 import de.fluchitconsulting.rechnungsgenerator.rules.AcceptedInvoice
+import de.fluchitconsulting.rechnungsgenerator.values.Design
 
 /**
  * Setzt die LaTeX-Vorlage mit den Werten einer Rechnung zusammen.
@@ -27,22 +28,27 @@ import de.fluchitconsulting.rechnungsgenerator.rules.AcceptedInvoice
  * Renderer vollständig beantwortet.
  */
 object InvoiceRenderer {
-    private const val TEMPLATE_PATH = "/templates/invoice.tex"
-
     // Eine Makro-Definition der Vorlage: \newcommand{\name}[stelligkeit].
     private val NEWCOMMAND = Regex("""\\newcommand\{\\([a-zA-Z]+)}(?:\[(\d+)])?""")
 
     fun render(acceptedInvoice: AcceptedInvoice): String {
-        val template =
-            withoutCommentLines(
-                checkNotNull(javaClass.getResource(TEMPLATE_PATH)) { "Vorlage $TEMPLATE_PATH fehlt" }.readText(),
-            )
+        val template = withoutCommentLines(templateOf(acceptedInvoice.calculated.config.design))
         val values = values(acceptedInvoice)
 
         checkMacros(template)
         checkPlaceholders(template)
         checkLineBreaks(values)
         return fillIn(template, values)
+    }
+
+    /**
+     * Die Vorlage eines Designs, so wie sie im Programm liegt – noch mit ihren
+     * Kommentarzeilen. Jedes Design ist eine Datei unter `templates/`, benannt
+     * wie in der YAML.
+     */
+    internal fun templateOf(design: Design): String {
+        val path = "/templates/${design.label}.tex"
+        return checkNotNull(javaClass.getResource(path)) { "Vorlage $path fehlt" }.readText()
     }
 
     /**
