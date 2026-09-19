@@ -1,7 +1,6 @@
 package de.fluchitconsulting.rechnungsgenerator.generate.toolchain
 
 import java.nio.file.Path
-import java.time.LocalDate
 
 /** Ein gesetztes und geprüftes PDF. */
 data class TypesetPdf(val pdf: Path, val validation: ValidationResult)
@@ -30,25 +29,20 @@ interface Typesetter {
     fun checkAvailable()
 
     /**
-     * Setzt [texSource] samt [xmpMetadata] und prüft das Ergebnis gegen
-     * PDF/A-1b. Die Arbeitsdateien bleiben in [workingDir] liegen; wer sie
-     * loswerden will, räumt das Verzeichnis selbst auf.
+     * Setzt die [sources] und prüft das Ergebnis gegen PDF/A-1b. Die
+     * Arbeitsdateien bleiben in [workingDir] liegen; wer sie loswerden will,
+     * räumt das Verzeichnis selbst auf.
      *
-     * [creationDate] ist das Erstellungsdatum im PDF. Es kommt von außen statt
-     * von der Uhr, damit dieselben Quellen dasselbe PDF ergeben.
-     *
-     * [files] sind weitere Quellen, die der Quelltext unter ihrem Namen
-     * einbindet – etwa `logo.tex` (#198). Sie gehören zu den Quellen wie
-     * `.tex` und `.xmpdata`, auch für die Frage, ob dasselbe PDF entsteht.
-     * Bytes und nicht Text, weil ein Bild später auch welche ist.
+     * Die Quellen kommen als ein Wert und nicht als vier Parameter (#202):
+     * Was in die Bytes des PDF eingeht, steht damit an einer Stelle, und ein
+     * neuer Wert – etwa die XML-Datei für ZUGFeRD – kommt dort an, ohne dass
+     * jeder Durchreicher davon erfährt. [workingDir] und [jobName] bleiben
+     * daneben: Sie sagen, wohin gesetzt wird, nicht woraus.
      */
     fun typeset(
         workingDir: Path,
         jobName: String,
-        texSource: String,
-        xmpMetadata: String,
-        creationDate: LocalDate,
-        files: Map<String, ByteArray>,
+        sources: PdfSources,
     ): TypesetPdf
 }
 
@@ -70,12 +64,9 @@ object LuaLatexTypesetter : Typesetter {
     override fun typeset(
         workingDir: Path,
         jobName: String,
-        texSource: String,
-        xmpMetadata: String,
-        creationDate: LocalDate,
-        files: Map<String, ByteArray>,
+        sources: PdfSources,
     ): TypesetPdf {
-        val pdf = compiler.compile(workingDir, jobName, texSource, xmpMetadata, creationDate, files)
+        val pdf = compiler.compile(workingDir, jobName, sources)
         return TypesetPdf(pdf, validator.validate(pdf))
     }
 }

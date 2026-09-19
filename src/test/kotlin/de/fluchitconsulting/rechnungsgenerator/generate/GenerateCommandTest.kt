@@ -171,7 +171,21 @@ class GenerateCommandTest : FunSpec({
 
         lauf(fake, "-o", eingaben.resolve("datum.pdf").toString())
 
-        fake.creationDate shouldBe LocalDate.of(2026, 8, 14)
+        fake.sources!!.creationDate shouldBe LocalDate.of(2026, 8, 14)
+    }
+
+    /**
+     * Die Metadaten gehen denselben Weg wie der Quelltext (#202). Vorher
+     * merkte der Fake sie sich nicht, und dass das Kommando sie überhaupt
+     * weiterreicht, belegte allein der Lauf mit den echten Werkzeugen – ohne
+     * sie gibt es kein gültiges PDF/A, aber das sagt erst veraPDF.
+     */
+    test("die Metadaten kommen beim Typesetter an") {
+        val fake = FakeTypesetter()
+
+        lauf(fake, "-o", eingaben.resolve("metadaten.pdf").toString())
+
+        fake.sources!!.xmpMetadata shouldContain "\\Title{Rechnung R26-042}"
     }
 
     context("--oeffnen") {
@@ -256,8 +270,11 @@ class GenerateCommandTest : FunSpec({
 
             lauf(fake, "-o", ziel("logo-raster"), stammdatenDatei = stammdatenMitLogo("raster"))
 
-            fake.files!!.keys shouldBe setOf("logo.tex")
-            fake.files!!.getValue("logo.tex").decodeToString() shouldBe logo.readText()
+            fake.sources!!.files.keys shouldBe setOf("logo.tex")
+            fake.sources!!
+                .files
+                .getValue("logo.tex")
+                .decodeToString() shouldBe logo.readText()
         }
 
         test("balken übergeht das Logo und reicht keine Datei weiter") {
@@ -265,7 +282,7 @@ class GenerateCommandTest : FunSpec({
 
             lauf(fake, "-o", ziel("logo-balken"), stammdatenDatei = stammdatenMitLogo("balken"))
 
-            fake.files shouldBe emptyMap()
+            fake.sources!!.files shouldBe emptyMap()
         }
 
         test("scheitert der Satz, nennt die Meldung das Logo mit seinem Pfad") {

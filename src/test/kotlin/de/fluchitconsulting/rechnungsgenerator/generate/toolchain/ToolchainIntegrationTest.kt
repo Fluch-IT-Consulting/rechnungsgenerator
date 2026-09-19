@@ -204,9 +204,12 @@ class ToolchainIntegrationTest : FunSpec({
             LatexCompiler(ExternalTool).compile(
                 workingDir = workDir,
                 jobName = "ohne-pdfa",
-                texSource = "\\documentclass{article}\\begin{document}Kein PDF/A.\\end{document}",
-                xmpMetadata = "",
-                creationDate = LocalDate.of(2026, 1, 1),
+                sources =
+                    PdfSources(
+                        tex = "\\documentclass{article}\\begin{document}Kein PDF/A.\\end{document}",
+                        xmpMetadata = "",
+                        creationDate = LocalDate.of(2026, 1, 1),
+                    ),
             )
 
         val validation = PdfAValidator(ExternalTool).validate(plain)
@@ -226,9 +229,12 @@ class ToolchainIntegrationTest : FunSpec({
                 LatexCompiler(ExternalTool).compile(
                     workingDir = workDir,
                     jobName = "kaputt",
-                    texSource = "\\documentclass{article}\\begin{document}\\gibtesnicht\\end{document}",
-                    xmpMetadata = "",
-                    creationDate = LocalDate.of(2026, 1, 1),
+                    sources =
+                        PdfSources(
+                            tex = "\\documentclass{article}\\begin{document}\\gibtesnicht\\end{document}",
+                            xmpMetadata = "",
+                            creationDate = LocalDate.of(2026, 1, 1),
+                        ),
                 )
             }
 

@@ -49,7 +49,7 @@ class InvoiceRendererTest : FunSpec({
 
     fun renderMit(vararg items: de.fluchitconsulting.rechnungsgenerator.model.LineItem): String {
         val invoice = testInvoice(items = items.toList())
-        return InvoiceRenderer.render(CalculatedInvoice(invoice, config).accepted()).tex
+        return InvoiceRenderer.render(CalculatedInvoice(invoice, config).accepted()).sources.tex
     }
 
     /**
@@ -132,7 +132,7 @@ class InvoiceRendererTest : FunSpec({
         val seller = YamlLoader.parseSellerConfig(resource("stammdaten.yaml"))
         val invoice = YamlLoader.parseInvoice(resource("rechnung.yaml"))
 
-        InvoiceRenderer.render(CalculatedInvoice(invoice, seller).accepted()).tex shouldBe
+        InvoiceRenderer.render(CalculatedInvoice(invoice, seller).accepted()).sources.tex shouldBe
             resource("rechnung-erwartet.tex")
     }
 
@@ -149,7 +149,7 @@ class InvoiceRendererTest : FunSpec({
             val invoice = YamlLoader.parseInvoice(resource("$name.yaml"))
 
             withClue(name) {
-                InvoiceRenderer.render(CalculatedInvoice(invoice, seller).accepted()).tex shouldBe
+                InvoiceRenderer.render(CalculatedInvoice(invoice, seller).accepted()).sources.tex shouldBe
                     resource("$name-erwartet.tex")
             }
         }
@@ -168,7 +168,7 @@ class InvoiceRendererTest : FunSpec({
             YamlLoader.parseSellerConfig(resource("stammdaten.yaml")).copy(design = Design.RASTER, logo = beispielLogo)
         val invoice = YamlLoader.parseInvoice(resource("rechnung.yaml"))
 
-        InvoiceRenderer.render(CalculatedInvoice(invoice, seller).accepted()).tex shouldBe
+        InvoiceRenderer.render(CalculatedInvoice(invoice, seller).accepted()).sources.tex shouldBe
             resource("raster-rechnung-erwartet.tex")
     }
 
@@ -184,9 +184,9 @@ class InvoiceRendererTest : FunSpec({
         test("raster bindet das Logo ein und bekommt es als logo.tex mit") {
             val rendered = gesetzt(Design.RASTER, beispielLogo)
 
-            rendered.tex shouldContain "\\input{logo}"
-            rendered.files.keys shouldBe setOf("logo.tex")
-            rendered.files.getValue("logo.tex") shouldBe beispielLogo.content
+            rendered.sources.tex shouldContain "\\input{logo}"
+            rendered.sources.files.keys shouldBe setOf("logo.tex")
+            rendered.sources.files.getValue("logo.tex") shouldBe beispielLogo.content
         }
 
         test("balken übergeht das Logo und bekommt keine Datei") {
@@ -194,13 +194,13 @@ class InvoiceRendererTest : FunSpec({
             // Rechnung ergäbe mit und ohne Eintrag verschiedene PDFs.
             val mitLogo = gesetzt(Design.BALKEN, beispielLogo)
 
-            mitLogo.files shouldBe emptyMap()
-            mitLogo.tex shouldBe gesetzt(Design.BALKEN, null).tex
+            mitLogo.sources.files shouldBe emptyMap()
+            mitLogo.sources.tex shouldBe gesetzt(Design.BALKEN, null).sources.tex
         }
 
         test("ohne Logo gibt es in keinem Design eine Datei") {
             Design.entries.forEach { design ->
-                withClue(design) { gesetzt(design, null).files shouldBe emptyMap() }
+                withClue(design) { gesetzt(design, null).sources.files shouldBe emptyMap() }
             }
         }
 
@@ -279,7 +279,7 @@ class InvoiceRendererTest : FunSpec({
     context("Abschlagsrechnung") {
         fun abschlag(receivedOn: LocalDate? = null): String {
             val invoice = testInvoice(type = InvoiceType.PREPAYMENT, receivedOn = receivedOn)
-            return InvoiceRenderer.render(CalculatedInvoice(invoice, config).accepted()).tex
+            return InvoiceRenderer.render(CalculatedInvoice(invoice, config).accepted()).sources.tex
         }
 
         test("der Balken nennt die Rechnungsart") {
@@ -324,7 +324,7 @@ class InvoiceRendererTest : FunSpec({
                 )
             val invoice = testInvoice(type = InvoiceType.PREPAYMENT, items = listOf(item))
 
-            InvoiceRenderer.render(CalculatedInvoice(invoice, config).accepted()).tex shouldContain
+            InvoiceRenderer.render(CalculatedInvoice(invoice, config).accepted()).sources.tex shouldContain
                 "Voraussichtlicher Zeitraum: September 2026"
         }
 
@@ -338,7 +338,7 @@ class InvoiceRendererTest : FunSpec({
         test("die Metadaten des PDF tragen dieselbe Bezeichnung") {
             val invoice = testInvoice(type = InvoiceType.PREPAYMENT)
 
-            val xmp = InvoiceRenderer.renderMetadata(CalculatedInvoice(invoice, config).accepted())
+            val xmp = InvoiceRenderer.render(CalculatedInvoice(invoice, config).accepted()).sources.xmpMetadata
 
             xmp shouldContain "\\Title{Abschlagsrechnung R26-001}"
             xmp shouldContain "\\Subject{Abschlagsrechnung R26-001 vom 14. August 2026}"
@@ -347,7 +347,7 @@ class InvoiceRendererTest : FunSpec({
     context("Schlussrechnung") {
         fun schlussrechnung(items: List<LineItem>, vararg prepayments: Prepayment): String {
             val invoice = testInvoice(type = InvoiceType.FINAL, items = items, prepayments = prepayments.toList())
-            return InvoiceRenderer.render(CalculatedInvoice(invoice, config).accepted()).tex
+            return InvoiceRenderer.render(CalculatedInvoice(invoice, config).accepted()).sources.tex
         }
 
         val gesamtleistung = listOf(testItem(quantity = "1", unitPrice = "20000.00"))
@@ -427,7 +427,7 @@ class InvoiceRendererTest : FunSpec({
     context("Skonto") {
         // Rechnungsdatum 14.08.2026, Zahlungsziel 14 Tage.
         fun mitSkonto(vararg stufen: SkontoTier): String =
-            InvoiceRenderer.render(CalculatedInvoice(testInvoice(skonto = stufen.toList()), config).accepted()).tex
+            InvoiceRenderer.render(CalculatedInvoice(testInvoice(skonto = stufen.toList()), config).accepted()).sources.tex
 
         test("eine Stufe wird ein Satz unter den Summen") {
             val tex = mitSkonto(SkontoTier(rate = Percent("2"), days = 7))
@@ -464,7 +464,7 @@ class InvoiceRendererTest : FunSpec({
         // Rechnungen ist steuerfrei. Geprüft wird am Inhalt, nicht am Makro.
 
         fun render(invoice: Invoice, stammdaten: SellerConfig = config): String =
-            InvoiceRenderer.render(CalculatedInvoice(invoice, stammdaten).accepted()).tex
+            InvoiceRenderer.render(CalculatedInvoice(invoice, stammdaten).accepted()).sources.tex
 
         // Eine Position zum Regelsatz und eine mit Steuerschuldnerschaft des
         // Leistungsempfängers – die verlangt die USt-IdNr. des Kunden.

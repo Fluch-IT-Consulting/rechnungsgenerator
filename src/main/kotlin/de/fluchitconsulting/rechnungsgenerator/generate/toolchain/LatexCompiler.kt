@@ -2,7 +2,6 @@ package de.fluchitconsulting.rechnungsgenerator.generate.toolchain
 
 import java.nio.file.Path
 import java.security.MessageDigest
-import java.time.LocalDate
 import java.time.ZoneOffset
 import java.util.HexFormat
 import kotlin.io.path.exists
@@ -25,25 +24,22 @@ class LatexCompiler(private val runner: ProcessRunner) {
     fun compile(
         workingDir: Path,
         jobName: String,
-        texSource: String,
-        xmpMetadata: String,
-        creationDate: LocalDate,
-        files: Map<String, ByteArray> = emptyMap(),
+        sources: PdfSources,
     ): Path {
         // Ein Name mit Verzeichnis landete außerhalb des Arbeitsverzeichnisses,
         // einer wie die .tex überschriebe sie. "." und ".." sind für Path
         // schlichte Namen, meinen aber Verzeichnisse; ein leerer Name das
         // Arbeitsverzeichnis selbst.
-        files.keys.forEach { name ->
+        sources.files.keys.forEach { name ->
             require(name.isNotBlank() && name != "." && name != "..") { "Kein Dateiname: '$name'" }
             require(name == Path.of(name).fileName.toString()) { "Kein schlichter Dateiname: $name" }
             require(name != "$jobName.tex" && name != "$jobName.xmpdata") { "$name ist schon vergeben" }
         }
-        workingDir.resolve("$jobName.tex").writeText(texSource)
-        workingDir.resolve("$jobName.xmpdata").writeText(xmpMetadata)
-        files.forEach { (name, content) -> workingDir.resolve(name).writeBytes(content) }
+        workingDir.resolve("$jobName.tex").writeText(sources.tex)
+        workingDir.resolve("$jobName.xmpdata").writeText(sources.xmpMetadata)
+        sources.files.forEach { (name, content) -> workingDir.resolve(name).writeBytes(content) }
 
-        val id = trailerId(texSource, xmpMetadata, files)
+        val id = trailerId(sources)
         val command =
             listOf(
                 PROGRAM,
@@ -54,7 +50,11 @@ class LatexCompiler(private val runner: ProcessRunner) {
             )
         val environment =
             mapOf(
-                "SOURCE_DATE_EPOCH" to creationDate.atStartOfDay(ZoneOffset.UTC).toEpochSecond().toString(),
+                "SOURCE_DATE_EPOCH" to
+                    sources.creationDate
+                        .atStartOfDay(ZoneOffset.UTC)
+                        .toEpochSecond()
+                        .toString(),
                 "TZ" to "UTC",
             )
 
@@ -87,16 +87,12 @@ class LatexCompiler(private val runner: ProcessRunner) {
      * vor jedem Inhalt trennt wie die Null – nur taugt die Null bei Bytes nicht,
      * weil sie selbst darin vorkommen kann.
      */
-    private fun trailerId(
-        texSource: String,
-        xmpMetadata: String,
-        files: Map<String, ByteArray>,
-    ): String {
+    private fun trailerId(sources: PdfSources): String {
         val md5 = MessageDigest.getInstance("MD5")
-        md5.update(texSource.toByteArray())
+        md5.update(sources.tex.toByteArray())
         md5.update(0.toByte())
-        md5.update(xmpMetadata.toByteArray())
-        files.toSortedMap().forEach { (name, content) ->
+        md5.update(sources.xmpMetadata.toByteArray())
+        sources.files.toSortedMap().forEach { (name, content) ->
             md5.update(0.toByte())
             md5.update(name.toByteArray())
             md5.update(0.toByte())
