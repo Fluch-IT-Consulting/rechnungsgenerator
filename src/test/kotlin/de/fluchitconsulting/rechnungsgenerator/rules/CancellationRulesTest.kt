@@ -107,6 +107,38 @@ class CancellationRulesTest : FunSpec({
         CalculatedInvoice(storno(), config).rules() shouldNotContain Rule.GESAMTBETRAG_NEGATIV
     }
 
+    context("ABSCHLAGSRECHNUNG_OHNE_BETRAG (#214)") {
+        fun abschlag(
+            unitPrice: String,
+            quantity: String = "1",
+        ) = testInvoice(type = InvoiceType.PREPAYMENT, items = listOf(testItem(quantity = quantity, unitPrice = unitPrice)))
+
+        test("eine Abschlagsrechnung über null wird abgelehnt") {
+            val message = messageFor(abschlag("0.00"), Rule.ABSCHLAGSRECHNUNG_OHNE_BETRAG)
+
+            message shouldContain "fordert nichts"
+        }
+
+        test("eine Abschlagsrechnung über einen positiven Betrag bleibt zulässig") {
+            CalculatedInvoice(abschlag("100.00"), config).aborts().shouldBeEmpty()
+        }
+
+        test("eine negative meldet nur das Vorzeichen") {
+            // Negativ ist auch nicht null; eine zweite Meldung über denselben
+            // Betrag sagte nichts Neues.
+            val rules = CalculatedInvoice(abschlag("100.00", quantity = "-1"), config).rules()
+
+            rules shouldContain Rule.GESAMTBETRAG_NEGATIV
+            rules shouldNotContain Rule.ABSCHLAGSRECHNUNG_OHNE_BETRAG
+        }
+
+        test("eine gewöhnliche Rechnung über null bricht nicht ab") {
+            CalculatedInvoice(testInvoice(items = listOf(testItem(unitPrice = "0.00"))), config)
+                .aborts()
+                .shouldBeEmpty()
+        }
+    }
+
     test("ein Storno hat keine Fälligkeit") {
         // Es fordert nicht zur Zahlung auf, sondern kündigt eine Erstattung an.
         CalculatedInvoice(storno(), config).dueDate shouldBe null
