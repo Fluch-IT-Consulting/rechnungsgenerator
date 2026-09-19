@@ -91,6 +91,11 @@ class ToolchainIntegrationTest : FunSpec({
      * `\logoskalierung` 1.2 und einmal ohne, steht im Bild 20 % höher.
      * Gemessen an den Zeilen mit blauen Pixeln im oberen Drittel der Seite –
      * dort steht sonst nur schwarzer Text.
+     *
+     * Mit 300 dpi: Das Logo ist dann rund 142 und 170 Pixel hoch, und ein
+     * Pixel Rundung an jedem Rand verschiebt das Verhältnis um weniger als
+     * 1 %. Bei 100 dpi waren es 47 und 57 Pixel, und schon ein Pixel je
+     * Messung konnte die Toleranz überschreiten.
      */
     test("der Skalierungsfaktor der Logodatei setzt das Logo größer") {
         val skaliert = Path.of("src/test/resources/logo-skaliert.tex")
@@ -110,7 +115,7 @@ class ToolchainIntegrationTest : FunSpec({
             val (pdf, ausgabe) = run.erzeuge("rechnung", "hoehe-${logo.fileName}", stammdaten = stammdaten)
             withClue(ausgabe.joinToString("\n")) { ausgabe shouldContain "PDF/A-1b: gültig" }
 
-            val bild = run.imageOf(pdf)
+            val bild = run.imageOf(pdf, dpi = 300)
             return (0 until bild.height / 3).count { y ->
                 (0 until bild.width).any { x ->
                     val rgb = bild.getRGB(x, y)
@@ -121,9 +126,10 @@ class ToolchainIntegrationTest : FunSpec({
             }
         }
 
-        val verhaeltnis = logoHoehe(skaliert).toDouble() / logoHoehe(ohneFaktor)
+        val mitFaktor = logoHoehe(skaliert)
+        val ohne = logoHoehe(ohneFaktor)
 
-        verhaeltnis shouldBe (1.2 plusOrMinus 0.03)
+        withClue("$mitFaktor und $ohne Pixel") { mitFaktor.toDouble() / ohne shouldBe (1.2 plusOrMinus 0.03) }
     }
 
     /**
