@@ -41,6 +41,26 @@ class ItemRulesTest : FunSpec({
             .shouldBeEmpty()
     }
 
+    context("RABATT_AUSSERHALB_BEREICH") {
+        listOf("0", "-10", "100.01", "150").forEach { rabatt ->
+            test("ein Rabatt von $rabatt % wird abgelehnt") {
+                val message =
+                    messageFor(testInvoice(items = listOf(testItem(discount = rabatt))), Rule.RABATT_AUSSERHALB_BEREICH)
+
+                message shouldContain "Position 1"
+                message shouldContain "über 0 % bis einschließlich 100 %"
+            }
+        }
+
+        listOf("0.5", "30", "100").forEach { rabatt ->
+            test("ein Rabatt von $rabatt % bleibt zulässig") {
+                CalculatedInvoice(testInvoice(items = listOf(testItem(discount = rabatt))), config)
+                    .aborts()
+                    .shouldBeEmpty()
+            }
+        }
+    }
+
     test("ein negativer Gesamtbetrag wird abgelehnt") {
         // Mit dem Einzelpreis ist nur noch eine negative Menge übrig, die dahin
         // führt. Ein negativer Betrag gehört seit ADR-0006 in eine

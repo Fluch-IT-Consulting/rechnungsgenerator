@@ -1,10 +1,12 @@
 package de.fluchitconsulting.rechnungsgenerator.rules
 
 import de.fluchitconsulting.rechnungsgenerator.calculation.CalculatedInvoice
+import java.math.BigDecimal
 
 /**
- * Die Positionen selbst: dass es welche gibt und dass kein Einzelpreis negativ
- * ist. Was an ihrer Steuerkategorie hängt, prüft [TaxCategoryRules].
+ * Die Positionen selbst: dass es welche gibt, dass kein Einzelpreis negativ
+ * ist und kein Rabatt außerhalb von 0 bis 100 % liegt. Was an ihrer
+ * Steuerkategorie hängt, prüft [TaxCategoryRules].
  */
 internal object ItemRules {
     fun check(calculated: CalculatedInvoice): List<Finding> =
@@ -34,6 +36,24 @@ internal object ItemRules {
                         ),
                     )
                 }
+                // Über 100 % würde der Positionsbetrag negativ, und ein negativer
+                // Rabatt wäre ein Aufschlag. Null lehnen wir ab, weil er die
+                // Spalte einschaltet, ohne etwas zu mindern.
+                item.discount?.let { rabatt ->
+                    val satz = rabatt.valueAsPercentage
+                    if (satz <= BigDecimal.ZERO || satz > HUNDRED) {
+                        add(
+                            Finding(
+                                Rule.RABATT_AUSSERHALB_BEREICH,
+                                Subject.Item(index, item.name),
+                                "Der Rabatt $rabatt liegt außerhalb des zulässigen Bereichs. " +
+                                    "Zulässig sind Sätze über 0 % bis einschließlich 100 %.",
+                            ),
+                        )
+                    }
+                }
             }
         }
+
+    private val HUNDRED = BigDecimal(100)
 }
