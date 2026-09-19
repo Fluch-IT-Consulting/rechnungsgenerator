@@ -258,6 +258,17 @@ CV/Web-Auftritt des Autors), Validierung über veraPDF.
   widersprüchliche Rechnung soll nicht als PDF hinausgehen. Gruppiert wird nach
   Kategorie **und** Satz, weil zwei Positionen mit 0 % steuerlich Verschiedenes
   bedeuten können.
+
+  Auf dem Blatt trennt der **Befreiungsgrund** die Gruppen, nicht ihr
+  Steuerbetrag (#218): Wer einen Grund trägt (E, AE, K, O), steht im Hinweis
+  unter den Summen, wer keinen trägt (S, Z), als Steuerzeile im Summenblock –
+  der Nullsatz also mit "0 % … 0,00 €", denn er ist keine Befreiung, sondern
+  eine Besteuerung mit 0 %. Vorher entschied das der Steuerbetrag, und eine
+  Z-Gruppe fiel ganz vom Blatt. Die Steuerzeile nennt außerdem das Entgelt
+  ihrer Gruppe (§14 Abs. 4 Nr. 7 UStG), sobald es mehr als eine gibt; bei
+  einer wäre es die Zwischensumme und stünde doppelt da. Geprüft wird das an
+  `gemischte-steuersaetze.yaml` im Netz, mit zwei Positionen je Satz – bei
+  einer stünde das Entgelt zufällig schon als Positionsbetrag da.
 - **Bestätigungsabfrage**: Vor einer Rechnung ohne Umsatzsteuer muss die
   USt-IdNr. des Kunden geprüft und die Prüfung dokumentiert sein
   (`kunde: ust-id-geprueft`). Sonst bricht der Lauf ab
