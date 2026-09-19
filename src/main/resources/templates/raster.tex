@@ -110,7 +110,8 @@
 %% Steuer ausgeschrieben und den Satz dahinter, wie auf der bisherigen
 %% Rechnung dieses Designs.
 \newcommand{\nettozeile}[1]{\summenzeile{Zwischensumme (netto)}{#1}}
-\newcommand{\steuerzeile}[2]{\summenzeile{Umsatzsteuer #1}{#2}}
+%% Die Grundlage nur bei mehreren Steuergruppen (#218), sonst ist sie leer.
+\newcommand{\steuerzeile}[3]{\summenzeile{Umsatzsteuer #1\ifblank{#2}{}{ auf #2}}{#3}}
 \newcommand{\gesamtzeile}[1]{\abschlusszeile{Gesamtbetrag}{#1}}
 
 %% Die Bankverbindung setzt raster nicht als eigenen Block: Sie steht im Fuß,

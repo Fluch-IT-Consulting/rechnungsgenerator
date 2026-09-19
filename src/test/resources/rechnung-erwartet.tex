@@ -92,7 +92,7 @@
 \newcommand{\abschlusszeile}[2]{\\\midrule\textbf{#1} & \textbf{#2}}
 
 \newcommand{\nettozeile}[1]{\summenzeile{Nettobetrag}{#1}}
-\newcommand{\steuerzeile}[2]{\summenzeile{zzgl. #1 USt.}{#2}}
+\newcommand{\steuerzeile}[3]{\summenzeile{zzgl. #1 USt.\ifblank{#2}{}{ auf #2}}{#3}}
 \newcommand{\gesamtzeile}[1]{\abschlusszeile{Gesamtbetrag}{#1}}
 
 \begin{document}
@@ -144,7 +144,7 @@
 \begin{minipage}{0.55\linewidth}
   \begin{tabularx}{\linewidth}{@{}>{\raggedright\arraybackslash}X r@{}}
   \nettozeile{8.337,50~€} \summentrenner{}
-  \steuerzeile{19~\%}{1.584,13~€}
+  \steuerzeile{19~\%}{}{1.584,13~€}
   \gesamtzeile{9.921,63~€}
   \end{tabularx}
 \end{minipage}

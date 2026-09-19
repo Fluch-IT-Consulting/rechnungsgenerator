@@ -73,20 +73,33 @@ internal object ItemBlocks {
 
     /**
      * Der Summenblock: Beträge und Sätze, die Beschriftungen setzt die Vorlage
-     * (#217). Gruppen ohne Steuerbetrag erscheinen hier NICHT als
-     * "zzgl. 0 % USt. 0,00 €" – das sähe aus wie ein Rechenfehler oder eine
-     * vergessene Zeile. Warum keine Steuer anfällt, sagt [taxNotes] darunter.
+     * (#217).
+     *
+     * Hier steht eine Gruppe genau dann, wenn sie keinen Befreiungsgrund trägt.
+     * Eine befreite Gruppe erschiene sonst als "zzgl. 0 % USt. 0,00 €" – das
+     * sähe aus wie ein Rechenfehler; warum keine Steuer anfällt, sagt
+     * [taxNotes] darunter. Der Nullsatz (Kategorie Z) trägt keinen Grund und
+     * steht deshalb hier: Er ist keine Befreiung, sondern eine Besteuerung mit
+     * 0 %, und §14 Abs. 4 Nr. 8 UStG verlangt dafür Satz und Steuerbetrag
+     * (#218). Vorher entschied das der Steuerbetrag von null, und eine
+     * Z-Gruppe fiel ganz vom Blatt.
      */
     fun totalsBlock(calculatedInvoice: CalculatedInvoice): Latex =
         buildList {
             add(Latex.macro(TemplateMacro.NETTOZEILE, listOf(GermanFormat.amountWithCurrency(calculatedInvoice.netTotal))))
-            calculatedInvoice.vatGroups.filterNot { it.amount.isZero() }.forEach { group ->
+            // §14 Abs. 4 Nr. 7 UStG verlangt das Entgelt je Steuersatz (#218).
+            // Bei nur einer Gruppe ist es die Zwischensumme und stünde doppelt da;
+            // sonst steht es in der Steuerzeile. Steuerfreie Gruppen zählen mit,
+            // ihr Entgelt nennt taxNotes.
+            val mitGrundlage = calculatedInvoice.vatGroups.size > 1
+            calculatedInvoice.vatGroups.filter { it.exemptionReason == null }.forEach { group ->
                 // Das Prozentzeichen ist maskiert, bevor es hier ankommt –
                 // GermanFormat.percent liefert ein fertiges Fragment.
+                val grundlage = if (mitGrundlage) GermanFormat.amountWithCurrency(group.base) else Latex.EMPTY
                 add(
                     Latex.macro(
                         TemplateMacro.STEUERZEILE,
-                        listOf(GermanFormat.percent(group.rate), GermanFormat.amountWithCurrency(group.amount)),
+                        listOf(GermanFormat.percent(group.rate), grundlage, GermanFormat.amountWithCurrency(group.amount)),
                     ),
                 )
             }
