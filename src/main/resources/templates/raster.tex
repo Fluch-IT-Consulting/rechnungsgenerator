@@ -6,8 +6,8 @@
 %% Gestaltungsprinzip: klassisch-tabellarisch und schwarz-weiß. Die Ordnung
 %% trägt das Gitter der Positionen, nicht eine Farbe. Oben rechts der
 %% Dokumenttitel mit den Kopfangaben, darunter Empfänger und Absender
-%% nebeneinander, unten der Fuß in drei Spalten. Die einzige Farbe ist die des
-%% Logos oben links.
+%% nebeneinander, unten der Fuß in drei Spalten. Farbe bringt allenfalls das
+%% Logo oben links mit, wenn die Stammdaten eines nennen.
 \documentclass[10pt,a4paper]{article}
 
 %% pdfx erzeugt das PDF/A-1b, siehe balken.tex. Früh laden, es zieht hyperref
@@ -108,62 +108,31 @@
 %% es bleibt leer (#189, ADR-0011).
 \newcommand{\bankblock}{}
 
-%% Das Logo, fest in der Vorlage (#197): ein Beispiellogo der fiktiven
-%% Muster IT-Consulting, eine Bildmarke "M" mit blauem Verlauf und eine
-%% Wortmarke. Konfigurierbar wird es später.
+%% Das Logo nennen die Stammdaten (#198), als Datei mit dem Rumpf einer
+%% tikzpicture. Der Renderer legt sie neben die .tex, <<LOGO>> ist ihr Name,
+%% ohne Logo leer. Das Fragment bringt Farben und Schrift selbst mit; die
+%% Vorlage sichert zu, dass TikZ, fontspec und xcolor geladen sind, und
+%% skaliert es mit \resizebox auf \logohoehe.
 %%
 %% TikZ und keine Bilddatei: Der Treiber luatex.def von graphicx gibt jedem
 %% über \includegraphics eingebundenen PDF eine Transparenzgruppe mit, und die
-%% verbietet PDF/A-1 (ISO 19005-1, 6.4). TikZ-Code erzeugt keine. Außerdem
-%% bleibt die Vorlage eine einzige Datei, und das Logo geht mit in die
-%% Prüfsumme, aus der LatexCompiler die Trailer-ID bildet.
-%%
-%% Die Wortmarke hat ihre eigene Schrift: Ein Logo sieht gleich aus, egal in
-%% welcher Schrift der Brief steht. Gezeichnet ist es in beliebigen Einheiten,
-%% \resizebox bringt es auf \logohoehe.
-\newfontfamily{\logoschrift}{texgyreheros}[
-  Extension   = .otf,
-  UprightFont = *-regular,
-  BoldFont    = *-bold,
-]
-\definecolor{logodunkel}{HTML}{1B2A4A}
-\definecolor{logohell}{HTML}{4FB3F0}
-\definecolor{logomittel}{HTML}{2F7FD8}
-\definecolor{logofalte}{HTML}{1F5FB0}
+%% verbietet PDF/A-1 (ISO 19005-1, 6.4, siehe #197).
 \newlength{\logohoehe}\setlength{\logohoehe}{12mm}
 \newlength{\versalhoehe}
-\newcommand{\logo}{\resizebox{!}{\logohoehe}{\begin{tikzpicture}
-  %% Bildmarke: zwei Pfeiler und ein gefaltetes Band dazwischen
-  \shade[top color=logohell, bottom color=logomittel, rounded corners=3pt]
-    (0,0) -- (0,2.6) -- (0.8,2.6) -- (0.8,0) -- cycle;
-  \shade[top color=logohell, bottom color=logomittel]
-    (0.8,2.6) -- (1.6,1.5) -- (1.6,0.6) -- (0.8,1.7) -- cycle;
-  \shade[top color=logohell, bottom color=logomittel]
-    (1.6,1.5) -- (2.4,2.6) -- (2.4,1.7) -- (1.6,0.6) -- cycle;
-  \shade[top color=logohell, bottom color=logomittel, rounded corners=3pt]
-    (2.4,0) -- (2.4,2.6) -- (3.2,2.6) -- (3.2,0) -- cycle;
-  \fill[logofalte] (0.8,2.6) -- (0.8,1.7) -- (1.15,2.12) -- cycle;
-  \fill[logofalte] (2.4,2.6) -- (2.4,1.7) -- (2.05,2.12) -- cycle;
-  %% Wortmarke
-  \node[anchor=south west, inner sep=0, font=\logoschrift\fontsize{40}{40}\selectfont\bfseries]
-    at (4.0,0.95) {\textcolor{logodunkel}{MUSTER}\textcolor{logohell}{IT}};
-  \node[anchor=south west, inner sep=0, text=logodunkel,
-    font=\logoschrift\fontsize{13}{13}\selectfont\addfontfeature{LetterSpace=30}]
-    at (4.05,0.05) {CONSULTING};
-\end{tikzpicture}}}
 
 \begin{document}
 
 %% ------------------------------------------------------- Titel und Kopfangaben
-%% Links das Logo, rechts der Titel mit den Kopfangaben; die Beschriftungen
-%% stehen rechtsbündig vor ihren Werten.
+%% Links das Logo, wenn es eines gibt, rechts der Titel mit den Kopfangaben;
+%% die Beschriftungen stehen rechtsbündig vor ihren Werten.
 %%
 %% Das Logo nimmt keinen Raum ein ([0pt][0pt]): So steht der Titel auf
 %% derselben Grundlinie wie ohne Logo, und alles darunter bleibt, wo es war.
 %% Seine Oberkante liegt auf der Versalhöhe des Titels. Dafür darf es nicht
 %% höher werden als der Block der Kopfangaben, sonst ragt es in die Anschriften.
 \settoheight{\versalhoehe}{\LARGE\bfseries M}%
-\noindent\raisebox{\dimexpr\versalhoehe-\height\relax}[0pt][0pt]{\logo}%
+\noindent\ifblank{<<LOGO>>}{}{\raisebox{\dimexpr\versalhoehe-\height\relax}[0pt][0pt]{%
+  \resizebox{!}{\logohoehe}{\begin{tikzpicture}\input{<<LOGO>>}\end{tikzpicture}}}}%
 \hfill
 \begin{tabular}[t]{@{}r@{\hspace{3mm}}l@{}}
   \multicolumn{2}{@{}r@{}}{\LARGE\bfseries <<DOKUMENTART>>}\\[2mm]

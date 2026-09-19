@@ -72,8 +72,17 @@ class PflichtangabenTest : FunSpec({
 
     // Die Stammdaten des Beispiels, nur mit anderem Design – dieselben Angaben,
     // damit ein Unterschied im Befund am Design liegt und nicht an den Daten.
-    fun stammdatenMit(design: String): Path =
-        workDir.resolve("stammdaten-$design.yaml").also { it.writeText(stammdaten.readText() + "design: $design\n") }
+    // Dazu auf Wunsch das Beispiellogo, mit absolutem Pfad: Die Stammdaten
+    // liegen hier im Temp-Verzeichnis, das Logo nicht (#198).
+    fun stammdatenMit(
+        design: String,
+        logo: Boolean = false,
+    ): Path {
+        val logoEintrag = if (logo) "logo: ${Path.of("src/test/resources/logo.tex").toAbsolutePath()}\n" else ""
+        return workDir.resolve("stammdaten-$design.yaml").also {
+            it.writeText(stammdaten.readText() + "design: $design\n" + logoEintrag)
+        }
+    }
 
     // Ein weiteres Design ist hier eine weitere Zeile.
     val designs =
@@ -86,7 +95,8 @@ class PflichtangabenTest : FunSpec({
             ),
             Design(
                 name = "raster",
-                stammdaten = stammdatenMit("raster"),
+                // raster setzt das Logo; so sieht veraPDF es bei jeder Rechnungsart.
+                stammdaten = stammdatenMit("raster", logo = true),
                 zahlungszielBeschriftung = "Zahlbar bis",
                 bankUeberschrift = null,
             ),

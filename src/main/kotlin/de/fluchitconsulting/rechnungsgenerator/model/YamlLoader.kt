@@ -1,9 +1,11 @@
 package de.fluchitconsulting.rechnungsgenerator.model
 
 import com.charleskorn.kaml.Yaml
+import de.fluchitconsulting.rechnungsgenerator.values.Logo
 import kotlinx.serialization.SerializationException
 import java.io.IOException
 import java.nio.file.Path
+import kotlin.io.path.readBytes
 import kotlin.io.path.readText
 
 /**
@@ -24,11 +26,25 @@ class InputFileException(message: String) : Exception(message)
 object YamlLoader {
     private val yaml = Yaml.default
 
-    fun parseSellerConfig(text: String): SellerConfig = yaml.decodeFromString(SellerConfig.serializer(), text)
+    /**
+     * Stammdaten aus Text. Ein Logo lehnt sie ab: Ohne Datei gibt es kein
+     * Verzeichnis, gegen das sein Pfad gälte.
+     */
+    fun parseSellerConfig(text: String): SellerConfig {
+        val config = decodeSellerConfig(text)
+        if (config.logoFile != null) {
+            throw SerializationException("logo: Ein Logo lässt sich nur mit loadSellerConfig lesen, das den Ort der Stammdaten kennt.")
+        }
+        return config
+    }
 
     fun parseInvoice(text: String): Invoice = yaml.decodeFromString(Invoice.serializer(), text)
 
-    fun loadSellerConfig(path: Path): SellerConfig = read(path, ::parseSellerConfig)
+    fun loadSellerConfig(path: Path): SellerConfig {
+        val config = read(path, ::decodeSellerConfig)
+        val logoFile = config.logoFile ?: return config
+        return config.copy(logo = readLogo(path, logoFile))
+    }
 
     fun loadInvoice(path: Path): Invoice = read(path, ::parseInvoice)
 
@@ -57,6 +73,40 @@ object YamlLoader {
         } catch (e: SerializationException) {
             throw InputFileException("Die Datei $path konnte nicht gelesen werden:\n${e.message}")
         }
+    }
+
+    private fun decodeSellerConfig(text: String): SellerConfig = yaml.decodeFromString(SellerConfig.serializer(), text)
+
+    /**
+     * Liest das Logo, das die Stammdaten unter [sellerConfig] nennen. Ein
+     * relativer Pfad gilt ab ihrem Verzeichnis, nicht ab dem Arbeitsverzeichnis:
+     * Die Stammdaten liegen meist anderswo als der Ort, von dem aus man
+     * `erzeuge` aufruft. `resolve` lässt einen absoluten Pfad, wie er ist.
+     *
+     * Jede Meldung nennt beide Dateien – wer nur "logo.tex fehlt" liest, weiß
+     * nicht, welche Stammdaten danach gefragt haben.
+     */
+    private fun readLogo(
+        sellerConfig: Path,
+        logoFile: String,
+    ): Logo {
+        val source =
+            sellerConfig
+                .toAbsolutePath()
+                .parent
+                .resolve(logoFile)
+                .normalize()
+        val named = "Die Stammdaten $sellerConfig nennen unter logo die Datei $source"
+        if (!Logo.isAllowed(source)) {
+            throw InputFileException("$named. ${Logo.unsupported(source)}")
+        }
+        val content =
+            try {
+                source.readBytes()
+            } catch (e: IOException) {
+                throw InputFileException("$named, und sie konnte nicht gelesen werden: ${reasonFor(e)}.")
+            }
+        return Logo(source, content)
     }
 
     /**

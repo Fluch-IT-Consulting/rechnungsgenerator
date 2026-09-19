@@ -103,18 +103,35 @@ class GenerateCommand(
             )
         }
 
+        val rendered = InvoiceRenderer.render(acceptedInvoice)
+        // Das Logo stammt aus einer Datei der Benutzerin oder des Benutzers, und
+        // ein Fehler darin zeigt sich erst im Satz oder bei veraPDF (#198). Im
+        // Protokoll heißt die Datei nur logo.tex – den eingetragenen Pfad
+        // kennt allein dieses Kommando. Nur wenn die Vorlage das Logo auch
+        // einbindet, sonst kann es an ihm nicht liegen.
+        val logoNote =
+            config.logo
+                ?.takeIf { rendered.files.isNotEmpty() }
+                ?.let { "\n\nDie Stammdaten nennen ein Logo (${it.source}); ein Fehler darin bricht den Satz ebenfalls ab." }
+                .orEmpty()
+
         val workDir = createTempDirectory("rechnungsgenerator")
         try {
             val typesetPdf =
-                typesetter.typeset(
-                    workingDir = workDir,
-                    jobName = jobName,
-                    texSource = InvoiceRenderer.render(acceptedInvoice),
-                    xmpMetadata = InvoiceRenderer.renderMetadata(acceptedInvoice),
-                    // Das Rechnungsdatum und nicht die Uhr: Eine neu erzeugte
-                    // Rechnung soll nicht jünger aussehen als die verschickte.
-                    creationDate = invoice.issueDate,
-                )
+                try {
+                    typesetter.typeset(
+                        workingDir = workDir,
+                        jobName = jobName,
+                        texSource = rendered.tex,
+                        xmpMetadata = InvoiceRenderer.renderMetadata(acceptedInvoice),
+                        // Das Rechnungsdatum und nicht die Uhr: Eine neu erzeugte
+                        // Rechnung soll nicht jünger aussehen als die verschickte.
+                        creationDate = invoice.issueDate,
+                        files = rendered.files,
+                    )
+                } catch (e: ToolchainException) {
+                    throw ToolchainException(e.message + logoNote, e)
+                }
             // Ein ungültiges PDF/A ist kein Erfolg: Exitcode 1, damit ein Skript
             // ringsherum es merkt. Und es kommt nicht ans Ziel – auch nicht mit
             // --ueberschreiben, das einer gültigen Rechnung gilt.
@@ -127,7 +144,7 @@ class GenerateCommand(
                     }
                 throw ToolchainException(
                     "Das erzeugte PDF ist kein gültiges PDF/A-1b und wurde nicht nach $target geschrieben.\n" +
-                        "${typesetPdf.validation.describe()}\n$inspectionNote",
+                        "${typesetPdf.validation.describe()}\n$inspectionNote$logoNote",
                 )
             }
             typesetPdf.pdf.copyTo(target, overwrite = overwrite)

@@ -1,0 +1,99 @@
+# Das Logo ist ein TikZ-Fragment aus den Stammdaten
+
+Die Stammdaten nennen das Logo als Datei: `logo: logo.tex`, ein relativer Pfad
+gilt ab dem Verzeichnis der Stammdaten. Ohne Eintrag gibt es kein Logo. Die
+Datei ist ein LaTeX-Fragment, der Rumpf einer `tikzpicture`.
+
+Der Weg ins PDF:
+
+- `YamlLoader.loadSellerConfig` liest die Datei beim Einlesen. `SellerConfig`
+  trägt sie als `Logo` mit Pfad und Bytes. Fehlt sie oder hat sie eine andere
+  Endung als `.tex`, bricht das Einlesen ab und nennt beide Dateien.
+- Der Renderer liefert den Platzhalter `LOGO` als Schalter, leer oder `logo`,
+  und die Datei als `logo.tex` in `RenderedInvoice.files` – aber nur, wenn die
+  Vorlage `<<LOGO>>` enthält.
+- `LatexCompiler` legt die Datei neben die `.tex`, und sie geht mit Namen und
+  Inhalt in die Trailer-ID ein.
+- Die Vorlage bindet sie mit `\input` in eine `tikzpicture` ein und bestimmt
+  Ort und Höhe. `raster` setzt das Logo, `balken` übergeht es.
+
+Der Vertrag des Fragments: Es zeichnet in TikZ und bringt alles andere selbst
+mit, Farben (`\definecolor`) wie Schrift (`\newfontfamily`). Die Vorlage sichert
+nur zu, dass TikZ, fontspec und xcolor geladen sind.
+
+## Warum
+
+**Ein Fragment ist kein mitgebrachtes Design.** ADR-0011 hat mitgebrachte
+Vorlagen verworfen, weil niemand sieht, ob sie jede Rechnungsart vollständig
+setzen. Ein Logo bekommt keine Werte, ruft keine Makros des Renderers und hängt
+an keiner Rechnungsart. Es kann eine Rechnung nicht unvollständig machen, nur
+hässlich oder ungültig – und ungültig fängt veraPDF.
+
+**TikZ und keine Bilddatei.** Der Treiber `luatex.def` von graphicx gibt jedem
+über `\includegraphics` eingebundenen PDF eine Transparenzgruppe mit
+(`\Gread@transgrouptrue`), und die verbietet PDF/A-1 (ISO 19005-1, 6.4).
+Nachgemessen mit veraPDF 1.30 in #197: Ein sauberes Vektor-PDF ist nach dem
+Einbinden nicht mehr konform, ohne die Gruppe ist es das wieder. Ein TikZ-Fragment
+erzeugt keine. PDF und PNG bleiben möglich, die Endung bestimmt dann die Art;
+sie brauchen eine Umdefinition von `\Gread@pdf` und die Prüfung auf
+Alphakanal und CMYK.
+
+**`\input` einer Datei statt eines Werts.** Das Fragment geht nicht durch die
+Werte-Map, also weder durch die Maskierung noch durch `checkLineBreaks` oder
+`fillIn`. Ein Fehler darin nennt im Protokoll `logo.tex`, nicht eine Zeile des
+erzeugten `.tex`. Und der Weg – eine Datei neben die Quelle legen und in die
+Prüfsumme nehmen – ist der, den ein Bild später auch braucht.
+
+**Die Vorlage entscheidet, der Renderer befolgt sie.** Ob ein Design das Logo
+setzt, weiß nur seine Vorlage. Der Renderer fragt ihren Platzhalter, nicht das
+Design; dieselbe Richtung wie bei `fillIn` seit #188: Jeder Platzhalter der
+Vorlage bekommt einen Wert, aber keine Vorlage muss jeden Wert setzen. Eine
+Vorlage ohne `<<LOGO>>` bekommt die Datei gar nicht erst. So ergibt `balken`
+mit und ohne Logo-Eintrag Byte für Byte dasselbe PDF.
+
+**`\directlua` läuft auch ohne `--shell-escape`.** Wer das Fragment schreibt,
+kann damit Code ausführen. Das ist hinnehmbar: Stammdaten und Fragment gehören
+demselben Menschen, der das Programm aufruft, und er könnte dasselbe auch ohne
+den Umweg.
+
+## Verworfen
+
+- **Das Beispiellogo als Vorgabe ohne Eintrag.** Auf der Rechnung eines anderen
+  Rechnungsstellers stünde eine erfundene Firma.
+- **Ein Hinweis, wenn das Design kein Logo setzt.** Der Renderer müsste die
+  Designs kennen, oder dieselbe Tatsache stünde in Kotlin und in der Vorlage.
+- **Das Fragment als roher Wert durch die Werte-Map.** Es bräuchte einen eigenen
+  Typ für unmaskiertes LaTeX, eine Ausnahme bei `checkLineBreaks` und ein Verbot
+  von `<<`, damit `fillIn` nichts darin ersetzt.
+- **Ein absoluter Pfad in `\input`.** `escapeLatex` macht aus `_` ein `\_`, und
+  das kennt `\input` nicht; dazu `%`, `#` und Leerzeichen in Verzeichnisnamen.
+  Eine zweite Maskierung nur für Pfade, statt die Datei unter festem Namen
+  danebenzulegen.
+- **Base64 in den Stammdaten.** Unlesbar, und das Nachbauen einer alten
+  Rechnung hängt ohnehin schon an den Stammdaten.
+- **Nur die Dateien in die Trailer-ID, die LuaLaTeX tatsächlich gelesen hat**
+  (`-recorder`). Die ID muss vor dem Lauf feststehen, die Liste der gelesenen
+  Dateien gibt es erst danach.
+- **`erzeuge` sucht im `.tex` nach `\input{logo}`.** Das Kommando wüsste dann,
+  wie Vorlagen ein Logo einbinden.
+- **Eine Probe des Fragments in einem eigenen LuaLaTeX-Lauf.** Ein zweiter
+  Satzweg bei jedem Aufruf. Stattdessen nennt die Meldung eines gescheiterten
+  Satzes oder eines ungültigen PDF/A das Logo samt Pfad.
+
+## Konsequenzen
+
+- **Wer das Logo austauscht und eine alte Rechnung nachbaut, bekommt das neue
+  Logo** – so wie heute eine geänderte Anschrift. Die gültige Rechnung ist das
+  archivierte PDF.
+- **Stammdaten mit einem Verweis ins Leere sind kaputt**, auch für
+  `abschlaege`, das das Logo nicht braucht.
+- **`parseSellerConfig` lehnt einen Logo-Eintrag ab**: Ohne Datei gibt es kein
+  Verzeichnis, gegen das der Pfad gälte. Tests setzen das Logo über `copy()`.
+- **`SellerConfig` trägt den Pfad zweimal**: `logoFile`, wie er in der YAML
+  steht, und `logo`, gelesen. Eine eigene Klasse nur für die YAML hätte das
+  vermieden, um den Preis eines Umbaus aller Stammdaten-Felder für eines.
+- **Die Vergleichsdateien zeigen das Logo nicht**, nur `\input{logo}`. Ob es
+  richtig gesetzt wird, prüfen `PflichtangabenTest` (raster mit Logo, jede Art)
+  und `ToolchainIntegrationTest`.
+
+Umgesetzt in #198, vorbereitet in #197.

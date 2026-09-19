@@ -12,6 +12,7 @@ import java.io.File
 import java.time.LocalDate
 import kotlin.io.path.createTempDirectory
 import kotlin.io.path.exists
+import kotlin.io.path.readBytes
 import kotlin.io.path.readText
 
 /**
@@ -42,7 +43,21 @@ class LatexCompilerTest : FunSpec({
         runner: FakeProcessRunner,
         dir: java.nio.file.Path = arbeitsverzeichnis(),
         tex: String = "\\documentclass{article}",
-    ) = LatexCompiler(runner).compile(dir, "rechnung", tex, "\\Title{Test}", LocalDate.of(2026, 8, 14))
+        files: Map<String, ByteArray> = emptyMap(),
+    ) = LatexCompiler(runner).compile(dir, "rechnung", tex, "\\Title{Test}", LocalDate.of(2026, 8, 14), files)
+
+    /** Die Trailer-ID aus dem Aufruf, mit dem LuaLaTeX gestartet wurde. */
+    fun trailerIdVon(
+        tex: String = "\\documentclass{article}",
+        files: Map<String, ByteArray> = emptyMap(),
+    ): String =
+        FakeProcessRunner(erfolgreicherLauf())
+            .also { setzen(it, tex = tex, files = files) }
+            .commands
+            .single()
+            .last()
+            .substringAfter("<")
+            .substringBefore(">")
 
     test("das Erstellungsdatum ist Mitternacht des Datums, in UTC geschrieben") {
         // 1786665600 ist 2026-08-14T00:00:00Z. Ohne TZ schriebe LuaTeX die
@@ -69,6 +84,52 @@ class LatexCompilerTest : FunSpec({
         erster shouldContain "\\pdfvariable trailerid"
         aufruf("\\documentclass{article}") shouldBe erster
         aufruf("\\documentclass{letter}") shouldNotBe erster
+    }
+
+    context("weitere Dateien (#198)") {
+        val logo = "\\fill (0,0) circle (1);".toByteArray()
+
+        test("liegen unter ihrem Namen im Arbeitsverzeichnis, Byte für Byte") {
+            val dir = arbeitsverzeichnis()
+
+            setzen(FakeProcessRunner(erfolgreicherLauf()), dir, files = mapOf("logo.tex" to logo))
+
+            dir.resolve("logo.tex").readBytes() shouldBe logo
+        }
+
+        test("gehen in die Trailer-ID ein: ein anderes Logo, eine andere ID") {
+            // Die .tex nennt das Logo nur per \\input. Ginge es nicht in die ID
+            // ein, änderte ein neues Logo das PDF, aber nicht seine ID.
+            val mitLogo = trailerIdVon(files = mapOf("logo.tex" to logo))
+
+            trailerIdVon(files = mapOf("logo.tex" to logo.copyOf())) shouldBe mitLogo
+            trailerIdVon(files = mapOf("logo.tex" to "\\fill (0,0) circle (2);".toByteArray())) shouldNotBe mitLogo
+            trailerIdVon() shouldNotBe mitLogo
+        }
+
+        test("ohne weitere Dateien bleibt die ID, wie sie vor #198 war") {
+            // Sonst ergäbe jede alte Rechnung beim Nachbauen ein anderes PDF.
+            val md5 = java.security.MessageDigest.getInstance("MD5")
+            md5.update("\\documentclass{article}".toByteArray())
+            md5.update(0.toByte())
+            md5.update("\\Title{Test}".toByteArray())
+            val vorher =
+                java.util.HexFormat
+                    .of()
+                    .withUpperCase()
+                    .formatHex(md5.digest())
+
+            trailerIdVon() shouldBe vorher
+        }
+
+        test("ein Name mit Verzeichnis oder der Name der Quelle wird abgelehnt") {
+            shouldThrow<IllegalArgumentException> {
+                setzen(FakeProcessRunner(erfolgreicherLauf()), files = mapOf("../logo.tex" to logo))
+            }
+            shouldThrow<IllegalArgumentException> {
+                setzen(FakeProcessRunner(erfolgreicherLauf()), files = mapOf("rechnung.tex" to logo))
+            }
+        }
     }
 
     test("die Quelldateien liegen neben dem Ergebnis") {

@@ -10,7 +10,10 @@ import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.string.shouldContain
+import kotlinx.serialization.SerializationException
+import java.nio.file.Path
 import java.time.LocalDate
+import kotlin.io.path.createDirectories
 import kotlin.io.path.createTempDirectory
 import kotlin.io.path.writeText
 
@@ -203,6 +206,72 @@ class YamlLoaderTest : FunSpec({
 
         failure.message!! shouldContain datei.toString()
         failure.message!! shouldContain "Kein gültiger regulärer Ausdruck"
+    }
+
+    context("logo") {
+        // Stammdaten mit Logo-Eintrag in einem eigenen Verzeichnis; das Logo
+        // liegt, wo der Test es hinlegt.
+        fun stammdatenMitLogo(eintrag: String): Path {
+            val datei = createTempDirectory("loader-test").resolve("stammdaten.yaml")
+            datei.writeText(resource("stammdaten.yaml") + "logo: $eintrag\n")
+            return datei
+        }
+
+        test("ohne Eintrag gibt es kein Logo") {
+            val datei = createTempDirectory("loader-test").resolve("stammdaten.yaml")
+            datei.writeText(resource("stammdaten.yaml"))
+
+            YamlLoader.loadSellerConfig(datei).logo shouldBe null
+        }
+
+        test("ein relativer Pfad gilt ab dem Verzeichnis der Stammdaten") {
+            // Nicht ab dem Arbeitsverzeichnis des Tests – das ist ein anderes.
+            val datei = stammdatenMitLogo("marke/logo.tex")
+            val logoDatei = datei.resolveSibling("marke").createDirectories().resolve("logo.tex")
+            logoDatei.writeText("\\fill (0,0) circle (1);")
+
+            val logo = YamlLoader.loadSellerConfig(datei).logo!!
+
+            logo.source shouldBe logoDatei.toAbsolutePath()
+            logo.content.decodeToString() shouldBe "\\fill (0,0) circle (1);"
+        }
+
+        test("ein absoluter Pfad gilt, wie er dasteht") {
+            val logoDatei = createTempDirectory("loader-logo").resolve("logo.tex")
+            logoDatei.writeText("\\fill (0,0) circle (1);")
+
+            YamlLoader.loadSellerConfig(stammdatenMitLogo(logoDatei.toAbsolutePath().toString())).logo!!.source shouldBe
+                logoDatei.toAbsolutePath()
+        }
+
+        test("eine fehlende Logodatei nennt beide Dateien") {
+            val datei = stammdatenMitLogo("gibtsnicht.tex")
+
+            val failure = shouldThrow<InputFileException> { YamlLoader.loadSellerConfig(datei) }
+
+            failure.message!! shouldContain datei.toString()
+            failure.message!! shouldContain datei.resolveSibling("gibtsnicht.tex").toAbsolutePath().toString()
+            failure.message!! shouldContain "es gibt sie nicht"
+        }
+
+        test("eine andere Endung als .tex bricht ab, bevor gelesen wird") {
+            // Die Datei gibt es nicht einmal: Die Endung entscheidet vorher.
+            val datei = stammdatenMitLogo("logo.png")
+
+            val failure = shouldThrow<InputFileException> { YamlLoader.loadSellerConfig(datei) }
+
+            failure.message!! shouldContain datei.toString()
+            failure.message!! shouldContain "zulässig ist .tex"
+        }
+
+        test("parseSellerConfig lehnt ein Logo ab, weil es keinen Ort kennt") {
+            val failure =
+                shouldThrow<SerializationException> {
+                    YamlLoader.parseSellerConfig(resource("stammdaten.yaml") + "logo: logo.tex\n")
+                }
+
+            failure.message!! shouldContain "loadSellerConfig"
+        }
     }
 
     test("ein YAML-Fehler nennt die Datei") {

@@ -65,6 +65,25 @@ class ToolchainIntegrationTest : FunSpec({
     }
 
     /**
+     * Dasselbe mit Logo (#198): Das Logo liegt als eigene Datei neben der .tex
+     * und geht in die Trailer-ID ein. Zwei Läufe mit denselben Quellen samt
+     * Logo ergeben also auch hier dasselbe PDF – und das Logo steht darin.
+     */
+    test("mit Logo ergeben zwei Läufe dasselbe PDF, und das Logo steht darin") {
+        val logo = Path.of("src/test/resources/logo.tex").toAbsolutePath()
+        val stammdaten =
+            workDir.resolve("stammdaten-logo.yaml").also {
+                it.writeText(Path.of("src/test/resources/stammdaten.yaml").readText() + "design: raster\nlogo: $logo\n")
+            }
+
+        val (erster, _) = run.erzeuge("rechnung", "logo-1", stammdaten = stammdaten)
+        val (zweiter, _) = run.erzeuge("rechnung", "logo-2", stammdaten = stammdaten)
+
+        erster.readBytes().contentEquals(zweiter.readBytes()) shouldBe true
+        run.textOf(erster) shouldContain "MUSTERIT"
+    }
+
+    /**
      * Text aus den Eingabedaten steht im PDF so, wie er in der YAML-Datei
      * steht. Ohne `Ligatures=TeXOff` in der Vorlage zöge die Schrift "A--C" zu
      * "A–C" zusammen und "<<A>>" zu "«A»" (#81) – das LaTeX sähe dabei richtig
