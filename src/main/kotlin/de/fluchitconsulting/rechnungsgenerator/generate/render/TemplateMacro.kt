@@ -5,7 +5,7 @@ package de.fluchitconsulting.rechnungsgenerator.generate.render
  *
  * Zugegeben eine zweite Liste neben der Vorlage, aber nur der Namen und nicht
  * des Satzes: Wie eine Position aussieht, steht weiterhin ausschließlich in
- * `invoice.tex`. Der Zweck ist die Prüfung. Vorher fiel ein vertippter
+ * den Vorlagen. Der Zweck ist die Prüfung. Vorher fiel ein vertippter
  * Makroname erst im LuaLaTeX-Lauf auf, also im Integrationstest; jetzt beim
  * Setzen der Vorlage, mit einer Meldung, die den Namen nennt – dasselbe, was
  * #30 für die Platzhalter eingeführt hat.

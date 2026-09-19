@@ -1,0 +1,196 @@
+%% Rechnungsvorlage "raster" – wird vom InvoiceRenderer gefüllt, mit denselben
+%% Werten und Makroaufrufen wie "balken" (ADR-0011). Platzhalter, Makros und die
+%% Regel, wer was entscheidet, beschreibt der Kopf von balken.tex. Kurz: Jede
+%% einzelne Angabe darf leer sein, und diese Vorlage fragt dafür nur \ifblank.
+%%
+%% Gestaltungsprinzip: klassisch-tabellarisch und schwarz-weiß. Die Ordnung
+%% trägt das Gitter der Positionen, nicht eine Farbe. Oben rechts der
+%% Dokumenttitel mit den Kopfangaben, darunter Empfänger und Absender
+%% nebeneinander, unten der Fuß in drei Spalten.
+\documentclass[10pt,a4paper]{article}
+
+%% pdfx erzeugt das PDF/A-1b, siehe balken.tex. Früh laden, es zieht hyperref
+%% und xcolor mit.
+\usepackage[a-1b]{pdfx}
+
+\usepackage{fontspec}
+\usepackage{geometry}
+\usepackage{tabularx}
+\usepackage{array}
+\usepackage{etoolbox}  %% \ifblank für die Angaben, die leer sein dürfen
+
+%% Fira Sans, aus TeX Live. Ligatures=TeXOff aus demselben Grund wie in
+%% balken.tex: Text aus den Eingabedaten soll so dastehen, wie er in der
+%% YAML-Datei steht, auch "--" und "<<" (#81).
+\setmainfont{FiraSans}[
+  Ligatures      = TeXOff,
+  Extension      = .otf,
+  UprightFont    = *-Regular,
+  BoldFont       = *-Bold,
+  ItalicFont     = *-Italic,
+  BoldItalicFont = *-BoldItalic,
+]
+
+\geometry{a4paper, left=20mm, right=20mm, top=18mm, bottom=16mm}
+
+\setlength{\parindent}{0pt}
+\pagestyle{empty}
+\raggedright
+
+%% Keine Silbentrennung, aus demselben Grund wie in balken.tex: Eigennamen,
+%% Beträge und Anschriften.
+\hyphenpenalty=10000
+\exhyphenpenalty=10000
+\tolerance=2000
+
+%% Gewöhnlicher Wortzwischenraum nach jedem Punkt (#143); den breiten
+%% bekommen nur die eigenen Sätze des Programms in \hinweisabsatz.
+\frenchspacing
+
+%% Etwas Luft in den Zeilen des Gitters, sonst kleben die Ziffern an den Linien.
+\renewcommand{\arraystretch}{1.35}
+
+%% Die Breite der Betragsspalte. Positionen, Summen und Absetzung stehen in
+%% drei Tabellen untereinander; nur mit derselben Breite fluchten ihre Linien.
+%% Nachgemessen braucht "−19.040,00 €" rund 21 mm.
+\newlength{\betragsbreite}\setlength{\betragsbreite}{24mm}
+\newcolumntype{B}{>{\raggedleft\arraybackslash}p{\betragsbreite}}
+
+%% Die Zeilen- und Tabellentrenner, die der Renderer aufruft (TemplateMacro).
+%% Im Gitter trennt eine Linie die Positionen; die Summen stehen ohne Linie
+%% untereinander, erst die Abschlusszeile setzt wieder eine.
+\newcommand{\positionstrenner}{\\\hline}
+\newcommand{\summentrenner}{\\}
+\newcommand{\zeilenwechsel}{\\}
+\newcommand{\zusammen}[1]{\mbox{#1}}
+
+%% Eine Zeile oben rechts: Beschriftung und Wert als Tabellenzeile. Ist der Wert
+%% leer, entfällt die ganze Zeile samt Beschriftung – sonst stünde auf einer
+%% Stornorechnung "Zahlbar bis" ohne Datum.
+\newcommand{\kopfangabe}[2]{\ifblank{#2}{}{#1 & #2\\}}
+
+%% Die eigenen Sätze des Programms unter den Summen, wie in balken.tex: nur hier
+%% der breite Abstand nach einem Satzende (#143), deshalb keine Eingabedaten.
+\newcommand{\hinweisabsatz}[1]{\par\vspace{5mm}\noindent%
+  {\nonfrenchspacing\sfcode`\:=1000 \sfcode`\;=1000 \sfcode`\,=1000 #1}}
+
+\newcommand{\absetzungskopf}[1]{\par\vspace{6mm}\noindent #1\par\vspace{1.5mm}}
+
+%% Die abgesetzten Abschläge im selben Gitter wie die Summen: Bezeichnung links,
+%% Betrag in der Betragsspalte. Der Renderer liefert die Zeilen ohne Zeilenende
+%% nach der letzten, das setzt diese Tabelle.
+\newcommand{\absetzungstabelle}[1]{\par\noindent%
+  \begin{tabularx}{\linewidth}{|>{\raggedright\arraybackslash}X|B|}\hline#1\\\hline\end{tabularx}\par}
+
+%% Die Zusatzzeile unter einer Position oder einem Abschlag. \normalfont, weil
+%% die Bezeichnung einer Position fett steht und die Zeile darin liegt.
+\newcommand{\positionsdetail}[1]{\newline{\normalfont\small #1}}
+\newcommand{\absetzungsdetail}[1]{\newline{\small #1}}
+
+%% Eine Zeile der Positionstabelle, sechs Spalten wie das Gitter: laufende
+%% Nummer, Bezeichnung (fett, die Beschreibung darunter), Menge, Einheit,
+%% Einzelpreis, Gesamt.
+\newcommand{\positionszeile}[6]{#1 & \textbf{#2} & #3 & #4 & #5 & #6}
+
+\newcommand{\summenzeile}[2]{#1 & #2}
+
+%% Die fette Zeile unter der Linie, mit der ein Betragsblock endet. Sie beendet
+%% die Zeile davor selbst, wie in balken.tex (#147).
+\newcommand{\abschlusszeile}[2]{\\\hline\textbf{#1} & \textbf{#2}}
+
+%% Die Bankverbindung setzt raster nicht als eigenen Block: Sie steht im Fuß,
+%% auf jedem Dokument, als Angabe des Briefbogens und nicht als
+%% Zahlungsaufforderung – so, wie balken die IBAN in seiner Fußzeile führt.
+%% Ob das Dokument zur Zahlung auffordert, sagt das Zahlungsziel oben rechts.
+%% Der Renderer ruft \bankblock trotzdem auf, wenn Zahlung gefordert wird, und
+%% es bleibt leer (#189, ADR-0011).
+\newcommand{\bankblock}{}
+
+\begin{document}
+
+%% ------------------------------------------------------- Titel und Kopfangaben
+%% Rechtsbündig, die Beschriftungen rechtsbündig vor ihren Werten.
+\hfill
+\begin{tabular}[t]{@{}r@{\hspace{3mm}}l@{}}
+  \multicolumn{2}{@{}r@{}}{\LARGE\bfseries <<DOKUMENTART>>}\\[2mm]
+  \kopfangabe{Rechnungsnr.:}{<<RECHNUNGSNUMMER>>}
+  \kopfangabe{Kundennr.:}{<<KUNDENNUMMER>>}
+  \kopfangabe{Unsere Auftragsnr.:}{<<AUFTRAGSNUMMER>>}
+  \kopfangabe{Datum:}{<<RECHNUNGSDATUM>>}
+  \kopfangabe{<<ZEITRAUM_BESCHRIFTUNG>>:}{<<LEISTUNGSZEITRAUM>>}
+  \kopfangabe{Vereinnahmt am:}{<<VEREINNAHMT_AM>>}
+  \kopfangabe{Ihre Referenz:}{<<KUNDENREFERENZ>>}
+  \kopfangabe{Zahlbar bis:}{<<ZAHLUNGSZIEL>>}
+\end{tabular}
+
+\vspace{12mm}
+
+%% ------------------------------------------------------ Empfänger und Absender
+%% Links der Empfänger mit seiner USt-IdNr. (BT-48, §14a UStG), rechts der
+%% Absender. Die Person unter der Firmierung nur ohne Geschäftsführung, wie in
+%% balken; die Geschäftsführung steht hier im Fuß.
+\begin{minipage}[t]{0.5\linewidth}\raggedright
+  <<EMPFAENGER>>\ifblank{<<KUNDE_USTID>>}{}{\\[2mm]USt-IdNr.: <<KUNDE_USTID>>}
+\end{minipage}%
+\hfill
+\begin{minipage}[t]{0.45\linewidth}\raggedleft
+  <<FIRMA>>\ifblank{<<GESCHAEFTSFUEHRUNG>>}{\zeilenwechsel{}<<INHABER>>}{}\zeilenwechsel{}<<STRASSE>>\zeilenwechsel{}<<PLZ>> <<ORT>>\ifblank{<<TELEFON>>}{}{\zeilenwechsel{}Tel.: <<TELEFON>>}\zeilenwechsel{}<<EMAIL>>
+\end{minipage}
+
+\vspace{12mm}
+
+%% --------------------------------------------------------------- Positionen
+\noindent
+\begin{tabularx}{\linewidth}{|>{\centering\arraybackslash}p{7mm}|>{\raggedright\arraybackslash}X|>{\raggedleft\arraybackslash}p{13mm}|>{\raggedright\arraybackslash}p{15mm}|>{\raggedleft\arraybackslash}p{22mm}|B|}
+  \hline
+  \textbf{Pos.} & \textbf{Bezeichnung} & \textbf{Menge} & \textbf{Einheit} & \textbf{Einzelpreis} & \textbf{Gesamt}\\
+  \hline
+<<POSITIONEN>>\\
+  \hline
+\end{tabularx}
+%% ------------------------------------------------------------------ Summen
+%% Direkt unter den Positionen, ohne Abstand: Mit derselben Betragsspalte
+%% setzt sich das Gitter fort. \nointerlineskip nimmt den Zeilenabstand
+%% zwischen den beiden Tabellen weg.
+\par\nointerlineskip\noindent
+\begin{tabularx}{\linewidth}{|>{\raggedright\arraybackslash}X|B|}
+<<SUMMEN>>\\
+  \hline
+\end{tabularx}
+
+%% ------------------------------------------------------ Die fachlichen Sätze
+%% Pflichtsatz, Steuerhinweise, Absetzung und Skonto in derselben Reihenfolge
+%% wie in balken. Jeder bringt seinen Abstand selbst mit.
+<<ARTHINWEIS>>
+
+<<STEUERHINWEISE>>
+
+<<ABSETZUNG>><<SKONTO>>
+
+<<BANKVERBINDUNG>>
+
+\vspace{8mm}
+
+%% Der Schlusssatz aus Stammdaten oder Rechnung. Keine Grußformel.
+<<SCHLUSSSATZ>>
+
+\vfill
+
+%% ------------------------------------------------------------------ Fuß
+%% Drei Spalten: Anschrift und Kontakt, Steuer und Register (§35a GmbHG),
+%% Bank. Beide Steuerkennungen, wo es beide gibt – die Spalte hat Platz.
+{\footnotesize
+\noindent
+\begin{minipage}[t]{0.32\linewidth}\raggedright
+  <<FIRMA>>\zeilenwechsel{}<<STRASSE>>\zeilenwechsel{}<<PLZ>> <<ORT>>\ifblank{<<WEBSEITE>>}{}{\zeilenwechsel{}<<WEBSEITE>>}
+\end{minipage}%
+\hfill
+\begin{minipage}[t]{0.34\linewidth}\raggedright
+  USt-IdNr.: <<USTID>>\ifblank{<<STEUERNUMMER>>}{}{\\Steuernummer: <<STEUERNUMMER>>}\ifblank{<<REGISTERGERICHT>>}{}{\\Registergericht: <<REGISTERGERICHT>>\ifblank{<<REGISTERNUMMER>>}{}{, <<REGISTERNUMMER>>}}\ifblank{<<GESCHAEFTSFUEHRUNG>>}{}{\\Geschäftsführung: <<GESCHAEFTSFUEHRUNG>>}
+\end{minipage}%
+\hfill
+\begin{minipage}[t]{0.28\linewidth}\raggedright
+  <<INSTITUT>>\\IBAN: <<IBAN>>\\BIC: <<BIC>>
+\end{minipage}\par}
+
+\end{document}

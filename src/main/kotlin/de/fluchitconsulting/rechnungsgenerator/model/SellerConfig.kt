@@ -2,6 +2,7 @@ package de.fluchitconsulting.rechnungsgenerator.model
 
 import de.fluchitconsulting.rechnungsgenerator.values.Bic
 import de.fluchitconsulting.rechnungsgenerator.values.CountryCode
+import de.fluchitconsulting.rechnungsgenerator.values.Design
 import de.fluchitconsulting.rechnungsgenerator.values.Iban
 import de.fluchitconsulting.rechnungsgenerator.values.InvoiceNumberPattern
 import de.fluchitconsulting.rechnungsgenerator.values.TaxNumber
@@ -34,6 +35,9 @@ data class SellerConfig(
     @SerialName("registergericht") val registerCourt: String? = null,
     @SerialName("handelsregister-nummer") val registerNumber: String? = null,
     @SerialName("geschaeftsfuehrer") val managingDirector: String? = null,
+    // Das Design der Rechnung (ADR-0011). In den Stammdaten und nicht je
+    // Rechnung: Alle Rechnungen eines Rechnungsstellers sehen gleich aus.
+    @SerialName("design") val design: Design = Design.BALKEN,
     // Schlusssatz über der Grußformel; überschreibbar pro Rechnung.
     @SerialName("schlusssatz") val closingLine: String =
         "Ich bedanke mich für das Vertrauen und die angenehme Zusammenarbeit.",

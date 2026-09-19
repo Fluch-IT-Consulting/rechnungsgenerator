@@ -19,6 +19,8 @@ import java.time.YearMonth
 import java.time.format.DateTimeFormatter
 import java.util.Locale
 import kotlin.io.path.createTempDirectory
+import kotlin.io.path.readText
+import kotlin.io.path.writeText
 
 /**
  * Ein Design, wie das Netz es sieht: die Stammdaten-Datei, die es wählt, und
@@ -28,12 +30,17 @@ import kotlin.io.path.createTempDirectory
  * sie zum Design. Ob eine Angabe dasteht, lässt sich an ihrem Wert prüfen; ob
  * sie fehlt, nur an ihrer Beschriftung – die IBAN etwa steht im Fuß jedes
  * Dokuments, die Überschrift der Bankverbindung nicht.
+ *
+ * [bankUeberschrift] ist null, wenn das Design keinen eigenen Bankblock setzt:
+ * raster führt die Bank nur im Fuß, als Angabe des Briefbogens (ADR-0011).
+ * Dann gibt es keine Überschrift, deren Abwesenheit zu prüfen wäre; ob das
+ * Dokument Zahlung fordert, zeigt dort allein das Zahlungsziel.
  */
 private data class Design(
     val name: String,
     val stammdaten: Path,
     val zahlungszielBeschriftung: String,
-    val bankUeberschrift: String,
+    val bankUeberschrift: String?,
 )
 
 /**
@@ -59,18 +66,37 @@ private data class Design(
 class PflichtangabenTest : FunSpec({
     tags(Toolchain)
 
-    val run = ToolchainRun(createTempDirectory("rechnungsgenerator-pflichtangaben"))
+    val workDir = createTempDirectory("rechnungsgenerator-pflichtangaben")
+    val run = ToolchainRun(workDir)
+    val stammdaten = Path.of("src/test/resources/stammdaten.yaml")
 
-    // Ein zweites Design ist hier eine zweite Zeile.
+    // Die Stammdaten des Beispiels, nur mit anderem Design – dieselben Angaben,
+    // damit ein Unterschied im Befund am Design liegt und nicht an den Daten.
+    fun stammdatenMit(design: String): Path =
+        workDir.resolve("stammdaten-$design.yaml").also { it.writeText(stammdaten.readText() + "design: $design\n") }
+
+    // Ein weiteres Design ist hier eine weitere Zeile.
     val designs =
         listOf(
             Design(
                 name = "balken",
-                stammdaten = Path.of("src/test/resources/stammdaten.yaml"),
+                stammdaten = stammdaten,
                 zahlungszielBeschriftung = "Zahlbar ohne Abzug bis",
                 bankUeberschrift = "Bankverbindung",
             ),
+            Design(
+                name = "raster",
+                stammdaten = stammdatenMit("raster"),
+                zahlungszielBeschriftung = "Zahlbar bis",
+                bankUeberschrift = null,
+            ),
         )
+
+    test("jedes Design steht im Netz") {
+        designs.map { it.name } shouldBe
+            de.fluchitconsulting.rechnungsgenerator.values.Design.entries
+                .map { it.label }
+    }
 
     // Eine Datei je Rechnungsart. Dass keine fehlt, prüft der erste Test.
     val arten =
@@ -212,14 +238,15 @@ private fun Blatt.pruefe(
     // fordert. Die Abwesenheit zeigt sich an der Beschriftung: Ein Design, das
     // sie ohne Wert stehen ließe, fiele hier auf.
     val dueDate = calculated.dueDate
+    val bankUeberschrift = design.bankUeberschrift
     if (dueDate != null) {
         steht("Zahlungsziel", *datum(dueDate))
-        steht("Überschrift der Bankverbindung", design.bankUeberschrift)
+        bankUeberschrift?.let { steht("Überschrift der Bankverbindung", it) }
         steht("IBAN", config.bank.iban.formatted())
         steht("BIC", config.bank.bic.value)
     } else {
         fehlt("Beschriftung des Zahlungsziels", design.zahlungszielBeschriftung)
-        fehlt("Überschrift der Bankverbindung", design.bankUeberschrift)
+        bankUeberschrift?.let { fehlt("Überschrift der Bankverbindung", it) }
     }
 }
 

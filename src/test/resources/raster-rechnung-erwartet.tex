@@ -1,0 +1,135 @@
+\documentclass[10pt,a4paper]{article}
+
+\usepackage[a-1b]{pdfx}
+
+\usepackage{fontspec}
+\usepackage{geometry}
+\usepackage{tabularx}
+\usepackage{array}
+\usepackage{etoolbox}  %% \ifblank für die Angaben, die leer sein dürfen
+
+\setmainfont{FiraSans}[
+  Ligatures      = TeXOff,
+  Extension      = .otf,
+  UprightFont    = *-Regular,
+  BoldFont       = *-Bold,
+  ItalicFont     = *-Italic,
+  BoldItalicFont = *-BoldItalic,
+]
+
+\geometry{a4paper, left=20mm, right=20mm, top=18mm, bottom=16mm}
+
+\setlength{\parindent}{0pt}
+\pagestyle{empty}
+\raggedright
+
+\hyphenpenalty=10000
+\exhyphenpenalty=10000
+\tolerance=2000
+
+\frenchspacing
+
+\renewcommand{\arraystretch}{1.35}
+
+\newlength{\betragsbreite}\setlength{\betragsbreite}{24mm}
+\newcolumntype{B}{>{\raggedleft\arraybackslash}p{\betragsbreite}}
+
+\newcommand{\positionstrenner}{\\\hline}
+\newcommand{\summentrenner}{\\}
+\newcommand{\zeilenwechsel}{\\}
+\newcommand{\zusammen}[1]{\mbox{#1}}
+
+\newcommand{\kopfangabe}[2]{\ifblank{#2}{}{#1 & #2\\}}
+
+\newcommand{\hinweisabsatz}[1]{\par\vspace{5mm}\noindent%
+  {\nonfrenchspacing\sfcode`\:=1000 \sfcode`\;=1000 \sfcode`\,=1000 #1}}
+
+\newcommand{\absetzungskopf}[1]{\par\vspace{6mm}\noindent #1\par\vspace{1.5mm}}
+
+\newcommand{\absetzungstabelle}[1]{\par\noindent%
+  \begin{tabularx}{\linewidth}{|>{\raggedright\arraybackslash}X|B|}\hline#1\\\hline\end{tabularx}\par}
+
+\newcommand{\positionsdetail}[1]{\newline{\normalfont\small #1}}
+\newcommand{\absetzungsdetail}[1]{\newline{\small #1}}
+
+\newcommand{\positionszeile}[6]{#1 & \textbf{#2} & #3 & #4 & #5 & #6}
+
+\newcommand{\summenzeile}[2]{#1 & #2}
+
+\newcommand{\abschlusszeile}[2]{\\\hline\textbf{#1} & \textbf{#2}}
+
+\newcommand{\bankblock}{}
+
+\begin{document}
+
+\hfill
+\begin{tabular}[t]{@{}r@{\hspace{3mm}}l@{}}
+  \multicolumn{2}{@{}r@{}}{\LARGE\bfseries Rechnung}\\[2mm]
+  \kopfangabe{Rechnungsnr.:}{R26-042}
+  \kopfangabe{Kundennr.:}{}
+  \kopfangabe{Unsere Auftragsnr.:}{}
+  \kopfangabe{Datum:}{14.~August 2026}
+  \kopfangabe{Leistungszeitraum:}{Juli 2026}
+  \kopfangabe{Vereinnahmt am:}{}
+  \kopfangabe{Ihre Referenz:}{BST-2026-0815}
+  \kopfangabe{Zahlbar bis:}{28.~August 2026}
+\end{tabular}
+
+\vspace{12mm}
+
+\begin{minipage}[t]{0.5\linewidth}\raggedright
+  Beispiel Software GmbH\zeilenwechsel{}Industriestraße 1\zeilenwechsel{}90402 Nürnberg\ifblank{}{}{\\[2mm]USt-IdNr.: }
+\end{minipage}%
+\hfill
+\begin{minipage}[t]{0.45\linewidth}\raggedleft
+  Muster IT-Consulting UG (haftungsbeschränkt)\ifblank{Dr. Erika Musterfrau}{\zeilenwechsel{}Dr. Erika Musterfrau}{}\zeilenwechsel{}Beispielweg 42\zeilenwechsel{}97070 Würzburg\ifblank{+49 931 1234567}{}{\zeilenwechsel{}Tel.: +49 931 1234567}\zeilenwechsel{}rechnung@muster-it-consulting.example
+\end{minipage}
+
+\vspace{12mm}
+
+\noindent
+\begin{tabularx}{\linewidth}{|>{\centering\arraybackslash}p{7mm}|>{\raggedright\arraybackslash}X|>{\raggedleft\arraybackslash}p{13mm}|>{\raggedright\arraybackslash}p{15mm}|>{\raggedleft\arraybackslash}p{22mm}|B|}
+  \hline
+  \textbf{Pos.} & \textbf{Bezeichnung} & \textbf{Menge} & \textbf{Einheit} & \textbf{Einzelpreis} & \textbf{Gesamt}\\
+  \hline
+\positionszeile{1}{IT-Beratungsleistungen\positionsdetail{Rahmenvertrag vom 01.02.2026}}{86,5}{Std.}{95,00~€}{8.217,50~€} \positionstrenner{}
+\positionszeile{2}{Fahrtkostenpauschale\positionsdetail{Juli 2026}}{1}{pauschal}{120,00~€}{120,00~€}\\
+  \hline
+\end{tabularx}
+\par\nointerlineskip\noindent
+\begin{tabularx}{\linewidth}{|>{\raggedright\arraybackslash}X|B|}
+  \summenzeile{Nettobetrag}{8.337,50~€} \summentrenner{}
+  \summenzeile{zzgl. 19~\% USt.}{1.584,13~€}
+  \abschlusszeile{Gesamtbetrag}{9.921,63~€}\\
+  \hline
+\end{tabularx}
+
+
+
+
+
+
+
+\bankblock{}
+
+\vspace{8mm}
+
+Ich bedanke mich für das Vertrauen und die angenehme Zusammenarbeit.
+
+\vfill
+
+{\footnotesize
+\noindent
+\begin{minipage}[t]{0.32\linewidth}\raggedright
+  Muster IT-Consulting UG (haftungsbeschränkt)\zeilenwechsel{}Beispielweg 42\zeilenwechsel{}97070 Würzburg\ifblank{https://muster-it-consulting.example}{}{\zeilenwechsel{}https://muster-it-consulting.example}
+\end{minipage}%
+\hfill
+\begin{minipage}[t]{0.34\linewidth}\raggedright
+  USt-IdNr.: DE 123 456 788\ifblank{257/123/45678}{}{\\Steuernummer: 257/123/45678}\ifblank{Würzburg}{}{\\Registergericht: Würzburg\ifblank{HRB 12345}{}{, HRB 12345}}\ifblank{Dr. Erika Musterfrau}{}{\\Geschäftsführung: Dr. Erika Musterfrau}
+\end{minipage}%
+\hfill
+\begin{minipage}[t]{0.28\linewidth}\raggedright
+  Musterbank Würzburg\\IBAN: DE89 3704 0044 0532 0130 00\\BIC: MUSTDEFFXXX
+\end{minipage}\par}
+
+\end{document}

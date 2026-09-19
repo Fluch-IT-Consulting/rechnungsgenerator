@@ -50,7 +50,7 @@ CV/Web-Auftritt des Autors), Validierung über veraPDF.
   echten Werkzeugen bleibt daneben bestehen – ohne gültiges PDF/A kein grüner
   Build.
 - **Satz nur in der Vorlage**: Abstände, Schriftgrad, Farbe und Linien stehen in
-  `invoice.tex`. Der Renderer liefert Inhalt und Makroaufrufe und entscheidet
+  der Vorlage des Designs (`templates/balken.tex`, `templates/raster.tex`). Der Renderer liefert Inhalt und Makroaufrufe und entscheidet
   weiter, *ob* etwas dasteht. Die Millimeter sind benannte Längen, die
   Zeilenwechsel mit Abstand Makros (`\positionstrenner`), ebenso das
   Zusammenhalten einer Angabe (`\zusammen`): Der Renderer schreibt weder einen
@@ -111,6 +111,19 @@ CV/Web-Auftritt des Autors), Validierung über veraPDF.
   `dateInMetadata`. Erwogen und verworfen: ein zweiter Weg in `escapeLatex`,
   der in Daten jeden Punkt entschärft – 74 Aufrufe hätten ihre Bedeutung
   geändert, für eine Entscheidung, die in die Vorlage gehört.
+- **Designs** (ADR-0011): Die Stammdaten wählen das Design, `design: balken`
+  oder `design: raster`, ohne Eintrag `balken`. Jedes ist eine eingebaute
+  Vorlage, die derselbe Renderer füllt – kein zweiter Renderer, kein Schalter,
+  keine mitgebrachte Vorlage. `raster` kommt mit dem Vokabular aus #188 aus;
+  wer für ein weiteres Design ein Wort braucht, das `TemplateMacro` und
+  `TemplateValue` nicht haben, stellt die Frage aus #188 neu und baut nicht am
+  Renderer vorbei. Feste Texte gehören zum Design, ein Wortlaut mit fachlicher
+  Aussage kommt aus Kotlin, auch als Beschriftung. Die Bank steht in `raster`
+  nur im Fuß, `\bankblock` ist dort leer. Die Vergleichsdateien sind
+  asymmetrisch: `balken` sichern vier `*-erwartet.tex`, `raster` nur
+  `raster-rechnung-erwartet.tex`, die übrigen Arten dort allein das
+  Pflichtangaben-Netz (`PflichtangabenTest`, je Design und Art). Ein neues
+  Design ist eine Vorlage, ein Eintrag in `Design` und eine Zeile im Netz.
 - **Externe Prozesse**: Ausgabe wird in eine Datei umgeleitet, nicht in einen
   Stream gelesen – sonst blockiert das Lesen bei einem hängenden Prozess, und
   die Zeitgrenze käme nie zum Zug. LuaLaTeX läuft, solange die Log-Datei einen
@@ -244,8 +257,9 @@ CV/Web-Auftritt des Autors), Validierung über veraPDF.
   Vorlage kommen gar nicht erst im `.tex` an: Der Renderer streicht ganze
   `%`-Zeilen vor den Prüfungen, nachgestellte Kommentare bleiben, weil ein `%`
   am Zeilenende in LaTeX Bedeutung hat (#149). Den Schnitt zwischen Inhalt und
-  Vorlage, der die Vergleichsdateien vom Design löst, hebt die Notiz vom 14.09.
-  für das zweite Design auf.
+  Vorlage, der die Vergleichsdateien vom Design lösen sollte (Notiz vom
+  14.09.), hat das zweite Design nicht gebraucht: `raster` sichert eine
+  einzige Datei (ADR-0011).
 - **Storno**: Eine falsche Rechnung wird nicht überschrieben, sondern
   aufgehoben – `art: stornorechnung` mit eigener Nummer, dem Bezug auf die
   Ursprungsrechnung unter `storniert` (EN 16931 BG-3, Pflicht) und den
