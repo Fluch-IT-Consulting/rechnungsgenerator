@@ -79,6 +79,12 @@ enum class TemplateValue(
     // nicht aus Kotlin, und ob er dasteht, heißt nur leer oder nicht.
     EINLEITUNG(true),
 
+    // Ein Schalter wie LOGO (#213): nicht leer, wenn eine Position einen Rabatt
+    // hat. Dann setzt die Vorlage die Spalte, sonst nicht. Pflicht, weil er an
+    // der Rechnung hängt: Ein Design ohne ihn zeigte den geminderten Betrag,
+    // aber nicht, warum er kleiner ist.
+    RABATTSPALTE(true),
+
     // Wiederholtes und fachliche Sätze: Makroaufrufe oder nichts.
     POSITIONEN(true),
     SUMMEN(true),

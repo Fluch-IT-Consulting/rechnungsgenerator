@@ -132,6 +132,7 @@ object InvoiceRenderer {
             TemplateValue.KUNDENREFERENZ -> MetadataBlocks.buyerReference(calculatedInvoice)
             TemplateValue.ZAHLUNGSZIEL -> MetadataBlocks.dueDate(calculatedInvoice)
             TemplateValue.EINLEITUNG -> invoice.introduction.orEmpty().escapeLatex()
+            TemplateValue.RABATTSPALTE -> ItemBlocks.discountColumn(calculatedInvoice)
             TemplateValue.POSITIONEN -> ItemBlocks.lineItems(calculatedInvoice)
             TemplateValue.SUMMEN -> ItemBlocks.totalsBlock(calculatedInvoice)
             TemplateValue.ARTHINWEIS -> ItemBlocks.typeNote(acceptedInvoice)

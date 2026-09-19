@@ -53,7 +53,10 @@
 \newcommand{\positionsdetail}[1]{\newline{\normalfont\small #1}}
 \newcommand{\absetzungsdetail}[1]{\newline{\small #1}}
 
-\newcommand{\positionszeile}[6]{#1 & \textbf{#2} & #3 & #4 & #5 & #6}
+\newcommand{\mitrabatt}[1]{\ifblank{}{}{#1}}
+\ifblank{}{\newcolumntype{R}{}}{\newcolumntype{R}{>{\raggedleft\arraybackslash}p{14mm}|}}
+
+\newcommand{\positionszeile}[7]{#1 & \textbf{#2} & #3 & #4 & #5\mitrabatt{ & #6} & #7}
 
 \newcommand{\summenzeile}[2]{#1 & #2}
 
@@ -98,12 +101,12 @@
 \ifblank{}{}{\noindent \par\vspace{5mm}}
 
 \noindent
-\begin{tabularx}{\linewidth}{|>{\centering\arraybackslash}p{7mm}|>{\raggedright\arraybackslash}X|>{\raggedleft\arraybackslash}p{13mm}|>{\raggedright\arraybackslash}p{15mm}|>{\raggedleft\arraybackslash}p{22mm}|B|}
+\begin{tabularx}{\linewidth}{|>{\centering\arraybackslash}p{7mm}|>{\raggedright\arraybackslash}X|>{\raggedleft\arraybackslash}p{13mm}|>{\raggedright\arraybackslash}p{15mm}|>{\raggedleft\arraybackslash}p{22mm}|RB|}
   \hline
-  \textbf{Pos.} & \textbf{Bezeichnung} & \textbf{Menge} & \textbf{Einheit} & \textbf{Einzelpreis} & \textbf{Gesamt}\\
+  \textbf{Pos.} & \textbf{Bezeichnung} & \textbf{Menge} & \textbf{Einheit} & \textbf{Einzelpreis}\mitrabatt{ & \textbf{Rabatt}} & \textbf{Gesamt}\\
   \hline
-\positionszeile{1}{IT-Beratungsleistungen\positionsdetail{Rahmenvertrag vom 01.02.2026}}{86,5}{Std.}{95,00~€}{8.217,50~€} \positionstrenner{}
-\positionszeile{2}{Fahrtkostenpauschale\positionsdetail{Juli 2026}}{1}{pauschal}{120,00~€}{120,00~€}\\
+\positionszeile{1}{IT-Beratungsleistungen\positionsdetail{Rahmenvertrag vom 01.02.2026}}{86,5}{Std.}{95,00~€}{}{8.217,50~€} \positionstrenner{}
+\positionszeile{2}{Fahrtkostenpauschale\positionsdetail{Juli 2026}}{1}{pauschal}{120,00~€}{}{120,00~€}\\
   \hline
 \end{tabularx}
 \par\nointerlineskip\noindent

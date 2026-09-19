@@ -38,8 +38,9 @@ enum class TemplateMacro(val macroName: String, val arity: Int) {
     ABSETZUNGSDETAIL("absetzungsdetail", 1),
     POSITIONSDETAIL("positionsdetail", 1),
 
-    // Das erste Argument ist die laufende Nummer der Position.
-    POSITIONSZEILE("positionszeile", 6),
+    // Das erste Argument ist die laufende Nummer der Position, das sechste der
+    // Rabatt – leer, wenn die Position keinen hat.
+    POSITIONSZEILE("positionszeile", 7),
     SUMMENZEILE("summenzeile", 2),
     ABSCHLUSSZEILE("abschlusszeile", 2),
 

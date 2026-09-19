@@ -85,7 +85,7 @@ class TemplateTest : FunSpec({
                 }
 
             fehler.message!! shouldContain "positionszeile"
-            fehler.message!! shouldContain "6"
+            fehler.message!! shouldContain "7"
         }
 
         test("ein auskommentiertes Makro gilt nicht als definiert") {
