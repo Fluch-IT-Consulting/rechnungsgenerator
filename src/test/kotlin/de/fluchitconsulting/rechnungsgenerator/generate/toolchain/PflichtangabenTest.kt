@@ -19,7 +19,7 @@ import java.time.YearMonth
 import java.time.format.DateTimeFormatter
 import java.util.Locale
 import kotlin.io.path.createTempDirectory
-import kotlin.io.path.readText
+import kotlin.io.path.readLines
 import kotlin.io.path.writeText
 
 /**
@@ -73,14 +73,18 @@ class PflichtangabenTest : FunSpec({
     // Die Stammdaten des Beispiels, nur mit anderem Design – dieselben Angaben,
     // damit ein Unterschied im Befund am Design liegt und nicht an den Daten.
     // Dazu auf Wunsch das Beispiellogo, mit absolutem Pfad: Die Stammdaten
-    // liegen hier im Temp-Verzeichnis, das Logo nicht (#198).
+    // liegen hier im Temp-Verzeichnis, das Logo nicht (#198). Ohne
+    // Geschäftsführung werden sie die eines Einzelunternehmens.
     fun stammdatenMit(
         design: String,
         logo: Boolean = false,
+        geschaeftsfuehrung: Boolean = true,
     ): Path {
         val logoEintrag = if (logo) "logo: ${Path.of("src/test/resources/logo.tex").toAbsolutePath()}\n" else ""
-        return workDir.resolve("stammdaten-$design.yaml").also {
-            it.writeText(stammdaten.readText() + "design: $design\n" + logoEintrag)
+        val zeilen = stammdaten.readLines().filter { geschaeftsfuehrung || !it.startsWith("geschaeftsfuehrer:") }
+        val name = "stammdaten-$design" + (if (logo) "-logo" else "") + (if (geschaeftsfuehrung) "" else "-einzel")
+        return workDir.resolve("$name.yaml").also {
+            it.writeText(zeilen.joinToString("\n", postfix = "\n") + "design: $design\n" + logoEintrag)
         }
     }
 
@@ -122,21 +126,46 @@ class PflichtangabenTest : FunSpec({
         arten.keys shouldBe InvoiceType.entries.toSet()
     }
 
+    // Setzt eine Beispieldatei mit den echten Werkzeugen und prüft das Blatt.
+    fun setzeUndPruefe(
+        datei: String,
+        design: Design,
+        stammdaten: Path,
+        zielname: String,
+    ): CalculatedInvoice {
+        val eingabe = Path.of("src/test/resources/$datei.yaml")
+        val calculated = CalculatedInvoice(YamlLoader.loadInvoice(eingabe), YamlLoader.loadSellerConfig(stammdaten))
+
+        val (pdf, ausgabe) = run.erzeuge(datei, zielname = zielname, stammdaten = stammdaten)
+        withClue(ausgabe.joinToString("\n")) { ausgabe shouldContain "PDF/A-1b: gültig" }
+
+        val blatt = Blatt(run.textOf(pdf))
+        assertSoftly { blatt.pruefe(calculated, design) }
+        return calculated
+    }
+
     for (design in designs) {
         for ((art, datei) in arten) {
             test("$datei im Design ${design.name}: gültiges PDF/A-1b mit allen Pflichtangaben") {
-                val eingabe = Path.of("src/test/resources/$datei.yaml")
-                val calculated =
-                    CalculatedInvoice(YamlLoader.loadInvoice(eingabe), YamlLoader.loadSellerConfig(design.stammdaten))
+                val calculated = setzeUndPruefe(datei, design, design.stammdaten, zielname = "${design.name}-$datei")
                 calculated.invoice.type shouldBe art
-
-                val (pdf, ausgabe) =
-                    run.erzeuge(datei, zielname = "${design.name}-$datei", stammdaten = design.stammdaten)
-                withClue(ausgabe.joinToString("\n")) { ausgabe shouldContain "PDF/A-1b: gültig" }
-
-                val blatt = Blatt(run.textOf(pdf))
-                assertSoftly { blatt.pruefe(calculated, design) }
             }
+        }
+    }
+
+    // Die Stammdaten oben führen eine Geschäftsführung, und raster läuft dort
+    // mit Logo. Zwei Zweige der Vorlagen erreichten so nie ein echtes PDF: der
+    // Name des Inhabers, der nur ohne Geschäftsführung dasteht, und raster
+    // ohne Logo, der Fall ohne Eintrag. Beide hängen an den Stammdaten und
+    // nicht an der Rechnungsart, deshalb genügt die gewöhnliche Rechnung.
+    for (design in designs) {
+        test("rechnung im Design ${design.name} für ein Einzelunternehmen ohne Logo: gültig, mit dem Namen des Inhabers") {
+            val einzelunternehmen = stammdatenMit(design.name, logo = false, geschaeftsfuehrung = false)
+
+            val calculated = setzeUndPruefe("rechnung", design, einzelunternehmen, zielname = "${design.name}-einzel")
+
+            calculated.config.managingDirector shouldBe null
+            calculated.config.logo shouldBe null
         }
     }
 })
@@ -181,8 +210,11 @@ private fun Blatt.pruefe(
     val invoice = calculated.invoice
     val config = calculated.config
 
-    // §14 Abs. 4 Nr. 1: Name und Anschrift beider Seiten.
+    // §14 Abs. 4 Nr. 1: Name und Anschrift beider Seiten. Der vollständige
+    // Name des leistenden Unternehmers ist ohne Geschäftsführung die Person,
+    // nicht die Firmierung.
     steht("Rechnungssteller", config.companyName)
+    if (config.managingDirector == null) steht("Name des Inhabers", config.ownerName)
     steht("Anschrift Rechnungssteller", config.address.street)
     steht("Ort Rechnungssteller", "${config.address.postalCode} ${config.address.city}")
     steht("Kunde", invoice.customer.name)
