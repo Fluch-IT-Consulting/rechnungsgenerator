@@ -182,11 +182,20 @@ class Template private constructor(
          * Diese Prüfung deckt ab, was kein Beispiel enthält (Skonto,
          * Befreiungsgrund); ob die Angaben der Stammdaten dastehen, prüft das Netz
          * aus #187 am fertigen PDF.
+         *
+         * Dazu aus jeder Gruppe in [TemplateValue.requiredOneOf] mindestens
+         * einen: Welchen, entscheidet das Design.
          */
         private fun checkPlaceholders(source: String) {
             TemplateValue.entries.filter { it.required }.forEach { key ->
                 check(key.placeholder in source) {
                     "Die Vorlage setzt ${key.placeholder} nicht, und das darf keine Vorlage weglassen."
+                }
+            }
+            TemplateValue.requiredOneOf.forEach { gruppe ->
+                check(gruppe.any { it.placeholder in source }) {
+                    "Die Vorlage setzt keinen von ${gruppe.joinToString(", ") { it.placeholder }}, " +
+                        "und einen davon muss jede Vorlage setzen."
                 }
             }
         }

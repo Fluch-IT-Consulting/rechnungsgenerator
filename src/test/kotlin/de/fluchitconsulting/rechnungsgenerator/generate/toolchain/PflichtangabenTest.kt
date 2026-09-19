@@ -35,6 +35,9 @@ import kotlin.io.path.writeText
  * raster führt die Bank nur im Fuß, als Angabe des Briefbogens (ADR-0011).
  * Dann gibt es keine Überschrift, deren Abwesenheit zu prüfen wäre; ob das
  * Dokument Zahlung fordert, zeigt dort allein das Zahlungsziel.
+ *
+ * Die Beschriftung des Zahlungsziels ist in raster der Anfang des Satzes, der
+ * es als Frist nennt (#211) – eine Kopfzeile gibt es dort nicht mehr.
  */
 private data class Design(
     val name: String,
@@ -105,7 +108,7 @@ class PflichtangabenTest : FunSpec({
                 name = "raster",
                 // raster setzt das Logo; so sieht veraPDF es bei jeder Rechnungsart.
                 stammdaten = stammdatenMit("raster", logo = true),
-                zahlungszielBeschriftung = "Zahlbar bis",
+                zahlungszielBeschriftung = "Die Zahlung ist",
                 bankUeberschrift = null,
             ),
         )
@@ -272,7 +275,7 @@ private fun Blatt.pruefe(
     val dueDate = calculated.dueDate
     val bankUeberschrift = design.bankUeberschrift
     if (dueDate != null) {
-        steht("Zahlungsziel", *datum(dueDate))
+        steht("Zahlungsziel", *datum(dueDate), *frist(calculated.paymentTermDays))
         bankUeberschrift?.let { steht("Überschrift der Bankverbindung", it) }
         steht("IBAN", config.bank.iban.formatted())
         steht("BIC", config.bank.bic.value)
@@ -313,6 +316,14 @@ private val MONAT = DateTimeFormatter.ofPattern("MMMM", Locale.GERMANY)
 private val MONAT_JAHR = DateTimeFormatter.ofPattern("MMMM yyyy", Locale.GERMANY)
 
 private fun datum(date: LocalDate): Array<String> = arrayOf(KURZ.format(date), LANG.format(date))
+
+/** Das Zahlungsziel als Frist ab Rechnungsdatum statt als Datum (#211). */
+private fun frist(tage: Int): Array<String> =
+    when (tage) {
+        0 -> arrayOf("sofort fällig")
+        1 -> arrayOf("1 Tag nach Rechnungsdatum")
+        else -> arrayOf("$tage Tage nach Rechnungsdatum")
+    }
 
 /**
  * Ein Zeitraum auf den Tag genau oder – wo er ganze Kalendermonate füllt – in

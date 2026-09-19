@@ -483,6 +483,43 @@ class InvoiceRendererTest : FunSpec({
         }
     }
 
+    context("Zahlungsfrist") {
+        // Der Satz, den raster statt der Kopfzeile "Zahlbar bis" setzt (#211).
+        // Die Stammdaten des Tests haben 14 Tage.
+        fun frist(invoice: Invoice): String = wert(TemplateValue.ZAHLUNGSFRIST, invoice)
+
+        test("mehrere Tage ab Rechnungsdatum") {
+            frist(testInvoice()) shouldBe "\\hinweisabsatz{Die Zahlung ist 14 Tage nach Rechnungsdatum fällig.}"
+        }
+
+        test("ein Tag in der Einzahl") {
+            frist(testInvoice(paymentTermDaysOverride = 1)) shouldBe
+                "\\hinweisabsatz{Die Zahlung ist 1 Tag nach Rechnungsdatum fällig.}"
+        }
+
+        test("null Tage heißt sofort") {
+            frist(testInvoice(paymentTermDaysOverride = 0)) shouldBe "\\hinweisabsatz{Die Zahlung ist sofort fällig.}"
+        }
+
+        test("mit Skonto ohne Abzug") {
+            // Ohne Skonto fehlen die Worte: Dort fragte man sich, welcher
+            // Abzug gemeint ist.
+            frist(testInvoice(skonto = listOf(SkontoTier(rate = Percent("2"), days = 7)))) shouldBe
+                "\\hinweisabsatz{Die Zahlung ist ohne Abzug 14 Tage nach Rechnungsdatum fällig.}"
+        }
+
+        test("ohne Zahlungsziel kein Satz") {
+            // Eine voll abgesetzte Schlussrechnung fordert kein Geld (#94).
+            val gedeckt =
+                testInvoice(
+                    type = InvoiceType.FINAL,
+                    items = listOf(testItem(quantity = "1", unitPrice = "4000.00")),
+                    prepayments = listOf(testPrepayment()),
+                )
+            frist(gedeckt) shouldBe ""
+        }
+    }
+
     context("Pflichtangaben und was fehlen darf") {
         // Keine dieser Angaben stand bis #95 in einem Test oder einer der
         // Vergleichsdateien: Deren Stammdaten haben alles, und keine ihrer

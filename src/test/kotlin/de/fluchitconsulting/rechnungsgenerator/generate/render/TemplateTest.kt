@@ -7,7 +7,9 @@ import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.string.shouldContain
 
-private val pflicht = TemplateValue.entries.filter { it.required }
+// Die Pflicht-Platzhalter und aus jeder Gruppe, von der einer dastehen muss,
+// der erste.
+private val pflicht = TemplateValue.entries.filter { it.required } + TemplateValue.requiredOneOf.map { it.first() }
 
 // Für jeden Platzhalter ein Wert, und zwar ein leerer. Ein Test legt darüber,
 // was er prüfen will.
@@ -122,6 +124,25 @@ class TemplateTest : FunSpec({
                 }
 
             fehler.message!! shouldContain "<<SKONTO>>"
+        }
+
+        test("aus einer Gruppe genügt einer, gleich welcher") {
+            // Das Zahlungsziel als Datum im Kopf oder als Frist unter den
+            // Summen (#211).
+            val ohneZahlungsangabe = pflicht - TemplateValue.ZAHLUNGSZIEL - TemplateValue.ZAHLUNGSFRIST
+
+            Template.of(vorlageMit(ohneZahlungsangabe + TemplateValue.ZAHLUNGSZIEL))
+            Template.of(vorlageMit(ohneZahlungsangabe + TemplateValue.ZAHLUNGSFRIST))
+        }
+
+        test("fehlt eine Gruppe ganz, werden alle ihre Platzhalter genannt") {
+            val fehler =
+                shouldThrow<IllegalStateException> {
+                    Template.of(vorlageMit(pflicht - TemplateValue.ZAHLUNGSZIEL - TemplateValue.ZAHLUNGSFRIST))
+                }
+
+            fehler.message!! shouldContain "<<ZAHLUNGSZIEL>>"
+            fehler.message!! shouldContain "<<ZAHLUNGSFRIST>>"
         }
 
         test("die Angaben der Stammdaten darf eine Vorlage weglassen") {

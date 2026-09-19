@@ -144,7 +144,11 @@ CV/Web-Auftritt des Autors), Validierung über veraPDF.
   `TemplateValue` nicht haben, stellt die Frage aus #188 neu und baut nicht am
   Renderer vorbei. Feste Texte gehören zum Design, ein Wortlaut mit fachlicher
   Aussage kommt aus Kotlin, auch als Beschriftung. Die Bank steht in `raster`
-  nur im Fuß, `\bankblock` ist dort leer. Die Vergleichsdateien sind seit
+  nur im Fuß, `\bankblock` ist dort leer. Das Zahlungsziel nennt `raster`
+  nicht im Kopf, sondern als Satz unter den Summen, als Frist ab
+  Rechnungsdatum ("sofort", "1 Tag", "x Tage"): `ZAHLUNGSFRIST` liefert Kotlin
+  als ganzen Satz, weil die Fallunterscheidung über `\ifblank` hinausgeht;
+  `balken` übergeht ihn und behält `ZAHLUNGSZIEL` im Kopf (#211). Die Vergleichsdateien sind seit
   #204 symmetrisch, je Art der Inhalt, je Design das Satzbild: fünf
   `<art>-inhalt.tex` mit den Werten aus `values()`, für jedes Design gleich,
   und je Design ein Volltext der gewöhnlichen Rechnung

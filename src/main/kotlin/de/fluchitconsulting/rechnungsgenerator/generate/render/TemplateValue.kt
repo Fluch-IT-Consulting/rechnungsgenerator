@@ -18,6 +18,9 @@ package de.fluchitconsulting.rechnungsgenerator.generate.render
  * Stammdaten gibt es keine solche Pflicht: "Steuernummer **oder** USt-IdNr."
  * lässt sich als Kennzeichen nicht ausdrücken. Das prüft das Netz aus #187 am
  * fertigen PDF.
+ *
+ * Wo es für dieselbe Angabe zwei Wege gibt, verlangt der Bau einen davon:
+ * [requiredOneOf].
  */
 enum class TemplateValue(
     val required: Boolean,
@@ -66,7 +69,10 @@ enum class TemplateValue(
     LEISTUNGSZEITRAUM(true),
     VEREINNAHMT_AM(true),
     KUNDENREFERENZ(true),
-    ZAHLUNGSZIEL(true),
+
+    // Das Zahlungsziel als Datum, für eine Kopfzeile. Nicht Pflicht, sondern
+    // eines von zweien mit ZAHLUNGSFRIST (requiredOneOf).
+    ZAHLUNGSZIEL(false),
 
     // Der Satz über den Positionen, aus der Rechnungsdatei (einleitung). Eine
     // einzelne Angabe, auch wenn sie ein Satz ist: Er kommt aus den Daten und
@@ -79,6 +85,11 @@ enum class TemplateValue(
     ARTHINWEIS(true),
     STEUERHINWEISE(true),
     ABSETZUNG(true),
+
+    // Das Zahlungsziel als Satz, für raster statt der Kopfzeile (#211). Ein
+    // ganzer Satz aus Kotlin, weil "sofort", "1 Tag" und "x Tage" eine
+    // Fallunterscheidung über \ifblank hinaus sind.
+    ZAHLUNGSFRIST(false),
     SKONTO(true),
     BANKVERBINDUNG(true),
 
@@ -87,4 +98,18 @@ enum class TemplateValue(
     ;
 
     val placeholder: String get() = "<<$name>>"
+
+    companion object {
+        /**
+         * Angaben, für die es zwei Platzhalter gibt: Jede Vorlage setzt aus
+         * jeder Gruppe mindestens einen. Das Zahlungsziel nennt `balken` als
+         * Datum im Kopf, `raster` als Frist unter den Summen (#211) – ein
+         * Design, das keines von beiden setzt, ließe es weg.
+         *
+         * Eine Gruppe statt zweier optionaler Platzhalter: Sonst fiele das erst
+         * im Netz aus #187 auf, im Lauf mit den echten Werkzeugen, und nicht
+         * schon beim Bau der Vorlage.
+         */
+        val requiredOneOf: List<Set<TemplateValue>> = listOf(setOf(ZAHLUNGSZIEL, ZAHLUNGSFRIST))
+    }
 }
