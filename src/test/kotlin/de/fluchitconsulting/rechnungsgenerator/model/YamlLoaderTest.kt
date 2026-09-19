@@ -83,6 +83,15 @@ class YamlLoaderTest : FunSpec({
         YamlLoader.parseInvoice(resource("rechnung.yaml")).customer.buyerIdentifier shouldBe null
     }
 
+    test("auftragsnummer liest die eigene Auftragsnummer") {
+        // BT-14, auf oberster Ebene und nicht unter kunde: Vergeben hat sie
+        // der Rechnungssteller.
+        val yaml = "auftragsnummer: A-2026-014\n" + resource("rechnung.yaml")
+
+        YamlLoader.parseInvoice(yaml).salesOrderReference shouldBe "A-2026-014"
+        YamlLoader.parseInvoice(resource("rechnung.yaml")).salesOrderReference shouldBe null
+    }
+
     test("eine Rechnungsdatei ohne art ist eine gewöhnliche Rechnung") {
         // Der negative Test dieses Schritts: Bestehende Dateien kennen den
         // Schlüssel nicht und sollen sich trotzdem verhalten wie bisher.

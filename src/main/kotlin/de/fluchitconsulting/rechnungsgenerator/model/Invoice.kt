@@ -22,6 +22,10 @@ data class Invoice(
     @SerialName("art") val type: InvoiceType = InvoiceType.INVOICE,
     // Leistungszeitraum: Pflichtangabe nach §14 UStG, EN 16931 BT-73/BT-74.
     @SerialName("leistungszeitraum") val servicePeriod: ServicePeriod,
+    // EN 16931 BT-14, die Auftragsreferenz, vom Verkäufer vergeben: die eigene
+    // Auftragsnummer aus Angebot oder Auftragsbestätigung. Nicht die
+    // Bestellnummer des Kunden (BT-13) und nicht kunde: referenz (BT-10).
+    @SerialName("auftragsnummer") val salesOrderReference: String? = null,
     @SerialName("kunde") val customer: Customer,
     @SerialName("positionen") val items: List<LineItem>,
     // BT-7, §14 Abs. 4 Nr. 6 UStG: der Zeitpunkt der Vereinnahmung. Nur auf

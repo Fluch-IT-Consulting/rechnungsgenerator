@@ -89,6 +89,10 @@ Was du dir selbst beschaffen kannst, solltest du auch selbst beschaffen:
 - **Kundennummer**: Steht in der letzten Rechnung an denselben Kunden, dann
   übernimm sie. Sonst bleibt das Feld weg – erfinde keine, und frag nur, wenn
   der Nutzer von einer Kundennummer spricht.
+- **Auftragsnummer**: die eigene, aus Angebot oder Auftragsbestätigung. Nur
+  eintragen, wenn der Nutzer sie nennt oder die Rechnung auf ein Angebot mit
+  Nummer zurückgeht; sonst bleibt das Feld weg. Nicht mit `kunde: referenz`
+  verwechseln – das ist eine Angabe des Kunden.
 - **Ansprechpartner**: Nennt die letzte Rechnung an denselben Kunden einen,
   übernimm ihn. Sonst bleibt das Feld weg, frag nicht eigens danach. Er steht
   wörtlich unter dem Kundennamen: Das Programm setzt weder "z. Hd." noch eine
@@ -146,6 +150,7 @@ datum: 2026-09-02
 leistungszeitraum:
   von: 2026-08-01
   bis: 2026-08-31
+auftragsnummer: A-2026-014          # optional, die eigene, aus Angebot oder Auftragsbestätigung
 kunde:
   name: Beispiel Software GmbH
   ansprechpartner: Herrn Max Beispiel   # optional, Person oder Abteilung, wörtlich
@@ -154,7 +159,7 @@ kunde:
     strasse: Industriestraße 1
     plz: "90402"                    # Text, keine Zahl – führende Nullen bleiben
     ort: Nürnberg
-  referenz: BST-2026-0815           # optional, Bestellnummer des Kunden
+  referenz: BST-2026-0815           # optional, Referenz des Kunden (BT-10), etwa eine Leitweg-ID
 positionen:
   - bezeichnung: IT-Beratungsleistungen      # Pflicht: die Art der Leistung
     beschreibung: Arbeitspaket Nord 26.3     # optional: ihr Umfang

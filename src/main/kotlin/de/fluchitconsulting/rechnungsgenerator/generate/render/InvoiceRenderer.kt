@@ -98,6 +98,7 @@ object InvoiceRenderer {
             TemplateValue.EMPFAENGER -> MetadataBlocks.recipient(calculatedInvoice)
             TemplateValue.KUNDE_USTID -> MetadataBlocks.customerVatId(calculatedInvoice)
             TemplateValue.KUNDENNUMMER -> MetadataBlocks.buyerIdentifier(calculatedInvoice)
+            TemplateValue.AUFTRAGSNUMMER -> MetadataBlocks.salesOrderReference(calculatedInvoice)
             TemplateValue.ZEITRAUM_BESCHRIFTUNG -> MetadataBlocks.servicePeriodLabel(calculatedInvoice)
             TemplateValue.LEISTUNGSZEITRAUM -> MetadataBlocks.servicePeriodValue(calculatedInvoice)
             TemplateValue.VEREINNAHMT_AM -> MetadataBlocks.receivedOn(acceptedInvoice)
