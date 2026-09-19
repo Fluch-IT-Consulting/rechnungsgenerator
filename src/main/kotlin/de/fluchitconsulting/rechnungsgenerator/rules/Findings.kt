@@ -170,6 +170,7 @@ enum class Rule(val severity: Severity) {
 
     // Hinweise: Die Rechnung entsteht trotzdem.
     MENGE_NULL(Severity.HINT),
+    GESAMTBETRAG_NULL(Severity.HINT),
     RECHNUNG_SPAET(Severity.HINT),
     EU_LISTE_ALT(Severity.HINT),
     KEIN_VIES_MOEGLICH(Severity.HINT),

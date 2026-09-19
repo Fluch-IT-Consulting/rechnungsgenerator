@@ -7,6 +7,7 @@ import de.fluchitconsulting.rechnungsgenerator.model.testSellerConfig
 import de.fluchitconsulting.rechnungsgenerator.values.InvoiceType
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.collections.shouldBeEmpty
+import io.kotest.matchers.collections.shouldContain
 import io.kotest.matchers.collections.shouldNotContain
 import io.kotest.matchers.string.shouldContain
 import java.time.LocalDate
@@ -28,6 +29,39 @@ class PlausibilityHintsTest : FunSpec({
 
         hint shouldContain "Position 2"
         hint shouldContain "Menge 0"
+    }
+
+    context("GESAMTBETRAG_NULL (#214)") {
+        fun ueberNull(type: InvoiceType) =
+            CalculatedInvoice(testInvoice(type = type, items = listOf(testItem(unitPrice = "0.00"))), config)
+
+        test("eine Rechnung über null bekommt einen Hinweis") {
+            val hint = ueberNull(InvoiceType.INVOICE).messageOf(Rule.GESAMTBETRAG_NULL)
+
+            hint shouldContain "0,00"
+            hint shouldContain "gewollt"
+        }
+
+        test("eine Teilrechnung ebenso") {
+            ueberNull(InvoiceType.PARTIAL).rules() shouldContain Rule.GESAMTBETRAG_NULL
+        }
+
+        test("die Abschlagsrechnung bricht stattdessen ab") {
+            // ABSCHLAGSRECHNUNG_OHNE_BETRAG sagt es schon, und strenger.
+            ueberNull(InvoiceType.PREPAYMENT).rules() shouldNotContain Rule.GESAMTBETRAG_NULL
+        }
+
+        test("eine Rechnung mit Betrag bekommt keinen") {
+            CalculatedInvoice(testInvoice(), config).rules() shouldNotContain Rule.GESAMTBETRAG_NULL
+        }
+
+        test("neben MENGE_NULL bleibt er stehen") {
+            // Der eine fragt nach der Position, der andere nach dem Dokument.
+            val rules = CalculatedInvoice(testInvoice(items = listOf(testItem(quantity = "0"))), config).rules()
+
+            rules shouldContain Rule.MENGE_NULL
+            rules shouldContain Rule.GESAMTBETRAG_NULL
+        }
     }
 
     context("Rechnung mehr als sechs Monate nach der Leistung (§14 Abs. 2 UStG)") {

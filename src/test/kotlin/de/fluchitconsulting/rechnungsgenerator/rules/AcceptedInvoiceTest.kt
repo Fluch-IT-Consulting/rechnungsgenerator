@@ -20,13 +20,14 @@ class AcceptedInvoiceTest : FunSpec({
     val config = testSellerConfig()
 
     test("eine Rechnung ohne Abbruch wird angenommen und trägt ihre Hinweise") {
-        // Menge 0 ist zulässig, aber ein Hinweis (MENGE_NULL).
+        // Menge 0 ist zulässig, aber ein Hinweis (MENGE_NULL) – und weil es die
+        // einzige Position ist, auch der Gesamtbetrag (GESAMTBETRAG_NULL).
         val calculated = CalculatedInvoice(testInvoice(items = listOf(testItem(quantity = "0"))), config)
 
         val accepted = AcceptedInvoice.check(calculated).shouldBeInstanceOf<Verdict.Accepted>().invoice
 
         accepted.calculated shouldBe calculated
-        accepted.hints.rules() shouldBe listOf(Rule.MENGE_NULL)
+        accepted.hints.rules() shouldBe listOf(Rule.MENGE_NULL, Rule.GESAMTBETRAG_NULL)
         accepted.fileBaseName shouldBe "Rechnung-R26-001"
     }
 
@@ -57,6 +58,7 @@ class AcceptedInvoiceTest : FunSpec({
 
         rejected.aborts.rules() shouldBe listOf(Rule.EINZELPREIS_NEGATIV, Rule.ZAHLUNGSZIEL_NEGATIV)
         // Die Regeltests lesen ihre Befunde auch von abgelehnten Rechnungen (#105).
-        rejected.findings.rules() shouldBe listOf(Rule.EINZELPREIS_NEGATIV, Rule.ZAHLUNGSZIEL_NEGATIV, Rule.MENGE_NULL)
+        rejected.findings.rules() shouldBe
+            listOf(Rule.EINZELPREIS_NEGATIV, Rule.ZAHLUNGSZIEL_NEGATIV, Rule.MENGE_NULL, Rule.GESAMTBETRAG_NULL)
     }
 })
