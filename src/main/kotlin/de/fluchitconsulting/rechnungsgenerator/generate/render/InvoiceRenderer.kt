@@ -1,6 +1,7 @@
 package de.fluchitconsulting.rechnungsgenerator.generate.render
 
 import de.fluchitconsulting.rechnungsgenerator.rules.AcceptedInvoice
+import de.fluchitconsulting.rechnungsgenerator.values.Logo
 
 /**
  * Setzt die LaTeX-Vorlage mit den Werten einer Rechnung zusammen.
@@ -33,12 +34,20 @@ object InvoiceRenderer {
 
     fun render(acceptedInvoice: AcceptedInvoice): RenderedInvoice {
         val template = Template.of(acceptedInvoice.calculated.config.design)
-        return RenderedInvoice(template.fillIn(values(acceptedInvoice)), files(template, acceptedInvoice))
+        val logo = includedLogo(template, acceptedInvoice)
+        // Dateien und Auskunft folgen beide aus dem eingebundenen Logo, nicht
+        // das eine aus dem anderen: Kommt eine zweite Datei dazu, stimmt die
+        // Auskunft weiter (#203).
+        return RenderedInvoice(
+            tex = template.fillIn(values(acceptedInvoice)),
+            files = logo?.let { mapOf("$LOGO_NAME.${it.extension}" to it.content) }.orEmpty(),
+            includesLogo = logo != null,
+        )
     }
 
     /**
-     * Die Dateien, die die Vorlage neben der .tex braucht: das Logo, wenn die
-     * Stammdaten eines nennen **und** die Vorlage es einbindet (#198).
+     * Das Logo, wenn die Stammdaten eines nennen **und** die Vorlage es
+     * einbindet (#198), sonst `null`.
      *
      * Ob sie es einbindet, zeigt allein ihr Platzhalter – der Renderer kennt
      * kein Design, er befolgt die Vorlage. Eine, die das Logo übergeht, bekommt
@@ -46,14 +55,12 @@ object InvoiceRenderer {
      * Rechnung ergäbe mit und ohne Logo-Eintrag verschiedene PDFs, obwohl auf
      * dem Blatt dasselbe steht.
      */
-    private fun files(
+    private fun includedLogo(
         template: Template,
         acceptedInvoice: AcceptedInvoice,
-    ): Map<String, ByteArray> {
-        val logo = acceptedInvoice.calculated.config.logo
-        if (logo == null || !template.uses(TemplateValue.LOGO)) return emptyMap()
-        return mapOf("$LOGO_NAME.${logo.extension}" to logo.content)
-    }
+    ): Logo? =
+        acceptedInvoice.calculated.config.logo
+            ?.takeIf { template.uses(TemplateValue.LOGO) }
 
     /**
      * Die Werte aller Platzhalter – die innere Naht zwischen Inhalt und

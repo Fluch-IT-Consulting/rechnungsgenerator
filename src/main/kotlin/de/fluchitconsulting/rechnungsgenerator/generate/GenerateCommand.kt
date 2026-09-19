@@ -111,7 +111,7 @@ class GenerateCommand(
         // einbindet, sonst kann es an ihm nicht liegen.
         val logoNote =
             config.logo
-                ?.takeIf { rendered.files.isNotEmpty() }
+                ?.takeIf { rendered.includesLogo }
                 ?.let { "\n\nDie Stammdaten nennen ein Logo (${it.source}); ein Fehler darin bricht den Satz ebenfalls ab." }
                 .orEmpty()
 

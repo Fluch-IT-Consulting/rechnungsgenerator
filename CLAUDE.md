@@ -145,7 +145,10 @@ CV/Web-Auftritt des Autors), Validierung über veraPDF.
   `YamlLoader.loadSellerConfig`, `parseSellerConfig` lehnt den Eintrag ab. Der
   Renderer liefert `LOGO` als Schalter und die Datei in
   `RenderedInvoice.files`, aber nur, wenn die Vorlage `<<LOGO>>` enthält – er
-  befolgt die Vorlage und kennt kein Design. `raster` liest sie per `\input` in
+  befolgt die Vorlage und kennt kein Design. Ob das Blatt das Logo zeigt, sagt
+  er ausdrücklich (`RenderedInvoice.includesLogo`); `erzeuge` nennt es danach
+  in einer Fehlermeldung und schließt nicht aus `files` darauf, das hielte nur,
+  solange das Logo die einzige Datei ist (#203). `raster` liest die Datei per `\input` in
   der Präambel, `balken` übergeht sie, und dann ist das PDF Byte für Byte
   dasselbe wie ohne Eintrag. Weitere Dateien gehen über `Typesetter.typeset(files)` in das
   Arbeitsverzeichnis und mit Namen, Länge und Inhalt in die Trailer-ID; ohne
