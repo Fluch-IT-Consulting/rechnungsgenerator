@@ -264,6 +264,17 @@ class YamlLoaderTest : FunSpec({
             failure.message!! shouldContain "zulässig ist .tex"
         }
 
+        test("die Endung zählt ohne Groß- und Kleinschreibung, weiter geht es klein") {
+            // macOS unterscheidet die Schreibweise im Dateinamen nicht, und
+            // eine Datei Logo.TEX ist eine .tex-Datei. Weitergereicht wird die
+            // Endung klein: Die Vorlage liest \input{logo}, und das findet
+            // unter Linux nur logo.tex.
+            val datei = stammdatenMitLogo("Logo.TEX")
+            datei.resolveSibling("Logo.TEX").writeText("\\fill (0,0) circle (1);")
+
+            YamlLoader.loadSellerConfig(datei).logo!!.extension shouldBe "tex"
+        }
+
         test("parseSellerConfig lehnt ein Logo ab, weil es keinen Ort kennt") {
             val failure =
                 shouldThrow<SerializationException> {

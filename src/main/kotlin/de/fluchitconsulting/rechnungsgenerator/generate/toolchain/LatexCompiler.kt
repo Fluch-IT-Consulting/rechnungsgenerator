@@ -31,8 +31,11 @@ class LatexCompiler(private val runner: ProcessRunner) {
         files: Map<String, ByteArray> = emptyMap(),
     ): Path {
         // Ein Name mit Verzeichnis landete außerhalb des Arbeitsverzeichnisses,
-        // einer wie die .tex überschriebe sie.
+        // einer wie die .tex überschriebe sie. "." und ".." sind für Path
+        // schlichte Namen, meinen aber Verzeichnisse; ein leerer Name das
+        // Arbeitsverzeichnis selbst.
         files.keys.forEach { name ->
+            require(name.isNotBlank() && name != "." && name != "..") { "Kein Dateiname: '$name'" }
             require(name == Path.of(name).fileName.toString()) { "Kein schlichter Dateiname: $name" }
             require(name != "$jobName.tex" && name != "$jobName.xmpdata") { "$name ist schon vergeben" }
         }
