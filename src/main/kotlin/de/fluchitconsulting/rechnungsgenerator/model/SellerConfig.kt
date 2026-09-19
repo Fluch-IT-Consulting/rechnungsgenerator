@@ -5,10 +5,12 @@ import de.fluchitconsulting.rechnungsgenerator.values.CountryCode
 import de.fluchitconsulting.rechnungsgenerator.values.Design
 import de.fluchitconsulting.rechnungsgenerator.values.Iban
 import de.fluchitconsulting.rechnungsgenerator.values.InvoiceNumberPattern
+import de.fluchitconsulting.rechnungsgenerator.values.Logo
 import de.fluchitconsulting.rechnungsgenerator.values.TaxNumber
 import de.fluchitconsulting.rechnungsgenerator.values.VatId
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.Transient
 
 // Stammdaten des Rechnungsstellers – auf jeder Rechnung gleich, kommen aus der
 // Konfigurationsdatei. `data class` erzeugt equals/hashCode/toString/copy automatisch.
@@ -38,6 +40,13 @@ data class SellerConfig(
     // Das Design der Rechnung (ADR-0011). In den Stammdaten und nicht je
     // Rechnung: Alle Rechnungen eines Rechnungsstellers sehen gleich aus.
     @SerialName("design") val design: Design = Design.BALKEN,
+    // Das Logo (#198): in der YAML nur der Pfad, wie er dasteht. Gelesen wird
+    // die Datei in YamlLoader.loadSellerConfig, das allein weiß, wo die
+    // Stammdaten liegen und wogegen ein relativer Pfad gilt. Ohne Eintrag kein Logo.
+    @SerialName("logo") val logoFile: String? = null,
+    // `@Transient`: Dieses Feld kennt die Serialisierung nicht, in der YAML gibt
+    // es keinen Schlüssel dafür. Es braucht deshalb einen Vorgabewert.
+    @Transient val logo: Logo? = null,
     // Schlusssatz über der Grußformel; überschreibbar pro Rechnung.
     @SerialName("schlusssatz") val closingLine: String =
         "Ich bedanke mich für das Vertrauen und die angenehme Zusammenarbeit.",

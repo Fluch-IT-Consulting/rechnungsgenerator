@@ -13,6 +13,7 @@ import io.kotest.matchers.collections.shouldContain
 import io.kotest.matchers.collections.shouldContainInOrder
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.string.shouldContain
+import io.kotest.matchers.string.shouldNotContain
 import java.nio.file.Path
 import java.time.LocalDate
 import kotlin.io.path.createTempDirectory
@@ -52,10 +53,11 @@ class GenerateCommandTest : FunSpec({
         vararg args: String,
         viewer: PdfViewer = FakePdfViewer(),
         ausgabe: MutableList<String> = mutableListOf(),
+        stammdatenDatei: Path = stammdaten,
     ): List<String> {
         val command = RechnungsgeneratorCommand(typesetter, viewer)
         command.context { echoMessage = { _, message, _, _ -> ausgabe += message.toString() } }
-        command.parse(arrayOf("erzeuge", rechnung.toString(), "-s", stammdaten.toString()) + args)
+        command.parse(arrayOf("erzeuge", rechnung.toString(), "-s", stammdatenDatei.toString()) + args)
         return ausgabe
     }
 
@@ -234,6 +236,78 @@ class GenerateCommandTest : FunSpec({
 
             ziel.exists() shouldBe true
             ausgabe.last() shouldBe "Hinweis: Das PDF konnte nicht geöffnet werden: open endete mit Exitcode 1."
+        }
+    }
+
+    context("logo (#198)") {
+        // Stammdaten mit Logo in einem eigenen Verzeichnis, das Logo daneben.
+        val logoVerzeichnis = createTempDirectory("kommando-logo")
+        val logo = logoVerzeichnis.resolve("logo.tex").also { it.writeText(quelle("logo.tex")) }
+
+        fun stammdatenMitLogo(design: String) =
+            logoVerzeichnis.resolve("stammdaten-$design.yaml").also {
+                it.writeText(quelle("stammdaten.yaml") + "design: $design\nlogo: logo.tex\n")
+            }
+
+        fun ziel(name: String) = eingaben.resolve("$name.pdf").toString()
+
+        test("raster bekommt das Logo als weitere Datei mit") {
+            val fake = FakeTypesetter()
+
+            lauf(fake, "-o", ziel("logo-raster"), stammdatenDatei = stammdatenMitLogo("raster"))
+
+            fake.files!!.keys shouldBe setOf("logo.tex")
+            fake.files!!.getValue("logo.tex").decodeToString() shouldBe logo.readText()
+        }
+
+        test("balken übergeht das Logo und reicht keine Datei weiter") {
+            val fake = FakeTypesetter()
+
+            lauf(fake, "-o", ziel("logo-balken"), stammdatenDatei = stammdatenMitLogo("balken"))
+
+            fake.files shouldBe emptyMap()
+        }
+
+        test("scheitert der Satz, nennt die Meldung das Logo mit seinem Pfad") {
+            // Im Protokoll von LuaLaTeX heißt es nur logo.tex; welche Datei
+            // das war, weiß allein das Kommando.
+            val fehler =
+                shouldThrow<ToolchainException> {
+                    lauf(
+                        FakeTypesetter(failure = "lualatex konnte Rechnung-R26-042.tex nicht übersetzen"),
+                        "-o",
+                        ziel("logo-kaputt"),
+                        stammdatenDatei = stammdatenMitLogo("raster"),
+                    )
+                }
+
+            fehler.message!! shouldContain "nicht übersetzen"
+            fehler.message!! shouldContain "Die Stammdaten nennen ein Logo (${logo.toAbsolutePath()})"
+        }
+
+        test("auch ein ungültiges PDF/A nennt das Logo, denn es kann daran liegen") {
+            // Etwa eine Deckkraft im Fragment: Transparenz verbietet PDF/A-1.
+            val fehler =
+                shouldThrow<ToolchainException> {
+                    lauf(FakeTypesetter(valid = false), "-o", ziel("logo-ungueltig"), stammdatenDatei = stammdatenMitLogo("raster"))
+                }
+
+            fehler.message!! shouldContain "kein gültiges PDF/A-1b"
+            fehler.message!! shouldContain "Die Stammdaten nennen ein Logo"
+        }
+
+        test("setzt das Design das Logo nicht, nennt die Meldung es auch nicht") {
+            val fehler =
+                shouldThrow<ToolchainException> {
+                    lauf(
+                        FakeTypesetter(failure = "lualatex konnte Rechnung-R26-042.tex nicht übersetzen"),
+                        "-o",
+                        ziel("logo-balken-kaputt"),
+                        stammdatenDatei = stammdatenMitLogo("balken"),
+                    )
+                }
+
+            fehler.message!! shouldNotContain "Logo"
         }
     }
 

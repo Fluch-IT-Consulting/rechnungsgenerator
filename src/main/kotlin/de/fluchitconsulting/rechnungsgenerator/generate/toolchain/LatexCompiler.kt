@@ -7,6 +7,7 @@ import java.time.ZoneOffset
 import java.util.HexFormat
 import kotlin.io.path.exists
 import kotlin.io.path.readText
+import kotlin.io.path.writeBytes
 import kotlin.io.path.writeText
 
 /**
@@ -27,11 +28,19 @@ class LatexCompiler(private val runner: ProcessRunner) {
         texSource: String,
         xmpMetadata: String,
         creationDate: LocalDate,
+        files: Map<String, ByteArray> = emptyMap(),
     ): Path {
+        // Ein Name mit Verzeichnis landete außerhalb des Arbeitsverzeichnisses,
+        // einer wie die .tex überschriebe sie.
+        files.keys.forEach { name ->
+            require(name == Path.of(name).fileName.toString()) { "Kein schlichter Dateiname: $name" }
+            require(name != "$jobName.tex" && name != "$jobName.xmpdata") { "$name ist schon vergeben" }
+        }
         workingDir.resolve("$jobName.tex").writeText(texSource)
         workingDir.resolve("$jobName.xmpdata").writeText(xmpMetadata)
+        files.forEach { (name, content) -> workingDir.resolve(name).writeBytes(content) }
 
-        val id = trailerId(texSource, xmpMetadata)
+        val id = trailerId(texSource, xmpMetadata, files)
         val command =
             listOf(
                 PROGRAM,
@@ -68,12 +77,30 @@ class LatexCompiler(private val runner: ProcessRunner) {
      *
      * Die Null zwischen den beiden Quellen trennt sie: Ohne sie ergäben "ab" +
      * "c" und "a" + "bc" dieselbe Prüfsumme.
+     *
+     * Die weiteren Dateien gehen mit Namen und Inhalt ein (#198): Ein Logo, das
+     * die .tex nur per `\input` nennt, änderte sonst das PDF, aber nicht die ID.
+     * Sortiert nach Namen, weil eine Map keine Reihenfolge verspricht. Die Länge
+     * vor jedem Inhalt trennt wie die Null – nur taugt die Null bei Bytes nicht,
+     * weil sie selbst darin vorkommen kann.
      */
-    private fun trailerId(texSource: String, xmpMetadata: String): String {
+    private fun trailerId(
+        texSource: String,
+        xmpMetadata: String,
+        files: Map<String, ByteArray>,
+    ): String {
         val md5 = MessageDigest.getInstance("MD5")
         md5.update(texSource.toByteArray())
         md5.update(0.toByte())
         md5.update(xmpMetadata.toByteArray())
+        files.toSortedMap().forEach { (name, content) ->
+            md5.update(0.toByte())
+            md5.update(name.toByteArray())
+            md5.update(0.toByte())
+            md5.update(content.size.toString().toByteArray())
+            md5.update(0.toByte())
+            md5.update(content)
+        }
         return HexFormat.of().withUpperCase().formatHex(md5.digest())
     }
 

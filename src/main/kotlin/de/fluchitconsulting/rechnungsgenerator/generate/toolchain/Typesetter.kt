@@ -36,6 +36,11 @@ interface Typesetter {
      *
      * [creationDate] ist das Erstellungsdatum im PDF. Es kommt von außen statt
      * von der Uhr, damit dieselben Quellen dasselbe PDF ergeben.
+     *
+     * [files] sind weitere Quellen, die der Quelltext unter ihrem Namen
+     * einbindet – etwa `logo.tex` (#198). Sie gehören zu den Quellen wie
+     * `.tex` und `.xmpdata`, auch für die Frage, ob dasselbe PDF entsteht.
+     * Bytes und nicht Text, weil ein Bild später auch welche ist.
      */
     fun typeset(
         workingDir: Path,
@@ -43,6 +48,7 @@ interface Typesetter {
         texSource: String,
         xmpMetadata: String,
         creationDate: LocalDate,
+        files: Map<String, ByteArray>,
     ): TypesetPdf
 }
 
@@ -67,8 +73,9 @@ object LuaLatexTypesetter : Typesetter {
         texSource: String,
         xmpMetadata: String,
         creationDate: LocalDate,
+        files: Map<String, ByteArray>,
     ): TypesetPdf {
-        val pdf = compiler.compile(workingDir, jobName, texSource, xmpMetadata, creationDate)
+        val pdf = compiler.compile(workingDir, jobName, texSource, xmpMetadata, creationDate, files)
         return TypesetPdf(pdf, validator.validate(pdf))
     }
 }

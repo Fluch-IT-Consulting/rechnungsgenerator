@@ -61,39 +61,14 @@
 
 \newcommand{\bankblock}{}
 
-\newfontfamily{\logoschrift}{texgyreheros}[
-  Extension   = .otf,
-  UprightFont = *-regular,
-  BoldFont    = *-bold,
-]
-\definecolor{logodunkel}{HTML}{1B2A4A}
-\definecolor{logohell}{HTML}{4FB3F0}
-\definecolor{logomittel}{HTML}{2F7FD8}
-\definecolor{logofalte}{HTML}{1F5FB0}
 \newlength{\logohoehe}\setlength{\logohoehe}{12mm}
 \newlength{\versalhoehe}
-\newcommand{\logo}{\resizebox{!}{\logohoehe}{\begin{tikzpicture}
-  \shade[top color=logohell, bottom color=logomittel, rounded corners=3pt]
-    (0,0) -- (0,2.6) -- (0.8,2.6) -- (0.8,0) -- cycle;
-  \shade[top color=logohell, bottom color=logomittel]
-    (0.8,2.6) -- (1.6,1.5) -- (1.6,0.6) -- (0.8,1.7) -- cycle;
-  \shade[top color=logohell, bottom color=logomittel]
-    (1.6,1.5) -- (2.4,2.6) -- (2.4,1.7) -- (1.6,0.6) -- cycle;
-  \shade[top color=logohell, bottom color=logomittel, rounded corners=3pt]
-    (2.4,0) -- (2.4,2.6) -- (3.2,2.6) -- (3.2,0) -- cycle;
-  \fill[logofalte] (0.8,2.6) -- (0.8,1.7) -- (1.15,2.12) -- cycle;
-  \fill[logofalte] (2.4,2.6) -- (2.4,1.7) -- (2.05,2.12) -- cycle;
-  \node[anchor=south west, inner sep=0, font=\logoschrift\fontsize{40}{40}\selectfont\bfseries]
-    at (4.0,0.95) {\textcolor{logodunkel}{MUSTER}\textcolor{logohell}{IT}};
-  \node[anchor=south west, inner sep=0, text=logodunkel,
-    font=\logoschrift\fontsize{13}{13}\selectfont\addfontfeature{LetterSpace=30}]
-    at (4.05,0.05) {CONSULTING};
-\end{tikzpicture}}}
 
 \begin{document}
 
 \settoheight{\versalhoehe}{\LARGE\bfseries M}%
-\noindent\raisebox{\dimexpr\versalhoehe-\height\relax}[0pt][0pt]{\logo}%
+\noindent\ifblank{logo}{}{\raisebox{\dimexpr\versalhoehe-\height\relax}[0pt][0pt]{%
+  \resizebox{!}{\logohoehe}{\begin{tikzpicture}\input{logo}\end{tikzpicture}}}}%
 \hfill
 \begin{tabular}[t]{@{}r@{\hspace{3mm}}l@{}}
   \multicolumn{2}{@{}r@{}}{\LARGE\bfseries Rechnung}\\[2mm]

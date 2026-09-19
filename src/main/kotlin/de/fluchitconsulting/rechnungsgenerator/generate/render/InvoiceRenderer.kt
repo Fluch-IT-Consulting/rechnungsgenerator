@@ -31,14 +31,37 @@ object InvoiceRenderer {
     // Eine Makro-Definition der Vorlage: \newcommand{\name}[stelligkeit].
     private val NEWCOMMAND = Regex("""\\newcommand\{\\([a-zA-Z]+)}(?:\[(\d+)])?""")
 
-    fun render(acceptedInvoice: AcceptedInvoice): String {
+    // Der Name, unter dem das Logo neben der .tex liegt, ohne Endung: `\input`
+    // und später `\includegraphics` finden die Datei auch so.
+    private const val LOGO_NAME = "logo"
+
+    fun render(acceptedInvoice: AcceptedInvoice): RenderedInvoice {
         val template = withoutCommentLines(templateOf(acceptedInvoice.calculated.config.design))
         val values = values(acceptedInvoice)
 
         checkMacros(template)
         checkPlaceholders(template)
         checkLineBreaks(values)
-        return fillIn(template, values)
+        return RenderedInvoice(fillIn(template, values), files(template, acceptedInvoice))
+    }
+
+    /**
+     * Die Dateien, die die Vorlage neben der .tex braucht: das Logo, wenn die
+     * Stammdaten eines nennen **und** die Vorlage es einbindet (#198).
+     *
+     * Ob sie es einbindet, zeigt allein ihr Platzhalter – der Renderer kennt
+     * kein Design, er befolgt die Vorlage. Eine, die das Logo übergeht, bekommt
+     * es gar nicht erst: Es ginge sonst in die Trailer-ID ein, und dieselbe
+     * Rechnung ergäbe mit und ohne Logo-Eintrag verschiedene PDFs, obwohl auf
+     * dem Blatt dasselbe steht.
+     */
+    private fun files(
+        template: String,
+        acceptedInvoice: AcceptedInvoice,
+    ): Map<String, ByteArray> {
+        val logo = acceptedInvoice.calculated.config.logo
+        if (logo == null || TemplateValue.LOGO.placeholder !in template) return emptyMap()
+        return mapOf("$LOGO_NAME.${logo.extension}" to logo.content)
     }
 
     /**
@@ -98,6 +121,7 @@ object InvoiceRenderer {
             TemplateValue.INSTITUT -> bank.bankName.escapeLatex()
             TemplateValue.IBAN -> bank.iban.formatted().escapeLatex()
             TemplateValue.BIC -> bank.bic.value.escapeLatex()
+            TemplateValue.LOGO -> if (config.logo != null) LOGO_NAME.escapeLatex() else Latex.EMPTY
             TemplateValue.DOKUMENTART -> invoice.type.documentName.escapeLatex()
             TemplateValue.RECHNUNGSNUMMER -> invoice.number.escapeLatex()
             TemplateValue.RECHNUNGSDATUM -> GermanFormat.date(invoice.issueDate)

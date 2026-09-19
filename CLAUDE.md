@@ -124,12 +124,20 @@ CV/Web-Auftritt des Autors), Validierung über veraPDF.
   `raster-rechnung-erwartet.tex`, die übrigen Arten dort allein das
   Pflichtangaben-Netz (`PflichtangabenTest`, je Design und Art). Ein neues
   Design ist eine Vorlage, ein Eintrag in `Design` und eine Zeile im Netz.
-  `raster` trägt oben links ein Beispiellogo, fest als TikZ in der Vorlage
-  (#197), nicht als Bilddatei: `luatex.def` gibt jedem per `\includegraphics`
-  eingebundenen PDF eine Transparenzgruppe mit, und die verbietet PDF/A-1. Wird
-  das Logo konfigurierbar, braucht es deshalb eine Umdefinition von
-  `\Gread@pdf`, die Datei im Arbeitsverzeichnis und in der Prüfsumme der
-  Trailer-ID.
+- **Logo** (ADR-0012): Die Stammdaten nennen es als Datei, `logo: logo.tex`,
+  relativ zu ihrem Verzeichnis; ohne Eintrag kein Logo. Die Datei ist der Rumpf
+  einer `tikzpicture` und bringt Farben und Schrift selbst mit. Gelesen wird sie
+  in `YamlLoader.loadSellerConfig`, `parseSellerConfig` lehnt den Eintrag ab.
+  Der Renderer liefert `LOGO` als Schalter und die Datei in
+  `RenderedInvoice.files`, aber nur, wenn die Vorlage `<<LOGO>>` enthält – er
+  befolgt die Vorlage und kennt kein Design. `raster` bindet sie per `\input`
+  ein, `balken` übergeht sie, und dann ist das PDF Byte für Byte dasselbe wie
+  ohne Eintrag. Weitere Dateien gehen über `Typesetter.typeset(files)` in das
+  Arbeitsverzeichnis und mit Namen, Länge und Inhalt in die Trailer-ID; ohne
+  sie bleibt die ID die von vorher. Keine Bilddatei: `luatex.def` gibt jedem
+  per `\includegraphics` eingebundenen PDF eine Transparenzgruppe mit, und die
+  verbietet PDF/A-1 (#197). Kommen PDF oder PNG dazu, bestimmt die Endung die
+  Art, und `\Gread@pdf` braucht eine Umdefinition.
 - **Externe Prozesse**: Ausgabe wird in eine Datei umgeleitet, nicht in einen
   Stream gelesen – sonst blockiert das Lesen bei einem hängenden Prozess, und
   die Zeitgrenze käme nie zum Zug. LuaLaTeX läuft, solange die Log-Datei einen

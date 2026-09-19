@@ -42,7 +42,8 @@ Wie die Rechnung aussieht, wählen die Stammdaten mit `design: balken` oder
 `design: raster` (ohne Eintrag `balken`, ADR-0011). Das gilt für alle
 Rechnungen gleich: In einer Rechnungsdatei gibt es den Schlüssel nicht, und
 ändere ihn nicht in den Stammdaten, nur weil eine einzelne Rechnung anders
-aussehen soll – frag dann nach.
+aussehen soll – frag dann nach. Dasselbe gilt für `logo:` (ADR-0012), die
+Datei eines Logos neben den Stammdaten; nur `raster` setzt es.
 
 ## Ablauf
 

@@ -41,6 +41,10 @@ enum class TemplateValue(
     IBAN(false),
     BIC(false),
 
+    // Ein Schalter und kein Inhalt (#198): leer oder der Name, unter dem das
+    // Logo neben der .tex liegt. Die Vorlage bindet es selbst ein.
+    LOGO(false),
+
     // Kopfangaben der Rechnung.
     DOKUMENTART(true),
     RECHNUNGSNUMMER(true),
