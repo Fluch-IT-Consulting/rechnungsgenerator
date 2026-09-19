@@ -8,6 +8,7 @@ import de.fluchitconsulting.rechnungsgenerator.model.SellerConfig
 import de.fluchitconsulting.rechnungsgenerator.model.ServicePeriod
 import de.fluchitconsulting.rechnungsgenerator.model.SkontoTier
 import de.fluchitconsulting.rechnungsgenerator.model.YamlLoader
+import de.fluchitconsulting.rechnungsgenerator.model.exampleInvoices
 import de.fluchitconsulting.rechnungsgenerator.model.testInvoice
 import de.fluchitconsulting.rechnungsgenerator.model.testItem
 import de.fluchitconsulting.rechnungsgenerator.model.testPrepayment
@@ -33,6 +34,19 @@ import java.time.LocalDate
 // Testressourcen liegen in src/test/resources und landen im Classpath.
 private fun resource(name: String): String =
     checkNotNull(InvoiceRendererTest::class.java.getResource("/$name")).readText()
+
+/**
+ * Der Inhalt einer Rechnung, wie ihn die Vorlage bekommt (#204): je nicht
+ * leerem Platzhalter eine Kopfzeile `<<NAME>>`, darunter der Wert, in der
+ * Reihenfolge von [TemplateValue]. Die leeren fehlen, damit eine neue,
+ * optionale Angabe keine dieser Dateien berührt. Ein Format des Netzes und
+ * kein Ergebnis des Renderers – deshalb steht es hier und nicht im Hauptcode.
+ */
+private fun contentOf(values: Map<TemplateValue, Latex>): String =
+    TemplateValue.entries
+        .map { it to values.getValue(it).tex }
+        .filter { (_, tex) -> tex.isNotEmpty() }
+        .joinToString("\n") { (key, tex) -> "<<${key.name}>>\n$tex\n" }
 
 /**
  * Prüft das erzeugte LaTeX, nicht das PDF. Ob daraus ein gültiges PDF/A wird,
@@ -151,6 +165,33 @@ class InvoiceRendererTest : FunSpec({
             withClue(name) {
                 InvoiceRenderer.render(CalculatedInvoice(invoice, seller).accepted()).sources.tex shouldBe
                     resource("$name-erwartet.tex")
+            }
+        }
+    }
+
+    /**
+     * Je Art der Inhalt, je Design das Satzbild (#204). Die Werte hängen nicht
+     * am Design, eine Datei gilt also für jedes; den Volltext sichert je Design
+     * allein die gewöhnliche Rechnung. Die übrigen Arten tragen ihr Markup –
+     * Absetzungstabelle, Pflichtsatz, Bezug – als Makroaufrufe in den Werten,
+     * und wie ein Design diese Makros definiert, steht in dessen Volltext.
+     *
+     * Ohne Logo: Es ist ein Schalter und keine Angabe der Rechnungsart; das
+     * Logo sichert die Volltext-Datei von raster.
+     */
+    test("jede Rechnungsart hat eine Beispieldatei") {
+        exampleInvoices.keys shouldBe InvoiceType.entries.toSet()
+    }
+
+    test("jede Rechnungsart bekommt die Werte wie festgehalten") {
+        val seller = YamlLoader.parseSellerConfig(resource("stammdaten.yaml"))
+
+        exampleInvoices.values.forEach { name ->
+            val invoice = YamlLoader.parseInvoice(resource("$name.yaml"))
+
+            withClue(name) {
+                contentOf(InvoiceRenderer.values(CalculatedInvoice(invoice, seller).accepted())) shouldBe
+                    resource("$name-inhalt.tex")
             }
         }
     }
