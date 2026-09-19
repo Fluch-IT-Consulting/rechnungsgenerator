@@ -137,6 +137,7 @@ object InvoiceRenderer {
             TemplateValue.ARTHINWEIS -> ItemBlocks.typeNote(acceptedInvoice)
             TemplateValue.STEUERHINWEISE -> ItemBlocks.taxNotes(calculatedInvoice)
             TemplateValue.ABSETZUNG -> DeductionBlocks.deductionBlock(acceptedInvoice)
+            TemplateValue.ZAHLUNGSFRIST -> ItemBlocks.paymentTermNote(calculatedInvoice)
             TemplateValue.SKONTO -> ItemBlocks.skontoNote(calculatedInvoice)
             TemplateValue.BANKVERBINDUNG -> SellerBlocks.bankDetails(calculatedInvoice)
             TemplateValue.SCHLUSSSATZ -> (invoice.note ?: config.closingLine).escapeLatex()

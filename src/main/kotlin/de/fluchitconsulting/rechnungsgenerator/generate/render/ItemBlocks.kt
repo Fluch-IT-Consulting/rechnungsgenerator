@@ -94,6 +94,33 @@ internal object ItemBlocks {
             ?: Latex.EMPTY
 
     /**
+     * Das Zahlungsziel als ein Satz unter den Summen, als Frist und nicht als
+     * Datum: "Die Zahlung ist 14 Tage nach Rechnungsdatum fällig." Das Design
+     * `raster` setzt ihn statt der Kopfzeile, `balken` übergeht ihn (#211).
+     *
+     * Der Bezug ist das Rechnungsdatum und nicht der Erhalt der Rechnung: Von
+     * dort rechnen [CalculatedInvoice.dueDate] und das Skonto daneben. "ohne
+     * Abzug" nur mit Skonto, sonst fragte man, welcher Abzug gemeint ist.
+     * "sofort" und Skonto zusammen gibt es nicht, weil eine Skontofrist vor dem
+     * Zahlungsziel endet (SKONTOFRIST_NICHT_VOR_ZAHLUNGSZIEL).
+     *
+     * Ob der Satz dasteht, sagt [CalculatedInvoice.dueDate] – wie die Kopfzeile.
+     */
+    fun paymentTermNote(calculatedInvoice: CalculatedInvoice): Latex {
+        if (calculatedInvoice.dueDate == null) return Latex.EMPTY
+
+        val tage = calculatedInvoice.paymentTermDays
+        val abzug = if (calculatedInvoice.skonto.isEmpty()) "" else "ohne Abzug "
+        val frist =
+            when (tage) {
+                0 -> "sofort"
+                1 -> "${abzug}1 Tag nach Rechnungsdatum"
+                else -> "$abzug$tage Tage nach Rechnungsdatum"
+            }
+        return Latex.macro(TemplateMacro.HINWEISABSATZ, listOf("Die Zahlung ist $frist fällig.".escapeLatex()))
+    }
+
+    /**
      * Das Skonto als ein Satz unter den Summen, eine Stufe je Satzteil, nach der
      * Skontofrist sortiert: "Bei Zahlung bis 21. August 2026 können 2 % Skonto
      * abgezogen werden, bei Zahlung bis 24. August 2026 1 %."

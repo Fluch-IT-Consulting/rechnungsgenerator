@@ -68,7 +68,7 @@
 
 %% Eine Zeile oben rechts: Beschriftung und Wert als Tabellenzeile. Ist der Wert
 %% leer, entfällt die ganze Zeile samt Beschriftung – sonst stünde auf einer
-%% Stornorechnung "Zahlbar bis" ohne Datum.
+%% gewöhnlichen Rechnung "Vereinnahmt am" ohne Datum.
 \newcommand{\kopfangabe}[2]{\ifblank{#2}{}{#1 & #2\\}}
 
 %% Die eigenen Sätze des Programms unter den Summen, wie in balken.tex: nur hier
@@ -103,7 +103,7 @@
 %% Die Bankverbindung setzt raster nicht als eigenen Block: Sie steht im Fuß,
 %% auf jedem Dokument, als Angabe des Briefbogens und nicht als
 %% Zahlungsaufforderung – so, wie balken die IBAN in seiner Fußzeile führt.
-%% Ob das Dokument zur Zahlung auffordert, sagt das Zahlungsziel oben rechts.
+%% Ob das Dokument zur Zahlung auffordert, sagt der Satz zur Zahlungsfrist.
 %% Der Renderer ruft \bankblock trotzdem auf, wenn Zahlung gefordert wird, und
 %% es bleibt leer (#189, ADR-0011).
 \newcommand{\bankblock}{}
@@ -151,7 +151,6 @@
   \kopfangabe{<<ZEITRAUM_BESCHRIFTUNG>>:}{<<LEISTUNGSZEITRAUM>>}
   \kopfangabe{Vereinnahmt am:}{<<VEREINNAHMT_AM>>}
   \kopfangabe{Ihre Referenz:}{<<KUNDENREFERENZ>>}
-  \kopfangabe{Zahlbar bis:}{<<ZAHLUNGSZIEL>>}
 \end{tabular}
 
 \vspace{12mm}
@@ -197,12 +196,14 @@
 
 %% ------------------------------------------------------ Die fachlichen Sätze
 %% Pflichtsatz, Steuerhinweise, Absetzung und Skonto in derselben Reihenfolge
-%% wie in balken. Jeder bringt seinen Abstand selbst mit.
+%% wie in balken. Jeder bringt seinen Abstand selbst mit. Dazwischen das
+%% Zahlungsziel als Satz, das balken im Kopf nennt (#211): erst was offen ist,
+%% dann wann es fällig ist, dann der mögliche Abzug.
 <<ARTHINWEIS>>
 
 <<STEUERHINWEISE>>
 
-<<ABSETZUNG>><<SKONTO>>
+<<ABSETZUNG>><<ZAHLUNGSFRIST>><<SKONTO>>
 
 <<BANKVERBINDUNG>>
 
