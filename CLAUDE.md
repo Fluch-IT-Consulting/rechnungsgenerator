@@ -330,9 +330,14 @@ CV/Web-Auftritt des Autors), Validierung über veraPDF.
   Einzelpreis, den BR-27 verbietet – genau so war das Projekt schon gebaut, die
   seit #47 offene Frage nach der negativen Menge ist damit beantwortet. Das
   Vorzeichen des Gesamtbetrags gehört seither zur Rechnungsart: im Storno
-  Pflicht, überall sonst verboten. Fälligkeit und Bankverbindung entfallen, weil
-  ein Storno kein Geld fordert; dafür wurde der Bankblock zum Makro der Vorlage,
-  sonst bliebe die Überschrift ohne Konto stehen. Die Ursprungsrechnung nennt
+  Pflicht, überall sonst verboten. Null ist nur für die Abschlagsrechnung zu
+  wenig (`ABSCHLAGSRECHNUNG_OHNE_BETRAG`); Rechnung und Teilrechnung über null
+  entstehen mit einem Hinweis (`GESAMTBETRAG_NULL`), weil eine ganz erlassene
+  Leistung gewollt sein kann. Zahlungsziel und Bank entfallen dort ohnehin,
+  `requestsPayment` verlangt einen positiven Betrag (#214). Fälligkeit und
+  Bankverbindung entfallen, weil ein Storno kein Geld fordert; dafür wurde der
+  Bankblock zum Makro der Vorlage, sonst bliebe die Überschrift ohne Konto
+  stehen. Die Ursprungsrechnung nennt
   der Pflichtsatz mit Nummer und Datum, über die Platzhalter
   `<<URSPRUNGSNUMMER>>` und `<<URSPRUNGSDATUM>>`, die `InvoiceVariableResolver`
   beim Setzen auflöst; eine eigene Zeile im Kopf gibt es nicht mehr (ADR-0010).
