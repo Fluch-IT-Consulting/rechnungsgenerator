@@ -99,6 +99,11 @@ internal object MetadataBlocks {
         calculatedInvoice.invoice.customer.buyerIdentifier
             ?.escapeLatex() ?: Latex.EMPTY
 
+    /** BT-14, die eigene Auftragsnummer, leer, wenn die Rechnung keine nennt. */
+    fun salesOrderReference(calculatedInvoice: CalculatedInvoice): Latex =
+        calculatedInvoice.invoice.salesOrderReference
+            ?.escapeLatex() ?: Latex.EMPTY
+
     /** BT-10, die Referenz des Kunden, leer, wenn er keine nennt. */
     fun buyerReference(calculatedInvoice: CalculatedInvoice): Latex =
         calculatedInvoice.invoice.customer.buyerReference

@@ -3,22 +3,23 @@ package de.fluchitconsulting.rechnungsgenerator.rules
 import de.fluchitconsulting.rechnungsgenerator.calculation.CalculatedInvoice
 
 /**
- * Die Freitextangaben zum Kunden: Ansprechpartner (#196) und Kundennummer
- * (#190).
+ * Die Freitextangaben der Rechnung: Ansprechpartner (#196), Kundennummer
+ * (#190) und die eigene Auftragsnummer (#191).
  *
  * Geprüft wird nur, was jeder Freitext erfüllen muss: Steht der Schlüssel da,
  * nennt er etwas, und zwar ohne Leerraum am Rand. Ein Muster gibt es nicht:
- * Kundennummern vergibt jeder Rechnungssteller anders, und wie ein Kunde seine
- * Abteilungen nennt, weiß nur er.
+ * Kunden- und Auftragsnummern vergibt jeder Rechnungssteller anders, und wie
+ * ein Kunde seine Abteilungen nennt, weiß nur er.
  *
  * Leerraum am Rand sieht man im PDF nicht, aber er stünde später wörtlich im
  * ZUGFeRD-XML. Tragen kann ihn ohnehin nur ein gequoteter YAML-Wert, und dann
  * ist er ein Versehen – dieselbe Überlegung wie bei
  * `RECHNUNGSNUMMER_MIT_LEERRAUM`.
  */
-internal object CustomerRules {
+internal object FreeTextRules {
     fun check(calculated: CalculatedInvoice): List<Finding> {
-        val customer = calculated.invoice.customer
+        val invoice = calculated.invoice
+        val customer = invoice.customer
         return listOf(
             freeText(
                 customer.contactPoint,
@@ -33,6 +34,13 @@ internal object CustomerRules {
                 designation = "Die Kundennummer",
                 blank = Rule.KUNDENNUMMER_LEER,
                 padded = Rule.KUNDENNUMMER_MIT_LEERRAUM,
+            ),
+            freeText(
+                invoice.salesOrderReference,
+                key = "auftragsnummer",
+                designation = "Die Auftragsnummer",
+                blank = Rule.AUFTRAGSNUMMER_LEER,
+                padded = Rule.AUFTRAGSNUMMER_MIT_LEERRAUM,
             ),
         ).flatten()
     }

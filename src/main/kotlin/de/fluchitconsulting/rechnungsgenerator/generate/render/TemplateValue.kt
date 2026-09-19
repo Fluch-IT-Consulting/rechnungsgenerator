@@ -52,6 +52,7 @@ enum class TemplateValue(
     EMPFAENGER(true),
     KUNDE_USTID(true),
     KUNDENNUMMER(true),
+    AUFTRAGSNUMMER(true),
 
     // Die eine Beschriftung, die vom Renderer kommt: "Voraussichtlicher
     // Leistungszeitraum" folgt aus servicePeriodIsForecast (UStAE 14.8) und ist

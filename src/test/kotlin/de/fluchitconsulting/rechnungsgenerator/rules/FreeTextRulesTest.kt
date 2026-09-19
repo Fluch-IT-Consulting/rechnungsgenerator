@@ -8,14 +8,17 @@ import io.kotest.matchers.collections.shouldBeEmpty
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.string.shouldContain
 
-/** Die Freitextangaben zum Kunden (#196, #190). */
-class CustomerRulesTest : FunSpec({
+/** Die Freitextangaben der Rechnung (#196, #190, #191). */
+class FreeTextRulesTest : FunSpec({
 
     fun mitAnsprechpartner(ansprechpartner: String?) =
         CalculatedInvoice(testInvoice(contactPoint = ansprechpartner), testSellerConfig())
 
     fun mitKundennummer(kundennummer: String?) =
         CalculatedInvoice(testInvoice(buyerIdentifier = kundennummer), testSellerConfig())
+
+    fun mitAuftragsnummer(auftragsnummer: String?) =
+        CalculatedInvoice(testInvoice(salesOrderReference = auftragsnummer), testSellerConfig())
 
     context("Ansprechpartner") {
         test("ohne Ansprechpartner gibt es nichts zu prüfen") {
@@ -78,6 +81,27 @@ class CustomerRulesTest : FunSpec({
 
             beide.rules().filter { it.name.startsWith("ANSPRECHPARTNER_") || it.name.startsWith("KUNDENNUMMER_") } shouldBe
                 listOf(Rule.ANSPRECHPARTNER_LEER, Rule.KUNDENNUMMER_LEER)
+        }
+    }
+
+    context("Auftragsnummer") {
+        test("ohne Auftragsnummer gibt es nichts zu prüfen") {
+            mitAuftragsnummer(null).aborts().shouldBeEmpty()
+        }
+
+        test("jede Form geht durch, ein Muster gibt es nicht") {
+            mitAuftragsnummer("A-2026-014").aborts().shouldBeEmpty()
+        }
+
+        test("eine leere Auftragsnummer wird abgelehnt und nennt den Schlüssel") {
+            mitAuftragsnummer("").messageOf(Rule.AUFTRAGSNUMMER_LEER) shouldContain "'auftragsnummer'"
+        }
+
+        test("Leerraum am Rand wird abgelehnt und die gemeinte Fassung genannt") {
+            val message = mitAuftragsnummer(" A-2026-014").messageOf(Rule.AUFTRAGSNUMMER_MIT_LEERRAUM)
+
+            message shouldContain "Leerraum"
+            message shouldContain "'A-2026-014'"
         }
     }
 })

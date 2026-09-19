@@ -589,6 +589,13 @@ class InvoiceRendererTest : FunSpec({
             wert(TemplateValue.KUNDENNUMMER) shouldBe ""
         }
 
+        test("die Auftragsnummer kommt maskiert, und ohne sie ist der Wert leer") {
+            // BT-14 (#191). Leer heißt: balken lässt die Zeile samt
+            // "Unsere Auftragsnr." weg.
+            wert(TemplateValue.AUFTRAGSNUMMER, testInvoice(salesOrderReference = "A_2026_014")) shouldBe "A\\_2026\\_014"
+            wert(TemplateValue.AUFTRAGSNUMMER) shouldBe ""
+        }
+
         test("Geschäftsführung, Telefon, Registergericht und Referenz sind leer, wenn sie fehlen") {
             // Die Beschriftungen stehen seit #188 in der Vorlage, ebenso die
             // Regel "die Person im Kopf nur ohne Geschäftsführung". Hier bleibt

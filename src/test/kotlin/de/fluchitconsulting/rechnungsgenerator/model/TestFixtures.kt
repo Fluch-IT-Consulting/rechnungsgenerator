@@ -89,6 +89,7 @@ fun testInvoice(
     skonto: List<SkontoTier> = emptyList(),
     contactPoint: String? = null,
     buyerIdentifier: String? = null,
+    salesOrderReference: String? = null,
 ) = Invoice(
     number = number,
     issueDate = LocalDate.of(2026, 8, 14),
@@ -108,4 +109,5 @@ fun testInvoice(
     cancelled = cancelled,
     paymentTermDaysOverride = paymentTermDaysOverride,
     skonto = skonto,
+    salesOrderReference = salesOrderReference,
 )
