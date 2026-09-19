@@ -125,14 +125,18 @@ CV/Web-Auftritt des Autors), Validierung über veraPDF.
   Pflichtangaben-Netz (`PflichtangabenTest`, je Design und Art). Ein neues
   Design ist eine Vorlage, ein Eintrag in `Design` und eine Zeile im Netz.
 - **Logo** (ADR-0012): Die Stammdaten nennen es als Datei, `logo: logo.tex`,
-  relativ zu ihrem Verzeichnis; ohne Eintrag kein Logo. Die Datei ist der Rumpf
-  einer `tikzpicture` und bringt Farben und Schrift selbst mit. Gelesen wird sie
-  in `YamlLoader.loadSellerConfig`, `parseSellerConfig` lehnt den Eintrag ab.
-  Der Renderer liefert `LOGO` als Schalter und die Datei in
+  relativ zu ihrem Verzeichnis; ohne Eintrag kein Logo. Die Datei definiert
+  `\logozeichnung` (Pflicht, der Rumpf einer `tikzpicture`) und
+  `\logoskalierung` (optional, ein Faktor auf die Logohöhe des Designs, sonst
+  1) und bringt Farben und Schrift selbst mit (#199). Der Faktor steht dort und
+  nicht in den Stammdaten, weil die Proportionen zum Logo gehören; die Vorlage
+  begrenzt ihn nicht, man sieht ihn am Blatt. Gelesen wird die Datei in
+  `YamlLoader.loadSellerConfig`, `parseSellerConfig` lehnt den Eintrag ab. Der
+  Renderer liefert `LOGO` als Schalter und die Datei in
   `RenderedInvoice.files`, aber nur, wenn die Vorlage `<<LOGO>>` enthält – er
-  befolgt die Vorlage und kennt kein Design. `raster` bindet sie per `\input`
-  ein, `balken` übergeht sie, und dann ist das PDF Byte für Byte dasselbe wie
-  ohne Eintrag. Weitere Dateien gehen über `Typesetter.typeset(files)` in das
+  befolgt die Vorlage und kennt kein Design. `raster` liest sie per `\input` in
+  der Präambel, `balken` übergeht sie, und dann ist das PDF Byte für Byte
+  dasselbe wie ohne Eintrag. Weitere Dateien gehen über `Typesetter.typeset(files)` in das
   Arbeitsverzeichnis und mit Namen, Länge und Inhalt in die Trailer-ID; ohne
   sie bleibt die ID die von vorher. Keine Bilddatei: `luatex.def` gibt jedem
   per `\includegraphics` eingebundenen PDF eine Transparenzgruppe mit, und die

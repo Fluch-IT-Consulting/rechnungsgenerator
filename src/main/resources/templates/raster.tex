@@ -108,17 +108,24 @@
 %% es bleibt leer (#189, ADR-0011).
 \newcommand{\bankblock}{}
 
-%% Das Logo nennen die Stammdaten (#198), als Datei mit dem Rumpf einer
-%% tikzpicture. Der Renderer legt sie neben die .tex, <<LOGO>> ist ihr Name,
-%% ohne Logo leer. Das Fragment bringt Farben und Schrift selbst mit; die
-%% Vorlage sichert zu, dass TikZ, fontspec und xcolor geladen sind, und
-%% skaliert es mit \resizebox auf \logohoehe.
+%% Das Logo nennen die Stammdaten (#198, ADR-0012). Der Renderer legt die
+%% Datei neben die .tex, <<LOGO>> ist ihr Name, ohne Logo leer. Sie wird hier
+%% in der Präambel gelesen und definiert (#199):
+%%  - \logozeichnung, Pflicht: den Rumpf einer tikzpicture;
+%%  - \logoskalierung, optional: einen Faktor auf \logohoehe, sonst 1.
+%% Schrift und Farben bringt sie selbst mit; die Vorlage sichert zu, dass TikZ,
+%% fontspec und xcolor geladen sind.
+%%
+%% Den Faktor begrenzt die Vorlage nicht, man sieht ihn am Blatt; die Grenze
+%% steht beim Kopf.
 %%
 %% TikZ und keine Bilddatei: Der Treiber luatex.def von graphicx gibt jedem
 %% über \includegraphics eingebundenen PDF eine Transparenzgruppe mit, und die
 %% verbietet PDF/A-1 (ISO 19005-1, 6.4, siehe #197).
 \newlength{\logohoehe}\setlength{\logohoehe}{12mm}
 \newlength{\versalhoehe}
+\ifblank{<<LOGO>>}{}{\input{<<LOGO>>}}
+\providecommand{\logoskalierung}{1}
 
 \begin{document}
 
@@ -129,10 +136,11 @@
 %% Das Logo nimmt keinen Raum ein ([0pt][0pt]): So steht der Titel auf
 %% derselben Grundlinie wie ohne Logo, und alles darunter bleibt, wo es war.
 %% Seine Oberkante liegt auf der Versalhöhe des Titels. Dafür darf es nicht
-%% höher werden als der Block der Kopfangaben, sonst ragt es in die Anschriften.
+%% höher werden als der Block der Kopfangaben, sonst ragt es in die Anschriften
+%% – mit \logoskalierung liegt die Grenze bei gut 2.
 \settoheight{\versalhoehe}{\LARGE\bfseries M}%
 \noindent\ifblank{<<LOGO>>}{}{\raisebox{\dimexpr\versalhoehe-\height\relax}[0pt][0pt]{%
-  \resizebox{!}{\logohoehe}{\begin{tikzpicture}\input{<<LOGO>>}\end{tikzpicture}}}}%
+  \resizebox{!}{\logoskalierung\logohoehe}{\begin{tikzpicture}\logozeichnung\end{tikzpicture}}}}%
 \hfill
 \begin{tabular}[t]{@{}r@{\hspace{3mm}}l@{}}
   \multicolumn{2}{@{}r@{}}{\LARGE\bfseries <<DOKUMENTART>>}\\[2mm]

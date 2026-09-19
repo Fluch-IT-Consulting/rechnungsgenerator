@@ -5,8 +5,10 @@ import com.github.ajalt.clikt.core.parse
 import de.fluchitconsulting.rechnungsgenerator.RechnungsgeneratorCommand
 import io.kotest.assertions.withClue
 import io.kotest.matchers.shouldBe
+import java.awt.image.BufferedImage
 import java.nio.file.Path
 import java.util.concurrent.TimeUnit
+import javax.imageio.ImageIO
 import kotlin.io.path.readText
 
 /**
@@ -66,5 +68,24 @@ class ToolchainRun(
         prozess.waitFor(30, TimeUnit.SECONDS) shouldBe true
         prozess.exitValue() shouldBe 0
         return text.readText()
+    }
+
+    /**
+     * Die erste Seite eines PDF als Bild, wie `pdftoppm` sie rastert – für die
+     * Frage, wie groß etwas gesetzt wurde, die kein Text beantwortet.
+     */
+    fun imageOf(
+        pdf: Path,
+        dpi: Int = 100,
+    ): BufferedImage {
+        val stamm = workDir.resolve(pdf.fileName.toString().removeSuffix(".pdf"))
+        val prozess =
+            ProcessBuilder("pdftoppm", "-png", "-singlefile", "-r", dpi.toString(), pdf.toString(), stamm.toString())
+                .redirectErrorStream(true)
+                .redirectOutput(workDir.resolve("pdftoppm.log").toFile())
+                .start()
+        prozess.waitFor(30, TimeUnit.SECONDS) shouldBe true
+        prozess.exitValue() shouldBe 0
+        return ImageIO.read(workDir.resolve("${stamm.fileName}.png").toFile())
     }
 }
