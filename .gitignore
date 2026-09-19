@@ -14,3 +14,7 @@ build/
 
 # Persönliche Claude-Code-Einstellungen (enthält lokale Pfade)
 .claude/settings.local.json
+
+# Eigene Dateien, die nicht ins Repo gehören – etwa echte Logos oder
+# Stammdaten zum Ausprobieren. Das Repo kann öffentlich werden.
+privat/
