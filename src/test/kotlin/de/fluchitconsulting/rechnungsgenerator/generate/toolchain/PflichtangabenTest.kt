@@ -38,12 +38,17 @@ import kotlin.io.path.writeText
  *
  * Die Beschriftung des Zahlungsziels ist in raster der Anfang des Satzes, der
  * es als Frist nennt (#211) – eine Kopfzeile gibt es dort nicht mehr.
+ *
+ * [rabattBeschriftung] ist der Kopf der Rabattspalte, so wie `pdftotext` ihn
+ * liest: balken sperrt seine Spaltenköpfe, und dann kommt jeder Buchstabe
+ * einzeln zurück (#213).
  */
 private data class Design(
     val name: String,
     val stammdaten: Path,
     val zahlungszielBeschriftung: String,
     val bankUeberschrift: String?,
+    val rabattBeschriftung: String,
 )
 
 /**
@@ -103,6 +108,7 @@ class PflichtangabenTest : FunSpec({
                 stammdaten = stammdaten,
                 zahlungszielBeschriftung = "Zahlbar ohne Abzug bis",
                 bankUeberschrift = "Bankverbindung",
+                rabattBeschriftung = "R A B AT T",
             ),
             Design(
                 name = "raster",
@@ -110,6 +116,7 @@ class PflichtangabenTest : FunSpec({
                 stammdaten = stammdatenMit("raster", logo = true),
                 zahlungszielBeschriftung = "Die Zahlung ist",
                 bankUeberschrift = null,
+                rabattBeschriftung = "Rabatt",
             ),
         )
 
@@ -229,6 +236,22 @@ private fun Blatt.pruefe(
     invoice.items.forEachIndexed { i, item ->
         steht("Bezeichnung der Position ${i + 1}", item.name)
         steht("Menge der Position ${i + 1}", menge(item.quantity))
+    }
+    // Der Rabatt ist keine Pflichtangabe: §14 Abs. 4 Nr. 7 verlangt nur
+    // Minderungen, die nicht schon im Entgelt berücksichtigt sind, und der
+    // Rabatt ist es. Geprüft wird trotzdem, dass die Spalte genau dann steht,
+    // wenn eine Position einen Rabatt hat (#213) – sonst sähe man einen
+    // Betrag, der nicht Menge × Einzelpreis ist, ohne Grund.
+    calculated.lines.forEachIndexed { i, line ->
+        line.item.discount?.let { rabatt ->
+            steht("Rabatt der Position ${i + 1}", *satz(rabatt))
+            steht("Betrag der Position ${i + 1}", betrag(line.net))
+        }
+    }
+    if (invoice.items.any { it.discount != null }) {
+        steht("Kopf der Rabattspalte", design.rabattBeschriftung)
+    } else {
+        fehlt("Kopf der Rabattspalte", design.rabattBeschriftung)
     }
     steht("Leistungszeitraum", *zeitraum(invoice.servicePeriod.start, invoice.servicePeriod.end))
     invoice.receivedOn?.let { steht("Tag der Vereinnahmung", *datum(it)) }
