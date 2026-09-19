@@ -1,0 +1,51 @@
+# Fiktive Rechnung mit zwei Steuersätzen und einer steuerfreien Position (#218).
+# Je Satz zwei Positionen: Das Entgelt je Satz (§14 Abs. 4 Nr. 7 UStG) steht
+# dann auf keiner Position und kommt nur über die Steuerzeile auf das Blatt.
+nummer: R26-043
+datum: 2026-08-14
+leistungszeitraum:
+  von: 2026-07-01
+  bis: 2026-07-31
+kunde:
+  name: Beispiel Software GmbH
+  anschrift:
+    strasse: Industriestraße 1
+    plz: "90402"
+    ort: Nürnberg
+positionen:
+  # 19 %: 950,00 € + 120,00 € = 1.070,00 €
+  - bezeichnung: IT-Beratungsleistungen
+    menge: 10
+    einheit: Std.
+    einzelpreis: 95.00
+  - bezeichnung: Fahrtkostenpauschale
+    menge: 1
+    einheit: pauschal
+    einzelpreis: 120.00
+  # 7 %: 79,80 € + 24,50 € = 104,30 €
+  - bezeichnung: Fachbuch Kotlin kompakt
+    menge: 2
+    einheit: Stück
+    einzelpreis: 39.90
+    ust-satz: 7
+  - bezeichnung: Fachbuch Gradle im Alltag
+    menge: 1
+    einheit: Stück
+    einzelpreis: 24.50
+    ust-satz: 7
+  # Steuerfrei: das Entgelt nennt der Hinweis unter den Summen.
+  - bezeichnung: Schulung
+    menge: 1
+    einheit: pauschal
+    einzelpreis: 500.00
+    ust-satz: 0
+    steuerkategorie: E
+    steuerbefreiungsgrund: Steuerfrei nach §4 Nr. 21 UStG
+  # Nullsatz: keine Befreiung, sondern 0 % – Satz und Steuerbetrag gehören
+  # deshalb in den Summenblock.
+  - bezeichnung: Photovoltaikmodul
+    menge: 1
+    einheit: Stück
+    einzelpreis: 5000.00
+    ust-satz: 0
+    steuerkategorie: Z

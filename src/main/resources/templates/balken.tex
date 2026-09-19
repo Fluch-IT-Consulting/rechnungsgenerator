@@ -222,7 +222,8 @@
 %% Die Zeilen des Summenblocks mit ihren Beschriftungen (#217). Die Wörter
 %% gehören zum Design; Kotlin liefert nur Satz und Beträge.
 \newcommand{\nettozeile}[1]{\summenzeile{Nettobetrag}{#1}}
-\newcommand{\steuerzeile}[2]{\summenzeile{zzgl. #1 USt.}{#2}}
+%% Die Grundlage nur bei mehreren Steuergruppen (#218), sonst ist sie leer.
+\newcommand{\steuerzeile}[3]{\summenzeile{zzgl. #1 USt.\ifblank{#2}{}{ auf #2}}{#3}}
 \newcommand{\gesamtzeile}[1]{\abschlusszeile{Gesamtbetrag}{#1}}
 
 \begin{document}

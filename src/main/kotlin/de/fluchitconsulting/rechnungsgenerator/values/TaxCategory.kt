@@ -95,6 +95,11 @@ enum class TaxCategory(
     // Bedeutung, der Vollständigkeit halber aber vorhanden. Nach den Regeln
     // BR-Z-* trägt er keinen Befreiungsgrund; hier bin ich mir am wenigsten
     // sicher, vor einem produktiven Einsatz von Z bitte nachschlagen.
+    //
+    // Auf dem Blatt steht er als gewöhnliche Steuerzeile, "0 % auf X: 0,00 €"
+    // (#218): Der Nullsatz ist keine Befreiung, sondern eine Besteuerung mit
+    // 0 %, und §14 Abs. 4 Nr. 8 UStG verlangt dafür Satz und Steuerbetrag.
+    // Dass er keinen Grund trägt, ist genau das Unterscheidungsmerkmal.
     ZERO_RATED(
         "Z",
         "Nullsatz",

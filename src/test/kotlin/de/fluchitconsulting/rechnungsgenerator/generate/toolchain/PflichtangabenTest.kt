@@ -153,6 +153,22 @@ class PflichtangabenTest : FunSpec({
         }
     }
 
+    // Mehrere Steuersätze (#218): §14 Abs. 4 Nr. 7 verlangt das Entgelt je
+    // Satz. In den Beispielen je Art hat jeder Satz genau eine Position, und
+    // deren Betrag stünde zufällig als Positionsbetrag da – hier je Satz zwei,
+    // damit das Entgelt nur über den Summenblock auf das Blatt kommen kann.
+    // Dazu eine befreite Position (Hinweis statt Satz und Steuerbetrag) und
+    // eine mit Nullsatz (Satz und Steuerbetrag, keine Befreiung).
+    for (design in designs) {
+        test("gemischte Steuersätze im Design ${design.name}: gültig, mit dem Entgelt je Steuersatz") {
+            val calculated =
+                setzeUndPruefe("gemischte-steuersaetze", design, design.stammdaten, zielname = "${design.name}-gemischt")
+
+            // 19 %, 7 %, steuerbefreit, Nullsatz – die vier Fälle nebeneinander.
+            calculated.vatGroups.size shouldBe 4
+        }
+    }
+
     // Die Stammdaten oben führen eine Geschäftsführung, und raster läuft dort
     // mit Logo. Zwei Zweige der Vorlagen erreichten so nie ein echtes PDF: der
     // Name des Inhabers, der nur ohne Geschäftsführung dasteht, und raster
@@ -256,12 +272,23 @@ private fun Blatt.pruefe(
     steht("Leistungszeitraum", *zeitraum(invoice.servicePeriod.start, invoice.servicePeriod.end))
     invoice.receivedOn?.let { steht("Tag der Vereinnahmung", *datum(it)) }
 
-    // Nr. 7 und 8: Entgelt je Steuersatz, Satz und Steuerbetrag.
+    // Nr. 7 und 8: Entgelt je Steuersatz, dazu Satz und Steuerbetrag – oder,
+    // bei einer Steuerbefreiung, der Hinweis darauf statt beider (Nr. 8
+    // zweiter Halbsatz, #218). Das Entgelt verlangt Nr. 7 in jedem Fall; bei
+    // einer befreiten Gruppe nennt es der Hinweis selbst. Ob eine Gruppe
+    // befreit ist, sagt ihr Grund und nicht ihr Steuerbetrag von null: Die
+    // Kategorie Z trägt keinen Grund und bleibt deshalb eine Gruppe, die Satz
+    // und Steuerbetrag zeigen muss.
     calculated.vatGroups.forEach { gruppe ->
         val name = "Steuergruppe ${gruppe.category} ${gruppe.rate}"
         steht("$name: Entgelt", betrag(gruppe.base))
-        steht("$name: Satz", *satz(gruppe.rate))
-        steht("$name: Steuerbetrag", betrag(gruppe.amount))
+        val grund = gruppe.exemptionReason
+        if (grund == null) {
+            steht("$name: Satz", *satz(gruppe.rate))
+            steht("$name: Steuerbetrag", betrag(gruppe.amount))
+        } else {
+            steht("$name: Hinweis auf die Steuerbefreiung", grund)
+        }
     }
 
     // §14 Abs. 5 Satz 2: Die Schlussrechnung setzt Entgelt und Steuer der

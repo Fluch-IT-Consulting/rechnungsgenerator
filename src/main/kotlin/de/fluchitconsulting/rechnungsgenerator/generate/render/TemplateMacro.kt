@@ -47,10 +47,11 @@ enum class TemplateMacro(val macroName: String, val arity: Int) {
     // Die Zeilen des Summenblocks, ohne Beschriftung: Die setzt die Vorlage
     // (#217), "Nettobetrag" und "Zwischensumme (netto)" sagen fachlich
     // dasselbe. Die Steuerzeile bekommt den Satz, weil ihn jedes Design an
-    // einer anderen Stelle seines Wortlauts nennt. Die Gesamtzeile beendet wie
+    // einer anderen Stelle seines Wortlauts nennt, und die Grundlage – leer,
+    // wenn es nur eine Steuergruppe gibt (#218). Die Gesamtzeile beendet wie
     // ABSCHLUSSZEILE die Zeile davor selbst.
     NETTOZEILE("nettozeile", 1),
-    STEUERZEILE("steuerzeile", 2),
+    STEUERZEILE("steuerzeile", 3),
     GESAMTZEILE("gesamtzeile", 1),
 
     // Ohne Argument: Den Inhalt setzt die Vorlage aus den Werten der Bank, der

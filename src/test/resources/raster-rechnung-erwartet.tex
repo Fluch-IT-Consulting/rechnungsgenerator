@@ -63,7 +63,7 @@
 \newcommand{\abschlusszeile}[2]{\\\hline\textbf{#1} & \textbf{#2}}
 
 \newcommand{\nettozeile}[1]{\summenzeile{Zwischensumme (netto)}{#1}}
-\newcommand{\steuerzeile}[2]{\summenzeile{Umsatzsteuer #1}{#2}}
+\newcommand{\steuerzeile}[3]{\summenzeile{Umsatzsteuer #1\ifblank{#2}{}{ auf #2}}{#3}}
 \newcommand{\gesamtzeile}[1]{\abschlusszeile{Gesamtbetrag}{#1}}
 
 \newcommand{\bankblock}{}
@@ -116,7 +116,7 @@
 \par\nointerlineskip\noindent
 \begin{tabularx}{\linewidth}{|>{\raggedright\arraybackslash}X|B|}
   \nettozeile{8.337,50~€} \summentrenner{}
-  \steuerzeile{19~\%}{1.584,13~€}
+  \steuerzeile{19~\%}{}{1.584,13~€}
   \gesamtzeile{9.921,63~€}\\
   \hline
 \end{tabularx}
