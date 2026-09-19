@@ -90,6 +90,7 @@ fun testInvoice(
     contactPoint: String? = null,
     buyerIdentifier: String? = null,
     salesOrderReference: String? = null,
+    introduction: String? = null,
 ) = Invoice(
     number = number,
     issueDate = LocalDate.of(2026, 8, 14),
@@ -110,6 +111,7 @@ fun testInvoice(
     paymentTermDaysOverride = paymentTermDaysOverride,
     skonto = skonto,
     salesOrderReference = salesOrderReference,
+    introduction = introduction,
 )
 
 /**

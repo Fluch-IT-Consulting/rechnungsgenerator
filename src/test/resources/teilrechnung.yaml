@@ -12,6 +12,9 @@ kunde:
     strasse: Industriestraße 1
     plz: "90402"
     ort: Nürnberg
+einleitung: >-
+  Für Projekt Süd berechnen wir den am 31.08.2026 abgenommenen
+  Meilenstein 1:
 positionen:
   - bezeichnung: Projekt Süd, Meilenstein 1
     beschreibung: Abnahme vom 31.08.2026

@@ -170,6 +170,12 @@
 
 \vspace{12mm}
 
+%% --------------------------------------------------------------- Einleitung
+%% Der Satz aus der Rechnungsdatei, der sagt, worum es geht (#209). Er kommt aus
+%% den Eingabedaten und steht deshalb nicht in \hinweisabsatz (#143). Ohne
+%% Einleitung steht hier nichts, und der Abstand zur Tabelle bleibt derselbe.
+\ifblank{<<EINLEITUNG>>}{}{\noindent <<EINLEITUNG>>\par\vspace{5mm}}
+
 %% --------------------------------------------------------------- Positionen
 \noindent
 \begin{tabularx}{\linewidth}{|>{\centering\arraybackslash}p{7mm}|>{\raggedright\arraybackslash}X|>{\raggedleft\arraybackslash}p{13mm}|>{\raggedright\arraybackslash}p{15mm}|>{\raggedleft\arraybackslash}p{22mm}|B|}

@@ -47,6 +47,10 @@ data class Invoice(
     // Rechnungsart kennt kotlinx.serialization nicht, und die Meldung soll von
     // der Rechnungsart sprechen statt von einem fehlenden YAML-Schlüssel.
     @SerialName("storniert") val cancelled: CancelledInvoice? = null,
+    // Der Satz über den Positionen, der sagt, worum es geht (#209). Nur in der
+    // Rechnung und ohne Vorgabe in den Stammdaten: Er hängt am Auftrag, eine
+    // Vorgabe landete still auf jeder Rechnung.
+    @SerialName("einleitung") val introduction: String? = null,
     @SerialName("bemerkung") val note: String? = null,
 )
 

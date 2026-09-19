@@ -112,6 +112,15 @@ class YamlLoaderTest : FunSpec({
         YamlLoader.parseInvoice(resource("rechnung.yaml")).salesOrderReference shouldBe null
     }
 
+    test("einleitung liest den Satz über den Positionen") {
+        // >- faltet die Zeilen mit Leerzeichen und lässt den Zeilenumbruch am
+        // Ende weg – so, wie das Beispiel im Skill rechnung es schreibt.
+        val yaml = "einleitung: >-\n  Für den Workshop\n  berechnen wir:\n" + resource("rechnung.yaml")
+
+        YamlLoader.parseInvoice(yaml).introduction shouldBe "Für den Workshop berechnen wir:"
+        YamlLoader.parseInvoice(resource("rechnung.yaml")).introduction shouldBe null
+    }
+
     test("eine Rechnungsdatei ohne art ist eine gewöhnliche Rechnung") {
         // Der negative Test dieses Schritts: Bestehende Dateien kennen den
         // Schlüssel nicht und sollen sich trotzdem verhalten wie bisher.

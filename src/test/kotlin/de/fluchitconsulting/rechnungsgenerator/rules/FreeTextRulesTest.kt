@@ -8,7 +8,7 @@ import io.kotest.matchers.collections.shouldBeEmpty
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.string.shouldContain
 
-/** Die Freitextangaben der Rechnung (#196, #190, #191). */
+/** Die Freitextangaben der Rechnung (#196, #190, #191, #209). */
 class FreeTextRulesTest : FunSpec({
 
     fun mitAnsprechpartner(ansprechpartner: String?) =
@@ -19,6 +19,9 @@ class FreeTextRulesTest : FunSpec({
 
     fun mitAuftragsnummer(auftragsnummer: String?) =
         CalculatedInvoice(testInvoice(salesOrderReference = auftragsnummer), testSellerConfig())
+
+    fun mitEinleitung(einleitung: String?) =
+        CalculatedInvoice(testInvoice(introduction = einleitung), testSellerConfig())
 
     context("Ansprechpartner") {
         test("ohne Ansprechpartner gibt es nichts zu prüfen") {
@@ -102,6 +105,31 @@ class FreeTextRulesTest : FunSpec({
 
             message shouldContain "Leerraum"
             message shouldContain "'A-2026-014'"
+        }
+    }
+
+    context("Einleitung") {
+        test("ohne Einleitung gibt es nichts zu prüfen") {
+            mitEinleitung(null).aborts().shouldBeEmpty()
+        }
+
+        test("ein Satz mit Satzzeichen geht durch") {
+            mitEinleitung("Für den Workshop am 04.08.2026 in Würzburg berechnen wir Folgendes:")
+                .aborts()
+                .shouldBeEmpty()
+        }
+
+        test("eine leere Einleitung wird abgelehnt und nennt den Schlüssel") {
+            mitEinleitung("").messageOf(Rule.EINLEITUNG_LEER) shouldContain "'einleitung'"
+        }
+
+        test("der Zeilenumbruch am Ende eines Blocks mit | wird abgelehnt, die Meldung nennt >-") {
+            // Die Falle eines langen Werts: `einleitung: |` behält den
+            // Zeilenumbruch am Ende, `>-` nicht.
+            val message = mitEinleitung("Für Projekt A berechnen wir:\n").messageOf(Rule.EINLEITUNG_MIT_LEERRAUM)
+
+            message shouldContain "'>-'"
+            message shouldContain "'Für Projekt A berechnen wir:'"
         }
     }
 })

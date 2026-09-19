@@ -4,7 +4,7 @@ import de.fluchitconsulting.rechnungsgenerator.calculation.CalculatedInvoice
 
 /**
  * Die Freitextangaben der Rechnung: Ansprechpartner (#196), Kundennummer
- * (#190) und die eigene Auftragsnummer (#191).
+ * (#190), die eigene Auftragsnummer (#191) und die Einleitung (#209).
  *
  * Geprüft wird nur, was jeder Freitext erfüllen muss: Steht der Schlüssel da,
  * nennt er etwas, und zwar ohne Leerraum am Rand. Ein Muster gibt es nicht:
@@ -12,9 +12,9 @@ import de.fluchitconsulting.rechnungsgenerator.calculation.CalculatedInvoice
  * ein Kunde seine Abteilungen nennt, weiß nur er.
  *
  * Leerraum am Rand sieht man im PDF nicht, aber er stünde später wörtlich im
- * ZUGFeRD-XML. Tragen kann ihn ohnehin nur ein gequoteter YAML-Wert, und dann
- * ist er ein Versehen – dieselbe Überlegung wie bei
- * `RECHNUNGSNUMMER_MIT_LEERRAUM`.
+ * ZUGFeRD-XML. Tragen kann ihn ohnehin nur ein gequoteter YAML-Wert oder ein
+ * Block mit `|`, der auf einen Zeilenumbruch endet, und dann ist er ein
+ * Versehen – dieselbe Überlegung wie bei `RECHNUNGSNUMMER_MIT_LEERRAUM`.
  */
 internal object FreeTextRules {
     fun check(calculated: CalculatedInvoice): List<Finding> {
@@ -41,6 +41,13 @@ internal object FreeTextRules {
                 designation = "Die Auftragsnummer",
                 blank = Rule.AUFTRAGSNUMMER_LEER,
                 padded = Rule.AUFTRAGSNUMMER_MIT_LEERRAUM,
+            ),
+            freeText(
+                invoice.introduction,
+                key = "einleitung",
+                designation = "Die Einleitung",
+                blank = Rule.EINLEITUNG_LEER,
+                padded = Rule.EINLEITUNG_MIT_LEERRAUM,
             ),
         ).flatten()
     }
@@ -72,8 +79,9 @@ internal object FreeTextRules {
                 Finding(
                     padded,
                     Subject.WholeInvoice,
-                    "$designation '$value' beginnt oder endet mit Leerraum. Nur ein gequoteter YAML-Wert " +
-                        "kann ihn tragen; gemeint war vermutlich '${value.trim()}'.",
+                    "$designation '$value' beginnt oder endet mit Leerraum. Tragen kann ihn nur ein " +
+                        "gequoteter YAML-Wert oder ein Block mit '|', der auf einen Zeilenumbruch endet " +
+                        "('>-' tut das nicht); gemeint war vermutlich '${value.trim()}'.",
                 ),
             )
         }
