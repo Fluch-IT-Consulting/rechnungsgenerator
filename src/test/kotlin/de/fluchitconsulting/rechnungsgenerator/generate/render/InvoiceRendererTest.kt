@@ -326,8 +326,12 @@ class InvoiceRendererTest : FunSpec({
         }
 
         test("jede echte Vorlage setzt jeden, den sie setzen muss") {
+            // Ohne Kommentarzeilen, so wie render sie prüft: Ein Platzhalter,
+            // der nur noch in einem Kommentar steht, zählt nicht.
             Design.entries.forEach { design ->
-                withClue(design) { InvoiceRenderer.checkPlaceholders(InvoiceRenderer.templateOf(design)) }
+                withClue(design) {
+                    InvoiceRenderer.checkPlaceholders(InvoiceRenderer.withoutCommentLines(InvoiceRenderer.templateOf(design)))
+                }
             }
         }
     }
