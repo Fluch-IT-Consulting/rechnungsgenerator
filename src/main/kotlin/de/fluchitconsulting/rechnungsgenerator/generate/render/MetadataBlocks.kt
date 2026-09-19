@@ -18,12 +18,17 @@ internal object MetadataBlocks {
      * Name und Anschrift des Kunden als ein Block: Die Landzeile hängt an
      * [CalculatedInvoice.isDomestic], und die Reihenfolge einer Anschrift ist
      * Postkonvention, kein Satzbild.
+     *
+     * Aus demselben Grund steht der Ansprechpartner (BT-56) hier und nicht als
+     * eigener Platzhalter (#196): Er gehört unter den Namen und vor die Straße,
+     * in jedem Design.
      */
     fun recipient(calculatedInvoice: CalculatedInvoice): Latex {
-        val invoice = calculatedInvoice.invoice
+        val customer = calculatedInvoice.invoice.customer
         return buildList {
-            add(invoice.customer.name.escapeLatex())
-            addAll(addressLines(invoice.customer.address, showCountry = !calculatedInvoice.isDomestic))
+            add(customer.name.escapeLatex())
+            customer.contactPoint?.let { add(it.escapeLatex()) }
+            addAll(addressLines(customer.address, showCountry = !calculatedInvoice.isDomestic))
         }.joinToLatex(Latex.macro(TemplateMacro.ZEILENWECHSEL))
     }
 

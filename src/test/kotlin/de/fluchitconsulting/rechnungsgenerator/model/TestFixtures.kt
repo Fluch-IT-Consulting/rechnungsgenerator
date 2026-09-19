@@ -87,6 +87,7 @@ fun testInvoice(
     prepayments: List<Prepayment> = emptyList(),
     cancelled: CancelledInvoice? = null,
     skonto: List<SkontoTier> = emptyList(),
+    contactPoint: String? = null,
 ) = Invoice(
     number = number,
     issueDate = LocalDate.of(2026, 8, 14),
@@ -96,6 +97,7 @@ fun testInvoice(
     customer =
         Customer(
             name = "Beispiel Software GmbH",
+            contactPoint = contactPoint,
             address = Address(street = "Industriestraße 1", postalCode = "90402", city = "Nürnberg"),
             vatId = customerVatId,
         ),

@@ -86,6 +86,10 @@ Was du dir selbst beschaffen kannst, solltest du auch selbst beschaffen:
 - **Rechnungsdatum**: heute, sofern nichts anderes gesagt wird.
 - **Leistungszeitraum**: Wird ein Monat genannt ("August"), nimm den ganzen
   Monat. Frage nach, wenn gar kein Zeitraum genannt wurde.
+- **Ansprechpartner**: Nennt die letzte Rechnung an denselben Kunden einen,
+  übernimm ihn. Sonst bleibt das Feld weg, frag nicht eigens danach. Er steht
+  wörtlich unter dem Kundennamen: Das Programm setzt weder "z. Hd." noch eine
+  Anrede davor, und wer eine will, schreibt sie mit ("Herrn Max Beispiel").
 - **Zahlungsziel**: kommt aus den Stammdaten, nur bei Abweichung angeben.
 - **Skonto**: nur, was mit dem Kunden vereinbart ist. Trägt die letzte Rechnung
   an denselben Kunden `skonto` und nennt der Nutzer keines, frag, ob es weiter
@@ -141,6 +145,7 @@ leistungszeitraum:
   bis: 2026-08-31
 kunde:
   name: Beispiel Software GmbH
+  ansprechpartner: Herrn Max Beispiel   # optional, Person oder Abteilung, wörtlich
   anschrift:
     strasse: Industriestraße 1
     plz: "90402"                    # Text, keine Zahl – führende Nullen bleiben

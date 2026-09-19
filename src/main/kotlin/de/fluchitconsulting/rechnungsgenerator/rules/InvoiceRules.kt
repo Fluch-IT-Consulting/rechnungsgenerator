@@ -32,6 +32,7 @@ internal object InvoiceRules {
         // `flatten` macht aus der Liste von Listen eine einzige.
         listOf(
             InvoiceNumberRules.check(calculated),
+            CustomerRules.check(calculated),
             kindCheck.findings,
             CancellationRules.check(calculated),
             ItemRules.check(calculated),

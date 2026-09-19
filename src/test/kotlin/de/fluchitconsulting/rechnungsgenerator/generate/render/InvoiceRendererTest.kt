@@ -573,6 +573,15 @@ class InvoiceRendererTest : FunSpec({
             wert(TemplateValue.KUNDE_USTID) shouldBe ""
         }
 
+        test("der Ansprechpartner steht unter dem Namen und vor der Straße, wenn es einen gibt") {
+            // BT-56 (#196). Die Reihenfolge ist Postkonvention, deshalb im
+            // Block EMPFAENGER und nicht als eigener Platzhalter.
+            wert(TemplateValue.EMPFAENGER, testInvoice(contactPoint = "Herrn Max Beispiel")) shouldBe
+                """Beispiel Software GmbH\zeilenwechsel{}Herrn Max Beispiel\zeilenwechsel{}Industriestraße 1\zeilenwechsel{}90402 Nürnberg"""
+            wert(TemplateValue.EMPFAENGER) shouldBe
+                """Beispiel Software GmbH\zeilenwechsel{}Industriestraße 1\zeilenwechsel{}90402 Nürnberg"""
+        }
+
         test("Geschäftsführung, Telefon, Registergericht und Referenz sind leer, wenn sie fehlen") {
             // Die Beschriftungen stehen seit #188 in der Vorlage, ebenso die
             // Regel "die Person im Kopf nur ohne Geschäftsführung". Hier bleibt
