@@ -124,6 +124,12 @@ CV/Web-Auftritt des Autors), Validierung über veraPDF.
   `raster-rechnung-erwartet.tex`, die übrigen Arten dort allein das
   Pflichtangaben-Netz (`PflichtangabenTest`, je Design und Art). Ein neues
   Design ist eine Vorlage, ein Eintrag in `Design` und eine Zeile im Netz.
+  `raster` trägt oben links ein Beispiellogo, fest als TikZ in der Vorlage
+  (#197), nicht als Bilddatei: `luatex.def` gibt jedem per `\includegraphics`
+  eingebundenen PDF eine Transparenzgruppe mit, und die verbietet PDF/A-1. Wird
+  das Logo konfigurierbar, braucht es deshalb eine Umdefinition von
+  `\Gread@pdf`, die Datei im Arbeitsverzeichnis und in der Prüfsumme der
+  Trailer-ID.
 - **Externe Prozesse**: Ausgabe wird in eine Datei umgeleitet, nicht in einen
   Stream gelesen – sonst blockiert das Lesen bei einem hängenden Prozess, und
   die Zeitgrenze käme nie zum Zug. LuaLaTeX läuft, solange die Log-Datei einen
