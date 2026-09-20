@@ -100,4 +100,19 @@ tasks.test {
     if (providers.gradleProperty("ohneToolchain").isPresent) {
         systemProperty("kotest.tags", "!Toolchain")
     }
+
+    // Drei Tests lesen unterhalb von .claude/skills: SkillBeispieleTest prüft
+    // die YAML-Beispiele des Skills gegen den echten Parser, die beiden
+    // Skript-Tests rufen die Python-Skripte wirklich auf. Sie tun das über
+    // File(…), also am Eingabesatz dieser Task vorbei – und dann galt sie nach
+    // einer reinen Änderung am Skill als UP-TO-DATE und lief nicht, genau bei
+    // der Änderung, für die es diese Tests gibt (#235). Lokal grün, in der CI
+    // rot, wo der Cache leer ist.
+    //
+    // RELATIVE: Verglichen werden Pfad und Inhalt, nicht der absolute Ort –
+    // sonst wäre jedes Arbeitsverzeichnis ein anderer Eingabesatz.
+    inputs
+        .files(fileTree(".claude/skills"))
+        .withPropertyName("skills")
+        .withPathSensitivity(PathSensitivity.RELATIVE)
 }
