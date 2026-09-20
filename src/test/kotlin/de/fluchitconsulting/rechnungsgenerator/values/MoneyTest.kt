@@ -100,6 +100,24 @@ class MoneyTest : FunSpec({
                 }
             fehler.message shouldContain "neunzig"
         }
+
+        // #232: Der Konstruktor rundet weiter (siehe unten), die Eingabe nicht.
+        test("eine dritte Nachkommastelle bricht ab, statt still zu runden") {
+            val fehler =
+                shouldThrow<SerializationException> {
+                    Yaml.default.decodeFromString(MoneySerializer, "1000.005")
+                }
+            assertSoftly {
+                fehler.message shouldContain "1000.005"
+                fehler.message shouldContain "zwei Nachkommastellen"
+            }
+        }
+        test("eine nachgestellte Null verliert nichts und wird gelesen") {
+            Yaml.default.decodeFromString(MoneySerializer, "200.500") shouldBe Money("200.50")
+        }
+        test("der Konstruktor rundet unverändert weiter") {
+            Money("1000.005") shouldBe Money("1000.01")
+        }
     }
 
     context("Formatierung") {

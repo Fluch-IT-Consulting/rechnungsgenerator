@@ -2,6 +2,7 @@ package de.fluchitconsulting.rechnungsgenerator.values
 
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.SerializationException
 import java.math.BigDecimal
 import java.math.RoundingMode
 
@@ -81,5 +82,30 @@ object MoneySerializer :
     KSerializer<Money> by stringSerializer(
         name = "Money",
         encode = { it.value.toPlainString() },
-        decode = { raw -> parsedNumber(raw, "Geldbetrag", ::Money) },
+        decode = { raw -> parsedNumber(raw, "Geldbetrag", ::readMoney) },
     )
+
+/**
+ * Gelesen wird nur, was sich auf Cent genau schreiben lässt (#232).
+ *
+ * Der Konstruktor rundet HALF_UP, und das ist für *gerechnete* Werte richtig:
+ * `base * percent` liefert zwangsläufig mehr Stellen, und die Rundungsregel
+ * soll im Typ wohnen. Eine dritte Nachkommastelle in der *Eingabe* verschwände
+ * damit aber ohne ein Wort – und die ist ein Tippfehler, keine Genauigkeit, die
+ * jemand ausdrücken wollte. Abgewiesen wird deshalb, was jemand geschrieben
+ * hat, nicht, was das Programm rechnet.
+ *
+ * `stripTrailingZeros` davor, weil `200.500` nichts verliert: Geprüft wird, ob
+ * das Runden den Wert ändern würde, nicht, wie viele Nullen jemand getippt hat.
+ * [Price] kennt die Prüfung nicht – der Einzelpreis (BT-146) darf beliebig
+ * viele Stellen tragen.
+ */
+private fun readMoney(raw: String): Money {
+    val value = BigDecimal(raw)
+    if (value.stripTrailingZeros().scale() > 2) {
+        throw SerializationException(
+            "Der Geldbetrag '$raw' hat mehr als zwei Nachkommastellen – Beträge stehen auf Cent genau.",
+        )
+    }
+    return Money(value)
+}
