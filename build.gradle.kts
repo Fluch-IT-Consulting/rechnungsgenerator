@@ -61,6 +61,13 @@ dependencies {
     implementation(libs.clikt)
     implementation(libs.verapdf) // PDF/A-Prüfung in derselben JVM statt als Unterprozess (#226)
 
+    // veraPDF bringt Jackson 2.21.1 mit, und darauf liegen elf Advisories –
+    // zwei davon verlangen 2.21.5. Angehoben wird auf die neueste Fassung
+    // derselben Reihe, gegen die veraPDF gebaut ist; 2.22 wäre ein Minor-Sprung
+    // in einer Bibliothek, die wir selbst nicht aufrufen. Anders als logback
+    // unten steht Jackson im ausgelieferten Programm, nicht nur bei ktlint.
+    implementation(platform(libs.jackson.bom))
+
     testImplementation(libs.kotest.runner) // Kotest läuft als JUnit-Platform-Engine
     testImplementation(libs.kotest.assertions) // shouldBe & Co.
     testImplementation(libs.kotest.property) // Property-based Testing (checkAll, Arb)
