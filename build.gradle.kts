@@ -50,6 +50,21 @@ dependencies {
 
 tasks.test {
     useJUnitPlatform() // JUnit 5/6 statt des alten JUnit-4-Runners
+
+    // Mehrere Test-JVMs nebeneinander (#223). Die Laufzeit liegt fast
+    // vollständig in zwei Klassen: PflichtangabenTest und
+    // ToolchainIntegrationTest setzen zusammen rund 29 PDFs, und je PDF
+    // braucht veraPDF allein 6,6 s – CPU-Arbeit, an der von außen nichts zu
+    // holen ist. Die 501 übrigen Tests kosten zusammen 6 s.
+    //
+    // 4 und nicht 2: Bei 2 Forks teilen sich die beiden schweren Klassen die
+    // Maschine noch mit den leichten und werden messbar langsamer (247 s
+    // gesamt ohne Forks, 186 s mit zweien, 147 s mit vieren). Ab 4 sind die
+    // leichten Klassen nach Sekunden durch, und die Wanduhr ist die längere
+    // der beiden schweren – mehr Forks ändern daran nichts, weil Gradle
+    // innerhalb einer Klasse nicht teilt.
+    maxParallelForks = 4
+
     // Benannte Abwahl der Tests, die LuaLaTeX, veraPDF und pdftotext brauchen
     // (Kotest-Tag `Toolchain`, #136). CI ruft `./gradlew build -PohneToolchain`
     // auf; lokal ohne den Schalter bleibt build das volle Netz – ohne gültiges
