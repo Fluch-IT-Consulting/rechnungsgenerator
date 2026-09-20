@@ -1,6 +1,7 @@
 package de.fluchitconsulting.rechnungsgenerator.rules
 
 import de.fluchitconsulting.rechnungsgenerator.calculation.CalculatedInvoice
+import de.fluchitconsulting.rechnungsgenerator.values.Discount
 import java.math.BigDecimal
 
 /**
@@ -39,17 +40,20 @@ internal object ItemRules {
                 // Über 100 % würde der Positionsbetrag negativ, und ein negativer
                 // Rabatt wäre ein Aufschlag. Null lehnen wir ab, weil er die
                 // Spalte einschaltet, ohne etwas zu mindern.
-                item.discount?.let { rabatt ->
-                    val satz = rabatt.valueAsPercentage
-                    if (satz <= BigDecimal.ZERO || satz > HUNDRED) {
-                        add(
-                            Finding(
-                                Rule.RABATT_AUSSERHALB_BEREICH,
-                                Subject.Item(index, item.name),
-                                "Der Rabatt $rabatt liegt außerhalb des zulässigen Bereichs. " +
-                                    "Zulässig sind Sätze über 0 % bis einschließlich 100 %.",
-                            ),
-                        )
+                when (val rabatt = item.discount) {
+                    null -> {}
+                    is Discount.Rate -> {
+                        val satz = rabatt.rate.valueAsPercentage
+                        if (satz <= BigDecimal.ZERO || satz > HUNDRED) {
+                            add(
+                                Finding(
+                                    Rule.RABATT_AUSSERHALB_BEREICH,
+                                    Subject.Item(index, item.name),
+                                    "Der Rabatt ${rabatt.rate} liegt außerhalb des zulässigen Bereichs. " +
+                                        "Zulässig sind Sätze über 0 % bis einschließlich 100 %.",
+                                ),
+                            )
+                        }
                     }
                 }
             }

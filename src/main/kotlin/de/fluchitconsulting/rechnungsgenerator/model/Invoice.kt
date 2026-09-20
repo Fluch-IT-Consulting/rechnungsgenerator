@@ -1,5 +1,6 @@
 package de.fluchitconsulting.rechnungsgenerator.model
 
+import de.fluchitconsulting.rechnungsgenerator.values.Discount
 import de.fluchitconsulting.rechnungsgenerator.values.InvoiceType
 import de.fluchitconsulting.rechnungsgenerator.values.Money
 import de.fluchitconsulting.rechnungsgenerator.values.Percent
@@ -197,7 +198,20 @@ data class LineItem(
     // fehlt er, setzt der Calculator den vorgesehenen Wortlaut ein.
     @SerialName("steuerbefreiungsgrund") val taxExemptionReason: String? = null,
     // BG-27, BT-138: Der Rabatt mindert den Positionsbetrag, nicht den
-    // Einzelpreis – der bleibt so stehen, wie er vereinbart ist. Nur als
-    // Prozentsatz; ohne Eintrag kein Rabatt.
-    @SerialName("rabatt") val discount: Percent? = null,
-)
+    // Einzelpreis – der bleibt so stehen, wie er vereinbart ist. Ohne Eintrag
+    // kein Rabatt.
+    //
+    // Privat: Nach draußen geht allein [discount]. Der Schlüssel der YAML ist
+    // eine Form der Eingabe, der Rabatt ist die Sache – und wer ihn auswertet,
+    // soll ihn als Typ bekommen und nicht als Feld, das zufällig gesetzt ist.
+    @SerialName("rabatt") private val discountRate: Percent? = null,
+) {
+    /**
+     * Der Rabatt dieser Position, aus dem Eintrag der YAML gebaut.
+     *
+     * `get()` und kein Hintergrundfeld: Eine Eigenschaft im Rumpf mit Feld
+     * schriebe kotlinx.serialization mit, und dann stünde `discount` als
+     * eigener Schlüssel in der YAML.
+     */
+    val discount: Discount? get() = discountRate?.let(Discount::Rate)
+}

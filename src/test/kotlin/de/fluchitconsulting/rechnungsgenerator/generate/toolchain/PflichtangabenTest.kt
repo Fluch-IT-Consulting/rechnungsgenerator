@@ -3,6 +3,7 @@ package de.fluchitconsulting.rechnungsgenerator.generate.toolchain
 import de.fluchitconsulting.rechnungsgenerator.calculation.CalculatedInvoice
 import de.fluchitconsulting.rechnungsgenerator.model.YamlLoader
 import de.fluchitconsulting.rechnungsgenerator.model.exampleInvoices
+import de.fluchitconsulting.rechnungsgenerator.values.Discount
 import de.fluchitconsulting.rechnungsgenerator.values.Money
 import de.fluchitconsulting.rechnungsgenerator.values.Percent
 import io.kotest.assertions.assertSoftly
@@ -259,9 +260,12 @@ private fun Blatt.pruefe(
     // wenn eine Position einen Rabatt hat (#213) – sonst sähe man einen
     // Betrag, der nicht Menge × Einzelpreis ist, ohne Grund.
     calculated.lines.forEachIndexed { i, line ->
-        line.item.discount?.let { rabatt ->
-            steht("Rabatt der Position ${i + 1}", *satz(rabatt))
-            steht("Betrag der Position ${i + 1}", betrag(line.net))
+        when (val rabatt = line.item.discount) {
+            null -> {}
+            is Discount.Rate -> {
+                steht("Rabatt der Position ${i + 1}", *satz(rabatt.rate))
+                steht("Betrag der Position ${i + 1}", betrag(line.net))
+            }
         }
     }
     if (invoice.items.any { it.discount != null }) {
