@@ -28,3 +28,10 @@ positionen:
     einheit: Stück
     einzelpreis: 800.00
     rabatt: 30
+  # Derselbe Rabatt als fester Betrag (#233). Beide Formen auf einem Blatt:
+  # In der Spalte stehen dann "30 %", "100,00 €" und eine leere Zelle.
+  - bezeichnung: Schulungsunterlagen
+    menge: 40
+    einheit: Stück
+    einzelpreis: 12.50
+    rabatt-betrag: 100.00

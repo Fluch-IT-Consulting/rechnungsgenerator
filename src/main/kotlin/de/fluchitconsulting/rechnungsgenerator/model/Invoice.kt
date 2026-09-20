@@ -205,6 +205,7 @@ data class LineItem(
     // eine Form der Eingabe, der Rabatt ist die Sache – und wer ihn auswertet,
     // soll ihn als Typ bekommen und nicht als Feld, das zufällig gesetzt ist.
     @SerialName("rabatt") private val discountRate: Percent? = null,
+    @SerialName("rabatt-betrag") private val discountAmount: Money? = null,
 ) {
     /**
      * Der Rabatt dieser Position, aus dem Eintrag der YAML gebaut.
@@ -212,6 +213,21 @@ data class LineItem(
      * `get()` und kein Hintergrundfeld: Eine Eigenschaft im Rumpf mit Feld
      * schriebe kotlinx.serialization mit, und dann stünde `discount` als
      * eigener Schlüssel in der YAML.
+     *
+     * Der Satz geht vor, wenn beide Schlüssel dastehen. Sichtbar wird dieser
+     * Vorrang nie – [hasBothDiscounts] meldet den Fall, und RABATT_DOPPELT
+     * bricht ab, bevor gesetzt wird. Er steht hier trotzdem, weil die
+     * `CalculatedInvoice` nur rechnet und auch eine ungültige Eingabe
+     * durchrechnen können muss (ADR-0004).
      */
-    val discount: Discount? get() = discountRate?.let(Discount::Rate)
+    val discount: Discount? get() =
+        discountRate?.let(Discount::Rate)
+            ?: discountAmount?.let(Discount::Amount)
+
+    /**
+     * Beide Formen gesetzt. Die einzige Frage, die [discount] nicht
+     * beantworten kann – der Typ trägt genau einen Rabatt, und welcher der
+     * beiden gemeint war, weiß niemand.
+     */
+    val hasBothDiscounts: Boolean get() = discountRate != null && discountAmount != null
 }

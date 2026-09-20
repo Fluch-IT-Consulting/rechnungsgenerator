@@ -32,9 +32,13 @@ internal object ItemBlocks {
                         GermanFormat.quantity(item.quantity),
                         item.unit.label.escapeLatex(),
                         GermanFormat.priceWithCurrency(item.unitPrice),
+                        // In der Spalte steht, was vereinbart wurde: der Satz
+                        // oder der Betrag, und der ohne Vorzeichen – das trägt
+                        // im Storno die Menge.
                         when (val rabatt = item.discount) {
                             null -> Latex.EMPTY
                             is Discount.Rate -> GermanFormat.percent(rabatt.rate)
+                            is Discount.Amount -> GermanFormat.amountWithCurrency(rabatt.amount)
                         },
                         GermanFormat.amountWithCurrency(line.net),
                     ),

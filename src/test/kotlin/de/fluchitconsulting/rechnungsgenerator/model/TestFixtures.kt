@@ -42,6 +42,7 @@ fun testItem(
     taxCategory: TaxCategory = TaxCategory.STANDARD,
     taxExemptionReason: String? = null,
     discount: String? = null,
+    discountAmount: String? = null,
 ) = LineItem(
     name = "Testposition",
     description = description,
@@ -52,6 +53,7 @@ fun testItem(
     taxCategory = taxCategory,
     taxExemptionReason = taxExemptionReason,
     discountRate = discount?.let { Percent(it) },
+    discountAmount = discountAmount?.let { Money(it) },
 )
 
 fun testPrepayment(

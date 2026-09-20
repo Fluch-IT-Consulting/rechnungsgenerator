@@ -100,6 +100,44 @@ class CalculatedInvoiceTest : FunSpec({
             CalculatedInvoice(invoice, config).lines.single().net shouldBe Money("0.00")
         }
 
+        // Der Rabatt als fester Betrag (#233): Er steht positiv in der Datei
+        // und mindert die Basis – gerundet wird an ihm nichts, er ist schon
+        // ein Betrag.
+        test("ein fester Rabattbetrag mindert das Positionsnetto") {
+            val invoice = testInvoice(items = listOf(testItem(quantity = "2", unitPrice = "800.00", discountAmount = "200.00")))
+
+            val line = CalculatedInvoice(invoice, config).lines.single()
+
+            line.base shouldBe Money("1600.00")
+            line.discountAmount shouldBe Money("200.00")
+            line.net shouldBe Money("1400.00")
+        }
+
+        // Anders als der Satz bringt der Betrag sein Vorzeichen nicht mit: Er
+        // bekommt das der Basis. Sonst forderte ein Storno mehr zurück, als die
+        // Ursprungsrechnung verlangt hat (hier: -1400,00 statt -1800,00).
+        test("ein fester Rabattbetrag folgt bei negativer Menge der Basis") {
+            val invoice = testInvoice(items = listOf(testItem(quantity = "-2", unitPrice = "800.00", discountAmount = "200.00")))
+
+            val line = CalculatedInvoice(invoice, config).lines.single()
+
+            line.base shouldBe Money("-1600.00")
+            line.discountAmount shouldBe Money("-200.00")
+            line.net shouldBe Money("-1400.00")
+        }
+
+        // Die Probe darauf, dass das Storno den Rabatt auf den Cent genau
+        // aufhebt: dieselbe Position, einmal berechnet und einmal negiert.
+        test("Rechnung und Storno heben sich mit festem Rabattbetrag auf") {
+            val rechnung = testItem(quantity = "3", unitPrice = "33.33", discountAmount = "19.99")
+            val storno = testItem(quantity = "-3", unitPrice = "33.33", discountAmount = "19.99")
+
+            val netto = CalculatedInvoice(testInvoice(items = listOf(rechnung)), config).lines.single().net
+            val gegenNetto = CalculatedInvoice(testInvoice(items = listOf(storno)), config).lines.single().net
+
+            netto + gegenNetto shouldBe Money.ZERO
+        }
+
         test("ohne Rabatt gibt es keinen Rabattbetrag, und das Netto ist die Basis") {
             val invoice = testInvoice(items = listOf(testItem(quantity = "1", unitPrice = "800.00")))
 
