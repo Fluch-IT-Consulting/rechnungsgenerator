@@ -240,6 +240,7 @@ ist der Build rot.
 ## Stand
 
 Layout und Toolchain stehen, ebenso Reverse Charge (§13b UStG), die Abschlags-
-und Schlussrechnung und das Storno. Offen sind Entgeltminderungen (Skonto), die
+und Schlussrechnung, das Storno, das Skonto und der Rabatt auf eine Position –
+als Satz oder als Betrag. Offen sind ein Nachlass auf die ganze Rechnung, die
 Rechnungskorrektur – also das Berichtigen einzelner Positionen, statt ganz zu
 stornieren – und später ZUGFeRD.

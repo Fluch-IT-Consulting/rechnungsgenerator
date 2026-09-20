@@ -184,6 +184,7 @@ positionen:
     einheit: Std.                   # geschlossene Liste, siehe unten
     einzelpreis: 95.00
     rabatt: 30                      # optional, Prozent über 0 bis 100; mindert den Positionsbetrag
+    rabatt-betrag: 200.00           # optional, statt rabatt: derselbe Rabatt als Betrag, über 0 bis zur Basis
     ust-satz: 19                    # optional, Vorgabe 19
     steuerkategorie: S              # optional, Vorgabe S (Regelsatz)
     positions-leistungszeitraum:    # optional, nur bei Abweichung
@@ -382,7 +383,9 @@ Sprich es an, wenn einer dieser Fälle auftaucht, statt etwas Falsches zu bauen:
 
 - **Skonto auf Abschlags-, Schluss- und Stornorechnungen**: bricht ab. Auf dem
   Blatt steht außerdem nur die Bedingung, nie ein Skontobetrag.
-- **Andere Entgeltminderungen** (Rabatt, Bonus): kein Feld vorhanden.
+- **Ein Nachlass auf die ganze Rechnung** (EN 16931 BG-20) und ein Bonus: kein
+  Feld vorhanden. Den Rabatt gibt es nur auf der Position, als Satz oder als
+  Betrag, und nie beides auf einer Position.
 - **Rechnungskorrektur**: Eine Rechnung teilweise berichtigen, statt sie ganz
   zu stornieren, geht nicht. Das Storno gibt es (siehe oben), die Korrektur
   nicht.
