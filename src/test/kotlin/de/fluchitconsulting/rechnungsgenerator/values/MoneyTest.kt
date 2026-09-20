@@ -67,6 +67,12 @@ class MoneyTest : FunSpec({
         }
     }
 
+    context("Vorzeichenwechsel") {
+        test("kehrt das Vorzeichen um") { -Money("19.99") shouldBe Money("-19.99") }
+        test("zweimal ist neutral") { checkAll(money) { a -> -(-a) shouldBe a } }
+        test("die Null bleibt die Null") { -Money.ZERO shouldBe Money.ZERO }
+    }
+
     context("Multiplikation mit Percent") {
         test("Prozentanteil eines Betrags") { Money("100") * Percent("10") shouldBe Money("10.00") }
         test("100 % ist neutral") { checkAll(money) { a -> a * Percent("100") shouldBe a } }

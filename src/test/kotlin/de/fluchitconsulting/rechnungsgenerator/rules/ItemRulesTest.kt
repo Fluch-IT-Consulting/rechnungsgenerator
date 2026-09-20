@@ -61,6 +61,57 @@ class ItemRulesTest : FunSpec({
         }
     }
 
+    // Der Rabatt als fester Betrag (#233). Seine Grenze ist die Basis der
+    // Position: Darüber würde der Positionsbetrag negativ, wie beim Satz über
+    // 100 %.
+    context("RABATT_BETRAG_AUSSERHALB_BEREICH") {
+        // Basis der Testposition: Menge 1 × 100,00.
+        listOf("0.00", "-10.00", "100.01", "150.00").forEach { rabatt ->
+            test("ein Rabattbetrag von $rabatt wird abgelehnt") {
+                val invoice = testInvoice(items = listOf(testItem(discountAmount = rabatt)))
+
+                val message = messageFor(invoice, Rule.RABATT_BETRAG_AUSSERHALB_BEREICH)
+
+                message shouldContain "Position 1"
+                message shouldContain "höchstens die Basis der Position"
+            }
+        }
+
+        listOf("0.01", "30.00", "100.00").forEach { rabatt ->
+            test("ein Rabattbetrag von $rabatt bleibt zulässig") {
+                CalculatedInvoice(testInvoice(items = listOf(testItem(discountAmount = rabatt))), config)
+                    .aborts()
+                    .shouldBeEmpty()
+            }
+        }
+
+        // Im Storno ist die Basis negativ, der Rabatt steht trotzdem positiv
+        // in der Datei – geprüft wird deshalb gegen ihren Betrag. Die Rechnung
+        // hat hier andere Abbrüche (negativer Gesamtbetrag ohne Storno); gefragt
+        // wird nach der Kennung dieser Regel, nicht nach einer leeren Liste.
+        test("ein Rabattbetrag bis zur Basis bleibt auch bei negativer Menge zulässig") {
+            val invoice = testInvoice(items = listOf(testItem(quantity = "-1", discountAmount = "100.00")))
+
+            CalculatedInvoice(invoice, config).rules() shouldNotContain Rule.RABATT_BETRAG_AUSSERHALB_BEREICH
+        }
+
+        // Bei Menge 0 ist die Basis 0,00 – dann ist jeder Betrag zu groß.
+        test("bei Menge 0 wird jeder Rabattbetrag abgelehnt") {
+            val invoice = testInvoice(items = listOf(testItem(quantity = "0", discountAmount = "0.01")))
+
+            messageFor(invoice, Rule.RABATT_BETRAG_AUSSERHALB_BEREICH) shouldContain "0.00 = Menge × Einzelpreis"
+        }
+    }
+
+    test("Satz und Betrag zugleich werden abgelehnt") {
+        val invoice = testInvoice(items = listOf(testItem(discount = "30", discountAmount = "10.00")))
+
+        val message = messageFor(invoice, Rule.RABATT_DOPPELT)
+
+        message shouldContain "Position 1"
+        message shouldContain "nicht als beides"
+    }
+
     test("ein negativer Gesamtbetrag wird abgelehnt") {
         // Mit dem Einzelpreis ist nur noch eine negative Menge übrig, die dahin
         // führt. Ein negativer Betrag gehört seit ADR-0006 in eine

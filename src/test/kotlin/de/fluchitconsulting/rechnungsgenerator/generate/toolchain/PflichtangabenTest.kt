@@ -266,6 +266,10 @@ private fun Blatt.pruefe(
                 steht("Rabatt der Position ${i + 1}", *satz(rabatt.rate))
                 steht("Betrag der Position ${i + 1}", betrag(line.net))
             }
+            is Discount.Amount -> {
+                steht("Rabatt der Position ${i + 1}", betrag(rabatt.amount))
+                steht("Betrag der Position ${i + 1}", betrag(line.net))
+            }
         }
     }
     if (invoice.items.any { it.discount != null }) {

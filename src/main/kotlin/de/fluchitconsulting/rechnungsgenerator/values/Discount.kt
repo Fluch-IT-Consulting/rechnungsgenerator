@@ -18,4 +18,11 @@ sealed interface Discount {
      * er steht in der YAML nicht und wäre dort eine zweite Wahrheit.
      */
     data class Rate(val rate: Percent) : Discount
+
+    /**
+     * Der vereinbarte Betrag (BT-136). Er steht positiv da; in welche Richtung
+     * er wirkt, sagt die Position – im Storno mit negativer Menge (ADR-0006)
+     * ist die Basis negativ, und der Rabatt mindert sie spiegelbildlich.
+     */
+    data class Amount(val amount: Money) : Discount
 }

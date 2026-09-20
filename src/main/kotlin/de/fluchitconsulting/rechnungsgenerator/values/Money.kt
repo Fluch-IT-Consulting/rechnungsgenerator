@@ -35,6 +35,8 @@ class Money(value: BigDecimal) : Comparable<Money> {
 
     operator fun minus(other: Money): Money = Money(value.subtract(other.value))
 
+    operator fun unaryMinus(): Money = Money(value.negate())
+
     // Betrag × Steuersatz: Das Ergebnis ist selbst wieder ein Betrag (BT-117, die
     // USt. je Steuersatz) und darf deshalb gerundet werden.
     operator fun times(percent: Percent): Money = Money(value.multiply(percent.valueAsMultiplier))

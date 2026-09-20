@@ -28,12 +28,18 @@ data class CalculatedLine(
     // unitPrice ist ein Price (exakt), base ein Money (zwei Stellen).
     val base: Money = (item.unitPrice * item.quantity).roundToAmount()
 
-    // BT-136, ohne Rabatt null. Money × Percent rundet HALF_UP, also weg von der
-    // Null – bei negativer Menge im Storno damit spiegelbildlich.
+    // BT-136, ohne Rabatt null.
+    //
+    // Der Satz bringt das Vorzeichen von selbst mit: Money × Percent rundet
+    // HALF_UP, also weg von der Null, und bei negativer Menge im Storno ist
+    // damit auch der Rabatt spiegelbildlich. Der Betrag steht positiv in der
+    // YAML und bekommt es hier – sonst forderte ein Storno mehr zurück, als
+    // die Ursprungsrechnung verlangt hat.
     val discountAmount: Money? =
         when (val rabatt = item.discount) {
             null -> null
             is Discount.Rate -> base * rabatt.rate
+            is Discount.Amount -> if (base.isNegative()) -rabatt.amount else rabatt.amount
         }
 
     // BT-131. Die Differenz und nicht Basis × (1 − Satz): Sonst würden
