@@ -206,6 +206,15 @@ Das Urteil über eine Rechnung ohne Abbruch. Nur aus ihr entsteht ein Dokument;
 Hinweise kann sie tragen.
 _Vermeiden_: gültig (das sagt veraPDF über das PDF), korrekt, freigegeben
 
+**PDF/A-Prüfung**:
+Die Frage, ob das gesetzte Dokument dem Archivformat PDF/A-1b genügt. Ihr
+Ergebnis ist *gültig* oder nicht, sie betrifft das Dokument und nicht die
+Rechnung, und sie kommt nach dem Satz – während die *Prüfung* der Rechnung ihr
+vorausgeht und über *angenommen* oder *abgelehnt* entscheidet. Ohne gültiges
+PDF/A entsteht keine Datei am Ziel.
+_Vermeiden_: Prüfung (ohne Zusatz – das ist die der Rechnung), Validierung,
+Konformitätsprüfung
+
 **Abgelehnt**:
 Das Urteil über eine Rechnung mit mindestens einem Abbruch – oder über das
 Zusammentragen der Abschläge, wenn eine Abschlagsrechnung abgelehnt ist oder sie
