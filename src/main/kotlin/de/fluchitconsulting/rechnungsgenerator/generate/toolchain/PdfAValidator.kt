@@ -64,6 +64,14 @@ object BuiltInPdfAValidator : PdfAValidator {
 
     // by lazy statt im Initialisierer: Das Profil wird erst gelesen, wenn
     // wirklich geprüft wird – ein Lauf, der vorher abbricht, zahlt es nicht.
+    //
+    // Ohne Argument ist das `LazyThreadSafetyMode.SYNCHRONIZED`, und das soll es
+    // bleiben: `initialise()` setzt globalen statischen Zustand in veraPDF, und
+    // das Profil ist danach ein geteilter Wert. Hier läuft heute nur ein Thread,
+    // die Zusage kostet aber nichts – mit `NONE` wäre sie still weg. Benutzt wird
+    // das Profil danach nur lesend (`getRuleByRuleId`), und das bewacht veraPDF
+    // selbst: Seine eigene faule Befüllung steht samt Prüfung in einem
+    // `synchronized`-Block.
     private val profile by lazy {
         VeraGreenfieldFoundryProvider.initialise()
         Profiles.getVeraProfileDirectory().getValidationProfileByFlavour(flavour)
