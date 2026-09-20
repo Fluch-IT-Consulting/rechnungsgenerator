@@ -24,6 +24,6 @@ fun runCli(
     val out = ByteArrayOutputStream()
     val err = ByteArrayOutputStream()
     val exitCode =
-        execute(arrayOf(*args), PrintStream(out, true, UTF_8), PrintStream(err, true, UTF_8), typesetter, viewer)
+        execute(arrayOf(*args), PrintStream(out, true, UTF_8), PrintStream(err, true, UTF_8), { typesetter }, viewer)
     return CliResult(exitCode, out.toString(UTF_8), err.toString(UTF_8))
 }

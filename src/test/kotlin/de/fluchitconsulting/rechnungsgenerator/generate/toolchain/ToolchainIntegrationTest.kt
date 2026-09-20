@@ -4,6 +4,7 @@ import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.assertions.withClue
 import io.kotest.core.Tag
 import io.kotest.core.spec.style.FunSpec
+import io.kotest.core.test.Enabled
 import io.kotest.matchers.collections.shouldContain
 import io.kotest.matchers.collections.shouldNotBeEmpty
 import io.kotest.matchers.doubles.plusOrMinus
@@ -11,6 +12,7 @@ import io.kotest.matchers.shouldBe
 import io.kotest.matchers.string.shouldContain
 import java.nio.file.Path
 import java.time.LocalDate
+import kotlin.io.path.copyTo
 import kotlin.io.path.createTempDirectory
 import kotlin.io.path.fileSize
 import kotlin.io.path.readBytes
@@ -27,6 +29,26 @@ import kotlin.io.path.writeText
 object Toolchain : Tag()
 
 /**
+ * Ob das Programm `verapdf` installiert ist.
+ *
+ * Seit #226 prüft der Generator eingebaut, und veraPDF ist keine
+ * Voraussetzung mehr – weder für ihn noch für seinen Build. Die zwei Tests,
+ * die das Programm wirklich brauchen, überspringen sich deshalb, statt rot zu
+ * werden. Übersprungen und nicht bestanden, wie beim Altersnachweis der
+ * EU-Liste: Ein Netz, das fehlt, soll nicht aussehen wie eines, das hält.
+ */
+private val mitVerapdf =
+    if (ExternalTool.locate("verapdf") != null) {
+        Enabled.enabled
+    } else {
+        Enabled.disabled(
+            "Das Programm verapdf ist nicht installiert (brew install verapdf). " +
+                "Der eingebaute Prüfer wird trotzdem auf Herz und Nieren geprüft; " +
+                "allein der Vergleich der beiden Prüfer entfällt.",
+        )
+    }
+
+/**
  * Der Integrationstest, der die Zusage des Projekts einlöst: Ohne gültiges
  * PDF/A gibt es keinen grünen Build. Er ruft LuaLaTeX und veraPDF wirklich auf –
  * fehlen sie, schlägt er fehl, statt sich stillschweigend zu überspringen.
@@ -37,8 +59,11 @@ class ToolchainIntegrationTest : FunSpec({
     val workDir = createTempDirectory("rechnungsgenerator-test")
     val run = ToolchainRun(workDir)
 
+    // Der eingebaute Prüfer braucht nichts; verlangt wird hier also LuaLaTeX.
+    // Dass der Generator ohne installiertes veraPDF läuft, ist seit #226 eine
+    // Zusage – und sie gilt auch für seinen Build.
     test("die benötigten Werkzeuge sind vorhanden") {
-        LuaLatexTypesetter.checkAvailable()
+        LuaLatexTypesetter(BuiltInPdfAValidator).checkAvailable()
     }
 
     // Ob jede Rechnungsart ein gültiges PDF/A-1b ergibt, prüft
@@ -188,8 +213,8 @@ class ToolchainIntegrationTest : FunSpec({
     }
 
     /**
-     * Sieht aus wie ein Doppelgänger von `PdfAValidatorTest`, ist aber das
-     * Gegenstück dazu: Der schnelle Test beweist, dass wir einen
+     * Sieht aus wie ein Doppelgänger von `ExternalPdfAValidatorTest`, ist aber
+     * das Gegenstück dazu: Der schnelle Test beweist, dass wir einen
      * aufgezeichneten Bericht richtig lesen. Dieser hier beweist, dass die
      * Aufzeichnung noch stimmt – dass echtes veraPDF bei einem nicht konformen
      * PDF weiterhin Exitcode 1 liefert und weiterhin dieses XML.
@@ -199,24 +224,68 @@ class ToolchainIntegrationTest : FunSpec({
      * schnellen Tests weiterhin grün und prüfen das Falsche. Wer hier aufräumen
      * will, nimmt genau das Netz weg, das die anderen trägt.
      */
-    test("ein nicht konformes PDF wird als solches gemeldet, nicht als Fehler") {
-        val plain =
-            LatexCompiler(ExternalTool).compile(
-                workingDir = workDir,
-                jobName = "ohne-pdfa",
-                sources =
-                    PdfSources(
-                        tex = "\\documentclass{article}\\begin{document}Kein PDF/A.\\end{document}",
-                        xmpMetadata = "",
-                        creationDate = LocalDate.of(2026, 1, 1),
-                    ),
-            )
+    test("ein nicht konformes PDF wird als solches gemeldet, nicht als Fehler")
+        .config(enabledOrReasonIf = { mitVerapdf }) {
+            val plain =
+                LatexCompiler(ExternalTool).compile(
+                    workingDir = workDir,
+                    jobName = "ohne-pdfa",
+                    sources =
+                        PdfSources(
+                            tex = "\\documentclass{article}\\begin{document}Kein PDF/A.\\end{document}",
+                            xmpMetadata = "",
+                            creationDate = LocalDate.of(2026, 1, 1),
+                        ),
+                )
 
-        val validation = PdfAValidator(ExternalTool).validate(plain)
+            val validation = ExternalPdfAValidator(ExternalTool).validate(plain)
 
-        validation.valid shouldBe false
-        validation.violations.shouldNotBeEmpty()
-    }
+            validation.valid shouldBe false
+            validation.violations.shouldNotBeEmpty()
+        }
+
+    /**
+     * Zwei Prüfer über dasselbe PDF, und sie sollen dasselbe sagen (ADR-0014).
+     *
+     * Das ist der Preis dafür, dass es zwei gibt: Die eingebaute Bibliothek
+     * kommt aus Maven Central, das Programm `verapdf` aus einer eigenen
+     * Installation, und beide können auseinanderlaufen. Dieser Test wird rot,
+     * sobald sie es tun – und das ist sein Zweck, nicht ein Defekt.
+     *
+     * Verglichen werden Urteil und Regelkennungen, nicht der Wortlaut der
+     * Meldungen: Den setzt das Programm mit den Werten des Dokuments zusammen
+     * ("first four bytes = 0, 0, 0, 0"), die Bibliothek liefert die Vorlage
+     * aus dem Profil ("%1, %2, %3, %4"). Der Wortlaut ist Darstellung, die
+     * Regelkennung ist die Aussage.
+     *
+     * Zwei Dokumente, weil ein gültiges keine Regelliste hat, an der sich ein
+     * Unterschied zeigen könnte. `nicht-konform.pdf` liegt als Datei im
+     * Testbestand statt zur Laufzeit erzeugt zu werden: Es ist von Hand
+     * geschrieben, 595 Bytes, und verletzt fünf Regeln auf einmal – nicht
+     * eingebettete Schrift, fehlende XMP-Metadaten, fehlende Trailer-ID,
+     * fehlender OutputIntent, fehlender binärer Kommentar im Kopf.
+     */
+    test("beide Prüfer urteilen über dasselbe PDF gleich")
+        .config(enabledOrReasonIf = { mitVerapdf }) {
+            val (gueltig, _) = run.erzeuge("rechnung", zielname = "zwei-pruefer")
+            // Ins Arbeitsverzeichnis kopiert: Der externe Prüfer legt seine
+            // Ausgabedatei neben das PDF, und das wäre hier der Testbestand.
+            val nichtKonform =
+                Path.of("src/test/resources/nicht-konform.pdf").copyTo(workDir.resolve("nicht-konform.pdf"), overwrite = true)
+
+            for (pdf in listOf(gueltig, nichtKonform)) {
+                val eingebaut = BuiltInPdfAValidator.validate(pdf)
+                val extern = ExternalPdfAValidator(ExternalTool).validate(pdf)
+
+                // Die Kennung als eine Zeichenkette: So steht im Fehlerfall
+                // "6.3.4-1" im Bericht und nicht ein Paar.
+                fun regeln(ergebnis: ValidationResult) =
+                    ergebnis.violations.map { "${it.clause}-${it.testNumber}" }.sorted()
+
+                withClue("$pdf: Urteil") { eingebaut.valid shouldBe extern.valid }
+                withClue("$pdf: Regeln") { regeln(eingebaut) shouldBe regeln(extern) }
+            }
+        }
 
     /**
      * Das Gegenstück zu `LatexCompilerTest` aus demselben Grund: Dieser Test

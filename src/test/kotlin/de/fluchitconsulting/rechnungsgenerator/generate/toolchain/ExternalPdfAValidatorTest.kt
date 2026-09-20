@@ -10,20 +10,23 @@ import java.io.File
 import kotlin.io.path.createTempDirectory
 
 /**
- * Wie das Prüfergebnis von veraPDF gelesen wird – ohne veraPDF.
+ * Wie der Bericht des Programms `verapdf` gelesen wird – ohne `verapdf`.
+ *
+ * Betrifft allein den externen Prüfer: Der eingebaute liefert seine Verstöße
+ * als Objekte und hat keinen Bericht zu lesen (ADR-0014).
  *
  * `verapdf-nicht-konform.txt` ist ein echter Mitschnitt und bringt zwei
  * Eigenheiten mit, die man sich nicht ausdenkt: die JVM-Warnungen, die vor dem
  * XML stehen, und einen Bericht, der bestandene *und* verletzte Regeln führt.
  */
-class PdfAValidatorTest : FunSpec({
+class ExternalPdfAValidatorTest : FunSpec({
 
     fun mitschnitt(name: String) = File("src/test/resources/werkzeugausgaben/$name").readText()
 
     val pdf = createTempDirectory("pdfavalidator-test").resolve("rechnung.pdf")
 
     fun pruefen(exitCode: Int, output: String) =
-        PdfAValidator(FakeProcessRunner(FakeProcessRunner.Run(exitCode, output))).validate(pdf)
+        ExternalPdfAValidator(FakeProcessRunner(FakeProcessRunner.Run(exitCode, output))).validate(pdf)
 
     // Der einzige erfundene Bericht hier: Für ein konformes PDF gibt es keinen
     // Mitschnitt, weil dieser Fall im Integrationstest ohnehin echt vorkommt.
