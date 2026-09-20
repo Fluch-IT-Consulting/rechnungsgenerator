@@ -10,6 +10,7 @@ kotest = "6.2.5"       # Test-Framework: FunSpec-Stil + Property-based Testing
 ktlintPlugin = "14.2.0"  # Gradle-Plugin; welche ktlint-CLI es startet, sagt ktlintCli
 ktlintCli = "1.8.0"      # ktlint selbst; ohne Eintrag wählte das Plugin 1.5.0 (#159)
 konsist = "0.17.3"       # Architekturtests: Schichten der Pakete, Importe (#112)
+verapdf = "1.30.2"       # PDF/A-Prüfung in derselben JVM (#226); dieselbe Fassung, die Homebrew als CLI führt
 
 [libraries]
 kaml = { module = "com.charleskorn.kaml:kaml", version.ref = "kaml" }
@@ -21,6 +22,9 @@ kotest-assertions = { module = "io.kotest:kotest-assertions-core", version.ref =
 kotest-property = { module = "io.kotest:kotest-property", version.ref = "kotest" }
 junit-platform-launcher = { module = "org.junit.platform:junit-platform-launcher", version.ref = "junit" }
 konsist = { module = "com.lemonappdev:konsist", version.ref = "konsist" }
+# validation-model allein genügt für PDF/A-1b; es zieht Kern, Parser und Modell
+# nach. Lizenz: GPLv3+ oder MPLv2+ nach Wahl – wir wählen MPL-2.0 (#226).
+verapdf = { module = "org.verapdf:validation-model", version.ref = "verapdf" }
 
 [plugins]
 kotlin-jvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }
