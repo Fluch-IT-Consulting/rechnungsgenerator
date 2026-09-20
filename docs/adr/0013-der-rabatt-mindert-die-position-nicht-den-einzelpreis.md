@@ -67,3 +67,49 @@ Betrag, der nicht Menge × Einzelpreis ist, ohne Grund.
   dann fordert, ist eine eigene Frage (#214).
 
 Umgesetzt in #213.
+
+## Nachtrag vom 20.09.2026: der feste Betrag
+
+Der Verworfen-Punkt „ein fester Rabattbetrag“ ist aufgehoben. Er stand unter
+Vorbehalt – „es gibt keinen Anlass; er kommt dazu, wenn es einen gibt“ –, und
+der Anlass ist da: Ein Rabatt wird nicht immer als Satz vereinbart, sondern als
+Betrag („auf diese Position 200 € weniger“).
+
+Neben `rabatt: 30` steht deshalb `rabatt-betrag: 200.00`. Beides ist derselbe
+Abschlag auf die Position (BG-27), nur anders ausgedrückt, und je Position gilt
+genau eines: Beide Schlüssel zusammen brechen ab (`RABATT_DOPPELT`). Zulässig
+ist ein Betrag über 0,00 € bis höchstens zur Basis
+(`RABATT_BETRAG_AUSSERHALB_BEREICH`) – darüber würde der Positionsbetrag
+negativ, wie beim Satz über 100 %. Bei Menge 0 ist die Basis 0,00 €, und damit
+bricht jeder Betrag ab.
+
+**Das Vorzeichen trägt die Basis, nicht die Datei.** Der Satz bringt seines von
+selbst mit: Basis −200 € × 30 % sind −60 €. Ein fester Betrag tut das nicht,
+und naiv abgezogen machte er aus einem Storno über −200 € eines über −250 €.
+Der Betrag steht deshalb positiv in der Datei und wirkt in Richtung der
+Position. Damit bleibt die Regel für ein Storno die, die sie war (ADR-0006):
+Positionen übernehmen, vor die Menge ein Minus, sonst nichts ändern.
+
+**Auf dem Blatt steht, was vereinbart wurde** – „30 %“ oder „200,00 €“, im
+Storno ohne Vorzeichen, das trägt die Menge. Die Spalte bleibt der Schalter
+`RABATTSPALTE`, `\positionszeile` behält seine sieben Argumente: Keine Vorlage
+ändert sich, und wer keinen Rabatt schreibt, bekommt Byte für Byte dasselbe PDF
+wie vorher. Verworfen: in der Spalte stets den Rabatt*betrag* zu zeigen, auch
+im Prozentfall – dann stünde der vereinbarte Satz nirgends mehr auf dem Blatt,
+und das ist der Kern dieses ADR.
+
+**Im Modell ist der Rabatt jetzt ein Typ.** Die zwei YAML-Schlüssel sind private
+Eigenschaften von `LineItem`, nach draußen geht `discount: Discount?` mit
+`Discount.Rate` und `Discount.Amount` (in `values`, damit auch `calculation` ihn
+sieht). Berechnung, Regeln, Renderer und das Pflichtangaben-Netz entscheiden in
+einem `when` ohne `else` – beim Hinzufügen der zweiten Form hat der Compiler
+genau diese vier Stellen angehalten. Eine Frage kann der Typ nicht beantworten,
+weil er nur einen Rabatt trägt: ob beide Schlüssel gesetzt sind. Dafür gibt es
+`LineItem.hasBothDiscounts`, und `RABATT_DOPPELT` bricht ab, bevor der Vorrang
+des Satzes je sichtbar würde.
+
+Weiterhin verworfen: zwei Abschläge auf einer Position (BG-27 wäre
+wiederholbar) – das brauchte eine Reihenfolge und einen Grund je Abschlag
+(BR-42), und die Spalte trüge zwei Werte.
+
+Umgesetzt in #233.

@@ -91,9 +91,9 @@ Null ist zulässig, negativ nicht.
 _Vermeiden_: Zahlbetrag, offener Betrag, Saldo, Differenz
 
 **Rabatt**:
-Eine Minderung des Positionsbetrags um einen Prozentsatz, sofort und ohne
-Bedingung. Der Einzelpreis bleibt, wie er vereinbart ist; gemindert wird, was
-die Position kostet. Anders als das Skonto steht auf der Rechnung schon der
+Eine Minderung des Positionsbetrags, sofort und ohne Bedingung – vereinbart als
+Satz oder als Betrag. Der Einzelpreis bleibt, wie er vereinbart ist; gemindert
+wird, was die Position kostet. Anders als das Skonto steht auf der Rechnung schon der
 geminderte Betrag.
 _Vermeiden_: Nachlass, Preisnachlass (für einen geminderten Einzelpreis),
 Abzug

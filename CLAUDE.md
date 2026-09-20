@@ -455,17 +455,28 @@ CV/Web-Auftritt des Autors), PDF/A-Prüfung über veraPDF.
     den Block `abschlaege` der Schlussrechnung; auf der Schlussrechnung wäre
     die Grundlage der Restbetrag, eine eigene Frage; das Storno fordert kein
     Geld.
-- **Rabatt** (ADR-0013): Eine Position trägt ihn als Prozentsatz,
-  `rabatt: 30`, und er mindert den Positionsbetrag, nicht den Einzelpreis –
-  EN 16931 BG-27 und nicht BT-147. Basis und Rabattbetrag sind je auf Cent
-  gerundet, das Netto ist ihre Differenz; `CalculatedLine` rechnet das im
-  Rumpf und kennt im Konstruktor nur die Position (#213). Zulässig über 0 bis
-  100 % (`RABATT_AUSSERHALB_BEREICH`), auf jeder Art. Die Spalte steht nur,
-  wenn eine Position einen Rabatt hat: Der Renderer liefert den Satz als
-  siebtes Argument von `\positionszeile` und den Schalter `RABATTSPALTE`,
-  die Vorlage entscheidet mit `\ifblank` (`\mitrabatt`, Spaltentyp `R`).
-  Bewusst **nicht**: ein fester Betrag, eine Rabattzeile im Summenblock (sähe
-  aus wie BG-20), ein Freitextgrund – der Export setzt später Code 95.
+- **Rabatt** (ADR-0013): Eine Position trägt ihn als Satz, `rabatt: 30`, oder
+  als Betrag, `rabatt-betrag: 200.00`, und er mindert den Positionsbetrag,
+  nicht den Einzelpreis – EN 16931 BG-27 und nicht BT-147. Basis und
+  Rabattbetrag sind je auf Cent gerundet, das Netto ist ihre Differenz;
+  `CalculatedLine` rechnet das im Rumpf und kennt im Konstruktor nur die
+  Position (#213). Zulässig ist ein Satz über 0 bis 100 %
+  (`RABATT_AUSSERHALB_BEREICH`) oder ein Betrag über 0,00 bis zur Basis
+  (`RABATT_BETRAG_AUSSERHALB_BEREICH`), auf jeder Art und **genau eines** von
+  beidem (`RABATT_DOPPELT`). Das Vorzeichen bringt der Satz selbst mit, der
+  Betrag bekommt das der Basis: Er steht positiv in der Datei, und ein Storno
+  bleibt damit das, was ADR-0006 sagt – Positionen übernehmen, vor die Menge
+  ein Minus (#233). Die Spalte steht nur, wenn eine Position einen Rabatt hat:
+  Der Renderer liefert Satz oder Betrag als siebtes Argument von
+  `\positionszeile` und den Schalter `RABATTSPALTE`, die Vorlage entscheidet
+  mit `\ifblank` (`\mitrabatt`, Spaltentyp `R`). In der Spalte steht, was
+  vereinbart wurde – nicht stets der Rabattbetrag, sonst fiele der Satz vom
+  Blatt. Im Modell ist der Rabatt ein Typ: Die zwei YAML-Schlüssel sind private
+  Eigenschaften von `LineItem`, nach draußen geht `discount: Discount?`
+  (`values`, mit `Rate` und `Amount`), und wer ihn auswertet, entscheidet in
+  einem `when` ohne `else`. Bewusst **nicht**: zwei Abschläge auf einer
+  Position, eine Rabattzeile im Summenblock (sähe aus wie BG-20), ein
+  Freitextgrund – der Export setzt später Code 95.
 - **ZUGFeRD-Vorbereitung**: Datenmodell enthält von Anfang an alle
   EN-16931-Pflichtfelder (Leistungsdatum, Steuerkategorie, Kennungen), damit
   ZUGFeRD (PDF/A-3 + XML) später ein zusätzlicher Ausgabemodus wird, kein Umbau.
