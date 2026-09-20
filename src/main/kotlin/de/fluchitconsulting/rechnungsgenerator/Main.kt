@@ -12,7 +12,7 @@ import de.fluchitconsulting.rechnungsgenerator.generate.PdfViewer
 import de.fluchitconsulting.rechnungsgenerator.generate.SystemPdfViewer
 import de.fluchitconsulting.rechnungsgenerator.generate.toolchain.LuaLatexTypesetter
 import de.fluchitconsulting.rechnungsgenerator.generate.toolchain.ToolchainException
-import de.fluchitconsulting.rechnungsgenerator.generate.toolchain.Typesetter
+import de.fluchitconsulting.rechnungsgenerator.generate.toolchain.TypesetterFactory
 import de.fluchitconsulting.rechnungsgenerator.model.InputFileException
 import de.fluchitconsulting.rechnungsgenerator.prepayments.PrepaymentsCommand
 import de.fluchitconsulting.rechnungsgenerator.rules.RejectedException
@@ -55,7 +55,7 @@ fun execute(
     args: Array<String>,
     out: PrintStream,
     err: PrintStream,
-    typesetter: Typesetter = LuaLatexTypesetter,
+    typesetter: TypesetterFactory = ::LuaLatexTypesetter,
     // Wie der Typesetter eine Naht für den Test (#153): Nur so lässt sich
     // prüfen, dass ein gescheiterter Viewer mit Exitcode 0 endet und sein
     // Hinweis auf stdout steht. Vorher nahm das Kommando ihn, execute nicht –
@@ -116,7 +116,7 @@ private fun parseReportingFailures(command: CoreCliktCommand, args: Array<String
  * lenke es die Hilfe auf stderr, doch in `clikt-core` liest es niemand aus.
  */
 class RechnungsgeneratorCommand(
-    typesetter: Typesetter = LuaLatexTypesetter,
+    typesetter: TypesetterFactory = ::LuaLatexTypesetter,
     viewer: PdfViewer = SystemPdfViewer,
 ) : CoreCliktCommand(name = "rechnungsgenerator") {
     override val invokeWithoutSubcommand = true

@@ -4,7 +4,10 @@ import com.github.ajalt.clikt.core.CliktError
 import com.github.ajalt.clikt.core.context
 import com.github.ajalt.clikt.core.parse
 import de.fluchitconsulting.rechnungsgenerator.RechnungsgeneratorCommand
+import de.fluchitconsulting.rechnungsgenerator.generate.toolchain.BuiltInPdfAValidator
+import de.fluchitconsulting.rechnungsgenerator.generate.toolchain.ExternalPdfAValidator
 import de.fluchitconsulting.rechnungsgenerator.generate.toolchain.FakeTypesetter
+import de.fluchitconsulting.rechnungsgenerator.generate.toolchain.PdfAValidator
 import de.fluchitconsulting.rechnungsgenerator.generate.toolchain.ToolchainException
 import de.fluchitconsulting.rechnungsgenerator.generate.toolchain.Typesetter
 import io.kotest.assertions.throwables.shouldThrow
@@ -14,6 +17,7 @@ import io.kotest.matchers.collections.shouldContainInOrder
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.string.shouldContain
 import io.kotest.matchers.string.shouldNotContain
+import io.kotest.matchers.types.shouldBeInstanceOf
 import java.nio.file.Path
 import java.time.LocalDate
 import kotlin.io.path.createTempDirectory
@@ -55,10 +59,49 @@ class GenerateCommandTest : FunSpec({
         ausgabe: MutableList<String> = mutableListOf(),
         stammdatenDatei: Path = stammdaten,
     ): List<String> {
-        val command = RechnungsgeneratorCommand(typesetter, viewer)
+        val command = RechnungsgeneratorCommand({ typesetter }, viewer)
         command.context { echoMessage = { _, message, _, _ -> ausgabe += message.toString() } }
         command.parse(arrayOf("erzeuge", rechnung.toString(), "-s", stammdatenDatei.toString()) + args)
         return ausgabe
+    }
+
+    /**
+     * Welcher Prüfer prüft, entscheidet der Schalter – und das lässt sich
+     * sehen, ohne dass ein PDF entsteht: Das Kommando reicht den Prüfer an
+     * die Fabrik weiter, und die gehört dem Test (#226).
+     */
+    context("die Wahl des PDF/A-Prüfers") {
+        fun gewaehlt(vararg args: String): PdfAValidator {
+            lateinit var gesehen: PdfAValidator
+            val command =
+                RechnungsgeneratorCommand({ validator ->
+                    gesehen = validator
+                    FakeTypesetter()
+                })
+            command.context { echoMessage = { _, _, _, _ -> } }
+            command.parse(
+                arrayOf(
+                    "erzeuge",
+                    rechnung.toString(),
+                    "-s",
+                    stammdaten.toString(),
+                    "-o",
+                    eingaben.resolve("pruefer-${args.size}.pdf").toString(),
+                    "--ueberschreiben",
+                ) + args,
+            )
+            return gesehen
+        }
+
+        test("ohne Schalter prüft die eingebaute Bibliothek") {
+            gewaehlt() shouldBe BuiltInPdfAValidator
+        }
+
+        // Nicht bloß "ein anderer": Dieser Prüfer ruft das installierte
+        // Programm auf, und genau das ist der Sinn des Schalters.
+        test("mit --externe-pdfa-pruefung prüft das Programm verapdf") {
+            gewaehlt("--externe-pdfa-pruefung").shouldBeInstanceOf<ExternalPdfAValidator>()
+        }
     }
 
     test("das PDF landet am gewünschten Ort, und das Ergebnis steht in der Ausgabe") {
@@ -358,7 +401,7 @@ class GenerateCommandTest : FunSpec({
             }
 
         val ausgabe = mutableListOf<String>()
-        val command = RechnungsgeneratorCommand(FakeTypesetter())
+        val command = RechnungsgeneratorCommand({ FakeTypesetter() })
         command.context { echoMessage = { _, message, _, _ -> ausgabe += message.toString() } }
         command.parse(
             arrayOf(

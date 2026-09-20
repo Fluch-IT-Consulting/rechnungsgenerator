@@ -10,9 +10,12 @@ import com.github.ajalt.clikt.parameters.options.option
 import com.github.ajalt.clikt.parameters.types.path
 import de.fluchitconsulting.rechnungsgenerator.calculation.CalculatedInvoice
 import de.fluchitconsulting.rechnungsgenerator.generate.render.InvoiceRenderer
+import de.fluchitconsulting.rechnungsgenerator.generate.toolchain.BuiltInPdfAValidator
+import de.fluchitconsulting.rechnungsgenerator.generate.toolchain.ExternalPdfAValidator
+import de.fluchitconsulting.rechnungsgenerator.generate.toolchain.ExternalTool
 import de.fluchitconsulting.rechnungsgenerator.generate.toolchain.LuaLatexTypesetter
 import de.fluchitconsulting.rechnungsgenerator.generate.toolchain.ToolchainException
-import de.fluchitconsulting.rechnungsgenerator.generate.toolchain.Typesetter
+import de.fluchitconsulting.rechnungsgenerator.generate.toolchain.TypesetterFactory
 import de.fluchitconsulting.rechnungsgenerator.model.YamlLoader
 import de.fluchitconsulting.rechnungsgenerator.rules.AcceptedInvoice
 import de.fluchitconsulting.rechnungsgenerator.rules.RejectedException
@@ -26,15 +29,20 @@ import kotlin.io.path.exists
 /**
  * `rechnungsgenerator erzeuge`: aus einer Rechnungsdatei ein geprüftes PDF.
  *
- * Das Kommando bekommt den [Typesetter] gereicht, statt ihn sich zu nehmen –
+ * Das Kommando bekommt den Typesetter gereicht, statt ihn sich zu nehmen –
  * so lässt sich alles prüfen, was danach kommt: das Kopieren der Datei, die
  * Reihenfolge der Ausgaben, der Exitcode bei ungültigem PDF/A und das
- * Aufräumen des Arbeitsverzeichnisses. Im Betrieb steht dort LuaLaTeX und
- * veraPDF, im Test ein vorbereitetes Ergebnis. Ebenso der [PdfViewer] für
- * `--oeffnen`: Im Test öffnet sich kein Fenster.
+ * Aufräumen des Arbeitsverzeichnisses. Im Betrieb steht dort LuaLaTeX, im Test
+ * ein vorbereitetes Ergebnis. Ebenso der [PdfViewer] für `--oeffnen`: Im Test
+ * öffnet sich kein Fenster.
+ *
+ * Gereicht wird eine [TypesetterFactory] und kein fertiger Typesetter, weil
+ * der Prüfer erst mit dem Schalter feststeht. Dadurch lässt sich auch die Wahl
+ * selbst prüfen, ohne dass ein PDF entsteht: Der Test sieht, welchen Prüfer
+ * das Kommando übergibt.
  */
 class GenerateCommand(
-    private val typesetter: Typesetter = LuaLatexTypesetter,
+    private val typesetterFor: TypesetterFactory = ::LuaLatexTypesetter,
     private val viewer: PdfViewer = SystemPdfViewer,
 ) : CoreCliktCommand(name = "erzeuge") {
     override fun help(context: Context) =
@@ -58,6 +66,11 @@ class GenerateCommand(
     private val openAfterwards by option("--oeffnen", help = "Die fertige Rechnung im PDF-Viewer des Systems öffnen")
         .flag()
 
+    private val externalPdfACheck by option(
+        "--externe-pdfa-pruefung",
+        help = "Das installierte Programm verapdf prüfen lassen statt der eingebauten Bibliothek",
+    ).flag()
+
     override fun run() {
         // Fehler beim Lesen, der Werkzeuge und die Ablehnung gehen durch: Zur
         // Meldung ohne Stacktrace macht sie execute(), für alle Kommandos an
@@ -74,6 +87,12 @@ class GenerateCommand(
     }
 
     private fun erzeuge() {
+        // Der Prüfer steht mit dem Schalter fest; eingebaut ist die Vorgabe
+        // (ADR-0014). Extern heißt: ein getrennt installiertes, getrennt
+        // versioniertes Programm urteilt – fehlt es, bricht checkAvailable ab.
+        val validator = if (externalPdfACheck) ExternalPdfAValidator(ExternalTool) else BuiltInPdfAValidator
+        val typesetter = typesetterFor(validator)
+
         // Erst die Werkzeuge prüfen: Ein Abbruch mitten im Satz wäre schwerer zu deuten.
         typesetter.checkAvailable()
 

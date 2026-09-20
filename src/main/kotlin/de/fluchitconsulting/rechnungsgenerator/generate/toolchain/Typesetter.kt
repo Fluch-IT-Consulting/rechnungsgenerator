@@ -2,6 +2,16 @@ package de.fluchitconsulting.rechnungsgenerator.generate.toolchain
 
 import java.nio.file.Path
 
+/**
+ * Ein [Typesetter], sobald der Prüfer feststeht.
+ *
+ * Eine Funktion und kein fertiger Wert, weil die Reihenfolge es verlangt: Den
+ * Prüfer wählt der Schalter `--externe-pdfa-pruefung`, und der ist erst
+ * gelesen, wenn das Kommando schon läuft. Für den Test bleibt es dieselbe
+ * Naht – er reicht einen, der den Prüfer gar nicht anschaut.
+ */
+typealias TypesetterFactory = (PdfAValidator) -> Typesetter
+
 /** Ein gesetztes und geprüftes PDF. */
 data class TypesetPdf(val pdf: Path, val validation: ValidationResult)
 
@@ -19,6 +29,9 @@ data class TypesetPdf(val pdf: Path, val validation: ValidationResult)
  * Zwei Adapter erfüllen dieses Interface, und deshalb ist die Naht eine echte
  * und keine gedachte: [LuaLatexTypesetter] im Betrieb, im Test einer, der ein
  * vorbereitetes PDF und ein vorbereitetes Prüfergebnis liefert.
+ *
+ * Welcher Prüfer hinter der Naht steht, ist noch einmal eine eigene Wahl:
+ * siehe [PdfAValidator].
  */
 interface Typesetter {
     /**
@@ -46,20 +59,28 @@ interface Typesetter {
     ): TypesetPdf
 }
 
-/** Der Adapter für den Betrieb: LuaLaTeX setzt, veraPDF prüft. */
-object LuaLatexTypesetter : Typesetter {
-    private val REQUIRED_TOOLS =
-        arrayOf(
-            "lualatex" to "TeX Live, siehe https://tug.org/texlive/",
-            "verapdf" to "brew install verapdf",
-        )
-
-    // Die beiden Teile bekommen den echten Prozessläufer; im Test steht an
-    // seiner Stelle ein aufgezeichneter Lauf.
+/**
+ * Der Adapter für den Betrieb: LuaLaTeX setzt, ein [PdfAValidator] prüft.
+ *
+ * Der Prüfer kommt von außen, weil er gewählt werden kann – eingebaut oder als
+ * Programm `verapdf` (ADR-0014). Eine Klasse also und kein `object`: Welcher
+ * es ist, entscheidet das Kommando anhand seines Schalters, und erst danach
+ * steht der Typesetter fest.
+ */
+class LuaLatexTypesetter(private val validator: PdfAValidator) : Typesetter {
+    // Bekommt den echten Prozessläufer; im Test steht an seiner Stelle ein
+    // aufgezeichneter Lauf.
     private val compiler = LatexCompiler(ExternalTool)
-    private val validator = PdfAValidator(ExternalTool)
 
-    override fun checkAvailable() = ExternalTool.requireAll(*REQUIRED_TOOLS)
+    /**
+     * LuaLaTeX braucht es immer, den Prüfer fragt sein Adapter selbst: Der
+     * eingebaute braucht nichts, der externe ein installiertes Programm. Ohne
+     * `--externe-pdfa-pruefung` läuft der Generator deshalb ganz ohne veraPDF.
+     */
+    override fun checkAvailable() {
+        ExternalTool.requireAll("lualatex" to "TeX Live, siehe https://tug.org/texlive/")
+        validator.checkAvailable()
+    }
 
     override fun typeset(
         workingDir: Path,
