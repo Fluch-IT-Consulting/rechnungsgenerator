@@ -4,6 +4,7 @@ import de.fluchitconsulting.rechnungsgenerator.calculation.CalculatedInvoice
 import de.fluchitconsulting.rechnungsgenerator.model.LineItem
 import de.fluchitconsulting.rechnungsgenerator.model.SkontoTier
 import de.fluchitconsulting.rechnungsgenerator.rules.AcceptedInvoice
+import de.fluchitconsulting.rechnungsgenerator.values.Discount
 import de.fluchitconsulting.rechnungsgenerator.values.InvoiceType
 
 /**
@@ -31,7 +32,10 @@ internal object ItemBlocks {
                         GermanFormat.quantity(item.quantity),
                         item.unit.label.escapeLatex(),
                         GermanFormat.priceWithCurrency(item.unitPrice),
-                        item.discount?.let(GermanFormat::percent) ?: Latex.EMPTY,
+                        when (val rabatt = item.discount) {
+                            null -> Latex.EMPTY
+                            is Discount.Rate -> GermanFormat.percent(rabatt.rate)
+                        },
                         GermanFormat.amountWithCurrency(line.net),
                     ),
                 )

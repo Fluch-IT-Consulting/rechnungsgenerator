@@ -51,7 +51,7 @@ fun testItem(
     vatRate = Percent(vatRate),
     taxCategory = taxCategory,
     taxExemptionReason = taxExemptionReason,
-    discount = discount?.let { Percent(it) },
+    discountRate = discount?.let { Percent(it) },
 )
 
 fun testPrepayment(

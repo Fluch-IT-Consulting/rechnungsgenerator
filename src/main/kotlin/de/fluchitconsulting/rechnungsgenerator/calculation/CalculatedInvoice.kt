@@ -5,6 +5,7 @@ import de.fluchitconsulting.rechnungsgenerator.model.LineItem
 import de.fluchitconsulting.rechnungsgenerator.model.Prepayment
 import de.fluchitconsulting.rechnungsgenerator.model.SellerConfig
 import de.fluchitconsulting.rechnungsgenerator.model.SkontoTier
+import de.fluchitconsulting.rechnungsgenerator.values.Discount
 import de.fluchitconsulting.rechnungsgenerator.values.EuMemberStates
 import de.fluchitconsulting.rechnungsgenerator.values.Money
 import de.fluchitconsulting.rechnungsgenerator.values.Percent
@@ -29,7 +30,11 @@ data class CalculatedLine(
 
     // BT-136, ohne Rabatt null. Money × Percent rundet HALF_UP, also weg von der
     // Null – bei negativer Menge im Storno damit spiegelbildlich.
-    val discountAmount: Money? = item.discount?.let { base * it }
+    val discountAmount: Money? =
+        when (val rabatt = item.discount) {
+            null -> null
+            is Discount.Rate -> base * rabatt.rate
+        }
 
     // BT-131. Die Differenz und nicht Basis × (1 − Satz): Sonst würden
     // Rabattbetrag und Netto je für sich gerundet und ergäben zusammen
