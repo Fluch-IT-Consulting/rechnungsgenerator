@@ -3,7 +3,7 @@
 Kotlin/Gradle-Lernprojekt: erzeugt aus einer YAML-Rechnungsdatei plus
 YAML-Stammdaten-Konfiguration eine deutsche Rechnung als valides
 PDF/A-1b-Dokument. Satz über LuaLaTeX (Schrift: TeX Gyre Heros, passend zum
-CV/Web-Auftritt des Autors), Validierung über veraPDF.
+CV/Web-Auftritt des Autors), PDF/A-Prüfung über veraPDF.
 
 ## Befehle
 
@@ -39,9 +39,27 @@ CV/Web-Auftritt des Autors), Validierung über veraPDF.
   (Schleichweg an `Price` vorbei) und `Money × Money` (fachlich sinnlos).
 
   Berechnungen (Summen, USt., Fälligkeit) im Kotlin-Code, nie im Template.
-- **Ausgabe**: PDF/A-1b via LuaLaTeX + `pdfx`-Paket. Externe Tools (lualatex,
-  verapdf) werden im PATH erwartet; `LuaLatexTypesetter.checkAvailable()` prüft
-  das beim Start und nennt die fehlenden mit Installationshinweis.
+- **Ausgabe**: PDF/A-1b via LuaLaTeX + `pdfx`-Paket. `lualatex` wird im PATH
+  erwartet; `LuaLatexTypesetter.checkAvailable()` prüft das beim Start und
+  nennt Fehlendes mit Installationshinweis.
+- **PDF/A-Prüfung** (ADR-0014): zwei Prüfer hinter der Naht `PdfAValidator` –
+  eingebaut (`org.verapdf:validation-model` in derselben JVM, die Vorgabe) und
+  extern (`erzeuge --externe-pdfa-pruefung` ruft das installierte Programm
+  `verapdf`). Der Grund ist die Startzeit: Ein Aufruf des Programms kostet
+  6,4 s, davon 6,2 s Start seines CLI-Wrappers; die Prüfung selbst dauert
+  50 ms. Der externe Prüfer bleibt trotzdem, weil er **unabhängig** urteilt –
+  getrennt installiert, getrennt versioniert, nicht dasselbe Stück Software,
+  das der Generator mitbringt. Dass die beiden nicht unbemerkt auseinanderlaufen,
+  hält ein Test fest, der sie über ein gültiges und ein nicht konformes PDF
+  vergleicht: gleiches Urteil, gleiche Regelliste, nicht derselbe Wortlaut (den
+  setzt das Programm mit den Werten des Dokuments zusammen, die Bibliothek
+  liefert die Vorlage aus dem Profil). veraPDF ist damit keine Voraussetzung
+  mehr: `checkAvailable()` verlangt LuaLaTeX immer, nach dem Prüfer fragt sein
+  Adapter selbst. Der Prüfer kommt dem Typesetter aus dem Kommando entgegen –
+  deshalb ist `LuaLatexTypesetter` eine Klasse und das Kommando bekommt eine
+  `TypesetterFactory`: Welcher es ist, steht erst mit dem Schalter fest.
+  Lizenz von veraPDF: dual GPLv3+ oder MPLv2+, gewählt ist **MPL-2.0** – GPLv3
+  schlüge auf das Ganze durch, wenn das Repo öffentlich wird.
 - **Naht zu den Werkzeugen**: `Typesetter` – "aus Quelltext wird ein geprüftes
   PDF". Dahinter im Betrieb LuaLaTeX und veraPDF, im Test ein vorbereitetes
   Ergebnis. Zwei Adapter, also eine echte Naht: Erst dadurch sind Kopieren,
@@ -490,8 +508,13 @@ CV/Web-Auftritt des Autors), Validierung über veraPDF.
   prompt eine Regel entlarvt, die sich auf einer Rechnung ganz ohne Abschläge
   meldete ("mehr Abschläge abgesetzt (0.00)") – solange der erste Wurf gewann,
   sah das niemand.
-- **Validierung ist Teil der Tests**: erzeugte PDFs werden per veraPDF geprüft;
-  ohne valides PDF/A kein grüner Build.
+- **Die PDF/A-Prüfung ist Teil der Tests**: erzeugte PDFs werden geprüft; ohne
+  gültiges PDF/A kein grüner Build. Das gilt seit ADR-0014 mit dem eingebauten
+  Prüfer, und deshalb auch ohne installiertes veraPDF. Die zwei Tests, die das
+  *Programm* brauchen – der Gegentest zum aufgezeichneten Bericht und der
+  Vergleich der beiden Prüfer –, überspringen sich, wenn es fehlt. Übersprungen
+  und nicht bestanden, wie beim Altersnachweis der EU-Liste: Ein Netz, das
+  fehlt, soll nicht aussehen wie eines, das hält.
 - **Paketstruktur**: Zwei vertikale Pakete, eines je Kommando, mit allem, was
   nur dieses Kommando braucht: `generate` mit dem LaTeX-Satz
   (`generate.render`) und der Naht zu den Werkzeugen (`generate.toolchain`),
@@ -567,8 +590,11 @@ CV/Web-Auftritt des Autors), Validierung über veraPDF.
 
 ## Umgebung
 
-- macOS, TeX Live lokal (`lualatex` in /Library/TeX/texbin), veraPDF via
-  Homebrew (`verapdf`), JDK 25 lokal; Build zielt per Toolchain auf JDK 21.
+- macOS, TeX Live lokal (`lualatex` in /Library/TeX/texbin), JDK 25 lokal;
+  Build zielt per Toolchain auf JDK 21.
+- veraPDF via Homebrew (`verapdf`) ist seit ADR-0014 **optional**: Es braucht
+  nur, wer `--externe-pdfa-pruefung` benutzt, und ohne es überspringen sich die
+  zwei Tests, die das Programm aufrufen.
 - `pdftotext` und `pdftoppm` aus poppler (Homebrew `poppler`). `pdftotext`
   braucht seit #81 auch der Build: `ToolchainIntegrationTest` liest damit
   zurück, ob Text aus den Eingabedaten unverändert im PDF steht.
