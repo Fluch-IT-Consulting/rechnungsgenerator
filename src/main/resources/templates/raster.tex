@@ -210,12 +210,17 @@
 
 %% ------------------------------------------------------ Die fachlichen Sätze
 %% Pflichtsatz, Steuerhinweise, Absetzung und Skonto in derselben Reihenfolge
-%% wie in balken. Jeder bringt seinen Abstand selbst mit. Dazwischen das
-%% Zahlungsziel als Satz, das balken im Kopf nennt (#211): erst was offen ist,
-%% dann wann es fällig ist, dann der mögliche Abzug.
+%% wie in balken. Dazwischen das Zahlungsziel als Satz, das balken im Kopf
+%% nennt (#211): erst was offen ist, dann wann es fällig ist, dann der
+%% mögliche Abzug.
 <<ARTHINWEIS>>
 
-<<STEUERHINWEISE>>
+%% Ihren Abstand bringen alle selbst mit – außer den Steuerhinweisen: Der
+%% Befreiungsgrund kommt aus den Eingabedaten und steht deshalb nicht in
+%% \hinweisabsatz (#143). Den Abstand setzt deshalb die Vorlage, und nur, wenn
+%% etwas dasteht – unbedingt wie in balken schöbe er auch jede Rechnung ohne
+%% steuerfreie Position um dieselben 5 mm nach unten (#220).
+\ifblank{<<STEUERHINWEISE>>}{}{\par\vspace{5mm}\noindent <<STEUERHINWEISE>>}
 
 <<ABSETZUNG>><<ZAHLUNGSFRIST>><<SKONTO>>
 
