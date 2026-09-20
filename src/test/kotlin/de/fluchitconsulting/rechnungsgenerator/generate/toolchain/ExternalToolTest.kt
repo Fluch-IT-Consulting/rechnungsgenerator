@@ -4,6 +4,7 @@ import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.assertions.withClue
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.comparables.shouldBeLessThan
+import io.kotest.matchers.shouldBe
 import io.kotest.matchers.string.shouldContain
 import kotlin.io.path.createTempDirectory
 import kotlin.time.Duration.Companion.seconds
@@ -63,5 +64,27 @@ class ExternalToolTest : FunSpec({
             )
 
         ergebnis.output shouldContain "angekommen"
+    }
+
+    /**
+     * Der Grund für die Trennung steht bei [ToolResult]: `verapdf` schreibt
+     * seinen Bericht auf stdout und sein Protokoll auf stderr, und
+     * zusammengeführt landeten Log-Zeilen mitten im XML (#227).
+     *
+     * Geprüft an `sh`, nicht an veraPDF: Was hier zur Debatte steht, ist die
+     * Hülle um ProcessBuilder, nicht das Werkzeug.
+     */
+    test("stdout und stderr kommen getrennt zurück") {
+        val ergebnis =
+            ExternalTool.run(
+                listOf("sh", "-c", "echo nach-stdout; echo nach-stderr >&2"),
+                arbeitsverzeichnis,
+            )
+
+        ergebnis.standardOutput.trim() shouldBe "nach-stdout"
+        ergebnis.errorOutput.trim() shouldBe "nach-stderr"
+        // output gibt es weiter, für Meldungen, die alles wollen.
+        ergebnis.output shouldContain "nach-stdout"
+        ergebnis.output shouldContain "nach-stderr"
     }
 })

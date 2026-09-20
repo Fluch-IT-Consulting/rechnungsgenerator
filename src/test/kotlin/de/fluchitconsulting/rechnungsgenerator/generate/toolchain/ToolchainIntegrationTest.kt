@@ -245,6 +245,30 @@ class ToolchainIntegrationTest : FunSpec({
         }
 
     /**
+     * Das Gegenstück zum Regressionstest in `ExternalPdfAValidatorTest`: Der
+     * schnelle Test beweist, dass ein Protokoll auf stderr uns nicht stört.
+     * Dieser hier beweist, dass echtes veraPDF sein Protokoll weiterhin dorthin
+     * schreibt und den Bericht auf stdout lässt (#227).
+     *
+     * `nicht-konform-mit-warnung.pdf` trägt dafür eine falsche `/Length` im
+     * Inhaltsstrom. veraPDF meldet das, und vor #227 stand diese Meldung mitten
+     * im XML – der Parser brach ab, und für die Benutzerin sah es aus wie ein
+     * Absturz des Generators.
+     */
+    test("ein PDF, über das veraPDF sich beschwert, wird trotzdem gelesen")
+        .config(enabledOrReasonIf = { mitVerapdf }) {
+            val laermend =
+                Path
+                    .of("src/test/resources/nicht-konform-mit-warnung.pdf")
+                    .copyTo(workDir.resolve("nicht-konform-mit-warnung.pdf"), overwrite = true)
+
+            val ergebnis = ExternalPdfAValidator(ExternalTool).validate(laermend)
+
+            ergebnis.valid shouldBe false
+            ergebnis.violations.shouldNotBeEmpty()
+        }
+
+    /**
      * Zwei Prüfer über dasselbe PDF, und sie sollen dasselbe sagen (ADR-0014).
      *
      * Das ist der Preis dafür, dass es zwei gibt: Die eingebaute Bibliothek

@@ -18,8 +18,8 @@ import kotlin.time.Duration.Companion.minutes
  * aufgezeichneten Lauf nach.
  *
  * Was ein Aufrufer wissen muss, steht am Adapter [ExternalTool] und gilt für
- * jeden weiteren: stderr läuft in dieselbe Ausgabe wie stdout, die Ausgabe geht
- * über eine Datei und nicht über einen Stream, und nach [timeout] wird der
+ * jeden weiteren: stdout und stderr kommen getrennt zurück (#227), die Ausgabe
+ * geht über Dateien und nicht über Streams, und nach [timeout] wird der
  * Prozess hart abgeräumt statt höflich gebeten. [environment] kommt zur
  * geerbten Umgebung hinzu, statt sie zu ersetzen.
  */

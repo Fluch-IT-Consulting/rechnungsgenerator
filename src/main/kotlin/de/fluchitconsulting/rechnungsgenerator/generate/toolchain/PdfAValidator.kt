@@ -132,18 +132,23 @@ class ExternalPdfAValidator(private val runner: ProcessRunner) : PdfAValidator {
         }
         return ValidationResult(
             valid = result.exitCode == EXIT_COMPLIANT,
-            violations = parseViolations(extractXml(result.output)),
+            violations = parseViolations(extractXml(result.standardOutput)),
         )
     }
 
     /**
      * Schneidet weg, was vor dem XML steht.
      *
-     * veraPDF ist selbst eine Java-Anwendung und schreibt JVM-Warnungen auf
-     * stderr ("has been mutated reflectively ..."). Da der Aufruf stderr und
-     * stdout zusammenführt, stehen die vor dem Bericht – der Parser bricht dann
-     * mit "Content is not allowed in prolog" ab. Deshalb wird ab dem Prolog
-     * gelesen.
+     * Gelesen wird seit #227 allein stdout, und dort steht der Bericht für
+     * sich: Sein Protokoll schreibt veraPDF auf stderr, die JVM ihre Warnungen
+     * ebenfalls. Nötig ist das Abschneiden damit nicht mehr – es bleibt als
+     * Sicherung, weil ein fremdes Programm jederzeit etwas auf stdout legen
+     * kann und der Parser sonst mit "Content is not allowed in prolog"
+     * abbräche. Drei Zeilen gegen eine Ausnahme, die der Benutzerin als
+     * Absturz erschiene.
+     *
+     * Was *mitten* im Bericht steht, fängt es nicht – genau daran ist #227
+     * gescheitert. Dagegen hilft nur, die Kanäle getrennt zu lassen.
      */
     private fun extractXml(output: String): String {
         val start = output.indexOf("<?xml")

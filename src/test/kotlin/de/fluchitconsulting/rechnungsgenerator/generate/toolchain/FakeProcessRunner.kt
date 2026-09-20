@@ -27,6 +27,7 @@ class FakeProcessRunner(vararg runs: Run) : ProcessRunner {
     data class Run(
         val exitCode: Int = 0,
         val output: String = "",
+        val errorOutput: String = "",
         val files: Map<String, String> = emptyMap(),
     )
 
@@ -50,6 +51,6 @@ class FakeProcessRunner(vararg runs: Run) : ProcessRunner {
         commands += command
         environments += environment
         run.files.forEach { (name, content) -> workingDir.resolve(name).writeText(content) }
-        return ToolResult(run.exitCode, run.output)
+        return ToolResult(run.exitCode, run.output, run.errorOutput)
     }
 }

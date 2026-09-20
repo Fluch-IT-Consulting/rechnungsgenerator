@@ -200,9 +200,15 @@ CV/Web-Auftritt des Autors), PDF/A-Prüfung über veraPDF.
   per `\includegraphics` eingebundenen PDF eine Transparenzgruppe mit, und die
   verbietet PDF/A-1 (#197). Kommen PDF oder PNG dazu, bestimmt die Endung die
   Art, und `\Gread@pdf` braucht eine Umdefinition.
-- **Externe Prozesse**: Ausgabe wird in eine Datei umgeleitet, nicht in einen
-  Stream gelesen – sonst blockiert das Lesen bei einem hängenden Prozess, und
-  die Zeitgrenze käme nie zum Zug. LuaLaTeX läuft, solange die Log-Datei einen
+- **Externe Prozesse**: Ausgabe wird in Dateien umgeleitet, nicht in Streams
+  gelesen – sonst blockiert das Lesen bei einem hängenden Prozess, und
+  die Zeitgrenze käme nie zum Zug. Zwei Dateien, denn stdout und stderr
+  bedeuten nicht dasselbe: `verapdf` schreibt seinen Bericht auf stdout und
+  sein Protokoll auf stderr, und zusammengeführt landeten Log-Zeilen mitten im
+  XML – der Parser brach ab, und für die Benutzerin sah es aus wie ein Absturz
+  des Generators (#227). `ToolResult.output` hängt beide Kanäle aneinander,
+  für Meldungen, die alles wollen; die Reihenfolge *zwischen* ihnen geht dabei
+  verloren, innerhalb eines Kanals nicht. LuaLaTeX läuft, solange die Log-Datei einen
   weiteren Lauf verlangt, höchstens dreimal – wer nach drei Läufen immer noch
   einen vierten fordert, konvergiert nicht. Bei den Rechnungen dieses Projekts
   ist es einer: Sie haben weder Querverweise noch Lesezeichen, und nachgemessen
