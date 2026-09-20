@@ -25,8 +25,10 @@ class ExternalPdfAValidatorTest : FunSpec({
 
     val pdf = createTempDirectory("pdfavalidator-test").resolve("rechnung.pdf")
 
-    fun pruefen(exitCode: Int, output: String) =
-        ExternalPdfAValidator(FakeProcessRunner(FakeProcessRunner.Run(exitCode, output))).validate(pdf)
+    fun pruefen(exitCode: Int, output: String, errorOutput: String = "") =
+        ExternalPdfAValidator(
+            FakeProcessRunner(FakeProcessRunner.Run(exitCode, output, errorOutput)),
+        ).validate(pdf)
 
     // Der einzige erfundene Bericht hier: Für ein konformes PDF gibt es keinen
     // Mitschnitt, weil dieser Fall im Integrationstest ohnehin echt vorkommt.
@@ -37,6 +39,24 @@ class ExternalPdfAValidatorTest : FunSpec({
         |<description>Datei beginnt mit einem Header</description></rule>
         |</details></validationReport></job></jobs></report>
         """.trimMargin()
+
+    /**
+     * Der Regressionstest zu #227: veraPDF schreibt sein Protokoll auf stderr,
+     * und zusammengeführt landete es mitten im Bericht – ein `<jobs>` gefolgt
+     * von einem Zeitstempel, und der Parser brach ab. Gelesen wird deshalb
+     * allein stdout, und was auf stderr steht, darf beliebig sein.
+     */
+    test("das Protokoll auf stderr stört den Bericht nicht") {
+        val protokoll =
+            """
+            |Sept 20, 2026 3:51:08 PM org.verapdf.parser.SeekableCOSParser checkStreamLength
+            |WARNING: Couldn't find expected endstream keyword(object key = 4 0 obj, offset = 327)
+            """.trimMargin()
+
+        val ergebnis = pruefen(exitCode = 0, output = konform, errorOutput = protokoll)
+
+        ergebnis.valid shouldBe true
+    }
 
     test("Exitcode 0 heißt konform") {
         val ergebnis = pruefen(exitCode = 0, output = konform)
