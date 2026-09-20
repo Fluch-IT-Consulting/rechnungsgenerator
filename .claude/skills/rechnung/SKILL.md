@@ -184,7 +184,7 @@ positionen:
     einheit: Std.                   # geschlossene Liste, siehe unten
     einzelpreis: 95.00
     rabatt: 30                      # optional, Prozent über 0 bis 100; mindert den Positionsbetrag
-    rabatt-betrag: 200.00           # optional, statt rabatt: derselbe Rabatt als Betrag, über 0 bis zur Basis
+  # rabatt-betrag: 200.00           # ODER als Betrag, über 0,00 bis zur Basis – beides zusammen bricht ab
     ust-satz: 19                    # optional, Vorgabe 19
     steuerkategorie: S              # optional, Vorgabe S (Regelsatz)
     positions-leistungszeitraum:    # optional, nur bei Abweichung
