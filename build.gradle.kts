@@ -13,8 +13,27 @@ kotlin {
     jvmToolchain(21)
 }
 
+// veraPDF schreibt sein Validierungsprofil per JAXB in ein final-Feld
+// (ValidationProfileImpl.flavour). Ab JDK 24 meldet die JVM das in drei Zeilen
+// auf stderr – dieselben drei, die heute schon der verapdf-Unterprozess
+// schreibt und die PdfAValidator nur wegschneidet, weil sie vor dem
+// XML-Prolog stehen. Die -jakarta-Artefakte helfen nicht: dort wechselt nur
+// der Verursacher.
+//
+// Was hier unterdrückt wird, ist eine *Ankündigung* und kein Symptom: Wird die
+// Änderung in einer künftigen JDK-Fassung scharf geschaltet, läuft veraPDF gar
+// nicht mehr – und diese Option hat uns die Vorwarnung genommen. Der Preis
+// dafür ist, dass nicht bei jedem Rechnungslauf drei Zeilen Lärm auf stderr
+// stehen; dieselbe Abwägung wie bei Mordant (#226).
+//
+// IgnoreUnrecognizedVMOptions muss davor stehen und deckt hier auch die
+// --enable-Option ab: JDK 21 kennt sie nicht und startet sonst nicht.
+private val jaxbFinalFields =
+    listOf("-XX:+IgnoreUnrecognizedVMOptions", "--enable-final-field-mutation=ALL-UNNAMED")
+
 application {
     mainClass = "de.fluchitconsulting.rechnungsgenerator.MainKt"
+    applicationDefaultJvmArgs = jaxbFinalFields
 }
 
 ktlint {
@@ -40,6 +59,7 @@ configurations.named("ktlint") {
 dependencies {
     implementation(libs.kaml)
     implementation(libs.clikt)
+    implementation(libs.verapdf) // PDF/A-Prüfung in derselben JVM statt als Unterprozess (#226)
 
     testImplementation(libs.kotest.runner) // Kotest läuft als JUnit-Platform-Engine
     testImplementation(libs.kotest.assertions) // shouldBe & Co.
@@ -50,6 +70,7 @@ dependencies {
 
 tasks.test {
     useJUnitPlatform() // JUnit 5/6 statt des alten JUnit-4-Runners
+    jvmArgs(jaxbFinalFields) // wie beim ausgelieferten Programm, siehe oben
 
     // Mehrere Test-JVMs nebeneinander (#223). Die Laufzeit liegt fast
     // vollständig in zwei Klassen: PflichtangabenTest und
