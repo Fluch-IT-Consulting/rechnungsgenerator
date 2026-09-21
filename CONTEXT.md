@@ -52,6 +52,20 @@ _Vermeiden_: Originalrechnung, vorausgegangene Rechnung, Ausgangsrechnung
 Die Angaben des Rechnungsstellers, die auf jeder Rechnung gleich sind.
 _Vermeiden_: Konfiguration, Absenderdaten, Profil
 
+## Ablage
+
+**Wurzel**:
+Das Verzeichnis, das den Ordner `.rechnungsgenerator/` mit den Stammdaten
+enthält. Alles darunter wird mit diesen Stammdaten gesetzt; ein zweiter
+Rechnungssteller ist eine zweite Wurzel (ADR-0015). Im Code heißt sie `root`.
+_Vermeiden_: Basisverzeichnis, Projektverzeichnis, Arbeitsverzeichnis
+
+Mehr als die Wurzel kennt der Generator von der Ablage nicht: Er liest eine
+Rechnungsdatei und was die Stammdaten nennen, nie das Verzeichnis. Welche
+Nummern vergeben und welche Abschläge offen sind, sieht er deshalb nicht
+(ADR-0001, ADR-0005) – das tun die Skripte des `rechnung`-Skills. Im Ordner der
+Wurzel liegt darum nur Handgeschriebenes, kein Zähler und kein Cache.
+
 ## Kennungen
 
 **Rechnungsnummer**:

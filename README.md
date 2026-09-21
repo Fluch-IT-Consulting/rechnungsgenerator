@@ -29,7 +29,7 @@ Code 0.
 rechnungsgenerator erzeuge [OPTIONEN] <rechnung.yaml>
 
   -s, --stammdaten=<pfad>    Stammdaten des Rechnungsstellers
-                             (Vorgabe: stammdaten.yaml)
+                             (ohne Angabe aus der Wurzel über der Rechnung)
   -o, --ausgabe=<pfad>       Zieldatei
                              (Vorgabe: aus der Rechnungsnummer gebildet)
   --ueberschreiben           Eine vorhandene Zieldatei ersetzen
@@ -74,7 +74,7 @@ sich gefahrlos umleiten.
 rechnungsgenerator abschlaege [OPTIONEN] <abschlagsrechnung.yaml>...
 
   -s, --stammdaten=<pfad>    Stammdaten des Rechnungsstellers
-                             (Vorgabe: stammdaten.yaml)
+                             (ohne Angabe aus der gemeinsamen Wurzel)
 ```
 
 Rechnet die übergebenen Abschlagsrechnungen und gibt daraus den
@@ -90,10 +90,54 @@ rechnungsgenerator abschlaege R26-009.yaml R26-011.yaml >> R26-014.yaml
 Bei einem Fehler steht nichts auf stdout, ein halber Block landet also nie in
 der Schlussrechnung.
 
+Gesucht wird je Datei. Liegen die Abschlagsrechnungen in verschiedenen Wurzeln,
+bricht das Kommando ab und nennt beide: Abschläge zweier Rechnungssteller
+gehören nicht in einen Block.
+
 ## Eingabedateien
 
 Zwei YAML-Dateien: die Stammdaten (auf jeder Rechnung gleich) und die Rechnung
 selbst. Beispiele liegen in [src/test/resources](src/test/resources).
+
+### Wo die Stammdaten liegen
+
+Ein Verzeichnis, das den Ordner `.rechnungsgenerator/` enthält, ist eine
+**Wurzel** (ADR-0015). Darin liegt `stammdaten.yaml`, und alles unterhalb der
+Wurzel wird damit gesetzt:
+
+```
+Rechnungen/
+  .rechnungsgenerator/
+    stammdaten.yaml
+    logo.tex
+  2026/
+    R26-009.yaml
+```
+
+```
+rechnungsgenerator erzeuge Rechnungen/2026/R26-009.yaml
+```
+
+Das findet die Stammdaten von jedem Arbeitsverzeichnis aus. Gesucht wird ab dem
+Verzeichnis der **Rechnungsdatei** den Pfad hinauf, bis zur Wurzel des
+Dateisystems – derselbe Aufruf auf dieselbe Datei findet damit immer dieselben
+Stammdaten, egal wo man steht. Ein zweiter Rechnungssteller ist eine zweite
+Wurzel, daneben oder verschachtelt; die nächste gewinnt. Für alles andere gibt
+es `-s`, und dann wird nicht gesucht.
+
+Findet die Suche nichts, nennt die Meldung das Verzeichnis, ab dem gesucht
+wurde, den erwarteten Ordner und `-s` als Ausweg. Trifft sie auf einen Ordner
+`.rechnungsgenerator/` ohne `stammdaten.yaml`, bricht sie dort ab, statt weiter
+oben nachzusehen: Eine halb eingerichtete Wurzel soll nicht still die
+Stammdaten der äußeren nehmen und den falschen Aussteller aufs Blatt setzen.
+
+Wer bisher `stammdaten.yaml` im Arbeitsverzeichnis liegen hatte, zieht sie um –
+eine Logo-Datei kommt mit:
+
+```
+mkdir .rechnungsgenerator
+mv stammdaten.yaml .rechnungsgenerator/
+```
 
 Widersprüchliche Angaben brechen ab, statt als PDF hinauszugehen. Der Generator
 verlangt mindestens eine Position und lehnt ab, wenn

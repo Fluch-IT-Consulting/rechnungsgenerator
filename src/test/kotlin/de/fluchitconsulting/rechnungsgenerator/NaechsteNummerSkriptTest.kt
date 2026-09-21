@@ -1,5 +1,6 @@
 package de.fluchitconsulting.rechnungsgenerator
 
+import de.fluchitconsulting.rechnungsgenerator.model.Root
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.string.shouldContain
@@ -153,5 +154,24 @@ class NaechsteNummerSkriptTest : FunSpec({
 
         ergebnis.exitCode shouldBe 2
         ergebnis.fehler shouldContain "--rechnungsdatum"
+    }
+
+    test("die Stammdaten im Ordner der Wurzel sind keine vergebene Nummer") {
+        // rglob steigt auch in versteckte Ordner, und seit ADR-0015 liegen die
+        // Stammdaten in einem. Sie haben kein Feld `nummer` und fallen deshalb
+        // durch – still, denn eine Datei ohne Nummer ist keine Rechnung.
+        val verzeichnis = ablage("Rechnung_R26-009-beispiel.yaml")
+        verzeichnis
+            .resolve("Outgoing")
+            .resolve(Root.FOLDER)
+            .createDirectories()
+            .resolve(Root.SELLER_CONFIG)
+            .writeText(stammdaten)
+
+        val ergebnis = lauf(verzeichnis, "--rechnungsdatum", "2026-08-14")
+
+        ergebnis.exitCode shouldBe 0
+        ergebnis.ausgabe shouldBe "R26-010"
+        ergebnis.fehler shouldBe ""
     }
 })

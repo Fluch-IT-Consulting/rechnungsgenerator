@@ -28,7 +28,9 @@ in `.claude/settings.local.json` unter `env` gehört.
 
 ```
 $RECHNUNGEN_DIR/
-  stammdaten.yaml                     ← Firmendaten, gelten für jede Rechnung
+  .rechnungsgenerator/
+    stammdaten.yaml                   ← Firmendaten, gelten für jede Rechnung
+    logo.tex                          ← optional, siehe unten
   Outgoing/
     Rechnung_R26-011-beispiel.yaml    ← Quelle
     Rechnung_R26-011-beispiel.pdf     ← Ergebnis
@@ -37,6 +39,17 @@ $RECHNUNGEN_DIR/
 
 Quelle und Ergebnis tragen denselben Namen und liegen nebeneinander – so wie
 früher die `.ods` neben ihrem PDF lag.
+
+Der Ordner `.rechnungsgenerator/` macht `$RECHNUNGEN_DIR` zur **Wurzel**
+(ADR-0015): Der Generator findet die Stammdaten von jeder Rechnungsdatei
+darunter aus, ohne `-s`. Fehlt der Ordner, sagt der Generator das und nennt
+ihn – dann leg ihn an und zieh `stammdaten.yaml` samt Logo hinein, statt mit
+`-s` daran vorbeizuarbeiten:
+
+```
+mkdir "$RECHNUNGEN_DIR/.rechnungsgenerator"
+mv "$RECHNUNGEN_DIR/stammdaten.yaml" "$RECHNUNGEN_DIR/.rechnungsgenerator/"
+```
 
 Wie die Rechnung aussieht, wählen die Stammdaten mit `design: balken` oder
 `design: raster` (ohne Eintrag `balken`, ADR-0011). Das gilt für alle
@@ -55,7 +68,7 @@ die Datei kommen. Die Schritte hier gelten trotzdem.
 
 ```
 scripts/naechste-nummer.py "$RECHNUNGEN_DIR/Outgoing" \
-  --stammdaten "$RECHNUNGEN_DIR/stammdaten.yaml"
+  --stammdaten "$RECHNUNGEN_DIR/.rechnungsgenerator/stammdaten.yaml"
 ```
 
 Es durchsucht auch die Jahresunterordner, damit eine versehentlich einsortierte
@@ -80,6 +93,10 @@ Teil einer Nummer der Zähler ist. `--stammdaten` prüft aber die Nummer, die da
 Skript ausgeben will, gegen `rechnungsnummer-muster` (ADR-0005). Wer das Muster
 wechselt und das Skript vergisst, bekommt hier einen Abbruch – statt später eine
 Rechnung, die der Generator ablehnt, wenn die Nummer schon in Dateinamen steht.
+
+Den Pfad zu den Stammdaten schreibst du hier aus: Das Skript sucht die Wurzel
+nicht, denn die Suche ein zweites Mal nachzubauen wäre eine zweite Fassung
+derselben Regel.
 
 **2. Angaben sammeln.** Nötig sind Kunde mit Anschrift, Leistungszeitraum und
 die Positionen. Erfinde nichts davon – eine falsche Zahl auf einer Rechnung ist
@@ -130,9 +147,12 @@ reine Ablage-Kosmetik.
 ```
 build/install/rechnungsgenerator/bin/rechnungsgenerator erzeuge \
   "$RECHNUNGEN_DIR/Outgoing/Rechnung_R26-012-beispiel.yaml" \
-  -s "$RECHNUNGEN_DIR/stammdaten.yaml" \
   -o "$RECHNUNGEN_DIR/Outgoing/Rechnung_R26-012-beispiel.pdf"
 ```
+
+Ohne `-s`: Die Stammdaten findet der Generator selbst, über der Rechnungsdatei.
+Meldet er, dass er keine findet, fehlt der Ordner `.rechnungsgenerator/` –
+siehe oben.
 
 Gibt es die Zieldatei schon, bricht das Kommando ab und nennt `--ueberschreiben`.
 Den Schalter setzt du nur beim **Nachbessern**: Du hast genau diese Datei in

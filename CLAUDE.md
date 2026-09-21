@@ -26,6 +26,25 @@ CV/Web-Auftritt des Autors), PDF/A-Prüfung über veraPDF.
   geschrieben werden", weil sein IOException-Zweig dem Ziel galt und das Lesen
   mitfing; `abschlaege` fing ihn gar nicht, und weil `Main` nur `CliktError`
   fängt, endete der Aufruf im Stacktrace.
+- **Wurzel der Ablage** (ADR-0015): Ohne `-s` findet der Generator die
+  Stammdaten selbst. Ein Verzeichnis mit dem Ordner `.rechnungsgenerator/` ist
+  eine **Wurzel**, `stammdaten.yaml` liegt darin, und gesucht wird ab dem
+  Verzeichnis der **Rechnungsdatei** den Pfad hinauf – nicht ab dem
+  Arbeitsverzeichnis: Derselbe Aufruf auf dieselbe Datei soll dieselben
+  Stammdaten finden, egal wo man steht. Die alte Vorgabe `stammdaten.yaml` im
+  Arbeitsverzeichnis entfällt ersatzlos, und einen Rückfall darauf gibt es
+  nicht – der nähme still das Falsche. Markierung ist allein der Ordner: Eine
+  lose Datei kann eine Kopie sein, ein Ordner mit dem Namen des Programms
+  nicht. Eine halb eingerichtete Wurzel bricht ab, statt weiter oben zu suchen,
+  sonst nähme sie die Stammdaten der äußeren und setzte den falschen Aussteller
+  aufs Blatt. `abschlaege` sucht je Datei und bricht bei verschiedenen Wurzeln
+  ab. Die Suche ist `Root` in `model` neben dem `YamlLoader` – der Dateiname
+  gehört dorthin, wo gelesen wird, und beide Kommandos brauchen sie; keine
+  Naht, denn sie rechnet Pfade und fragt `exists`. Im Ordner liegt nur
+  Handgeschriebenes: keinen Zähler und keinen Cache legt das Programm dort ab
+  (ADR-0001). Der Skill ruft deshalb ohne `-s` auf; `naechste-nummer.py` behält
+  `--stammdaten` mit ausgeschriebenem Pfad, weil die Suche dort eine zweite
+  Fassung derselben Regel wäre.
 - **Geldwerte**: ausschließlich `BigDecimal`, niemals Float/Double. Zwei
   gleichrangige Value Objects, die die Grenze der EN 16931 abbilden:
   - `Price` – exakt, rundet nie. Für Einzelpreise (BT-146), wo die Norm beliebig

@@ -56,9 +56,12 @@ Dateien in der Reihenfolge ihrer Nummern:
 build/install/rechnungsgenerator/bin/rechnungsgenerator abschlaege \
   "$RECHNUNGEN_DIR/Outgoing/Rechnung_R26-009-beispiel.yaml" \
   "$RECHNUNGEN_DIR/Outgoing/2025/Rechnung_R26-011-beispiel.yaml" \
-  -s "$RECHNUNGEN_DIR/stammdaten.yaml" \
   >> "$RECHNUNGEN_DIR/Outgoing/Rechnung_R26-014-beispiel-schluss.yaml"
 ```
+
+Ohne `-s` wie beim Erzeugen: Der Generator sucht die Stammdaten je Datei. Liegen
+die Abschlagsrechnungen in verschiedenen Wurzeln, bricht er ab und nennt beide –
+dann gehören sie nicht in einen Block.
 
 Den Block übernimmst du, wie er kommt. Bei einem Fehler endet das Kommando mit
 einem Exitcode ungleich 0 und schreibt nichts in die Datei; gib die Meldung

@@ -10,6 +10,8 @@ import de.fluchitconsulting.rechnungsgenerator.generate.toolchain.FakeTypesetter
 import de.fluchitconsulting.rechnungsgenerator.generate.toolchain.PdfAValidator
 import de.fluchitconsulting.rechnungsgenerator.generate.toolchain.ToolchainException
 import de.fluchitconsulting.rechnungsgenerator.generate.toolchain.Typesetter
+import de.fluchitconsulting.rechnungsgenerator.model.Root
+import de.fluchitconsulting.rechnungsgenerator.runCli
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.collections.shouldContain
@@ -20,6 +22,7 @@ import io.kotest.matchers.string.shouldNotContain
 import io.kotest.matchers.types.shouldBeInstanceOf
 import java.nio.file.Path
 import java.time.LocalDate
+import kotlin.io.path.createDirectories
 import kotlin.io.path.createTempDirectory
 import kotlin.io.path.exists
 import kotlin.io.path.readText
@@ -418,6 +421,61 @@ class GenerateCommandTest : FunSpec({
         val hinweis = ausgabe.indexOfFirst { it.startsWith("Hinweis:") }
         (hinweis > result) shouldBe true
         ausgabe[hinweis] shouldContain "nicht qualifiziert"
+    }
+
+    context("ohne -s kommen die Stammdaten aus der Wurzel (ADR-0015)") {
+        /**
+         * Eine Ablage mit einer Rechnung im Jahresordner – mit Wurzel, wenn
+         * [firma] genannt ist. Der Name steht später im Satz und sagt, welche
+         * Stammdaten wirklich gelesen wurden.
+         */
+        fun ablage(firma: String? = null): Path {
+            val wurzel = createTempDirectory("wurzel-erzeuge")
+            if (firma != null) {
+                wurzel
+                    .resolve(Root.FOLDER)
+                    .createDirectories()
+                    .resolve(Root.SELLER_CONFIG)
+                    .writeText(quelle("stammdaten.yaml").replace("Muster IT-Consulting UG (haftungsbeschränkt)", firma))
+            }
+            wurzel
+                .resolve("2026")
+                .createDirectories()
+                .resolve("rechnung.yaml")
+                .writeText(quelle("rechnung.yaml"))
+            return wurzel
+        }
+
+        test("gesucht wird von der Rechnungsdatei aus, nicht im Arbeitsverzeichnis") {
+            // Das Arbeitsverzeichnis des Testlaufs ist das Projekt, und dort
+            // liegt keine Wurzel: Was hier gefunden wird, kann nur die über
+            // der Rechnungsdatei sein.
+            val wurzel = ablage("Wurzelfirma UG")
+            val fake = FakeTypesetter()
+
+            val result =
+                runCli(
+                    "erzeuge",
+                    wurzel.resolve("2026/rechnung.yaml").toString(),
+                    "-o",
+                    wurzel.resolve("ziel.pdf").toString(),
+                    typesetter = fake,
+                )
+
+            result.exitCode shouldBe 0
+            fake.sources!!.tex shouldContain "Wurzelfirma UG"
+        }
+
+        test("ohne Wurzel bricht der Lauf ab und nennt den Ausweg") {
+            val ohneWurzel = ablage()
+
+            val result = runCli("erzeuge", ohneWurzel.resolve("2026/rechnung.yaml").toString())
+
+            result.exitCode shouldBe 1
+            result.out shouldBe ""
+            result.err shouldContain Root.FOLDER
+            result.err shouldContain "-s"
+        }
     }
 })
 
