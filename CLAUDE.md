@@ -121,7 +121,14 @@ CV/Web-Auftritt des Autors), PDF/A-Prüfung über veraPDF.
   Rechnungsart oder Rechnung hängen (`TemplateValue.required`), von jeder
   Vorlage. Für die Stammdaten gibt es keine solche Pflicht – "Steuernummer
   oder USt-IdNr." ist kein Kennzeichen –, das prüft `PflichtangabenTest` am
-  fertigen PDF, je Design und Rechnungsart (#187).
+  fertigen PDF, je Design und Rechnungsart (#187). Ebenso wenig für einen
+  **Schalter** (`LOGO`, `RABATTSPALTE`) und die **Einleitung** (#248): Der
+  Schalter hat keinen Inhalt, er sagt nur, ob die Vorlage ein Mittel einsetzt,
+  und die Einleitung darf ein Design weglassen (#209). Eine freiwillige Angabe
+  der Rechnungsdatei ist damit noch nicht frei – Kundennummer (#190),
+  Auftragsnummer (#191), Kundenreferenz und der Schlusssatz aus `bemerkung`
+  bleiben Pflicht: Das sind Angaben und keine Begleitsätze, jemand hat sie für
+  diese eine Rechnung hingeschrieben.
 
   Die Vorlage ist ein eigener Typ, `Template` (#201), mit privatem
   Konstruktor – derselbe Zug wie bei der `AcceptedInvoice`: Was ungeprüft ist,

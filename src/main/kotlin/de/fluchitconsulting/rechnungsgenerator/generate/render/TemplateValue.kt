@@ -19,6 +19,22 @@ package de.fluchitconsulting.rechnungsgenerator.generate.render
  * lässt sich als Kennzeichen nicht ausdrücken. Das prüft das Netz aus #187 am
  * fertigen PDF.
  *
+ * An beiden Hälften fällt etwas heraus (#248). Ein **Schalter** hat gar keinen
+ * Inhalt: Er sagt der Vorlage nicht, *was* dasteht, sondern *ob* sie ein
+ * Mittel einsetzt – [LOGO] die Einbindung, [RABATTSPALTE] die Spalte. Eine
+ * Vorlage, die das Mittel nicht kennt, braucht ihn nicht; dass die Spalte
+ * genau dann steht, wenn eine Position einen Rabatt hat, hält ohnehin das
+ * Netz aus #187 an `teilrechnung`. Und die [EINLEITUNG] darf ein Design
+ * weglassen (#209): Sie begleitet die Rechnung, statt eine ihrer Angaben zu
+ * sein.
+ *
+ * Freiwillig heißt aber nicht frei: [KUNDENNUMMER] (#190) und
+ * [AUFTRAGSNUMMER] (#191) bleiben Pflicht, so entschieden in ihren Issues,
+ * und mit ihnen [KUNDENREFERENZ] und [SCHLUSSSATZ]. Das sind Angaben und
+ * keine Begleitsätze – jemand hat sie für diese Rechnung hingeschrieben –,
+ * und Kundennummer, Auftragsnummer und `bemerkung` nennt kein Beispiel: Ein
+ * Design, das sie weglässt, verschluckt sie, und nichts sieht es.
+ *
  * Wo es für dieselbe Angabe zwei Wege gibt, verlangt der Bau einen davon:
  * [requiredOneOf].
  */
@@ -77,13 +93,20 @@ enum class TemplateValue(
     // Der Satz über den Positionen, aus der Rechnungsdatei (einleitung). Eine
     // einzelne Angabe, auch wenn sie ein Satz ist: Er kommt aus den Daten und
     // nicht aus Kotlin, und ob er dasteht, heißt nur leer oder nicht.
-    EINLEITUNG(true),
+    //
+    // Keine Pflicht (#209): Der Satz begleitet die Rechnung, statt eine ihrer
+    // Angaben zu sein – was berechnet wird, steht in den Positionen. Ein
+    // Design ohne Absatz über der Tabelle darf ihn weglassen, und kein Netz
+    // hält das auf. Genau diese Freiheit wollte #209, und bis #248 war sie zu.
+    EINLEITUNG(false),
 
     // Ein Schalter wie LOGO (#213): nicht leer, wenn eine Position einen Rabatt
-    // hat. Dann setzt die Vorlage die Spalte, sonst nicht. Pflicht, weil er an
-    // der Rechnung hängt: Ein Design ohne ihn zeigte den geminderten Betrag,
-    // aber nicht, warum er kleiner ist.
-    RABATTSPALTE(true),
+    // hat. Dann setzt die Vorlage die Spalte, sonst nicht. Und keine Pflicht,
+    // wie LOGO keine ist – ein Schalter ist kein Inhalt. Dass ein Design den
+    // geminderten Betrag nicht ohne Grund zeigt, hält das Netz aus #187:
+    // `teilrechnung` hat einen Rabatt, und dort wird je Design geprüft, dass
+    // die Spalte genau dann steht.
+    RABATTSPALTE(false),
 
     // Wiederholtes und fachliche Sätze: Makroaufrufe oder nichts.
     POSITIONEN(true),
@@ -99,7 +122,9 @@ enum class TemplateValue(
     SKONTO(true),
     BANKVERBINDUNG(true),
 
-    // Kann aus der Rechnungsdatei kommen (bemerkung).
+    // Kann aus der Rechnungsdatei kommen (bemerkung) und ist deshalb Pflicht,
+    // obwohl die Vorgabe aus den Stammdaten stammt: Wer eine Bemerkung für
+    // diese eine Rechnung schreibt, soll sie nicht an ein Design verlieren.
     SCHLUSSSATZ(true),
     ;
 
