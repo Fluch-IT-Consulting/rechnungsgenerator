@@ -11,17 +11,17 @@ import io.kotest.matchers.string.shouldContain
 /** Die Freitextangaben der Rechnung (#196, #190, #191, #209). */
 class FreeTextRulesTest : FunSpec({
 
-    fun mitAnsprechpartner(ansprechpartner: String?) =
-        CalculatedInvoice(testInvoice(contactPoint = ansprechpartner), testSellerConfig())
+    fun mitAnsprechpartner(contactPoint: String?) =
+        CalculatedInvoice(testInvoice(contactPoint = contactPoint), testSellerConfig())
 
-    fun mitKundennummer(kundennummer: String?) =
-        CalculatedInvoice(testInvoice(buyerIdentifier = kundennummer), testSellerConfig())
+    fun mitKundennummer(buyerIdentifier: String?) =
+        CalculatedInvoice(testInvoice(buyerIdentifier = buyerIdentifier), testSellerConfig())
 
-    fun mitAuftragsnummer(auftragsnummer: String?) =
-        CalculatedInvoice(testInvoice(salesOrderReference = auftragsnummer), testSellerConfig())
+    fun mitAuftragsnummer(salesOrderReference: String?) =
+        CalculatedInvoice(testInvoice(salesOrderReference = salesOrderReference), testSellerConfig())
 
-    fun mitEinleitung(einleitung: String?) =
-        CalculatedInvoice(testInvoice(introduction = einleitung), testSellerConfig())
+    fun mitEinleitung(introduction: String?) =
+        CalculatedInvoice(testInvoice(introduction = introduction), testSellerConfig())
 
     context("Ansprechpartner") {
         test("ohne Ansprechpartner gibt es nichts zu prüfen") {

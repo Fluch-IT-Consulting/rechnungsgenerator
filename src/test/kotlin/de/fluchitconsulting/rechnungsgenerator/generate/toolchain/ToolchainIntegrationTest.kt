@@ -125,8 +125,8 @@ class ToolchainIntegrationTest : FunSpec({
     test("der Skalierungsfaktor der Logodatei setzt das Logo größer") {
         val skaliert = Path.of("src/test/resources/logo-skaliert.tex")
         val ohneFaktor =
-            workDir.resolve("logo-ohne-faktor.tex").also { datei ->
-                datei.writeText(skaliert.readLines().filterNot { "logoskalierung" in it }.joinToString("\n"))
+            workDir.resolve("logo-ohne-faktor.tex").also { file ->
+                file.writeText(skaliert.readLines().filterNot { "logoskalierung" in it }.joinToString("\n"))
             }
 
         fun logoHoehe(logo: Path): Int {
@@ -257,15 +257,15 @@ class ToolchainIntegrationTest : FunSpec({
      */
     test("ein PDF, über das veraPDF sich beschwert, wird trotzdem gelesen")
         .config(enabledOrReasonIf = { mitVerapdf }) {
-            val laermend =
+            val noisy =
                 Path
                     .of("src/test/resources/nicht-konform-mit-warnung.pdf")
                     .copyTo(workDir.resolve("nicht-konform-mit-warnung.pdf"), overwrite = true)
 
-            val ergebnis = ExternalPdfAValidator(ExternalTool).validate(laermend)
+            val result = ExternalPdfAValidator(ExternalTool).validate(noisy)
 
-            ergebnis.valid shouldBe false
-            ergebnis.violations.shouldNotBeEmpty()
+            result.valid shouldBe false
+            result.violations.shouldNotBeEmpty()
         }
 
     /**
@@ -301,8 +301,8 @@ class ToolchainIntegrationTest : FunSpec({
 
                 // Die Kennung als eine Zeichenkette: So steht im Fehlerfall
                 // "6.3.4-1" im Bericht und nicht ein Paar.
-                fun regeln(ergebnis: ValidationResult) =
-                    ergebnis.violations.map { "${it.clause}-${it.testNumber}" }.sorted()
+                fun regeln(result: ValidationResult) =
+                    result.violations.map { "${it.clause}-${it.testNumber}" }.sorted()
 
                 withClue("$pdf: Urteil") { eingebaut.valid shouldBe extern.valid }
                 withClue("$pdf: Regeln") { regeln(eingebaut) shouldBe regeln(extern) }

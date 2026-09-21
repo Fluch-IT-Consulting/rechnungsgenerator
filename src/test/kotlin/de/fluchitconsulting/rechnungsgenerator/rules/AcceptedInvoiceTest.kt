@@ -35,8 +35,8 @@ class AcceptedInvoiceTest : FunSpec({
         // check verlangt den Dateinamen selbst, die Gründe nennen aber die
         // Regeln zur Rechnungsnummer (#150). Liefen beide auseinander, stünde
         // eine Ablehnung ohne einen einzigen Abbruch da.
-        listOf("", "   ", "///", "ä").forAll { nummer ->
-            val calculated = CalculatedInvoice(testInvoice(number = nummer), config)
+        listOf("", "   ", "///", "ä").forAll { number ->
+            val calculated = CalculatedInvoice(testInvoice(number = number), config)
 
             calculated.fileBaseName shouldBe null
             AcceptedInvoice

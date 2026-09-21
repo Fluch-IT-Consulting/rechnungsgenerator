@@ -42,11 +42,11 @@ internal object FinalInvoiceRules {
             invoice.prepayments
                 .groupBy { it.invoiceNumber }
                 .filterValues { it.size > 1 }
-                .forEach { (nummer, duplicates) ->
+                .forEach { (number, duplicates) ->
                     add(
                         Finding(
                             Rule.ABSCHLAG_DOPPELT,
-                            Subject.Prepayment(nummer),
+                            Subject.Prepayment(number),
                             "Der Abschlag steht ${duplicates.size}-mal in dieser Schlussrechnung.",
                         ),
                     )

@@ -94,10 +94,10 @@ class PflichtangabenTest : FunSpec({
         geschaeftsfuehrung: Boolean = true,
     ): Path {
         val logoEintrag = if (logo) "logo: ${Path.of("src/test/resources/logo.tex").toAbsolutePath()}\n" else ""
-        val zeilen = stammdaten.readLines().filter { geschaeftsfuehrung || !it.startsWith("geschaeftsfuehrer:") }
+        val lines = stammdaten.readLines().filter { geschaeftsfuehrung || !it.startsWith("geschaeftsfuehrer:") }
         val name = "stammdaten-$design" + (if (logo) "-logo" else "") + (if (geschaeftsfuehrung) "" else "-einzel")
         return workDir.resolve("$name.yaml").also {
-            it.writeText(zeilen.joinToString("\n", postfix = "\n") + "design: $design\n" + logoEintrag)
+            it.writeText(lines.joinToString("\n", postfix = "\n") + "design: $design\n" + logoEintrag)
         }
     }
 
@@ -129,15 +129,15 @@ class PflichtangabenTest : FunSpec({
 
     // Setzt eine Beispieldatei mit den echten Werkzeugen und prüft das Blatt.
     fun setzeUndPruefe(
-        datei: String,
+        file: String,
         design: Design,
         stammdaten: Path,
         zielname: String,
     ): CalculatedInvoice {
-        val eingabe = Path.of("src/test/resources/$datei.yaml")
+        val eingabe = Path.of("src/test/resources/$file.yaml")
         val calculated = CalculatedInvoice(YamlLoader.loadInvoice(eingabe), YamlLoader.loadSellerConfig(stammdaten))
 
-        val (pdf, ausgabe) = run.erzeuge(datei, zielname = zielname, stammdaten = stammdaten)
+        val (pdf, ausgabe) = run.erzeuge(file, zielname = zielname, stammdaten = stammdaten)
         withClue(ausgabe.joinToString("\n")) { ausgabe shouldContain "PDF/A-1b: gültig" }
 
         val blatt = Blatt(run.textOf(pdf))
@@ -146,9 +146,9 @@ class PflichtangabenTest : FunSpec({
     }
 
     for (design in designs) {
-        for ((art, datei) in exampleInvoices) {
-            test("$datei im Design ${design.name}: gültiges PDF/A-1b mit allen Pflichtangaben") {
-                val calculated = setzeUndPruefe(datei, design, design.stammdaten, zielname = "${design.name}-$datei")
+        for ((art, file) in exampleInvoices) {
+            test("$file im Design ${design.name}: gültiges PDF/A-1b mit allen Pflichtangaben") {
+                val calculated = setzeUndPruefe(file, design, design.stammdaten, zielname = "${design.name}-$file")
                 calculated.invoice.type shouldBe art
             }
         }
@@ -302,10 +302,10 @@ private fun Blatt.pruefe(
     // §14 Abs. 5 Satz 2: Die Schlussrechnung setzt Entgelt und Steuer der
     // vereinnahmten Abschläge ab.
     calculated.prepayments.forEach { abschlag ->
-        val nummer = abschlag.prepayment.invoiceNumber
-        steht("Abschlag $nummer", nummer)
-        steht("Abschlag $nummer: Entgelt", betrag(abschlag.net))
-        steht("Abschlag $nummer: Steuer", betrag(abschlag.vat))
+        val number = abschlag.prepayment.invoiceNumber
+        steht("Abschlag $number", number)
+        steht("Abschlag $number: Entgelt", betrag(abschlag.net))
+        steht("Abschlag $number: Steuer", betrag(abschlag.vat))
     }
 
     // §35a GmbHG, soweit die Stammdaten die Angaben führen.

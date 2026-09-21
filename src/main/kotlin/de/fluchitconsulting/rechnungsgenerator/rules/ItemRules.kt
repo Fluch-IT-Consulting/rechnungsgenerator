@@ -57,16 +57,16 @@ internal object ItemRules {
                         ),
                     )
                 }
-                when (val rabatt = item.discount) {
+                when (val discount = item.discount) {
                     null -> {}
                     is Discount.Rate -> {
-                        val satz = rabatt.rate.valueAsPercentage
-                        if (satz <= BigDecimal.ZERO || satz > HUNDRED) {
+                        val rate = discount.rate.valueAsPercentage
+                        if (rate <= BigDecimal.ZERO || rate > HUNDRED) {
                             add(
                                 Finding(
                                     Rule.RABATT_AUSSERHALB_BEREICH,
                                     Subject.Item(index, item.name),
-                                    "Der Rabatt ${rabatt.rate} liegt außerhalb des zulässigen Bereichs. " +
+                                    "Der Rabatt ${discount.rate} liegt außerhalb des zulässigen Bereichs. " +
                                         "Zulässig sind Sätze über 0 % bis einschließlich 100 %.",
                                 ),
                             )
@@ -79,12 +79,12 @@ internal object ItemRules {
                     // gegen den Betrag der Basis: Im Storno ist sie negativ,
                     // der Rabatt steht aber positiv da.
                     is Discount.Amount -> {
-                        if (!rabatt.amount.isPositive() || rabatt.amount > line.base.abs()) {
+                        if (!discount.amount.isPositive() || discount.amount > line.base.abs()) {
                             add(
                                 Finding(
                                     Rule.RABATT_BETRAG_AUSSERHALB_BEREICH,
                                     Subject.Item(index, item.name),
-                                    "Der Rabattbetrag ${rabatt.amount} liegt außerhalb des zulässigen Bereichs. " +
+                                    "Der Rabattbetrag ${discount.amount} liegt außerhalb des zulässigen Bereichs. " +
                                         "Zulässig ist mehr als 0,00 und höchstens die Basis der Position " +
                                         "(${line.base.abs()} = Menge × Einzelpreis).",
                                 ),

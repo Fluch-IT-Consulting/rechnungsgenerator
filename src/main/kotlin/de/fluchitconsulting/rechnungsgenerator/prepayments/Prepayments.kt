@@ -93,11 +93,11 @@ fun prepaymentsOf(abschlagsrechnungen: List<NamedInvoice>, config: SellerConfig)
     abschlagsrechnungen
         .groupBy { it.invoice.number }
         .filterValues { it.size > 1 }
-        .forEach { (nummer, duplicates) ->
+        .forEach { (number, duplicates) ->
             findings +=
                 Finding(
                     Rule.ABSCHLAGSRECHNUNG_DOPPELT,
-                    Subject.FromInvoice(nummer, Subject.WholeInvoice),
+                    Subject.FromInvoice(number, Subject.WholeInvoice),
                     "ist ${duplicates.size}-mal angegeben.",
                 )
         }

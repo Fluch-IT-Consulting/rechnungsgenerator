@@ -62,14 +62,14 @@ class ExternalToolTest : FunSpec({
     }
 
     test("die Umgebung kommt beim Programm an") {
-        val ergebnis =
+        val result =
             ExternalTool.run(
                 listOf("printenv", "RECHNUNGSGENERATOR_TEST"),
                 arbeitsverzeichnis,
                 environment = mapOf("RECHNUNGSGENERATOR_TEST" to "angekommen"),
             )
 
-        ergebnis.output shouldContain "angekommen"
+        result.output shouldContain "angekommen"
     }
 
     /**
@@ -81,17 +81,17 @@ class ExternalToolTest : FunSpec({
      * Hülle um ProcessBuilder, nicht das Werkzeug.
      */
     test("stdout und stderr kommen getrennt zurück") {
-        val ergebnis =
+        val result =
             ExternalTool.run(
                 listOf("sh", "-c", "echo nach-stdout; echo nach-stderr >&2"),
                 arbeitsverzeichnis,
             )
 
-        ergebnis.standardOutput.trim() shouldBe "nach-stdout"
-        ergebnis.errorOutput.trim() shouldBe "nach-stderr"
+        result.standardOutput.trim() shouldBe "nach-stdout"
+        result.errorOutput.trim() shouldBe "nach-stderr"
         // output gibt es weiter, für Meldungen, die alles wollen.
-        ergebnis.output shouldContain "nach-stdout"
-        ergebnis.output shouldContain "nach-stderr"
+        result.output shouldContain "nach-stdout"
+        result.output shouldContain "nach-stderr"
     }
 
     /**
