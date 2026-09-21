@@ -150,6 +150,18 @@ class TemplateTest : FunSpec({
             // ausdrücken; das prüft das Netz aus #187 am fertigen PDF.
             Template.of(vorlageMit(pflicht))
         }
+
+        test("einen Schalter darf sie ebenso weglassen, und die Einleitung auch") {
+            // Ein Schalter ist kein Inhalt: Er sagt nicht, was dasteht, sondern
+            // ob die Vorlage ein Mittel einsetzt (#248). Die Einleitung darf ein
+            // Design weglassen (#209). Beide standen bis #248 unter Pflicht, und
+            // ein drittes Design hätte sie deshalb leer aufnehmen müssen.
+            val vorlage = Template.of(vorlageMit(pflicht))
+
+            vorlage.uses(TemplateValue.LOGO) shouldBe false
+            vorlage.uses(TemplateValue.RABATTSPALTE) shouldBe false
+            vorlage.uses(TemplateValue.EINLEITUNG) shouldBe false
+        }
     }
 
     context("Ob die Vorlage einen Platzhalter setzt") {

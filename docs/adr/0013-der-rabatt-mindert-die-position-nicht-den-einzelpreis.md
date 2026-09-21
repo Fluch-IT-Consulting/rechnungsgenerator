@@ -113,3 +113,23 @@ wiederholbar) – das brauchte eine Reihenfolge und einen Grund je Abschlag
 (BR-42), und die Spalte trüge zwei Werte.
 
 Umgesetzt in #233.
+
+## Nachtrag vom 21.09.2026: der Schalter ist keine Pflicht
+
+Der Satz oben, `RABATTSPALTE` sei Pflicht für jede Vorlage, ist aufgehoben.
+Er widersprach dem Absatz, in dem er stand: Die Spalte ist ein Schalter „so,
+wie es beim Logo (ADR-0012) schon geht“, und `LOGO` war nie Pflicht. Ein
+Schalter sagt der Vorlage nicht, *was* dasteht, sondern *ob* sie ein Mittel
+einsetzt; eine Vorlage ohne dieses Mittel braucht ihn nicht.
+
+Die Sorge dahinter – ein Design zeigte einen Betrag, der nicht Menge ×
+Einzelpreis ist, ohne Grund – bleibt berechtigt, aber `TemplateValue.required`
+ist nicht, was sie auffängt. Das tut das Netz aus #187: `teilrechnung` trägt
+einen Rabatt, und `PflichtangabenTest` prüft je Design, dass die Spalte genau
+dann dasteht. Ein drittes Design ohne sie fällt dort auf, am fertigen PDF, und
+nicht erst dem Leser der Rechnung.
+
+Für `balken` und `raster` ändert sich nichts: Beide setzen den Platzhalter
+weiter, die Vergleichsdateien und das Netz bleiben, wie sie waren.
+
+Umgesetzt in #248.
