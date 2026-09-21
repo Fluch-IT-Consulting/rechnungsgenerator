@@ -1,0 +1,71 @@
+# Ein Tag v* baut das Release-Archiv und hängt es an einen Release-Entwurf.
+#
+# Entwurf und nicht veröffentlicht: Der Tag löst den Bau aus, das Release
+# bleibt ein Draft, bis jemand auf "Publish" drückt. Ein misslungener Lauf
+# steht damit nicht sofort draußen, und die Notizen werden vorher gelesen. Ein
+# veröffentlichtes Release lässt sich nur noch löschen – und eine
+# Homebrew-Formel könnte die URL schon gezogen haben.
+#
+# Wie die CI ohne die externen Werkzeuge (#136): LuaLaTeX und veraPDF auf einem
+# Runner zu installieren kostet mehr, als der Nachweis hier wert ist. Was hier
+# grün wird, beweist NICHT die PDF/A-Gültigkeit; die prüft weiterhin der lokale
+# `./gradlew build` vor dem Merge.
+name: Release
+
+on:
+  push:
+    tags: ['v*']
+
+# Das Anlegen des Releases schreibt in contents.
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: 21
+
+      - uses: gradle/actions/setup-gradle@v6
+        with:
+          cache-provider: basic
+
+      # Die Skripttests rufen die Python-Skripte wirklich auf (siehe ci.yml).
+      - name: PyYAML installieren
+        run: python3 -m pip install pyyaml
+
+      - name: Bauen und testen (ohne Werkzeug-Tests)
+        run: ./gradlew build -PohneToolchain
+
+      # Das Netz, das #263 angekündigt hat: Dort war "Tag und version in
+      # build.gradle.kts passen zusammen" noch eine Gewohnheit.
+      #
+      # Geprüft wird am gebauten Archiv und nicht an der Zeile im Build: Der
+      # Dateiname ist das, worauf eine Homebrew-Formel zeigt. Passt er nicht
+      # zum Tag, zeigt die Formel ins Leere – und zwar erst beim Benutzer.
+      - name: Archiv bauen und gegen den Tag halten
+        run: |
+          ./gradlew distZip
+          fassung="${GITHUB_REF_NAME#v}"
+          archiv="build/distributions/rechnungsgenerator-${fassung}.zip"
+          if [ ! -f "$archiv" ]; then
+            echo "::error::Der Tag $GITHUB_REF_NAME passt nicht zu version in build.gradle.kts."
+            echo "Erwartet wurde $archiv. Gebaut wurde:"
+            ls -1 build/distributions/
+            exit 1
+          fi
+          echo "ARCHIV=$archiv" >> "$GITHUB_ENV"
+
+      - name: Release-Entwurf anlegen
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "$GITHUB_REF_NAME" "$ARCHIV" \
+            --draft \
+            --title "$GITHUB_REF_NAME" \
+            --generate-notes

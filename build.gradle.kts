@@ -105,6 +105,18 @@ sourceSets {
     }
 }
 
+// Lizenz und Vermerke gehören in das ausgelieferte Archiv und nicht nur ins
+// Repository (#269): Apache-2.0 §4 und MPL-2.0 §3.3 verlangen sie bei der
+// Weitergabe der Binärfassung, und wer das Zip auspackt, hat das Repository
+// nicht. Sie liegen neben bin/ und lib/.
+distributions {
+    main {
+        contents {
+            from("LICENSE", "NOTICE", "THIRD-PARTY.md")
+        }
+    }
+}
+
 ktlint {
     // Welche ktlint-CLI läuft, steht hier und nicht beim Plugin: 14.2.0 wählte
     // von sich aus 1.5.0. Die Fassung selbst kommt aus dem Versionskatalog, wie
