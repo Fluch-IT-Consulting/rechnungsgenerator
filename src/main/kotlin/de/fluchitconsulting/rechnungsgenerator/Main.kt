@@ -17,6 +17,7 @@ import de.fluchitconsulting.rechnungsgenerator.generate.toolchain.TypesetterFact
 import de.fluchitconsulting.rechnungsgenerator.model.InputFileException
 import de.fluchitconsulting.rechnungsgenerator.prepayments.PrepaymentsCommand
 import de.fluchitconsulting.rechnungsgenerator.rules.RejectedException
+import de.fluchitconsulting.rechnungsgenerator.setup.SetupCommand
 import java.io.PrintStream
 import kotlin.system.exitProcess
 
@@ -143,7 +144,7 @@ class RechnungsgeneratorCommand(
     override val invokeWithoutSubcommand = true
 
     init {
-        subcommands(GenerateCommand(typesetter, viewer), PrepaymentsCommand())
+        subcommands(GenerateCommand(typesetter, viewer), PrepaymentsCommand(), SetupCommand())
         // Eager: Clikt gibt die Fassung schon beim Parsen aus und wirft
         // PrintMessage mit Exitcode 0. Damit greift run() unten gar nicht erst,
         // und --version endet nicht als "kein Unterkommando" mit Code 1.
