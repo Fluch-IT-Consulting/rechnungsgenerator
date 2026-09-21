@@ -21,10 +21,10 @@ plugins {
 // Hier und nicht aus dem Git-Tag abgeleitet: Das machte den Build von der
 // Repo-Historie abhängig und schlüge in einem Quelltext-Archiv fehl, gegen die
 // Reproduzierbarkeit, auf die dieses Projekt sonst achtet. Dass Tag und Zeile
-// zusammenpassen, ist damit eine Gewohnheit und kein Netz – dieselbe Lage wie
-// bei den Bedingungen im Versionskatalog (#253). Bleibt sie stecken, ist der
-// nächste Schritt ein Test, der diese Zeile gegen den Tag liest.
-version = "0.1.0"
+// zusammenpassen, hält seit #269 der Release-Workflow fest – und zwar am
+// Namen des gebauten Archivs, denn darauf zeigt eine Homebrew-Formel. Bis
+// dahin war es eine Gewohnheit, wie die Bedingungen im Versionskatalog (#253).
+version = "0.2.0"
 
 kotlin {
     // Ziel-JDK; Foojay (siehe settings.gradle.kts) lädt es bei Bedarf herunter.
