@@ -1,0 +1,115 @@
+# Hebt nach dem Veröffentlichen eines Releases die Homebrew-Formel im Tap an
+# (#271): url mit neuer Asset-ID, version und sha256.
+#
+# Ausgelöst vom Veröffentlichen und NICHT vom Tag: Der Tag baut einen Entwurf,
+# und eine Formel, die auf ein unveröffentlichtes Asset zeigt, lässt jeden
+# `brew upgrade` ins Leere laufen. Erst hier stimmt sie.
+#
+# Geschrieben wird mit einem Deploy Key, denn der eingebaute GITHUB_TOKEN gilt
+# nur für sein eigenes Repository. Ein Deploy Key hängt an genau einem anderen
+# Repository, ist an keine Person gebunden und läuft nicht ab – ein
+# Fine-grained Token dürfte in dieser Organisation höchstens 366 Tage gelten
+# und risse die Automatik danach still ab.
+#
+# Einzurichten war dafür einmalig:
+#   ssh-keygen -t ed25519 -f tap-deploy -N "" -C "release -> homebrew-tap"
+#   gh repo deploy-key add tap-deploy.pub --repo Fluch-IT-Consulting/homebrew-tap \
+#     --title release-workflow --allow-write
+#   gh secret set TAP_DEPLOY_KEY --repo Fluch-IT-Consulting/rechnungsgenerator < tap-deploy
+#   rm tap-deploy tap-deploy.pub
+name: Tap-Formel anheben
+
+on:
+  release:
+    types: [published]
+
+jobs:
+  bump:
+    # Eine Vorabfassung hebt die Formel nicht an – sonst bekäme jeder
+    # `brew upgrade` eine Fassung, die niemand für fertig hält.
+    if: ${{ !github.event.release.prerelease }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Asset und Prüfsumme ermitteln
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ github.event.release.tag_name }}
+        run: |
+          version="${TAG#v}"
+          archiv="rechnungsgenerator-${version}.zip"
+
+          asset_id=$(gh api "repos/${GITHUB_REPOSITORY}/releases/tags/${TAG}" \
+            --jq ".assets[] | select(.name == \"${archiv}\") | .id")
+          if [ -z "$asset_id" ]; then
+            echo "::error::Im Release ${TAG} gibt es kein Asset namens ${archiv}."
+            gh api "repos/${GITHUB_REPOSITORY}/releases/tags/${TAG}" --jq '.assets[].name'
+            exit 1
+          fi
+
+          # Dieselbe Datei, die eine Formel später lädt – die Prüfsumme wird an
+          # ihr genommen und nicht an einem frisch gebauten Archiv.
+          gh api "repos/${GITHUB_REPOSITORY}/releases/assets/${asset_id}" \
+            -H "Accept: application/octet-stream" > "$archiv"
+          sha=$(sha256sum "$archiv" | cut -d' ' -f1)
+
+          {
+            echo "VERSION=${version}"
+            echo "ASSET_ID=${asset_id}"
+            echo "SHA=${sha}"
+          } >> "$GITHUB_ENV"
+
+      - name: Tap auschecken
+        uses: actions/checkout@v7
+        with:
+          repository: Fluch-IT-Consulting/homebrew-tap
+          ssh-key: ${{ secrets.TAP_DEPLOY_KEY }}
+          path: tap
+
+      - name: Formel anheben
+        run: |
+          f=tap/Formula/rechnungsgenerator.rb
+          sed -i -E \
+            -e "s|(releases/assets/)[0-9]+\"|\1${ASSET_ID}\"|" \
+            -e "s|^(  version \")[^\"]*(\")|\1${VERSION}\2|" \
+            -e "s|^(  sha256 \")[^\"]*(\")|\1${SHA}\2|" \
+            "$f"
+
+          # Ein sed, das nichts trifft, ändert nichts und meldet trotzdem
+          # Erfolg. Dann stünde die Formel weiter auf der alten Fassung, und
+          # der Workflow wäre grün.
+          for wert in "$ASSET_ID" "$VERSION" "$SHA"; do
+            if ! grep -q -- "$wert" "$f"; then
+              echo "::error::'${wert}' steht nach dem Ersetzen nicht in der Formel."
+              exit 1
+            fi
+          done
+
+          # Und dass die Datei noch Ruby ist, statt nur die richtigen Zeichen
+          # zu enthalten.
+          ruby -c "$f"
+
+          grep -nE 'releases/assets|^  version |^  sha256 ' "$f"
+
+      - name: Committen und pushen
+        working-directory: tap
+        # Der Tag-Name kommt als Umgebungsvariable und nicht als eingesetzter
+        # Ausdruck: Was in den Skripttext interpoliert wird, kann ihn auch
+        # verlassen.
+        env:
+          TAG: ${{ github.event.release.tag_name }}
+        run: |
+          if git diff --quiet; then
+            echo "Die Formel steht schon auf ${VERSION} – nichts zu tun."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -a -F - <<EOF
+          rechnungsgenerator ${VERSION}
+
+          Angehoben vom Release-Workflow des Generators, ausgelöst vom
+          Veröffentlichen von ${TAG}.
+
+          Asset-ID ${ASSET_ID}, sha256 ${SHA}.
+          EOF
+          git push
