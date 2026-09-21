@@ -222,7 +222,10 @@ CV/Web-Auftritt des Autors), PDF/A-Prüfung über veraPDF.
   XML – der Parser brach ab, und für die Benutzerin sah es aus wie ein Absturz
   des Generators (#227). `ToolResult.output` hängt beide Kanäle aneinander,
   für Meldungen, die alles wollen; die Reihenfolge *zwischen* ihnen geht dabei
-  verloren, innerhalb eines Kanals nicht. LuaLaTeX läuft, solange die Log-Datei einen
+  verloren, innerhalb eines Kanals nicht. An der Nahtstelle steht ein
+  Zeilenumbruch, sonst klebte die letzte Zeile des einen an der ersten des
+  anderen und sähe in der Meldung wie eine Zeile aus einer Quelle aus (#246).
+  LuaLaTeX läuft, solange die Log-Datei einen
   weiteren Lauf verlangt, höchstens dreimal – wer nach drei Läufen immer noch
   einen vierten fordert, konvergiert nicht. Bei den Rechnungen dieses Projekts
   ist es einer: Sie haben weder Querverweise noch Lesezeichen, und nachgemessen
