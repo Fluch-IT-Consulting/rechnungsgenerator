@@ -7,6 +7,25 @@ plugins {
     application // macht das Projekt ausführbar (./gradlew run) und installierbar
 }
 
+// Die Nummer, unter der eine Fassung weitergegeben wird: Sie benennt das
+// Release-Archiv (rechnungsgenerator-0.1.0.zip) und damit die URL, auf die eine
+// Homebrew-Formel zeigt. Ohne sie lässt Gradle den Teil weg, und jedes Archiv
+// hieße gleich.
+//
+// 0.x nach SemVer, obwohl das Programm längst echte Rechnungen schreibt: Seine
+// öffentliche Schnittstelle sind die YAML-Schlüssel der Eingabedateien, und die
+// sind nicht fertig – "Stand" im README nennt drei offene Punkte, und einmal ist
+// ein Schlüssel schon umbenannt worden (bezahlt-am zu vereinnahmt-am). 1.0.0
+// sagte zu, dass ein Schlüssel erst in 2.0.0 wieder verschwindet.
+//
+// Hier und nicht aus dem Git-Tag abgeleitet: Das machte den Build von der
+// Repo-Historie abhängig und schlüge in einem Quelltext-Archiv fehl, gegen die
+// Reproduzierbarkeit, auf die dieses Projekt sonst achtet. Dass Tag und Zeile
+// zusammenpassen, ist damit eine Gewohnheit und kein Netz – dieselbe Lage wie
+// bei den Bedingungen im Versionskatalog (#253). Bleibt sie stecken, ist der
+// nächste Schritt ein Test, der diese Zeile gegen den Tag liest.
+version = "0.1.0"
+
 kotlin {
     // Ziel-JDK; Foojay (siehe settings.gradle.kts) lädt es bei Bedarf herunter.
     // 21 ist das aktuelle "sichere" LTS-Ziel – unabhängig vom lokal installierten Java.
