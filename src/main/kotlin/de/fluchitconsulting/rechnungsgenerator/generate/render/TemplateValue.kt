@@ -36,7 +36,7 @@ package de.fluchitconsulting.rechnungsgenerator.generate.render
  * Design, das sie weglässt, verschluckt sie, und nichts sieht es.
  *
  * Wo es für dieselbe Angabe zwei Wege gibt, verlangt der Bau einen davon:
- * [requiredOneOf].
+ * [ZAHLUNGSANGABE].
  */
 enum class TemplateValue(
     val required: Boolean,
@@ -87,7 +87,7 @@ enum class TemplateValue(
     KUNDENREFERENZ(true),
 
     // Das Zahlungsziel als Datum, für eine Kopfzeile. Nicht Pflicht, sondern
-    // eines von zweien mit ZAHLUNGSFRIST (requiredOneOf).
+    // eines von zweien mit ZAHLUNGSFRIST (ZAHLUNGSANGABE).
     ZAHLUNGSZIEL(false),
 
     // Der Satz über den Positionen, aus der Rechnungsdatei (einleitung). Eine
@@ -132,15 +132,21 @@ enum class TemplateValue(
 
     companion object {
         /**
-         * Angaben, für die es zwei Platzhalter gibt: Jede Vorlage setzt aus
-         * jeder Gruppe mindestens einen. Das Zahlungsziel nennt `balken` als
-         * Datum im Kopf, `raster` als Frist unter den Summen (#211) – ein
-         * Design, das keines von beiden setzt, ließe es weg.
+         * Jede Vorlage sagt etwas über die Zahlung: `balken` nennt das
+         * Zahlungsziel als Datum im Kopf ([ZAHLUNGSZIEL]), `raster` die Frist
+         * als Satz unter den Summen ([ZAHLUNGSFRIST], #211). Pflicht ist
+         * deshalb keiner der beiden, aber einer von beiden – eine Vorlage, die
+         * keinen setzt, ließe die Zahlung ganz vom Blatt.
          *
-         * Eine Gruppe statt zweier optionaler Platzhalter: Sonst fiele das erst
-         * im Netz aus #187 auf, im Lauf mit den echten Werkzeugen, und nicht
-         * schon beim Bau der Vorlage.
+         * Geprüft beim Bau der Vorlage statt am fertigen PDF: Sonst fiele es
+         * erst im Netz aus #187 auf, im Lauf mit den echten Werkzeugen.
+         *
+         * Eine benannte Regel und keine allgemeine Liste von Gruppen (#249):
+         * Es gibt genau diesen einen Fall. Ein zweiter soll nicht als
+         * Listeneintrag hereinkommen, sondern hingeschrieben werden – und wer
+         * ihn hinschreibt, steht vor der Frage aus #188, welches Wort ein
+         * Design überhaupt braucht.
          */
-        val requiredOneOf: List<Set<TemplateValue>> = listOf(setOf(ZAHLUNGSZIEL, ZAHLUNGSFRIST))
+        val ZAHLUNGSANGABE: Set<TemplateValue> = setOf(ZAHLUNGSZIEL, ZAHLUNGSFRIST)
     }
 }
