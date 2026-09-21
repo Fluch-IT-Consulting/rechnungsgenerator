@@ -611,6 +611,27 @@ CV/Web-Auftritt des Autors), PDF/A-Prüfung über veraPDF.
   `.claude/settings.json` ruft nach jeder Änderung an einer `.kt`/`.kts`-Datei
   `./gradlew ktlintFormat` auf, damit das nicht von Hand nachgezogen werden muss.
   Kosten: rund 1 s pro Bearbeitung bei warmem Gradle-Daemon.
+- Ein Kommentar im Versionskatalog, der ein Issue nennt, ist eine
+  **Bedingung** und keine Fußnote. `kotlin` steht auf 2.4.20 wegen
+  CVE-2026-53914 (#158), `ktlintCli` auf 1.8.0 wegen #159, `jackson` auf der
+  Reihe 2.22, weil #250 nachgemessen hat, dass unser Weg Jackson nie lädt.
+  Bevor ein Dependabot-PR eine solche Zeile anhebt, wird das genannte Issue
+  gelesen: Trägt seine Begründung noch, geht der Bump durch, sonst nicht.
+
+  Das ist ausdrücklich eine **Gewohnheit und kein Netz** (#253) – nichts
+  hält sie auf, wenn sie vergessen wird, und genau das ist in #250 passiert:
+  Ein Bump hob Jackson über die Reihe, auf die #230 sich festgelegt hatte,
+  und auffallen tat es erst ein Review später. Trotzdem so entschieden. Der
+  mechanische Weg wäre ein `ignore` in `.github/dependabot.yml`, und der ist
+  hier der schlechtere: `ignore` ist in den GitHub-Docs für „Version
+  updates" **und** „Security updates" gekennzeichnet (nachgemessen am
+  21.09.2026), unterdrückt also auch den Pull Request der
+  Sicherheitsaktualisierung. Die Meldung bliebe stehen, die Abhilfe fiele
+  weg – bei einer Zeile, die überhaupt nur wegen Sicherheitsmeldungen
+  festgeschrieben wurde, die falsche Richtung. Bleibt die Gewohnheit
+  stecken, ist der nächste Schritt kein `ignore`, sondern ein Test, der
+  `gradle/libs.versions.toml` gegen die Bedingung liest – die Bauart des
+  Altersnachweises der EU-Liste.
 
 ## Umgebung
 

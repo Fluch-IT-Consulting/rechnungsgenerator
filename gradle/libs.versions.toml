@@ -1,5 +1,8 @@
 # Gradle Version Catalog: alle Abhängigkeiten und Versionen an einer Stelle.
 # In build.gradle.kts wird daraus typsicher z. B. libs.kaml bzw. libs.plugins.kotlin.jvm.
+#
+# Nennt der Kommentar einer Zeile ein Issue, ist er eine Bedingung und keine
+# Fußnote: erst das Issue lesen, dann einen Bump dieser Zeile mergen (#253).
 
 [versions]
 kotlin = "2.4.20"       # 2.4.20 wegen CVE-2026-53914 (#158), nicht nur der Aktualität halber
