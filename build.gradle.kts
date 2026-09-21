@@ -55,6 +55,34 @@ application {
     applicationDefaultJvmArgs = jaxbFinalFields
 }
 
+// Die Fassung als Ressource neben den Klassen, damit `rechnungsgenerator
+// --version` sie zur Laufzeit nennen kann (#264).
+//
+// Eine Ressource und nicht das Manifest-Attribut Implementation-Version: Das
+// liefert null, sobald nicht aus dem JAR heraus gestartet wird – also in jedem
+// Test. Geprüft wäre dann nur der Zweig, der im Betrieb nie läuft. Eine
+// Ressource liest das Programm überall gleich, und zwar so, wie Template.of
+// schon die Vorlagen der Designs liest.
+val generateVersionResource =
+    tasks.register("generateVersionResource") {
+        val target = layout.buildDirectory.dir("generated/version")
+        val current = version.toString()
+        inputs.property("version", current)
+        outputs.dir(target)
+        doLast {
+            val file = target.get().asFile.resolve("rechnungsgenerator.version")
+            file.writeText(current + "\n")
+        }
+    }
+
+sourceSets {
+    main {
+        // Die Task selbst als Quelle: Gradle liest daraus das Verzeichnis und
+        // die Abhängigkeit, ein eigenes dependsOn braucht es dafür nicht.
+        resources.srcDir(generateVersionResource)
+    }
+}
+
 ktlint {
     // Welche ktlint-CLI läuft, steht hier und nicht beim Plugin: 14.2.0 wählte
     // von sich aus 1.5.0. Die Fassung selbst kommt aus dem Versionskatalog, wie
@@ -111,6 +139,11 @@ tasks.test {
     // der beiden schweren – mehr Forks ändern daran nichts, weil Gradle
     // innerhalb einer Klasse nicht teilt.
     maxParallelForks = 4
+
+    // Damit ein Test nachhalten kann, dass die Fassung, die das Programm nennt,
+    // die aus diesem Build ist (#264). Ohne Gradle – etwa im Editor – fehlt die
+    // Eigenschaft, und der Test gilt als übersprungen statt als bestanden.
+    systemProperty("projectVersion", version)
 
     // Benannte Abwahl der Tests, die LuaLaTeX, veraPDF und pdftotext brauchen
     // (Kotest-Tag `Toolchain`, #136). CI ruft `./gradlew build -PohneToolchain`

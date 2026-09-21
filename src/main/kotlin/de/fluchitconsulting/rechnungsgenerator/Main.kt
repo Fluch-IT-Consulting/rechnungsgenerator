@@ -7,6 +7,7 @@ import com.github.ajalt.clikt.core.PrintHelpMessage
 import com.github.ajalt.clikt.core.context
 import com.github.ajalt.clikt.core.parse
 import com.github.ajalt.clikt.core.subcommands
+import com.github.ajalt.clikt.parameters.options.versionOption
 import de.fluchitconsulting.rechnungsgenerator.generate.GenerateCommand
 import de.fluchitconsulting.rechnungsgenerator.generate.PdfViewer
 import de.fluchitconsulting.rechnungsgenerator.generate.SystemPdfViewer
@@ -103,6 +104,26 @@ private fun parseReportingFailures(command: CoreCliktCommand, args: Array<String
 }
 
 /**
+ * Die Fassung des Programms. Sie entsteht beim Bauen aus `version` in
+ * build.gradle.kts und liegt als Ressource neben den Klassen.
+ *
+ * Gelesen wie die Vorlagen der Designs (`Template.of`): mit `checkNotNull` und
+ * einer Meldung, die sagt, was fehlt. Fehlt die Datei, ist das Programm falsch
+ * gebaut und nicht falsch bedient – dann soll es laut abbrechen und nicht
+ * "unbekannt" ausgeben.
+ *
+ * Der Name trägt das Programm, weil die Ressource im Wurzelverzeichnis des
+ * Klassenpfads liegt: Dort teilt sie sich den Raum mit jedem mitgelieferten
+ * JAR.
+ */
+private fun programVersion(): String {
+    val path = "/rechnungsgenerator.version"
+    return checkNotNull(RechnungsgeneratorCommand::class.java.getResource(path)) {
+        "$path fehlt – das Programm wurde ohne generateVersionResource gebaut"
+    }.readText().trim()
+}
+
+/**
  * Das Programm selbst. Es verteilt nur an seine Unterkommandos; jedes davon
  * steht in einer eigenen Datei, benannt nach seiner Klasse.
  *
@@ -123,6 +144,14 @@ class RechnungsgeneratorCommand(
 
     init {
         subcommands(GenerateCommand(typesetter, viewer), PrepaymentsCommand())
+        // Eager: Clikt gibt die Fassung schon beim Parsen aus und wirft
+        // PrintMessage mit Exitcode 0. Damit greift run() unten gar nicht erst,
+        // und --version endet nicht als "kein Unterkommando" mit Code 1.
+        versionOption(
+            programVersion(),
+            help = "Die Fassung des Programms ausgeben und beenden",
+            message = { "rechnungsgenerator $it" },
+        )
     }
 
     override fun help(context: Context) = "Erzeugt deutsche Rechnungen als geprüftes PDF/A-1b."
