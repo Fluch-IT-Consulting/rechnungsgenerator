@@ -1,11 +1,13 @@
 package de.fluchitconsulting.rechnungsgenerator.generate.toolchain
 
+import io.kotest.assertions.throwables.shouldNotThrowAny
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.assertions.withClue
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.comparables.shouldBeLessThan
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.string.shouldContain
+import io.kotest.matchers.string.shouldNotContain
 import kotlin.io.path.createTempDirectory
 import kotlin.time.Duration.Companion.seconds
 import kotlin.time.measureTime
@@ -21,6 +23,10 @@ import kotlin.time.measureTime
  * umgeleitet wird statt in einen Stream gelesen (siehe das KDoc von
  * [ExternalTool]); ob diese Konstruktion trägt, zeigt sich nur an einem Prozess,
  * der wirklich hängt.
+ *
+ * Dazu die Meldung über fehlende Programme. Sie startet keinen Prozess, liest
+ * aber denselben PATH – und ein Name, den es sicher nicht gibt, fehlt auf jedem
+ * Rechner gleich zuverlässig (#238).
  */
 class ExternalToolTest : FunSpec({
 
@@ -86,5 +92,46 @@ class ExternalToolTest : FunSpec({
         // output gibt es weiter, für Meldungen, die alles wollen.
         ergebnis.output shouldContain "nach-stdout"
         ergebnis.output shouldContain "nach-stderr"
+    }
+
+    /**
+     * `requireAll` wird beim Start aufgerufen: Ein Abbruch mitten im Satz wäre
+     * schwerer zu deuten. Die Meldung muss deshalb sagen, was zu tun ist – der
+     * Name allein hilft niemandem weiter, der das Programm nicht kennt.
+     */
+    test("ein fehlendes Programm steht mit seinem Installationshinweis in der Meldung") {
+        val fehler =
+            shouldThrow<ToolchainException> {
+                ExternalTool.requireAll("gibt-es-nicht-verapdf" to "brew install gibt-es-nicht")
+            }
+
+        fehler.message!! shouldContain "Diese Programme fehlen im PATH:"
+        fehler.message!! shouldContain "gibt-es-nicht-verapdf"
+        fehler.message!! shouldContain "brew install gibt-es-nicht"
+    }
+
+    /**
+     * Alle fehlenden auf einmal, aus demselben Grund wie die Befunde einer
+     * Rechnung (ADR-0004): Zwei fehlende Programme sollen nicht zwei Läufe
+     * brauchen. Ein vorhandenes ist mit dabei – sonst wäre der Test auch dann
+     * grün, wenn `requireAll` gar nicht erst nachsähe.
+     */
+    test("mehrere fehlende Programme stehen alle in der Meldung, ein vorhandenes nicht") {
+        val fehler =
+            shouldThrow<ToolchainException> {
+                ExternalTool.requireAll(
+                    "gibt-es-nicht-lualatex" to "brew install lualatex-attrappe",
+                    "sh" to "liegt auf jedem Rechner",
+                    "gibt-es-nicht-verapdf" to "brew install verapdf-attrappe",
+                )
+            }
+
+        fehler.message!! shouldContain "gibt-es-nicht-lualatex"
+        fehler.message!! shouldContain "gibt-es-nicht-verapdf"
+        fehler.message!! shouldNotContain "liegt auf jedem Rechner"
+    }
+
+    test("sind alle Programme da, geschieht nichts") {
+        shouldNotThrowAny { ExternalTool.requireAll("sh" to "liegt auf jedem Rechner") }
     }
 })
