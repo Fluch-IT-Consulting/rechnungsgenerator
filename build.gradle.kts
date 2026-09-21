@@ -83,6 +83,28 @@ sourceSets {
     }
 }
 
+// Die Namen der ausgelieferten JARs als Test-Ressource, damit ein Test
+// THIRD-PARTY.md dagegen halten kann (#268). Dieselbe Bauart wie die
+// Versions-Ressource darüber: Was nur Gradle weiß, reicht Gradle als Datei
+// weiter, statt dass der Test es nachbaut.
+val generateShippedJarList =
+    tasks.register("generateShippedJarList") {
+        val target = layout.buildDirectory.dir("generated/shipped")
+        val jars = configurations.named("runtimeClasspath").map { conf -> conf.files.map { it.name }.sorted() }
+        inputs.property("jars", jars)
+        outputs.dir(target)
+        doLast {
+            val file = target.get().asFile.resolve("shipped-jars.txt")
+            file.writeText(jars.get().joinToString("\n") + "\n")
+        }
+    }
+
+sourceSets {
+    test {
+        resources.srcDir(generateShippedJarList)
+    }
+}
+
 ktlint {
     // Welche ktlint-CLI läuft, steht hier und nicht beim Plugin: 14.2.0 wählte
     // von sich aus 1.5.0. Die Fassung selbst kommt aus dem Versionskatalog, wie
@@ -166,5 +188,13 @@ tasks.test {
     inputs
         .files(fileTree(".claude/skills"))
         .withPropertyName("skills")
+        .withPathSensitivity(PathSensitivity.RELATIVE)
+
+    // Ebenso THIRD-PARTY.md: ThirdPartyNoticesTest liest sie über File(…), und
+    // ohne diese Zeile gälte die Task nach einer Änderung an ihr als
+    // UP-TO-DATE – genau bei der Änderung, für die es den Test gibt.
+    inputs
+        .file("THIRD-PARTY.md")
+        .withPropertyName("thirdParty")
         .withPathSensitivity(PathSensitivity.RELATIVE)
 }
