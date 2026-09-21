@@ -56,6 +56,37 @@ zwei Ränder bedient.
 > #187 beantwortet: das Pflichtangaben-Netz am fertigen PDF. Die
 > Reihenfolge-Tests blieben beim Renderer.
 
+> **Nachtrag vom 21.09.2026:** Zu Punkt 2 ist ein Satz richtigzustellen.
+> „Testbar ist trotzdem alles, weil die eine Naht (`Typesetter`) reicht“
+> verwechselt zwei Dinge: Eine Naht macht alles *über* ihr prüfbar, nie den
+> Adapter selbst. Das ist kein Sonderfall, sondern was eine Naht tut – über
+> `Typesetter` liegt alles im Netz, `LuaLatexTypesetter` liegt darunter, und
+> dort prüft der Integrationstest. Aufgefallen ist es an `checkAvailable`:
+> Beide Adapter rufen dort `ExternalTool.requireAll`, und das startet keinen
+> Prozess, sondern liest `PATH` und fragt `isExecutable()`. Der gereichte
+> `ProcessRunner` kann die Frage gar nicht beantworten – es fehlt eine Naht,
+> umgangen wird keine.
+>
+> Gebaut wurde sie trotzdem nicht (#239). Der prüfbare Teil ist inzwischen
+> geprüft: `requireAll` nennt die fehlenden Programme samt
+> Installationshinweis, alle auf einmal, ein vorhandenes nicht – gegen den
+> echten `PATH`, mit Namen, die auf jedem Rechner fehlen, und ohne Naht (#238).
+> Übrig bleibt an `ExternalPdfAValidator.checkAvailable` die Zusage, dass dort
+> `verapdf` und sein Hinweis stehen: zwei Literale gegen sich selbst geprüft.
+> `LuaLatexTypesetter.checkAvailable` ruft der Integrationstest auf, auf einer
+> Maschine mit den Werkzeugen – genau dort bedeutet die Aussage etwas. Eine
+> Naht brächte also wenig und kostete etwas: `locate` in `ProcessRunner` zöge
+> einem Adapter, der einen aufgezeichneten Lauf nachspielt, eine Frage auf, die
+> ein Lauf nicht kennt; eine eigene Naht fürs Auffinden hätte einen echten
+> Adapter und eine Attrappe und verfehlte die Latte, die `Typesetter` und
+> `PdfAValidator` in ihrem KDoc setzen.
+>
+> Wirklich ungeprüft bleibt `LuaLatexTypesetter.typeset`, weil es
+> `LatexCompiler(ExternalTool)` fest verdrahtet. Das ist aber Punkt 2 selbst
+> und keine fehlende Naht: `ProcessRunner` gibt es, und `LatexCompiler` bekommt
+> ihn gereicht. Der Zeitpunkt bleibt deshalb der von Punkt 2. Der Text der
+> Notiz bleibt, wie er war.
+
 ## 1. Gradle-Module statt `PackageStructureTest`
 
 Die Schichtung `values → model → calculation → rules` und die beiden
