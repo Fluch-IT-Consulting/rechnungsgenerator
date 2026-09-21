@@ -64,8 +64,14 @@ object ExternalTool : ProcessRunner {
     // einen kürzeren PATH geerbt hat als die Shell (häufig bei GUI-gestarteten IDEs).
     private val EXTRA_PATHS = listOf("/Library/TeX/texbin", "/usr/local/bin", "/opt/homebrew/bin")
 
-    /** Sucht ein Programm im PATH. `null`, wenn es nirgends gefunden wird. */
-    fun locate(name: String): Path? {
+    /**
+     * Sucht ein Programm im PATH. `null`, wenn es nirgends gefunden wird.
+     *
+     * Privat: Nach draußen geht die Antwort als [canRun], nicht der Pfad. Wo
+     * das Programm liegt, ist Sache dieses Adapters – ein anderer hat womöglich
+     * gar keinen Pfad zu nennen.
+     */
+    private fun locate(name: String): Path? {
         val fromPath = System.getenv("PATH").orEmpty().split(java.io.File.pathSeparator)
         return (fromPath + EXTRA_PATHS)
             .asSequence()
@@ -74,18 +80,7 @@ object ExternalTool : ProcessRunner {
             .firstOrNull { it.isExecutable() }
     }
 
-    /**
-     * Prüft, ob alle genannten Werkzeuge vorhanden sind, und meldet die fehlenden
-     * in einer Meldung, die sagt, was zu tun ist. Wird beim Start aufgerufen –
-     * ein Abbruch mitten im Satz wäre schwerer zu deuten.
-     */
-    fun requireAll(vararg tools: Pair<String, String>) {
-        val missing = tools.filter { (name, _) -> locate(name) == null }
-        if (missing.isNotEmpty()) {
-            val list = missing.joinToString("\n") { (name, hint) -> "  - $name ($hint)" }
-            throw ToolchainException("Diese Programme fehlen im PATH:\n$list")
-        }
-    }
+    override fun canRun(program: String) = locate(program) != null
 
     override fun run(
         command: List<String>,

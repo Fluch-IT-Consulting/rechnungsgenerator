@@ -1,5 +1,6 @@
 package de.fluchitconsulting.rechnungsgenerator.generate.toolchain
 
+import io.kotest.assertions.throwables.shouldNotThrowAny
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.collections.shouldBeEmpty
@@ -111,5 +112,27 @@ class ExternalPdfAValidatorTest : FunSpec({
         val verstoss = pruefen(exitCode = 1, output = mitschnitt("verapdf-nicht-konform.txt")).violations.first()
 
         verstoss.toString() shouldContain "ISO 19005-1"
+    }
+
+    /**
+     * Beide Zweige von `checkAvailable`, und keiner davon fragt die Maschine,
+     * auf der der Test läuft (#245): Die Suche geht seit dem Umbau über
+     * dieselbe Naht wie der Aufruf, und der Fake beantwortet sie.
+     *
+     * Damit fällt auch der Installationshinweis unter Test. Er steht in einer
+     * Meldung, die beim Start kommt – wer sie liest, hat veraPDF gerade nicht
+     * und kennt es womöglich nicht einmal.
+     */
+    test("fehlt verapdf, nennt die Meldung das Programm und seinen Installationshinweis") {
+        val pruefer = ExternalPdfAValidator(FakeProcessRunner(missing = setOf("verapdf")))
+
+        val fehler = shouldThrow<ToolchainException> { pruefer.checkAvailable() }
+
+        fehler.message!! shouldContain "verapdf"
+        fehler.message!! shouldContain "brew install verapdf"
+    }
+
+    test("ist verapdf da, meldet checkAvailable nichts") {
+        shouldNotThrowAny { ExternalPdfAValidator(FakeProcessRunner()).checkAvailable() }
     }
 })

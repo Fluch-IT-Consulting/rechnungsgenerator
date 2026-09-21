@@ -62,7 +62,12 @@ CV/Web-Auftritt des Autors), PDF/A-Prüfung über veraPDF.
   setzt das Programm mit den Werten des Dokuments zusammen, die Bibliothek
   liefert die Vorlage aus dem Profil). veraPDF ist damit keine Voraussetzung
   mehr: `checkAvailable()` verlangt LuaLaTeX immer, nach dem Prüfer fragt sein
-  Adapter selbst. Der Prüfer kommt dem Typesetter aus dem Kommando entgegen –
+  Adapter selbst – und zwar über dieselbe Naht, über die er ihn aufruft:
+  `ProcessRunner` kennt neben `run` auch `canRun`, und `requireAll` baut darauf
+  die Meldung. Vorher ging die Suche fest am `ProcessRunner` vorbei, und damit
+  hing die halbe Zusage von `checkAvailable` daran, ob auf der Testmaschine
+  gerade `verapdf` installiert war (#245). Der Prüfer kommt dem Typesetter aus
+  dem Kommando entgegen –
   deshalb ist `LuaLatexTypesetter` eine Klasse und das Kommando bekommt eine
   `TypesetterFactory`: Welcher es ist, steht erst mit dem Schalter fest.
   Lizenz von veraPDF: dual GPLv3+ oder MPLv2+, gewählt ist **MPL-2.0** – GPLv3
