@@ -4,12 +4,11 @@ import com.github.ajalt.clikt.core.Context
 import com.github.ajalt.clikt.core.CoreCliktCommand
 import com.github.ajalt.clikt.parameters.arguments.argument
 import com.github.ajalt.clikt.parameters.arguments.multiple
-import com.github.ajalt.clikt.parameters.options.default
 import com.github.ajalt.clikt.parameters.options.option
 import com.github.ajalt.clikt.parameters.types.path
+import de.fluchitconsulting.rechnungsgenerator.model.Root
 import de.fluchitconsulting.rechnungsgenerator.model.YamlLoader
 import de.fluchitconsulting.rechnungsgenerator.rules.RejectedException
-import java.nio.file.Path
 import kotlin.io.path.name
 
 /**
@@ -32,12 +31,17 @@ class PrepaymentsCommand : CoreCliktCommand(name = "abschlaege") {
     ).path(mustExist = true, canBeDir = false)
         .multiple(required = true)
 
-    private val configFile by option("-s", "--stammdaten", help = "Stammdaten des Rechnungsstellers")
-        .path(mustExist = true, canBeDir = false)
-        .default(Path.of("stammdaten.yaml"))
+    private val configFile by option(
+        "-s",
+        "--stammdaten",
+        help = "Stammdaten des Rechnungsstellers; ohne Angabe aus der gemeinsamen Wurzel über den Rechnungsdateien",
+    ).path(mustExist = true, canBeDir = false)
 
     override fun run() {
-        val config = YamlLoader.loadSellerConfig(configFile)
+        // Gesucht wird je Datei (ADR-0015), und verschiedene Wurzeln brechen
+        // ab: Abschläge zweier Rechnungssteller in einem Block sind fachlich
+        // sinnlos, und "die erste gewinnt" verschleierte das nur.
+        val config = YamlLoader.loadSellerConfig(configFile ?: Root.of(invoiceFiles).sellerConfig)
         // Einzeln geladen, weil jede Datei ihre eigene Meldung verdient:
         // kaml sagt nur, welcher Schlüssel falsch ist, nicht wo. Den
         // Dateinamen setzt das Lesen selbst davor (#52). Der Name reist

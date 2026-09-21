@@ -1,5 +1,6 @@
 package de.fluchitconsulting.rechnungsgenerator
 
+import de.fluchitconsulting.rechnungsgenerator.model.Root
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.string.shouldContain
@@ -8,6 +9,7 @@ import java.io.File
 import java.nio.file.Path
 import java.util.concurrent.TimeUnit
 import kotlin.io.path.copyTo
+import kotlin.io.path.createDirectories
 import kotlin.io.path.createTempDirectory
 import kotlin.io.path.readText
 import kotlin.io.path.writeText
@@ -249,5 +251,23 @@ class OffeneAbschlaegeSkriptTest : FunSpec({
 
         ergebnis.exitCode shouldBe 0
         ergebnis.ausgabe shouldBe "R26-011\t2026-08-20\t${verzeichnis.resolve("abschlagsrechnung-2.yaml")}"
+    }
+
+    test("die Stammdaten im Ordner der Wurzel stören nicht") {
+        // Seit ADR-0015 liegen sie in einem versteckten Ordner, in den rglob
+        // hineinsteigt. Sie tragen keine `art` und fallen deshalb durch – ohne
+        // Warnung, denn lesbar sind sie ja.
+        val verzeichnis = ablage("r011.yaml" to abschlagsrechnung("R26-011", "2026-07-15"))
+        verzeichnis
+            .resolve(Root.FOLDER)
+            .createDirectories()
+            .resolve(Root.SELLER_CONFIG)
+            .writeText(File("src/test/resources/stammdaten.yaml").readText())
+
+        val ergebnis = lauf(verzeichnis)
+
+        ergebnis.exitCode shouldBe 0
+        ergebnis.ausgabe shouldContain "R26-011"
+        ergebnis.fehler shouldNotContain Root.SELLER_CONFIG
     }
 })

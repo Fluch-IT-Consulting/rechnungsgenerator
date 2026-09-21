@@ -1,6 +1,7 @@
 package de.fluchitconsulting.rechnungsgenerator.prepayments
 
 import de.fluchitconsulting.rechnungsgenerator.calculation.CalculatedInvoice
+import de.fluchitconsulting.rechnungsgenerator.model.Root
 import de.fluchitconsulting.rechnungsgenerator.model.YamlLoader
 import de.fluchitconsulting.rechnungsgenerator.runCli
 import io.kotest.core.spec.style.FunSpec
@@ -8,6 +9,7 @@ import io.kotest.matchers.shouldBe
 import io.kotest.matchers.string.shouldContain
 import io.kotest.matchers.string.shouldNotContain
 import java.nio.file.Path
+import kotlin.io.path.createDirectories
 import kotlin.io.path.createTempDirectory
 import kotlin.io.path.readText
 import kotlin.io.path.writeText
@@ -96,4 +98,50 @@ class PrepaymentsCommandTest : FunSpec({
     // Dass eine unlesbare Datei nicht im Stacktrace endet, stand hier bis #119
     // noch einmal eigens für dieses Kommando. Das hält jetzt execute() für alle,
     // geprüft in MainTest.
+
+    context("ohne -s kommen die Stammdaten aus der Wurzel (ADR-0015)") {
+        /** Eine Ablage mit den Beispiel-Stammdaten in ihrem Ordner. */
+        fun ablage(): Path =
+            createTempDirectory("wurzel-abschlaege").also {
+                it
+                    .resolve(Root.FOLDER)
+                    .createDirectories()
+                    .resolve(Root.SELLER_CONFIG)
+                    .writeText(Path.of(stammdaten).readText())
+            }
+
+        /** Legt [vorlage] unter [name] in die Ablage; die Zwischenordner entstehen mit. */
+        fun kopie(ablage: Path, name: String, vorlage: String): Path =
+            ablage.resolve(name).also {
+                it.parent.createDirectories()
+                it.writeText(Path.of(vorlage).readText())
+            }
+
+        test("gesucht wird je Datei, und aus einer Wurzel kommt derselbe Block") {
+            val ablage = ablage()
+            val erste = kopie(ablage, "2026/abschlagsrechnung.yaml", june)
+            val zweite = kopie(ablage, "abschlagsrechnung-2.yaml", august)
+
+            val result = runCli("abschlaege", erste.toString(), zweite.toString())
+
+            result.exitCode shouldBe 0
+            result.out shouldBe runCli("abschlaege", june, august, "-s", stammdaten).out
+        }
+
+        test("verschiedene Wurzeln brechen ab und nennen beide") {
+            // Abschläge zweier Rechnungssteller in einem Block sind fachlich
+            // sinnlos; "die erste gewinnt" verschleierte das nur.
+            val eine = ablage()
+            val andere = ablage()
+            val hier = kopie(eine, "abschlagsrechnung.yaml", june)
+            val dort = kopie(andere, "abschlagsrechnung-2.yaml", august)
+
+            val result = runCli("abschlaege", hier.toString(), dort.toString())
+
+            result.exitCode shouldBe 1
+            result.out shouldBe ""
+            result.err shouldContain eine.toString()
+            result.err shouldContain andere.toString()
+        }
+    }
 })

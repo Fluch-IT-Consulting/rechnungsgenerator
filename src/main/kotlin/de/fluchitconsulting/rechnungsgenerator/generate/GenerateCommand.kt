@@ -4,7 +4,6 @@ import com.github.ajalt.clikt.core.CliktError
 import com.github.ajalt.clikt.core.Context
 import com.github.ajalt.clikt.core.CoreCliktCommand
 import com.github.ajalt.clikt.parameters.arguments.argument
-import com.github.ajalt.clikt.parameters.options.default
 import com.github.ajalt.clikt.parameters.options.flag
 import com.github.ajalt.clikt.parameters.options.option
 import com.github.ajalt.clikt.parameters.types.path
@@ -16,6 +15,7 @@ import de.fluchitconsulting.rechnungsgenerator.generate.toolchain.ExternalTool
 import de.fluchitconsulting.rechnungsgenerator.generate.toolchain.LuaLatexTypesetter
 import de.fluchitconsulting.rechnungsgenerator.generate.toolchain.ToolchainException
 import de.fluchitconsulting.rechnungsgenerator.generate.toolchain.TypesetterFactory
+import de.fluchitconsulting.rechnungsgenerator.model.Root
 import de.fluchitconsulting.rechnungsgenerator.model.YamlLoader
 import de.fluchitconsulting.rechnungsgenerator.rules.AcceptedInvoice
 import de.fluchitconsulting.rechnungsgenerator.rules.RejectedException
@@ -50,9 +50,14 @@ class GenerateCommand(
 
     private val invoiceFile by argument("rechnung.yaml", help = "Die Rechnungsdatei").path(mustExist = true, canBeDir = false)
 
-    private val configFile by option("-s", "--stammdaten", help = "Stammdaten des Rechnungsstellers")
-        .path(mustExist = true, canBeDir = false)
-        .default(Path.of("stammdaten.yaml"))
+    // Ohne Angabe wird gesucht, und zwar von der Rechnungsdatei aus (ADR-0015).
+    // Eine Vorgabe gibt es nicht mehr: `stammdaten.yaml` im Arbeitsverzeichnis
+    // trug nur, solange man dort stand, wo sie liegt.
+    private val configFile by option(
+        "-s",
+        "--stammdaten",
+        help = "Stammdaten des Rechnungsstellers; ohne Angabe aus der Wurzel über der Rechnungsdatei",
+    ).path(mustExist = true, canBeDir = false)
 
     private val outputFile by option("-o", "--ausgabe", help = "Zieldatei; Vorgabe ist der Name aus der Rechnungsnummer")
         .path(canBeDir = false)
@@ -96,7 +101,8 @@ class GenerateCommand(
         // Erst die Werkzeuge prüfen: Ein Abbruch mitten im Satz wäre schwerer zu deuten.
         typesetter.checkAvailable()
 
-        val config = YamlLoader.loadSellerConfig(configFile)
+        // Mit -s wird nicht gesucht; ohne -s gibt es nur die Suche.
+        val config = YamlLoader.loadSellerConfig(configFile ?: Root.of(invoiceFile).sellerConfig)
         val invoice = YamlLoader.loadInvoice(invoiceFile)
 
         // Gesetzt wird nur eine angenommene Rechnung (ADR-0007) – der Renderer
