@@ -48,36 +48,36 @@ class ExternalPdfAValidatorTest : FunSpec({
      * allein stdout, und was auf stderr steht, darf beliebig sein.
      */
     test("das Protokoll auf stderr stört den Bericht nicht") {
-        val protokoll =
+        val log =
             """
             |Sept 20, 2026 3:51:08 PM org.verapdf.parser.SeekableCOSParser checkStreamLength
             |WARNING: Couldn't find expected endstream keyword(object key = 4 0 obj, offset = 327)
             """.trimMargin()
 
-        val ergebnis = pruefen(exitCode = 0, output = konform, errorOutput = protokoll)
+        val result = pruefen(exitCode = 0, output = konform, errorOutput = log)
 
-        ergebnis.valid shouldBe true
+        result.valid shouldBe true
     }
 
     test("Exitcode 0 heißt konform") {
-        val ergebnis = pruefen(exitCode = 0, output = konform)
+        val result = pruefen(exitCode = 0, output = konform)
 
-        ergebnis.valid shouldBe true
-        ergebnis.violations.shouldBeEmpty()
-        ergebnis.describe() shouldContain "gültig"
+        result.valid shouldBe true
+        result.violations.shouldBeEmpty()
+        result.describe() shouldContain "gültig"
     }
 
     test("Exitcode 1 ist ein Prüfergebnis, kein Fehler") {
         // veraPDF unterscheidet über den Exitcode: 1 heißt "nicht konform".
         // Das ist eine Antwort auf unsere Frage und kein Absturz.
-        val ergebnis = pruefen(exitCode = 1, output = mitschnitt("verapdf-nicht-konform.txt"))
+        val result = pruefen(exitCode = 1, output = mitschnitt("verapdf-nicht-konform.txt"))
 
-        ergebnis.valid shouldBe false
+        result.valid shouldBe false
         // Der Bericht führt bestandene und verletzte Regeln; nur die verletzten
         // interessieren.
-        ergebnis.violations shouldHaveSize 7
-        ergebnis.violations.first().clause shouldContain "6."
-        ergebnis.violations
+        result.violations shouldHaveSize 7
+        result.violations.first().clause shouldContain "6."
+        result.violations
             .first()
             .description
             .isNotBlank() shouldBe true

@@ -36,10 +36,10 @@ data class CalculatedLine(
     // YAML und bekommt es hier – sonst forderte ein Storno mehr zurück, als
     // die Ursprungsrechnung verlangt hat.
     val discountAmount: Money? =
-        when (val rabatt = item.discount) {
+        when (val discount = item.discount) {
             null -> null
-            is Discount.Rate -> base * rabatt.rate
-            is Discount.Amount -> if (base.isNegative()) -rabatt.amount else rabatt.amount
+            is Discount.Rate -> base * discount.rate
+            is Discount.Amount -> if (base.isNegative()) -discount.amount else discount.amount
         }
 
     // BT-131. Die Differenz und nicht Basis × (1 − Satz): Sonst würden

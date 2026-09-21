@@ -35,10 +35,10 @@ internal object ItemBlocks {
                         // In der Spalte steht, was vereinbart wurde: der Satz
                         // oder der Betrag, und der ohne Vorzeichen – das trägt
                         // im Storno die Menge.
-                        when (val rabatt = item.discount) {
+                        when (val discount = item.discount) {
                             null -> Latex.EMPTY
-                            is Discount.Rate -> GermanFormat.percent(rabatt.rate)
-                            is Discount.Amount -> GermanFormat.amountWithCurrency(rabatt.amount)
+                            is Discount.Rate -> GermanFormat.percent(discount.rate)
+                            is Discount.Amount -> GermanFormat.amountWithCurrency(discount.amount)
                         },
                         GermanFormat.amountWithCurrency(line.net),
                     ),
@@ -99,15 +99,15 @@ internal object ItemBlocks {
             // Bei nur einer Gruppe ist es die Zwischensumme und stünde doppelt da;
             // sonst steht es in der Steuerzeile. Steuerfreie Gruppen zählen mit,
             // ihr Entgelt nennt taxNotes.
-            val mitGrundlage = calculatedInvoice.vatGroups.size > 1
+            val showsBase = calculatedInvoice.vatGroups.size > 1
             calculatedInvoice.vatGroups.filter { it.exemptionReason == null }.forEach { group ->
                 // Das Prozentzeichen ist maskiert, bevor es hier ankommt –
                 // GermanFormat.percent liefert ein fertiges Fragment.
-                val grundlage = if (mitGrundlage) GermanFormat.amountWithCurrency(group.base) else Latex.EMPTY
+                val base = if (showsBase) GermanFormat.amountWithCurrency(group.base) else Latex.EMPTY
                 add(
                     Latex.macro(
                         TemplateMacro.STEUERZEILE,
-                        listOf(GermanFormat.percent(group.rate), grundlage, GermanFormat.amountWithCurrency(group.amount)),
+                        listOf(GermanFormat.percent(group.rate), base, GermanFormat.amountWithCurrency(group.amount)),
                     ),
                 )
             }
@@ -146,15 +146,15 @@ internal object ItemBlocks {
     fun paymentTermNote(calculatedInvoice: CalculatedInvoice): Latex {
         if (calculatedInvoice.dueDate == null) return Latex.EMPTY
 
-        val tage = calculatedInvoice.paymentTermDays
-        val abzug = if (calculatedInvoice.skonto.isEmpty()) "" else "ohne Abzug "
-        val frist =
-            when (tage) {
+        val days = calculatedInvoice.paymentTermDays
+        val withoutDeduction = if (calculatedInvoice.skonto.isEmpty()) "" else "ohne Abzug "
+        val deadline =
+            when (days) {
                 0 -> "sofort"
-                1 -> "${abzug}1 Tag nach Rechnungsdatum"
-                else -> "$abzug$tage Tage nach Rechnungsdatum"
+                1 -> "${withoutDeduction}1 Tag nach Rechnungsdatum"
+                else -> "$withoutDeduction$days Tage nach Rechnungsdatum"
             }
-        return Latex.macro(TemplateMacro.HINWEISABSATZ, listOf("Die Zahlung ist $frist fällig.".escapeLatex()))
+        return Latex.macro(TemplateMacro.HINWEISABSATZ, listOf("Die Zahlung ist $deadline fällig.".escapeLatex()))
     }
 
     /**

@@ -196,24 +196,24 @@ class YamlLoaderTest : FunSpec({
     test("ein Wert, der seine Prüfung nicht besteht, nennt die Datei") {
         // Die Meldung des Wertobjekts nennt die IBAN, aber nicht, in welcher
         // Datei sie steht – bei zwei Eingabedateien ist das die halbe Auskunft.
-        val datei = createTempDirectory("loader-test").resolve("stammdaten.yaml")
-        datei.writeText(resource("stammdaten.yaml").replace("0532 0130 00", "0532 0130 01"))
+        val file = createTempDirectory("loader-test").resolve("stammdaten.yaml")
+        file.writeText(resource("stammdaten.yaml").replace("0532 0130 00", "0532 0130 01"))
 
-        val failure = shouldThrow<InputFileException> { YamlLoader.loadSellerConfig(datei) }
+        val failure = shouldThrow<InputFileException> { YamlLoader.loadSellerConfig(file) }
 
-        failure.message!! shouldContain datei.toString()
+        failure.message!! shouldContain file.toString()
         failure.message!! shouldContain "Prüfsumme"
     }
 
     test("ein Muster, das kein regulärer Ausdruck ist, nennt die Datei") {
         // Der Tippfehler {2-3} statt {2,3} fällt beim Laden auf, nicht erst bei
         // der ersten Rechnung, die daran scheitert.
-        val datei = createTempDirectory("loader-test").resolve("stammdaten.yaml")
-        datei.writeText(resource("stammdaten.yaml").replace("R\\d{2}-\\d{3}", "R\\d{2-3}"))
+        val file = createTempDirectory("loader-test").resolve("stammdaten.yaml")
+        file.writeText(resource("stammdaten.yaml").replace("R\\d{2}-\\d{3}", "R\\d{2-3}"))
 
-        val failure = shouldThrow<InputFileException> { YamlLoader.loadSellerConfig(datei) }
+        val failure = shouldThrow<InputFileException> { YamlLoader.loadSellerConfig(file) }
 
-        failure.message!! shouldContain datei.toString()
+        failure.message!! shouldContain file.toString()
         failure.message!! shouldContain "Kein gültiger regulärer Ausdruck"
     }
 
@@ -221,25 +221,25 @@ class YamlLoaderTest : FunSpec({
         // Stammdaten mit Logo-Eintrag in einem eigenen Verzeichnis; das Logo
         // liegt, wo der Test es hinlegt.
         fun stammdatenMitLogo(eintrag: String): Path {
-            val datei = createTempDirectory("loader-test").resolve("stammdaten.yaml")
-            datei.writeText(resource("stammdaten.yaml") + "logo: $eintrag\n")
-            return datei
+            val file = createTempDirectory("loader-test").resolve("stammdaten.yaml")
+            file.writeText(resource("stammdaten.yaml") + "logo: $eintrag\n")
+            return file
         }
 
         test("ohne Eintrag gibt es kein Logo") {
-            val datei = createTempDirectory("loader-test").resolve("stammdaten.yaml")
-            datei.writeText(resource("stammdaten.yaml"))
+            val file = createTempDirectory("loader-test").resolve("stammdaten.yaml")
+            file.writeText(resource("stammdaten.yaml"))
 
-            YamlLoader.loadSellerConfig(datei).logo shouldBe null
+            YamlLoader.loadSellerConfig(file).logo shouldBe null
         }
 
         test("ein relativer Pfad gilt ab dem Verzeichnis der Stammdaten") {
             // Nicht ab dem Arbeitsverzeichnis des Tests – das ist ein anderes.
-            val datei = stammdatenMitLogo("marke/logo.tex")
-            val logoDatei = datei.resolveSibling("marke").createDirectories().resolve("logo.tex")
+            val file = stammdatenMitLogo("marke/logo.tex")
+            val logoDatei = file.resolveSibling("marke").createDirectories().resolve("logo.tex")
             logoDatei.writeText("\\fill (0,0) circle (1);")
 
-            val logo = YamlLoader.loadSellerConfig(datei).logo!!
+            val logo = YamlLoader.loadSellerConfig(file).logo!!
 
             logo.source shouldBe logoDatei.toAbsolutePath()
             logo.content.decodeToString() shouldBe "\\fill (0,0) circle (1);"
@@ -254,22 +254,22 @@ class YamlLoaderTest : FunSpec({
         }
 
         test("eine fehlende Logodatei nennt beide Dateien") {
-            val datei = stammdatenMitLogo("gibtsnicht.tex")
+            val file = stammdatenMitLogo("gibtsnicht.tex")
 
-            val failure = shouldThrow<InputFileException> { YamlLoader.loadSellerConfig(datei) }
+            val failure = shouldThrow<InputFileException> { YamlLoader.loadSellerConfig(file) }
 
-            failure.message!! shouldContain datei.toString()
-            failure.message!! shouldContain datei.resolveSibling("gibtsnicht.tex").toAbsolutePath().toString()
+            failure.message!! shouldContain file.toString()
+            failure.message!! shouldContain file.resolveSibling("gibtsnicht.tex").toAbsolutePath().toString()
             failure.message!! shouldContain "es gibt sie nicht"
         }
 
         test("eine andere Endung als .tex bricht ab, bevor gelesen wird") {
             // Die Datei gibt es nicht einmal: Die Endung entscheidet vorher.
-            val datei = stammdatenMitLogo("logo.png")
+            val file = stammdatenMitLogo("logo.png")
 
-            val failure = shouldThrow<InputFileException> { YamlLoader.loadSellerConfig(datei) }
+            val failure = shouldThrow<InputFileException> { YamlLoader.loadSellerConfig(file) }
 
-            failure.message!! shouldContain datei.toString()
+            failure.message!! shouldContain file.toString()
             failure.message!! shouldContain "zulässig ist .tex"
         }
 
@@ -278,10 +278,10 @@ class YamlLoaderTest : FunSpec({
             // eine Datei Logo.TEX ist eine .tex-Datei. Weitergereicht wird die
             // Endung klein: Die Vorlage liest \input{logo}, und das findet
             // unter Linux nur logo.tex.
-            val datei = stammdatenMitLogo("Logo.TEX")
-            datei.resolveSibling("Logo.TEX").writeText("\\fill (0,0) circle (1);")
+            val file = stammdatenMitLogo("Logo.TEX")
+            file.resolveSibling("Logo.TEX").writeText("\\fill (0,0) circle (1);")
 
-            YamlLoader.loadSellerConfig(datei).logo!!.extension shouldBe "tex"
+            YamlLoader.loadSellerConfig(file).logo!!.extension shouldBe "tex"
         }
 
         test("parseSellerConfig lehnt ein Logo ab, weil es keinen Ort kennt") {
@@ -295,12 +295,12 @@ class YamlLoaderTest : FunSpec({
     }
 
     test("ein YAML-Fehler nennt die Datei") {
-        val datei = createTempDirectory("loader-test").resolve("kaputt.yaml")
-        datei.writeText("nummer: R26-001\ngibtsnicht: 1\n")
+        val file = createTempDirectory("loader-test").resolve("kaputt.yaml")
+        file.writeText("nummer: R26-001\ngibtsnicht: 1\n")
 
-        val failure = shouldThrow<InputFileException> { YamlLoader.loadInvoice(datei) }
+        val failure = shouldThrow<InputFileException> { YamlLoader.loadInvoice(file) }
 
-        failure.message!! shouldContain datei.toString()
+        failure.message!! shouldContain file.toString()
         failure.message!! shouldContain "gibtsnicht"
     }
 })

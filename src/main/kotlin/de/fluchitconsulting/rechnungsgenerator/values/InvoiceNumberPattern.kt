@@ -38,7 +38,7 @@ class InvoiceNumberPattern(val value: String) {
         }
 
     /** Ob eine Rechnungsnummer dem Muster genügt. */
-    fun matches(nummer: String): Boolean = regex.matches(nummer)
+    fun matches(number: String): Boolean = regex.matches(number)
 
     // Regex hat kein equals – verglichen wird der Ausdruck selbst.
     override fun equals(other: Any?): Boolean = other is InvoiceNumberPattern && value == other.value

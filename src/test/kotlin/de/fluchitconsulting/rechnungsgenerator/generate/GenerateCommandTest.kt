@@ -414,9 +414,9 @@ class GenerateCommandTest : FunSpec({
             ),
         )
 
-        val ergebnis = ausgabe.indexOfFirst { it.contains("PDF/A-1b") }
+        val result = ausgabe.indexOfFirst { it.contains("PDF/A-1b") }
         val hinweis = ausgabe.indexOfFirst { it.startsWith("Hinweis:") }
-        (hinweis > ergebnis) shouldBe true
+        (hinweis > result) shouldBe true
         ausgabe[hinweis] shouldContain "nicht qualifiziert"
     }
 })

@@ -239,8 +239,8 @@ class LatexCompilerTest : FunSpec({
 
         val fehler = shouldThrow<ToolchainException> { setzen(runner) }
 
-        val zeilen = fehler.message!!.lines().filter { it.isNotBlank() }
-        zeilen.distinct() shouldHaveSize zeilen.size
+        val lines = fehler.message!!.lines().filter { it.isNotBlank() }
+        lines.distinct() shouldHaveSize lines.size
         fehler.message!! shouldContain "gibtesnicht"
         fehler.message!! shouldContain "auchnicht"
     }

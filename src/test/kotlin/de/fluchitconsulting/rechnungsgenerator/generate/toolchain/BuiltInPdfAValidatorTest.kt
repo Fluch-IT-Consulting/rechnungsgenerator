@@ -42,18 +42,18 @@ class BuiltInPdfAValidatorTest : FunSpec({
     val nichtKonform = Path.of("src/test/resources/nicht-konform.pdf")
 
     test("ein nicht konformes PDF wird als solches gemeldet") {
-        val ergebnis = BuiltInPdfAValidator.validate(nichtKonform)
+        val result = BuiltInPdfAValidator.validate(nichtKonform)
 
-        ergebnis.valid shouldBe false
-        ergebnis.describe() shouldContain "PDF/A-1b verletzt"
+        result.valid shouldBe false
+        result.describe() shouldContain "PDF/A-1b verletzt"
     }
 
     test("die verletzten Regeln stehen genau so im Ergebnis") {
-        val ergebnis = BuiltInPdfAValidator.validate(nichtKonform)
+        val result = BuiltInPdfAValidator.validate(nichtKonform)
 
         // Die Kennung als eine Zeichenkette, wie beim Vergleich der beiden
         // Prüfer: So steht im Fehlerfall "6.3.4-1" im Bericht und nicht ein Paar.
-        ergebnis.violations.map { "${it.clause}-${it.testNumber}" }.sorted() shouldBe
+        result.violations.map { "${it.clause}-${it.testNumber}" }.sorted() shouldBe
             listOf("6.1.2-2", "6.1.3-1", "6.1.7-1", "6.2.3.3-3", "6.3.4-1", "6.7.2-1")
     }
 
@@ -64,9 +64,9 @@ class BuiltInPdfAValidatorTest : FunSpec({
      * nicht.
      */
     test("jeder Verstoß trägt Beschreibung und Meldung aus dem Profil") {
-        val ergebnis = BuiltInPdfAValidator.validate(nichtKonform)
+        val result = BuiltInPdfAValidator.validate(nichtKonform)
 
-        ergebnis.violations.forEach { verstoss ->
+        result.violations.forEach { verstoss ->
             withClue("${verstoss.clause}-${verstoss.testNumber}") {
                 verstoss.description.isNotBlank() shouldBe true
                 verstoss.errorMessage.isNotBlank() shouldBe true
