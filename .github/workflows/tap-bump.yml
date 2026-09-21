@@ -19,21 +19,37 @@
 #   rm tap-deploy tap-deploy.pub
 name: Tap-Formel anheben
 
+# Von Hand startbar, und das ist mehr als eine Testhilfe (#273): Scheitert der
+# automatische Lauf bei einem echten Release, lässt sich das Anheben damit
+# nachholen, ohne das Release erneut zu veröffentlichen.
+#
+# Nötig wurde es, weil ein Trockenlauf an einem älteren Tag grundsätzlich nicht
+# geht: Bei `release`-Ereignissen liest Actions die Workflow-Datei vom COMMIT
+# DES TAGS und nicht vom Standardzweig. Ein Tag, der vor diesem Workflow
+# entstand, kennt ihn nicht – das Ereignis entsteht, der Lauf nicht.
+# Nachgemessen an v0.1.0.
 on:
   release:
     types: [published]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Tag eines veröffentlichten Releases, etwa v0.1.0'
+        required: true
+        type: string
 
 jobs:
   bump:
     # Eine Vorabfassung hebt die Formel nicht an – sonst bekäme jeder
-    # `brew upgrade` eine Fassung, die niemand für fertig hält.
-    if: ${{ !github.event.release.prerelease }}
+    # `brew upgrade` eine Fassung, die niemand für fertig hält. Wer von Hand
+    # startet, weiß dagegen, was er tut.
+    if: ${{ github.event_name == 'workflow_dispatch' || !github.event.release.prerelease }}
     runs-on: ubuntu-latest
     steps:
       - name: Asset und Prüfsumme ermitteln
         env:
           GH_TOKEN: ${{ github.token }}
-          TAG: ${{ github.event.release.tag_name }}
+          TAG: ${{ github.event.release.tag_name || inputs.tag }}
         run: |
           version="${TAG#v}"
           archiv="rechnungsgenerator-${version}.zip"
@@ -96,7 +112,7 @@ jobs:
         # Ausdruck: Was in den Skripttext interpoliert wird, kann ihn auch
         # verlassen.
         env:
-          TAG: ${{ github.event.release.tag_name }}
+          TAG: ${{ github.event.release.tag_name || inputs.tag }}
         run: |
           if git diff --quiet; then
             echo "Die Formel steht schon auf ${VERSION} – nichts zu tun."
