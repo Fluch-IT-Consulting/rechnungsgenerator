@@ -95,6 +95,7 @@ object InvoiceRenderer {
         val calculatedInvoice = acceptedInvoice.calculated
         val invoice = calculatedInvoice.invoice
         val config = calculatedInvoice.config
+        val customer = invoice.customer
         val address = config.address
         val bank = config.bank
         val taxNumber = config.taxNumber
@@ -123,14 +124,31 @@ object InvoiceRenderer {
             TemplateValue.RECHNUNGSNUMMER -> invoice.number.escapeLatex()
             TemplateValue.RECHNUNGSDATUM -> GermanFormat.date(invoice.issueDate)
             TemplateValue.EMPFAENGER -> MetadataBlocks.recipient(calculatedInvoice)
-            TemplateValue.KUNDE_USTID -> MetadataBlocks.customerVatId(calculatedInvoice)
-            TemplateValue.KUNDENNUMMER -> MetadataBlocks.buyerIdentifier(calculatedInvoice)
-            TemplateValue.AUFTRAGSNUMMER -> MetadataBlocks.salesOrderReference(calculatedInvoice)
-            TemplateValue.ZEITRAUM_BESCHRIFTUNG -> MetadataBlocks.servicePeriodLabel(calculatedInvoice)
-            TemplateValue.LEISTUNGSZEITRAUM -> MetadataBlocks.servicePeriodValue(calculatedInvoice)
+            // BT-48, leer, wenn der Kunde keine hat. Bei Reverse Charge und
+            // innergemeinschaftlicher Lieferung verlangt §14a UStG sie auf der
+            // Rechnung; wo sie steht, entscheidet die Vorlage.
+            TemplateValue.KUNDE_USTID -> customer.vatId?.formatted()?.escapeLatex() ?: Latex.EMPTY
+            // BT-46 und BT-14: freiwillige Angaben der Rechnungsdatei, leer,
+            // wenn sie keine nennt – Pflicht ist nur, dass die Vorlage sie
+            // setzt (#190, #191).
+            TemplateValue.KUNDENNUMMER -> customer.buyerIdentifier?.escapeLatex() ?: Latex.EMPTY
+            TemplateValue.AUFTRAGSNUMMER -> invoice.salesOrderReference?.escapeLatex() ?: Latex.EMPTY
+            // Die eine Beschriftung, die vom Renderer kommt (#188): Auf einer
+            // Abschlagsrechnung ist der Zeitraum eine Prognose, und eine
+            // Vorlage, die dort fest "Leistungszeitraum" schriebe, wäre falsch.
+            // Den Doppelpunkt setzt die Vorlage.
+            TemplateValue.ZEITRAUM_BESCHRIFTUNG -> invoice.type.servicePeriodLabel.escapeLatex()
+            // Pflichtangabe nach §14 Abs. 4 Nr. 6 UStG, geschrieben wie die Art
+            // es verlangt.
+            TemplateValue.LEISTUNGSZEITRAUM -> servicePeriod(invoice.servicePeriod, invoice.type)
             TemplateValue.VEREINNAHMT_AM -> MetadataBlocks.receivedOn(acceptedInvoice)
-            TemplateValue.KUNDENREFERENZ -> MetadataBlocks.buyerReference(calculatedInvoice)
-            TemplateValue.ZAHLUNGSZIEL -> MetadataBlocks.dueDate(calculatedInvoice)
+            // BT-10, die Referenz des Kunden.
+            TemplateValue.KUNDENREFERENZ -> customer.buyerReference?.escapeLatex() ?: Latex.EMPTY
+            // Ob es ein Zahlungsziel gibt, entscheidet der Calculator
+            // (CalculatedInvoice.dueDate); hier wird nur gesetzt, was dasteht.
+            // Ohne eines bleibt der Wert leer, und die Vorlage lässt die Zeile
+            // samt Beschriftung weg.
+            TemplateValue.ZAHLUNGSZIEL -> calculatedInvoice.dueDate?.let { GermanFormat.date(it) } ?: Latex.EMPTY
             TemplateValue.EINLEITUNG -> invoice.introduction.orEmpty().escapeLatex()
             TemplateValue.RABATTSPALTE -> ItemBlocks.discountColumn(calculatedInvoice)
             TemplateValue.POSITIONEN -> ItemBlocks.lineItems(calculatedInvoice)

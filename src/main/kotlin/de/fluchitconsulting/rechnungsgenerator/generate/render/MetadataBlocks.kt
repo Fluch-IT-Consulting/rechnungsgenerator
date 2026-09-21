@@ -4,14 +4,19 @@ import de.fluchitconsulting.rechnungsgenerator.calculation.CalculatedInvoice
 import de.fluchitconsulting.rechnungsgenerator.model.Address
 import de.fluchitconsulting.rechnungsgenerator.rules.AcceptedInvoice
 import de.fluchitconsulting.rechnungsgenerator.rules.InvoiceKind
-import de.fluchitconsulting.rechnungsgenerator.values.InvoiceType
 
 /**
- * Die Angaben um den Empfänger: seine Anschrift und die Kopfangaben der
- * Rechnung, jede einzeln (#188). Reihenfolge und Beschriftung bestimmt die
- * Vorlage. Hier steht eines der `when` über die Rechnungsart (#128): die
- * Vereinnahmung eines Abschlags. Den Bezug einer Stornorechnung nennt der
- * Pflichtsatz (#141).
+ * Die Angaben um den Empfänger, die mehr sind als der Pfad zu einem Wert: die
+ * Anschrift als Block und die Vereinnahmung mit ihrem `when` über die
+ * Rechnungsart (#128). Den Bezug einer Stornorechnung nennt der Pflichtsatz
+ * (#141).
+ *
+ * Eine **einzelne Angabe** steht dagegen direkt im `when` von
+ * [InvoiceRenderer.values] – auch mit Formatierschritt (#244). Dort stehen
+ * `formatted()` und `GermanFormat.date` seit jeher bei USTID, IBAN und
+ * RECHNUNGSDATUM; eine Zwischenstufe daneben, die nur weiterreicht, hieße
+ * beim Lesen von `values()` einen Sprung in diese Datei, nur um zu erfahren,
+ * dass hier keine Entscheidung steht.
  */
 internal object MetadataBlocks {
     /**
@@ -33,16 +38,6 @@ internal object MetadataBlocks {
     }
 
     /**
-     * Die USt-IdNr. des Kunden (BT-48), leer, wenn er keine hat. Bei Reverse
-     * Charge und innergemeinschaftlicher Lieferung verlangt §14a UStG sie auf
-     * der Rechnung; wo sie steht, entscheidet die Vorlage.
-     */
-    fun customerVatId(calculatedInvoice: CalculatedInvoice): Latex =
-        calculatedInvoice.invoice.customer.vatId
-            ?.formatted()
-            ?.escapeLatex() ?: Latex.EMPTY
-
-    /**
      * Die Anschrift, Zeile für Zeile, mit dem Land nur bei [showCountry].
      *
      * Ob es eine Inlandsrechnung ist, entscheidet nicht diese Funktion, sondern
@@ -61,24 +56,6 @@ internal object MetadataBlocks {
         }
 
     /**
-     * Wie der Leistungszeitraum heißt – die eine Beschriftung, die vom
-     * Renderer kommt (#188). Sie hängt an der Rechnungsart
-     * ([InvoiceType.servicePeriodLabel]): Auf einer Abschlagsrechnung ist der
-     * Zeitraum eine Prognose, und eine Vorlage, die dort fest
-     * "Leistungszeitraum" schriebe, wäre falsch. Den Doppelpunkt setzt die
-     * Vorlage.
-     */
-    fun servicePeriodLabel(calculatedInvoice: CalculatedInvoice): Latex =
-        calculatedInvoice.invoice.type.servicePeriodLabel
-            .escapeLatex()
-
-    /** Pflichtangabe nach §14 Abs. 4 Nr. 6 UStG, geschrieben wie die Art es verlangt. */
-    fun servicePeriodValue(calculatedInvoice: CalculatedInvoice): Latex {
-        val invoice = calculatedInvoice.invoice
-        return servicePeriod(invoice.servicePeriod, invoice.type)
-    }
-
-    /**
      * BT-7: Steht der Zeitpunkt der Vereinnahmung fest, gehört er zu den
      * Pflichtangaben. Leer auf jeder anderen Art und solange er nicht
      * feststeht.
@@ -93,28 +70,4 @@ internal object MetadataBlocks {
             is InvoiceKind.PrepaymentInvoice -> kind.receivedOn?.let { GermanFormat.date(it) } ?: Latex.EMPTY
             is InvoiceKind.Ordinary, is InvoiceKind.FinalInvoice, is InvoiceKind.Cancellation -> Latex.EMPTY
         }
-
-    /** BT-46, die Kundennummer, leer, wenn die Rechnung keine nennt. */
-    fun buyerIdentifier(calculatedInvoice: CalculatedInvoice): Latex =
-        calculatedInvoice.invoice.customer.buyerIdentifier
-            ?.escapeLatex() ?: Latex.EMPTY
-
-    /** BT-14, die eigene Auftragsnummer, leer, wenn die Rechnung keine nennt. */
-    fun salesOrderReference(calculatedInvoice: CalculatedInvoice): Latex =
-        calculatedInvoice.invoice.salesOrderReference
-            ?.escapeLatex() ?: Latex.EMPTY
-
-    /** BT-10, die Referenz des Kunden, leer, wenn er keine nennt. */
-    fun buyerReference(calculatedInvoice: CalculatedInvoice): Latex =
-        calculatedInvoice.invoice.customer.buyerReference
-            ?.escapeLatex() ?: Latex.EMPTY
-
-    /**
-     * Das Zahlungsziel. Ob es eines gibt, entscheidet der Calculator
-     * ([CalculatedInvoice.dueDate]); hier wird nur gesetzt, was dasteht. Ohne
-     * Zahlungsziel ist der Wert leer, und die Vorlage lässt die Zeile samt
-     * Beschriftung weg.
-     */
-    fun dueDate(calculatedInvoice: CalculatedInvoice): Latex =
-        calculatedInvoice.dueDate?.let { GermanFormat.date(it) } ?: Latex.EMPTY
 }

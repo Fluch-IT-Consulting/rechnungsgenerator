@@ -125,6 +125,15 @@ CV/Web-Auftritt des Autors), PDF/A-Prüfung über veraPDF.
   hinaus – was an der Rechnungsart hängt, würde sonst je Design neu
   entschieden, ohne Compiler.
 
+  Eine einzelne Angabe steht mit ihrer Zeile **direkt** im `when` von
+  `InvoiceRenderer.values`, auch wenn sie einen Formatierschritt braucht
+  (#244): `formatted()` und `GermanFormat.date` stehen dort seit jeher bei
+  `USTID`, `IBAN` und `RECHNUNGSDATUM`. Eine eigene Funktion bekommt nur, was
+  entscheidet – `MetadataBlocks` behält die Anschrift als Block und die
+  Vereinnahmung mit ihrem `when` über die Rechnungsart. Wer beim Lesen von
+  `values()` in eine andere Datei springt, soll dort eine Entscheidung finden
+  und nicht einen Pfad.
+
   Die Platzhalter zählt das Enum `TemplateValue` auf, die Werte-Map hat es als
   Schlüssel, und gefüllt wird sie in einem `when` ohne `else`. `fillIn`
   verlangt nur noch eine Richtung: Jeder Platzhalter der Vorlage bekommt einen
