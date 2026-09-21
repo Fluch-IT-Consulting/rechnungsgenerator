@@ -142,6 +142,18 @@ CV/Web-Auftritt des Autors), PDF/A-Prüfung über veraPDF.
   bleiben Pflicht: Das sind Angaben und keine Begleitsätze, jemand hat sie für
   diese eine Rechnung hingeschrieben.
 
+  Neben der Pflichtliste steht **eine** benannte Regel,
+  `TemplateValue.ZAHLUNGSANGABE` (#249): Jede Vorlage sagt etwas über die
+  Zahlung – `balken` das Zahlungsziel als Datum im Kopf (`ZAHLUNGSZIEL`),
+  `raster` die Frist als Satz unter den Summen (`ZAHLUNGSFRIST`, #211).
+  Pflicht ist deshalb keiner der beiden Platzhalter, aber einer von beiden,
+  und geprüft wird das beim Bau der Vorlage statt am fertigen PDF. Eine
+  benannte Regel und keine allgemeine Liste von Gruppen: Es gibt genau diesen
+  einen Fall, und ein zweiter soll nicht als Listeneintrag hereinkommen,
+  sondern hingeschrieben werden – wer ihn hinschreibt, steht vor der Frage aus
+  #188. Derselbe Zug wie `InvoiceType` ohne Vorgabewerte (ADR-0009) und die
+  `when` ohne `else`: Der Nächste entscheidet, statt zu erben.
+
   Die Vorlage ist ein eigener Typ, `Template` (#201), mit privatem
   Konstruktor – derselbe Zug wie bei der `AcceptedInvoice`: Was ungeprüft ist,
   lässt sich nicht bauen. `Template.of` streicht die Kommentarzeilen und prüft

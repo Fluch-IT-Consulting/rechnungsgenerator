@@ -9,7 +9,7 @@ import io.kotest.matchers.string.shouldContain
 
 // Die Pflicht-Platzhalter und aus jeder Gruppe, von der einer dastehen muss,
 // der erste.
-private val pflicht = TemplateValue.entries.filter { it.required } + TemplateValue.requiredOneOf.map { it.first() }
+private val pflicht = TemplateValue.entries.filter { it.required } + TemplateValue.ZAHLUNGSANGABE.first()
 
 // Für jeden Platzhalter ein Wert, und zwar ein leerer. Ein Test legt darüber,
 // was er prüfen will.

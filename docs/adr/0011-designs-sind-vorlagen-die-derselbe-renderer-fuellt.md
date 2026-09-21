@@ -137,3 +137,28 @@ Nicht mitgewandert ist die Absetzung der Schlussrechnung: "Restbetrag" ist ein
 Begriff aus dem Glossar, und die Zeile je Abschlag nennt Nummer, Datum und
 Vereinnahmung – ein Satz mit fachlicher Aussage. Ebenso hängt keine
 Beschriftung an der Rechnungsart; das bliebe eine Entscheidung je Design.
+
+## Nachtrag vom 21.09.2026: Jede Vorlage sagt etwas über die Zahlung
+
+`raster` nennt das Zahlungsziel seit #211 nicht mehr im Kopf, sondern als
+Frist unter den Summen. Damit gibt es für dieselbe Angabe zwei Platzhalter,
+und `ZAHLUNGSZIEL` konnte nicht bleiben, was die Pflichtliste aus #188 aus ihm
+gemacht hatte: `TemplateValue.required` verlangt den Platzhalter von *jeder*
+Vorlage, und `raster` setzt ihn bewusst nicht.
+
+Beide schlicht optional zu machen, wie #211 es formuliert hatte, ließe aber
+eine Vorlage durch, die über die Zahlung gar nichts sagt – auffallen würde das
+erst im Netz aus #187, am fertigen PDF und im Lauf mit den echten Werkzeugen.
+
+Die Antwort ist eine **benannte Regel** neben der Pflichtliste,
+`TemplateValue.ZAHLUNGSANGABE`: die beiden Platzhalter als Menge, und der Bau
+der Vorlage verlangt einen davon. Welchen, entscheidet das Design.
+
+Bewusst keine allgemeine Liste von Gruppen (`requiredOneOf`, so war es zuerst
+gebaut, #249): Es gibt genau diesen einen Fall. Eine allgemeine Liste nähme
+dem nächsten Paar die Frage ab – man hängt eine Zeile an und ist fertig –,
+während die Freiheit eines Designs genau die Frage ist, die dieses ADR und
+#188 jedes Mal neu gestellt haben wollen. Wer ein zweites Paar braucht,
+schreibt es hin und entscheidet damit sichtbar. Derselbe Zug wie `InvoiceType`
+ohne Vorgabewerte (ADR-0009) und die `when` ohne `else` in den Regelgruppen:
+Der Nächste entscheidet, statt zu erben.
