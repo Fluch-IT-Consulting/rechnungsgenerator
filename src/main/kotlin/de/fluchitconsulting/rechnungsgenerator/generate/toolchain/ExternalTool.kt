@@ -22,7 +22,8 @@ class ToolchainException(message: String, cause: Throwable? = null) : Exception(
  * [output] hängt die Kanäle aneinander, statt sie zu verschränken. Die
  * Reihenfolge zwischen ihnen geht damit verloren; innerhalb eines Kanals
  * bleibt sie. Für den Zweck – ein Protokoll in eine Fehlermeldung legen –
- * genügt das.
+ * genügt das. An der Nahtstelle steht ein Zeilenumbruch, damit nicht zwei
+ * Quellen in einer Zeile stehen.
  */
 data class ToolResult(
     val exitCode: Int,
@@ -31,8 +32,21 @@ data class ToolResult(
 ) {
     val failed: Boolean get() = exitCode != 0
 
-    /** Beide Kanäle, für Meldungen und für Protokolle, die alles wollen. */
-    val output: String get() = standardOutput + errorOutput
+    /**
+     * Beide Kanäle, für Meldungen und für Protokolle, die alles wollen.
+     *
+     * Der Umbruch an der Nahtstelle ist kein Schmuck: Endet stdout nicht auf
+     * einem, klebt seine letzte Zeile an der ersten von stderr, und in einer
+     * Fehlermeldung sieht das aus wie eine Zeile aus einer Quelle (#246). Ist
+     * ein Kanal leer, gibt es keine Nahtstelle und kommt nichts dazu.
+     */
+    val output: String
+        get() =
+            when {
+                standardOutput.isEmpty() || errorOutput.isEmpty() -> standardOutput + errorOutput
+                standardOutput.endsWith("\n") -> standardOutput + errorOutput
+                else -> standardOutput + "\n" + errorOutput
+            }
 }
 
 /**
