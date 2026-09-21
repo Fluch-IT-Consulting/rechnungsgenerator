@@ -4,6 +4,7 @@ import de.fluchitconsulting.rechnungsgenerator.generate.FakePdfViewer
 import de.fluchitconsulting.rechnungsgenerator.generate.ViewerResult
 import de.fluchitconsulting.rechnungsgenerator.generate.toolchain.FakeTypesetter
 import io.kotest.core.spec.style.FunSpec
+import io.kotest.core.test.Enabled
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.string.shouldContain
 import io.kotest.matchers.string.shouldNotContain
@@ -11,6 +12,26 @@ import java.nio.file.Path
 import kotlin.io.path.createTempDirectory
 import kotlin.io.path.readText
 import kotlin.io.path.writeText
+
+/** Die Eigenschaft, über die der Build seine Version an die Test-JVM reicht. */
+private const val VERSION_PROPERTY = "projectVersion"
+
+/**
+ * Nur Gradle setzt [VERSION_PROPERTY]. Wer die Tests im Editor startet, hat sie
+ * nicht – dann fehlt der Vergleichswert, und der Test überspringt sich, statt
+ * grün oder rot zu melden. Übersprungen und nicht bestanden, wie beim
+ * Altersnachweis der EU-Liste: Ein Netz, das fehlt, soll nicht aussehen wie
+ * eines, das hält.
+ */
+private val mitVersionAusDemBuild =
+    if (System.getProperty(VERSION_PROPERTY) != null) {
+        Enabled.enabled
+    } else {
+        Enabled.disabled(
+            "Die Fassung aus dem Build steht nur unter Gradle zur Verfügung (./gradlew test). " +
+                "Dass --version überhaupt etwas ausgibt, prüft der Test davor trotzdem.",
+        )
+    }
 
 /**
  * Prüft den ganzen Weg von den Argumenten bis zum Exitcode – und dazu, auf
@@ -166,4 +187,26 @@ class MainTest : FunSpec({
         result.out shouldContain "Usage: rechnungsgenerator"
         result.err shouldBe ""
     }
+
+    test("--version ist kein Fehler und steht auf stdout") {
+        // Dieselbe Regel wie bei --help: Wer die Fassung erfragt, hat keinen
+        // Fehler gemacht. Ohne die eager Option fiele der Aufruf in "kein
+        // Unterkommando" und endete mit 1 auf stderr.
+        val result = runCli("--version")
+
+        result.exitCode shouldBe 0
+        result.out shouldContain "rechnungsgenerator "
+        result.err shouldBe ""
+    }
+
+    test("die genannte Fassung ist die aus dem Build")
+        .config(enabledOrReasonIf = { mitVersionAusDemBuild }) {
+            // Schließt den Kreis: Die Ressource entsteht beim Bauen aus
+            // `version` in build.gradle.kts, und hier steht, dass genau die
+            // Zahl beim Benutzer ankommt. Ohne diesen Test liefe eine
+            // veraltete Ressource still mit.
+            val result = runCli("--version")
+
+            result.out.trim() shouldBe "rechnungsgenerator ${System.getProperty(VERSION_PROPERTY)}"
+        }
 })

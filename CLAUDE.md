@@ -284,6 +284,15 @@ CV/Web-Auftritt des Autors), PDF/A-Prüfung über veraPDF.
   Fehlschlag ist deshalb ein Hinweis mit Exitcode 0, kein Abbruch. Gestartet
   wird nicht über `ProcessRunner`, dessen Vertrag bis zum Ende wartet und hart
   abräumt; das risse unter Linux den Viewer mit.
+  `--version` nennt die Fassung und endet mit 0. Woher sie zur Laufzeit kommt,
+  ist eine Entscheidung und keine Formalie (#264): aus einer Ressource, die
+  `generateVersionResource` beim Bauen aus `version` in `build.gradle.kts`
+  schreibt – gelesen mit `checkNotNull`, wie `Template.of` die Vorlagen der
+  Designs liest. **Nicht** aus dem Manifest-Attribut `Implementation-Version`:
+  Das liefert `null`, sobald nicht aus dem JAR heraus gestartet wird, also in
+  jedem Test – geprüft wäre dann nur der Zweig, der im Betrieb nie läuft. Dass
+  die genannte Zahl die aus dem Build ist, hält ein Test fest, dem Gradle
+  `version` als Systemeigenschaft reicht; ohne Gradle überspringt er sich.
 - **Positionstexte**: drei Felder statt einem, entlang der Aufteilung von
   EN 16931 – `bezeichnung` (BT-153, Pflicht), `beschreibung` (BT-154) und
   `hinweis` (BT-127). Ein einziges Freitextfeld hätte fürs PDF gereicht, würde

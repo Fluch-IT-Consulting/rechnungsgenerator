@@ -22,6 +22,9 @@ man es installiert. Der Generator selbst braucht kein Python.
 
 ## Verwendung
 
+`rechnungsgenerator --version` nennt die Fassung des Programms und endet mit
+Code 0.
+
 ```
 rechnungsgenerator erzeuge [OPTIONEN] <rechnung.yaml>
 
