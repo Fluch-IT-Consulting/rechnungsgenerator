@@ -283,11 +283,9 @@ class ToolchainIntegrationTest : FunSpec({
      * Regelkennung ist die Aussage.
      *
      * Zwei Dokumente, weil ein gültiges keine Regelliste hat, an der sich ein
-     * Unterschied zeigen könnte. `nicht-konform.pdf` liegt als Datei im
-     * Testbestand statt zur Laufzeit erzeugt zu werden: Es ist von Hand
-     * geschrieben, 595 Bytes, und verletzt fünf Regeln auf einmal – nicht
-     * eingebettete Schrift, fehlende XMP-Metadaten, fehlende Trailer-ID,
-     * fehlender OutputIntent, fehlender binärer Kommentar im Kopf.
+     * Unterschied zeigen könnte. Woher `nicht-konform.pdf` kommt und welche
+     * Regeln es verletzt, steht seit #238 bei `BuiltInPdfAValidatorTest`: Der
+     * läuft in jedem Build, dieser hier nur mit installiertem veraPDF.
      */
     test("beide Prüfer urteilen über dasselbe PDF gleich")
         .config(enabledOrReasonIf = { mitVerapdf }) {
