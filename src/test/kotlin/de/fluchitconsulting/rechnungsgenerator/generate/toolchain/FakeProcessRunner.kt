@@ -19,7 +19,10 @@ import kotlin.time.Duration
  * weiteren Lauf verlangt, und diese Schleife lässt sich nur prüfen, wenn der
  * zweite Lauf etwas anderes antwortet als der erste.
  */
-class FakeProcessRunner(vararg runs: Run) : ProcessRunner {
+class FakeProcessRunner(
+    vararg runs: Run,
+    private val missing: Set<String> = emptySet(),
+) : ProcessRunner {
     /**
      * Ein vorbereiteter Lauf. [files] sind Name und Inhalt dessen, was er im
      * Arbeitsverzeichnis hinterlässt.
@@ -38,6 +41,13 @@ class FakeProcessRunner(vararg runs: Run) : ProcessRunner {
 
     /** Mit welcher Umgebung gerufen wurde, je Lauf. */
     val environments = mutableListOf<Map<String, String>>()
+
+    /**
+     * Da ist, was nicht in [missing] steht – vorgegeben ist also der Rechner,
+     * auf dem alles installiert ist. Der andere Fall wird ausdrücklich genannt
+     * und hängt damit nicht mehr daran, was auf der Testmaschine liegt (#245).
+     */
+    override fun canRun(program: String) = program !in missing
 
     override fun run(
         command: List<String>,

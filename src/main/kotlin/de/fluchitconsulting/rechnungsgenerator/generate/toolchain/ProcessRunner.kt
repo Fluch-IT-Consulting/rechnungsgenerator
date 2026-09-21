@@ -30,4 +30,31 @@ interface ProcessRunner {
         timeout: Duration = 2.minutes,
         environment: Map<String, String> = emptyMap(),
     ): ToolResult
+
+    /**
+     * Ist dieses Programm da?
+     *
+     * Der zweite Begriff der Naht (#245): Wer ein Werkzeug aufruft, fragt
+     * vorher, ob es überhaupt zu finden ist – und zwar dort, wo auch der Aufruf
+     * hingeht. Ein fester Aufruf am Adapter vorbei hinge sonst daran, was auf
+     * der Maschine installiert ist, auf der der Test gerade läuft.
+     */
+    fun canRun(program: String): Boolean
+}
+
+/**
+ * Prüft, ob alle genannten Programme da sind, und meldet die fehlenden in einer
+ * Meldung, die sagt, was zu tun ist. Wird beim Start aufgerufen – ein Abbruch
+ * mitten im Satz wäre schwerer zu deuten.
+ *
+ * Eine Erweiterung und keine Methode der Naht: Gefragt wird über [canRun], also
+ * über dieselbe Naht wie der Aufruf, aber der Wortlaut gehört zum Vertrag und
+ * nicht zum Adapter – kein Adapter soll ihn abwandeln.
+ */
+fun ProcessRunner.requireAll(vararg tools: Pair<String, String>) {
+    val missing = tools.filter { (name, _) -> !canRun(name) }
+    if (missing.isNotEmpty()) {
+        val list = missing.joinToString("\n") { (name, hint) -> "  - $name ($hint)" }
+        throw ToolchainException("Diese Programme fehlen im PATH:\n$list")
+    }
 }

@@ -127,7 +127,7 @@ class ExternalPdfAValidator(private val runner: ProcessRunner) : PdfAValidator {
         private const val EXIT_NOT_COMPLIANT = 1
     }
 
-    override fun checkAvailable() = ExternalTool.requireAll(PROGRAM to "brew install verapdf")
+    override fun checkAvailable() = runner.requireAll(PROGRAM to "brew install verapdf")
 
     override fun validate(pdf: Path): ValidationResult {
         val result =

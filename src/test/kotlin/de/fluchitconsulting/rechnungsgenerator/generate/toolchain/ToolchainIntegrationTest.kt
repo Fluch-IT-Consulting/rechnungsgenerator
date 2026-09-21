@@ -38,7 +38,7 @@ object Toolchain : Tag()
  * EU-Liste: Ein Netz, das fehlt, soll nicht aussehen wie eines, das hält.
  */
 private val mitVerapdf =
-    if (ExternalTool.locate("verapdf") != null) {
+    if (ExternalTool.canRun("verapdf")) {
         Enabled.enabled
     } else {
         Enabled.disabled(
