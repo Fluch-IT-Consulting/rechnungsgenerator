@@ -71,8 +71,27 @@ value class Root private constructor(val directory: Path) {
             throw InputFileException(
                 "Zu $invoiceFile gibt es keine Stammdaten: Weder in $start noch in einem Verzeichnis darüber " +
                     "liegt der Ordner $FOLDER mit der Datei $SELLER_CONFIG. " +
-                    "Lege ihn an, oder gib die Stammdaten mit -s an.",
+                    "Mit rechnungsgenerator einrichten entsteht beides, oder gib die Stammdaten mit -s an.",
             )
+        }
+
+        /**
+         * Die nächste vollständige Wurzel **oberhalb** von [directory], oder
+         * `null`, wenn es keine gibt.
+         *
+         * Eine Frage und kein Urteil: `einrichten` stellt sie, um auf eine
+         * Wurzel darüber hinzuweisen, bevor es daneben eine zweite anlegt.
+         * Deshalb wirft sie nicht, und deshalb übergeht sie – anders als
+         * [of] – einen halb eingerichteten Ordner und sucht weiter. [of] darf
+         * das nicht: Dort geht es um die Stammdaten, die wirklich aufs Blatt
+         * kommen, und ein stiller Griff zur äußeren Wurzel setzte den falschen
+         * Aussteller. Hier geht es nur um einen Satz auf stderr.
+         */
+        fun above(directory: Path): Root? {
+            val start = directory.toAbsolutePath().normalize().parent ?: return null
+            return generateSequence(start) { it.parent }
+                .firstOrNull { it.resolve(FOLDER).resolve(SELLER_CONFIG).isRegularFile() }
+                ?.let { Root(it) }
         }
 
         /**

@@ -45,6 +45,34 @@ CV/Web-Auftritt des Autors), PDF/A-Prüfung über veraPDF.
   (ADR-0001). Der Skill ruft deshalb ohne `-s` auf; `naechste-nummer.py` behält
   `--stammdaten` mit ausgeschriebenem Pfad, weil die Suche dort eine zweite
   Fassung derselben Regel wäre.
+- **`einrichten`** (#276) legt `.rechnungsgenerator/stammdaten.yaml` im
+  Arbeitsverzeichnis an – ein Gerüst und kein `git init`: eine Datei, die
+  danach der Benutzerin gehört, und das Programm schreibt nie wieder in den
+  Ordner. Ohne Argument (ein `cd` kostet nichts, ein Argument ließe sich
+  ergänzen, aber nicht zurücknehmen); Vorhandenes wird nie überschrieben, und
+  es gibt kein `--force`. Auf stdout allein der Pfad, damit
+  `$(rechnungsgenerator einrichten)` ihn liefert; Abbruch und Hinweis stehen
+  auf stderr. Eine Wurzel oberhalb ist ein **Hinweis** und kein Abbruch –
+  Verschachteln ist der vorgesehene Weg für einen zweiten Rechnungssteller,
+  dieselbe Unterscheidung wie bei den Befunden. Das Arbeitsverzeichnis ist dem
+  Kommando gereicht wie `GenerateCommand` der Viewer: Sonst schriebe der
+  Testlauf in sein eigenes Projektverzeichnis. Gefragt wird `Root.above`, das
+  – anders als `Root.of` – nicht wirft und einen halb eingerichteten Ordner
+  übergeht: `of` liefert die Stammdaten, die aufs Blatt kommen, `above` einen
+  Satz auf stderr.
+
+  Die **Vorlage** ist eine Ressource, gelesen mit `checkNotNull` wie die
+  Vorlagen der Designs. Pflichtfelder stehen leer da, Freiwilliges mit `#`
+  direkt vor dem Schlüssel (`#telefon:`), erklärender Text mit `# `. Nicht
+  alles mit Beispielwerten vorbelegt: Eine vergessene Zeile ergäbe sonst ein
+  gültiges PDF mit der Bankverbindung einer erfundenen Firma; leer scheitert
+  sie laut, mit Datei und Schlüssel. Weil die Vorlage eine zweite Abschrift des
+  Schemas ist und sonst still veraltet, hält sie ein Netz: Die Schlüssel der
+  **einkommentierten** Vorlage sind die `@SerialName` aus den Deskriptoren von
+  `SellerConfig`, `Address` und `BankDetails`, in beide Richtungen; jede
+  genannte Vorgabe (`land`, `zahlungsziel-tage`, `design`, `schlusssatz`) ist
+  die echte, geprüft über zwei Läufe mit und ohne sie; und die unausgefüllte
+  Vorlage wird abgelehnt. Ohne dieses Netz wird das Kommando nicht gebaut.
 - **Geldwerte**: ausschließlich `BigDecimal`, niemals Float/Double. Zwei
   gleichrangige Value Objects, die die Grenze der EN 16931 abbilden:
   - `Price` – exakt, rundet nie. Für Einzelpreise (BT-146), wo die Norm beliebig
@@ -603,10 +631,13 @@ CV/Web-Auftritt des Autors), PDF/A-Prüfung über veraPDF.
   Vergleich der beiden Prüfer –, überspringen sich, wenn es fehlt. Übersprungen
   und nicht bestanden, wie beim Altersnachweis der EU-Liste: Ein Netz, das
   fehlt, soll nicht aussehen wie eines, das hält.
-- **Paketstruktur**: Zwei vertikale Pakete, eines je Kommando, mit allem, was
+- **Paketstruktur**: Ein vertikales Paket je Kommando, mit allem, was
   nur dieses Kommando braucht: `generate` mit dem LaTeX-Satz
   (`generate.render`) und der Naht zu den Werkzeugen (`generate.toolchain`),
-  `prepayments` mit dem Zusammentragen der Abschläge und dem YAML-Block.
+  `prepayments` mit dem Zusammentragen der Abschläge und dem YAML-Block,
+  `setup` mit der Vorlage der Stammdaten (#276) – es kennt aus dem Kern nur
+  `model`, weil `einrichten` den Namen des Wurzelordners braucht und die Frage,
+  ob oberhalb schon eine Wurzel liegt.
   Darunter der gemeinsame Kern, in dem jede Kante nach unten zeigt: `rules`
   (Befunde, Regelgruppen, `AcceptedInvoice.check`, `InvoiceKind`) →
   `calculation` (`CalculatedInvoice`) → `model` (samt

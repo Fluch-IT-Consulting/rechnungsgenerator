@@ -1,0 +1,77 @@
+# Stammdaten des Rechnungsstellers. Sie gelten für jede Rechnung unterhalb
+# dieser Wurzel (ADR-0015).
+#
+# Die Pflichtfelder stehen leer da und wollen ausgefüllt werden – ohne sie
+# lehnt der Generator die Rechnung ab und nennt den Schlüssel. Was mit einem
+# # davor steht, ist freiwillig: Das # wegnehmen und den Wert eintragen. Wo
+# eine Vorgabe dahintersteht, ist es die, die ohne den Eintrag gilt.
+#
+# Alle Beispiele sind erfunden.
+
+# Beispiel: Muster IT-Consulting UG (haftungsbeschränkt)
+firma:
+# Beispiel: Dr. Erika Musterfrau
+inhaber:
+
+anschrift:
+  # Beispiel: Beispielweg 42
+  strasse:
+  # In Anführungszeichen, sonst verschwindet die führende Null einer PLZ.
+  # Beispiel: "97070"
+  plz:
+  # Beispiel: Würzburg
+  ort:
+  # ISO 3166-1 alpha-2, wie EN 16931 es verlangt (BT-40).
+  #land: DE
+
+# Beispiel: rechnung@muster-it-consulting.example
+email:
+# Beispiel: "+49 931 1234567"
+#telefon:
+# Beispiel: https://muster-it-consulting.example
+#webseite:
+
+# §14 Abs. 4 Nr. 2 UStG verlangt Steuernummer oder USt-IdNr.; EN 16931 (BT-31)
+# und der Verkehr mit Unternehmen verlangen die USt-IdNr.
+# Beispiel: 257/123/45678
+#steuernummer:
+# Beispiel: DE123456788
+umsatzsteuer-id:
+
+bank:
+  # Beispiel: Muster IT-Consulting UG (haftungsbeschränkt)
+  kontoinhaber:
+  # Beispiel: DE89 3704 0044 0532 0130 00
+  iban:
+  # Beispiel: MUSTDEFFXXX
+  bic:
+  # Beispiel: Musterbank Würzburg
+  institut:
+
+# Handelsregister: für Kapitalgesellschaften (UG, GmbH) nach §35a GmbHG auf
+# Geschäftsbriefen Pflicht, für Einzelunternehmer gegenstandslos.
+# Beispiel: Würzburg
+#registergericht:
+# Beispiel: HRB 12345
+#handelsregister-nummer:
+# Beispiel: Dr. Erika Musterfrau
+#geschaeftsfuehrer:
+
+# Tage bis zur Fälligkeit; eine Rechnung darf davon abweichen.
+#zahlungsziel-tage: 14
+
+# Welche Rechnungsnummern gültig sind, legt der Rechnungssteller fest. Ohne
+# diesen Schlüssel wird die Form gar nicht geprüft (ADR-0005).
+# Beispiel: 'R\d{2}-\d{3}'
+#rechnungsnummer-muster:
+
+# Das Satzbild: balken oder raster (ADR-0011).
+#design: balken
+
+# Ein Logo als TikZ-Fragment, sein Pfad relativ zu dieser Datei (ADR-0012).
+# Ohne Eintrag keines; gesetzt wird es nur vom Design raster.
+# Beispiel: logo.tex
+#logo:
+
+# Der Satz über der Grußformel; eine Rechnung darf davon abweichen.
+#schlusssatz: Ich bedanke mich für das Vertrauen und die angenehme Zusammenarbeit.

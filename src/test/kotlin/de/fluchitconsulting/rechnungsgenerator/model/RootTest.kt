@@ -73,7 +73,7 @@ class RootTest : FunSpec({
         Root.of(rechnung(innen, "2026/R26-009.yaml")).directory shouldBe innen
     }
 
-    test("ohne Wurzel nennt die Meldung den Ausgangspunkt, den Ordner und -s") {
+    test("ohne Wurzel nennt die Meldung den Ausgangspunkt, den Ordner und beide Auswege") {
         val ohneWurzel = createTempDirectory("wurzel-test")
         val rechnung = rechnung(ohneWurzel, "2026/R26-009.yaml")
 
@@ -82,6 +82,7 @@ class RootTest : FunSpec({
         failure.message!! shouldContain rechnung.parent.toString()
         failure.message!! shouldContain Root.FOLDER
         failure.message!! shouldContain Root.SELLER_CONFIG
+        failure.message!! shouldContain "einrichten"
         failure.message!! shouldContain "-s"
     }
 

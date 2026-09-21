@@ -31,7 +31,15 @@ class PackageStructureTest : FunSpec({
     val allowedImports =
         mapOf(
             // model und rules für die Fachfehler, die execute() übersetzt (#119).
-            root to setOf("$root.generate", "$root.generate.toolchain", "$root.prepayments", "$root.rules", "$root.model"),
+            root to
+                setOf(
+                    "$root.generate",
+                    "$root.generate.toolchain",
+                    "$root.prepayments",
+                    "$root.setup",
+                    "$root.rules",
+                    "$root.model",
+                ),
             "$root.generate" to
                 setOf("$root.generate.render", "$root.generate.toolchain", "$root.rules", "$root.calculation", "$root.model"),
             // generate.toolchain für PdfSources: Der Renderer liefert die
@@ -42,6 +50,9 @@ class PackageStructureTest : FunSpec({
                 setOf("$root.generate.toolchain", "$root.rules", "$root.calculation", "$root.model", "$root.values"),
             "$root.generate.toolchain" to emptySet(),
             "$root.prepayments" to setOf("$root.rules", "$root.calculation", "$root.model", "$root.values"),
+            // setup kennt aus dem Kern nur die Wurzel: den Namen ihres
+            // Ordners und die Frage, ob oberhalb schon eine liegt (#275).
+            "$root.setup" to setOf("$root.model"),
             "$root.rules" to setOf("$root.calculation", "$root.model", "$root.values"),
             "$root.calculation" to setOf("$root.model", "$root.values"),
             "$root.model" to setOf("$root.values"),

@@ -25,6 +25,31 @@ man es installiert. Der Generator selbst braucht kein Python.
 `rechnungsgenerator --version` nennt die Fassung des Programms und endet mit
 Code 0.
 
+Der Weg von vorn: **einrichten**, die Stammdaten **ausfüllen**, Rechnungen
+**erzeugen**.
+
+```
+rechnungsgenerator einrichten
+```
+
+Legt `.rechnungsgenerator/stammdaten.yaml` im Arbeitsverzeichnis an – eine
+Vorlage mit leeren Pflichtfeldern und Kommentaren – und macht das Verzeichnis
+damit zur Wurzel (siehe [Wo die Stammdaten liegen](#wo-die-stammdaten-liegen)).
+Auf stdout steht allein der Pfad der angelegten Datei, `$(rechnungsgenerator
+einrichten)` liefert also genau ihn.
+
+Vorhandenes wird nie überschrieben: Gibt es die Datei schon, bricht das
+Kommando ab, und es gibt keinen Schalter dagegen. Gibt es den Ordner ohne die
+Datei, entsteht nur die Datei. Liegt oberhalb schon eine Wurzel, entsteht die
+neue trotzdem, mit einem Hinweis auf stderr – verschachteln ist der vorgesehene
+Weg für einen zweiten Rechnungssteller, aus Versehen aber eine Falle.
+
+Ausgefüllt wird von Hand; die Kommentare in der Datei sagen, was freiwillig
+ist und welche Vorgabe ohne Eintrag gilt. Die Datei gehört danach dem, der sie
+ausfüllt: Das Programm schreibt nie wieder in den Ordner.
+
+Aus einer ausgefüllten Rechnungsdatei entsteht dann das PDF:
+
 ```
 rechnungsgenerator erzeuge [OPTIONEN] <rechnung.yaml>
 
@@ -125,8 +150,9 @@ Stammdaten, egal wo man steht. Ein zweiter Rechnungssteller ist eine zweite
 Wurzel, daneben oder verschachtelt; die nächste gewinnt. Für alles andere gibt
 es `-s`, und dann wird nicht gesucht.
 
+Angelegt wird der Ordner samt Vorlage von `rechnungsgenerator einrichten`.
 Findet die Suche nichts, nennt die Meldung das Verzeichnis, ab dem gesucht
-wurde, den erwarteten Ordner und `-s` als Ausweg. Trifft sie auf einen Ordner
+wurde, den erwarteten Ordner und beide Auswege – `einrichten` und `-s`. Trifft sie auf einen Ordner
 `.rechnungsgenerator/` ohne `stammdaten.yaml`, bricht sie dort ab, statt weiter
 oben nachzusehen: Eine halb eingerichtete Wurzel soll nicht still die
 Stammdaten der äußeren nehmen und den falschen Aussteller aufs Blatt setzen.
