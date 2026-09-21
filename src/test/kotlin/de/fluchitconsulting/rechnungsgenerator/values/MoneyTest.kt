@@ -73,6 +73,19 @@ class MoneyTest : FunSpec({
         test("die Null bleibt die Null") { -Money.ZERO shouldBe Money.ZERO }
     }
 
+    context("Betrag ohne Vorzeichen") {
+        test("streicht das Minus, lässt das Plus") {
+            Money("-19.99").abs() shouldBe Money("19.99")
+            Money("19.99").abs() shouldBe Money("19.99")
+            Money.ZERO.abs() shouldBe Money.ZERO
+        }
+        test("ist nie negativ") { checkAll(money) { a -> a.abs().isNegative() shouldBe false } }
+        // Die Form, die vor #247 in ItemRules von Hand dastand.
+        test("ist der Wert selbst oder sein Gegenteil") {
+            checkAll(money) { a -> a.abs() shouldBe if (a.isNegative()) -a else a }
+        }
+    }
+
     context("Multiplikation mit Percent") {
         test("Prozentanteil eines Betrags") { Money("100") * Percent("10") shouldBe Money("10.00") }
         test("100 % ist neutral") { checkAll(money) { a -> a * Percent("100") shouldBe a } }

@@ -38,6 +38,13 @@ CV/Web-Auftritt des Autors), PDF/A-Prüfung über veraPDF.
   Symmetrie von `equals` brechen. Ebenso bewusst fehlen `Money × Menge`
   (Schleichweg an `Price` vorbei) und `Money × Money` (fachlich sinnlos).
 
+  Den **Betrag ohne Vorzeichen** trägt `Money` selbst (`abs()`), den
+  **Vorzeichenübertrag** nicht (#247): "ohne Vorzeichen" ist ein Begriff jeder
+  Zahl, "nimm das Vorzeichen von jenem" einer der Rechnung. Die eine solche
+  Rechnung steht in `CalculatedLine.discountAmount`, mit ihrer Begründung aus
+  ADR-0013 und gehalten von einem Test über Rechnung und Storno; vorher standen
+  beide Begriffe von Hand da und sahen dabei gleich aus.
+
   Berechnungen (Summen, USt., Fälligkeit) im Kotlin-Code, nie im Template.
 - **Ausgabe**: PDF/A-1b via LuaLaTeX + `pdfx`-Paket. `lualatex` wird im PATH
   erwartet; `LuaLatexTypesetter.checkAvailable()` prüft das beim Start und

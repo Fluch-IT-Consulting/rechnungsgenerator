@@ -79,15 +79,14 @@ internal object ItemRules {
                     // gegen den Betrag der Basis: Im Storno ist sie negativ,
                     // der Rabatt steht aber positiv da.
                     is Discount.Amount -> {
-                        val basis = if (line.base.isNegative()) -line.base else line.base
-                        if (!rabatt.amount.isPositive() || rabatt.amount > basis) {
+                        if (!rabatt.amount.isPositive() || rabatt.amount > line.base.abs()) {
                             add(
                                 Finding(
                                     Rule.RABATT_BETRAG_AUSSERHALB_BEREICH,
                                     Subject.Item(index, item.name),
                                     "Der Rabattbetrag ${rabatt.amount} liegt außerhalb des zulässigen Bereichs. " +
                                         "Zulässig ist mehr als 0,00 und höchstens die Basis der Position " +
-                                        "($basis = Menge × Einzelpreis).",
+                                        "(${line.base.abs()} = Menge × Einzelpreis).",
                                 ),
                             )
                         }
