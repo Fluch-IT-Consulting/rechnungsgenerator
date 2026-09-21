@@ -244,3 +244,14 @@ und Schlussrechnung, das Storno, das Skonto und der Rabatt auf eine Position –
 als Satz oder als Betrag. Offen sind ein Nachlass auf die ganze Rechnung, die
 Rechnungskorrektur – also das Berichtigen einzelner Positionen, statt ganz zu
 stornieren – und später ZUGFeRD.
+
+## Lizenz
+
+Apache-2.0, siehe [LICENSE](LICENSE) und [NOTICE](NOTICE).
+
+Die mitgelieferten Bibliotheken stehen unter eigenen Lizenzen – Apache-2.0,
+MPL-2.0 (Saxon-HE, Rhino), BSD-3-Clause und CDDL mit Classpath-Exception; für
+veraPDF ist von den beiden angebotenen Fassungen MPL-2.0 gewählt, weil GPLv3
+auf das Ganze durchschlüge. Keine davon verlangt, den eigenen Quelltext
+offenzulegen: Sie alle binden je Datei, und keine dieser Dateien ist hier
+geändert.
