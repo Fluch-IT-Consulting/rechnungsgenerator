@@ -194,6 +194,15 @@ _Vermeiden_: Betreff, Anschreiben, Vorspann
 
 ## Prüfung
 
+**Pflichtangaben**:
+Die Angaben, die §14 Abs. 4 UStG auf jeder Rechnung verlangt – Name und
+Anschrift beider Seiten, Steuernummer oder USt-IdNr. des Ausstellers,
+Rechnungsdatum, Rechnungsnummer, Menge und Art der Leistung, Leistungszeitraum,
+Entgelt je Steuersatz und Steuerbetrag. Fehlt eine, ist das Dokument keine
+ordnungsgemäße Rechnung. Ob sie auf dem Blatt stehen, zeigt sich erst am
+fertigen PDF und nicht am Modell.
+_Vermeiden_: Pflichtfelder, Mussfelder, Mindestangaben
+
 **Befund**:
 Was die Prüfung an einer Rechnung feststellt – bezogen auf die ganze Rechnung,
 eine Position oder einen Abschlag. Jeder Befund ist entweder ein Abbruch oder
