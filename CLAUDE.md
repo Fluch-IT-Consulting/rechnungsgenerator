@@ -21,30 +21,20 @@ CV/Web-Auftritt des Autors), PDF/A-Prüfung über veraPDF.
   nennt dabei immer die Datei – unlesbar, kein gültiges YAML, ein Wert, der
   seine Prüfung nicht besteht. Der Dateiname gehört dorthin, wo gelesen wird:
   kaml nennt nur den falschen Schlüssel, und `erzeuge` liest zwei Dateien.
-  Vorher übersetzte jedes Kommando für sich, und die Fassungen liefen
-  auseinander: `erzeuge` meldete einen Lesefehler als "Die Datei konnte nicht
-  geschrieben werden", weil sein IOException-Zweig dem Ziel galt und das Lesen
-  mitfing; `abschlaege` fing ihn gar nicht, und weil `Main` nur `CliktError`
-  fängt, endete der Aufruf im Stacktrace.
+  Übersetzte jedes Kommando für sich, liefen die Fassungen auseinander (#52).
 - **Wurzel der Ablage** (ADR-0015): Ohne `-s` findet der Generator die
   Stammdaten selbst. Ein Verzeichnis mit dem Ordner `.rechnungsgenerator/` ist
   eine **Wurzel**, `stammdaten.yaml` liegt darin, und gesucht wird ab dem
   Verzeichnis der **Rechnungsdatei** den Pfad hinauf – nicht ab dem
-  Arbeitsverzeichnis: Derselbe Aufruf auf dieselbe Datei soll dieselben
-  Stammdaten finden, egal wo man steht. Die alte Vorgabe `stammdaten.yaml` im
-  Arbeitsverzeichnis entfällt ersatzlos, und einen Rückfall darauf gibt es
-  nicht – der nähme still das Falsche. Markierung ist allein der Ordner: Eine
-  lose Datei kann eine Kopie sein, ein Ordner mit dem Namen des Programms
-  nicht. Eine halb eingerichtete Wurzel bricht ab, statt weiter oben zu suchen,
-  sonst nähme sie die Stammdaten der äußeren und setzte den falschen Aussteller
-  aufs Blatt. `abschlaege` sucht je Datei und bricht bei verschiedenen Wurzeln
-  ab. Die Suche ist `Root` in `model` neben dem `YamlLoader` – der Dateiname
-  gehört dorthin, wo gelesen wird, und beide Kommandos brauchen sie; keine
-  Naht, denn sie rechnet Pfade und fragt `exists`. Im Ordner liegt nur
-  Handgeschriebenes: keinen Zähler und keinen Cache legt das Programm dort ab
-  (ADR-0001). Der Skill ruft deshalb ohne `-s` auf; `naechste-nummer.py` behält
-  `--stammdaten` mit ausgeschriebenem Pfad, weil die Suche dort eine zweite
-  Fassung derselben Regel wäre.
+  Arbeitsverzeichnis. Einen Rückfall auf `stammdaten.yaml` im
+  Arbeitsverzeichnis gibt es nicht, und eine halb eingerichtete Wurzel bricht
+  ab, statt weiter oben zu suchen. Die Suche ist `Root` in `model` neben dem
+  `YamlLoader`; `abschlaege` sucht je Datei und bricht bei verschiedenen
+  Wurzeln ab. Im Ordner liegt nur Handgeschriebenes: keinen Zähler und keinen
+  Cache legt das Programm dort ab (ADR-0001). Der `rechnung`-Skill ruft deshalb
+  ohne `-s` auf; `naechste-nummer.py` behält `--stammdaten` mit
+  ausgeschriebenem Pfad.
+
 - **`einrichten`** (#276) legt `.rechnungsgenerator/stammdaten.yaml` im
   Arbeitsverzeichnis an – ein Gerüst und kein `git init`: eine Datei, die
   danach der Benutzerin gehört, und das Programm schreibt nie wieder in den
@@ -89,8 +79,7 @@ CV/Web-Auftritt des Autors), PDF/A-Prüfung über veraPDF.
   **Vorzeichenübertrag** nicht (#247): "ohne Vorzeichen" ist ein Begriff jeder
   Zahl, "nimm das Vorzeichen von jenem" einer der Rechnung. Die eine solche
   Rechnung steht in `CalculatedLine.discountAmount`, mit ihrer Begründung aus
-  ADR-0013 und gehalten von einem Test über Rechnung und Storno; vorher standen
-  beide Begriffe von Hand da und sahen dabei gleich aus.
+  ADR-0013 und gehalten von einem Test über Rechnung und Storno.
 
   Berechnungen (Summen, USt., Fälligkeit) im Kotlin-Code, nie im Template.
 - **Ausgabe**: PDF/A-1b via LuaLaTeX + `pdfx`-Paket. `lualatex` wird im PATH
@@ -99,26 +88,17 @@ CV/Web-Auftritt des Autors), PDF/A-Prüfung über veraPDF.
 - **PDF/A-Prüfung** (ADR-0014): zwei Prüfer hinter der Naht `PdfAValidator` –
   eingebaut (`org.verapdf:validation-model` in derselben JVM, die Vorgabe) und
   extern (`erzeuge --externe-pdfa-pruefung` ruft das installierte Programm
-  `verapdf`). Der Grund ist die Startzeit: Ein Aufruf des Programms kostet
-  6,4 s, davon 6,2 s Start seines CLI-Wrappers; die Prüfung selbst dauert
-  50 ms. Der externe Prüfer bleibt trotzdem, weil er **unabhängig** urteilt –
-  getrennt installiert, getrennt versioniert, nicht dasselbe Stück Software,
-  das der Generator mitbringt. Dass die beiden nicht unbemerkt auseinanderlaufen,
-  hält ein Test fest, der sie über ein gültiges und ein nicht konformes PDF
-  vergleicht: gleiches Urteil, gleiche Regelliste, nicht derselbe Wortlaut (den
-  setzt das Programm mit den Werten des Dokuments zusammen, die Bibliothek
-  liefert die Vorlage aus dem Profil). veraPDF ist damit keine Voraussetzung
-  mehr: `checkAvailable()` verlangt LuaLaTeX immer, nach dem Prüfer fragt sein
-  Adapter selbst – und zwar über dieselbe Naht, über die er ihn aufruft:
-  `ProcessRunner` kennt neben `run` auch `canRun`, und `requireAll` baut darauf
-  die Meldung. Vorher ging die Suche fest am `ProcessRunner` vorbei, und damit
-  hing die halbe Zusage von `checkAvailable` daran, ob auf der Testmaschine
-  gerade `verapdf` installiert war (#245). Der Prüfer kommt dem Typesetter aus
-  dem Kommando entgegen –
-  deshalb ist `LuaLatexTypesetter` eine Klasse und das Kommando bekommt eine
-  `TypesetterFactory`: Welcher es ist, steht erst mit dem Schalter fest.
-  Lizenz von veraPDF: dual GPLv3+ oder MPLv2+, gewählt ist **MPL-2.0** – GPLv3
-  schlüge auf das Ganze durch, wenn das Repo öffentlich wird.
+  `verapdf`). Der eingebaute ist die Vorgabe wegen der Startzeit, der externe
+  bleibt, weil er unabhängig urteilt; dass die beiden nicht unbemerkt
+  auseinanderlaufen, hält ein Test über ein gültiges und ein nicht konformes
+  PDF fest. veraPDF ist damit **keine Voraussetzung**: `checkAvailable()`
+  verlangt LuaLaTeX immer, nach dem Prüfer fragt sein Adapter selbst – und zwar
+  über dieselbe Naht, über die er ihn aufruft (`ProcessRunner.canRun`, #245).
+  Deshalb ist `LuaLatexTypesetter` eine Klasse und das Kommando bekommt eine
+  `TypesetterFactory`: Welcher Prüfer es ist, steht erst mit dem Schalter fest.
+  Lizenz von veraPDF: gewählt ist **MPL-2.0** und nicht GPLv3+, die auf das
+  Ganze durchschlüge.
+
 - **Naht zu den Werkzeugen**: `Typesetter` – "aus Quelltext wird ein geprüftes
   PDF". Dahinter im Betrieb LuaLaTeX und veraPDF, im Test ein vorbereitetes
   Ergebnis. Zwei Adapter, also eine echte Naht: Erst dadurch sind Kopieren,
@@ -133,160 +113,48 @@ CV/Web-Auftritt des Autors), PDF/A-Prüfung über veraPDF.
   was darin steht, bestimmt die Bytes, was nicht darin steht, nicht. Deshalb
   gehört das Datum dazu (`SOURCE_DATE_EPOCH`) und das Arbeitsverzeichnis nicht:
   Es sagt, *wohin* gesetzt wird, und bleibt mit dem Jobnamen beim Kommando.
-  Gebaut wird der Wert im Renderer, nicht im Kommando – vorher setzte das
-  Kommando sechs Argumente aus vier Quellen zusammen, und die Metadaten kamen
-  über einen zweiten Aufruf. Der Preis ist die Kante `generate.render →
+  Gebaut wird der Wert im Renderer und nicht im Kommando, das sonst sechs
+  Argumente aus vier Quellen zusammensetzte. Der Preis ist die Kante `generate.render →
   generate.toolchain` in `PackageStructureTest`: Der Renderer kennt den
   Eingabetyp der Werkzeuge. Sie zeigt nach unten auf ein Blatt, `toolchain`
   bleibt frei vom Projekt. Verworfen: zwei Typen mit einer Abbildung im
   Kommando – das verlegt das Durchreichen nur.
-- **Satz nur in der Vorlage**: Abstände, Schriftgrad, Farbe und Linien stehen in
-  der Vorlage des Designs (`templates/balken.tex`, `templates/raster.tex`). Der Renderer liefert Inhalt und Makroaufrufe und entscheidet
-  weiter, *ob* etwas dasteht. Die Millimeter sind benannte Längen, die
-  Zeilenwechsel mit Abstand Makros (`\positionstrenner`), ebenso das
-  Zusammenhalten einer Angabe (`\zusammen`): Der Renderer schreibt weder einen
-  Längennamen noch ein Makro von LaTeX selbst (#76). Auch kein `\\` (#147):
-  Die Zeilen eines Blocks verbindet `\zeilenwechsel`, die Abschlusszeile eines
-  Betragsblocks beendet die Zeile davor selbst, und die Person im Briefkopf
-  setzt `\kopfperson`. Vorher schrieb der Renderer das rohe `\\`, und eine
-  Zeile, die mit `[` begann, las LaTeX als Abstandsangabe und brach ab – das
-  `{}`, das `Latex.macro` hinter ein Makro ohne Argument setzt, verhindert das.
-  Beim Füllen prüft `Template.fillIn`, dass kein Wert ein `\\` enthält.
+- **Satz nur in der Vorlage** (ADR-0017): Abstände, Schriftgrad, Farbe, Linien,
+  Beschriftungen, Trenner, Ort und Reihenfolge stehen in der Vorlage des
+  Designs (`templates/balken.tex`, `templates/raster.tex`). Der Renderer
+  liefert Werte und Makroaufrufe und entscheidet, *ob* etwas dasteht; er
+  schreibt kein LaTeX von sich aus – keinen Längennamen, kein `\\`, kein
+  `\mbox`. Die Grenze läuft zwischen zwei Arten von Angaben: Eine **einzelne
+  Angabe** kommt als eigener Platzhalter und darf leer sein, und die Vorlage
+  entscheidet mit `\ifblank` über Ort, Beschriftung und Trenner;
+  **Wiederholtes und fachliche Sätze** (Positionen, Summen, Absetzung,
+  Pflichtsatz, Skonto, Bankblock) kommen als Makroaufruf oder gar nicht, und
+  dort liegt das "ob" beim Renderer, weil es an der Rechnungsart hängt.
+  Aufgezählt ist beides: `TemplateValue` die Platzhalter, `TemplateMacro` die
+  Makros samt Stelligkeit, geprüft beim Bau der Vorlage; `Template` hat einen
+  privaten Konstruktor. Wer für ein neues Design ein Wort braucht, das diese
+  beiden Aufzählungen nicht haben, liest ADR-0017 und baut nicht am Renderer
+  vorbei.
 
-  Wer was entscheidet (#188): Eine **einzelne Angabe** – jede Angabe der
-  Stammdaten, jede Kopfangabe wie Zahlungsziel oder Referenz – kommt als eigener
-  Platzhalter und darf leer sein. Ob sie dasteht, entscheidet der Renderer
-  über leer oder nicht leer; Ort, Reihenfolge, Beschriftung und Trenner
-  (` · `, "Tel.", "Zahlbar ohne Abzug bis") entscheidet die Vorlage, und sie
-  fragt dafür nur `\ifblank` aus etoolbox. Der Vorlage ist gleich, warum ein
-  Wert leer ist. **Wiederholtes und fachliche Sätze** (Positionen, Summen,
-  Absetzung, Pflichtsatz, Skonto, der Bankblock) kommen wie bisher als
-  Makroaufrufe oder gar nicht, und das "ob" liegt beim Renderer. Die Zeilen
-  des Summenblocks beschriftet seit #217 die Vorlage (`\nettozeile`,
-  `\steuerzeile`, `\gesamtzeile`), Kotlin liefert Satz und Beträge; die
-  Absetzung behält ihre Wörter, "Restbetrag" steht im Glossar. Eine
-  Beschriftung kommt trotzdem aus Kotlin, `ZEITRAUM_BESCHRIFTUNG`: Ein Wortlaut,
-  der eine fachliche Aussage trägt ("Voraussichtlicher Leistungszeitraum"),
-  ist kein Satzbild. `EMPFAENGER` bleibt ein Block, weil die Landzeile an
-  `isDomestic` hängt. Verworfen: Bedingungen in der Vorlage über `\ifblank`
-  hinaus – was an der Rechnungsart hängt, würde sonst je Design neu
-  entschieden, ohne Compiler.
-
-  Eine einzelne Angabe steht mit ihrer Zeile **direkt** im `when` von
-  `InvoiceRenderer.values`, auch wenn sie einen Formatierschritt braucht
-  (#244): `formatted()` und `GermanFormat.date` stehen dort seit jeher bei
-  `USTID`, `IBAN` und `RECHNUNGSDATUM`. Eine eigene Funktion bekommt nur, was
-  entscheidet – `MetadataBlocks` behält die Anschrift als Block und die
-  Vereinnahmung mit ihrem `when` über die Rechnungsart. Wer beim Lesen von
-  `values()` in eine andere Datei springt, soll dort eine Entscheidung finden
-  und nicht einen Pfad.
-
-  Die Platzhalter zählt das Enum `TemplateValue` auf, die Werte-Map hat es als
-  Schlüssel, und gefüllt wird sie in einem `when` ohne `else`. `fillIn`
-  verlangt nur noch eine Richtung: Jeder Platzhalter der Vorlage bekommt einen
-  Wert. Die Gegenrichtung hätte verboten, dass ein Design einen Wert nicht
-  setzt. Stattdessen verlangt der Bau der Vorlage die Platzhalter, die an
-  Rechnungsart oder Rechnung hängen (`TemplateValue.required`), von jeder
-  Vorlage. Für die Stammdaten gibt es keine solche Pflicht – "Steuernummer
-  oder USt-IdNr." ist kein Kennzeichen –, das prüft `PflichtangabenTest` am
-  fertigen PDF, je Design und Rechnungsart (#187). Ebenso wenig für einen
-  **Schalter** (`LOGO`, `RABATTSPALTE`) und die **Einleitung** (#248): Der
-  Schalter hat keinen Inhalt, er sagt nur, ob die Vorlage ein Mittel einsetzt,
-  und die Einleitung darf ein Design weglassen (#209). Eine freiwillige Angabe
-  der Rechnungsdatei ist damit noch nicht frei – Kundennummer (#190),
-  Auftragsnummer (#191), Kundenreferenz und der Schlusssatz aus `bemerkung`
-  bleiben Pflicht: Das sind Angaben und keine Begleitsätze, jemand hat sie für
-  diese eine Rechnung hingeschrieben.
-
-  Neben der Pflichtliste steht **eine** benannte Regel,
-  `TemplateValue.ZAHLUNGSANGABE` (#249): Jede Vorlage sagt etwas über die
-  Zahlung – `balken` das Zahlungsziel als Datum im Kopf (`ZAHLUNGSZIEL`),
-  `raster` die Frist als Satz unter den Summen (`ZAHLUNGSFRIST`, #211).
-  Pflicht ist deshalb keiner der beiden Platzhalter, aber einer von beiden,
-  und geprüft wird das beim Bau der Vorlage statt am fertigen PDF. Eine
-  benannte Regel und keine allgemeine Liste von Gruppen: Es gibt genau diesen
-  einen Fall, und ein zweiter soll nicht als Listeneintrag hereinkommen,
-  sondern hingeschrieben werden – wer ihn hinschreibt, steht vor der Frage aus
-  #188. Derselbe Zug wie `InvoiceType` ohne Vorgabewerte (ADR-0009) und die
-  `when` ohne `else`: Der Nächste entscheidet, statt zu erben.
-
-  Die Vorlage ist ein eigener Typ, `Template` (#201), mit privatem
-  Konstruktor – derselbe Zug wie bei der `AcceptedInvoice`: Was ungeprüft ist,
-  lässt sich nicht bauen. `Template.of` streicht die Kommentarzeilen und prüft
-  dann Makros und Pflicht-Platzhalter, `fillIn` füllt und prüft die Werte,
-  `uses` beantwortet, ob die Vorlage einen Platzhalter setzt. Der Renderer
-  liefert nur die Werte (`values()`, die innere Naht) und fragt die Vorlage.
-  Vorher waren das fünf `internal`-Funktionen, die `template: String`
-  herumreichten, und die Reihenfolge "erst streichen, dann prüfen" kannte
-  nur `render`; ein Test, der sie nicht einhielt, prüfte die Vorlage mit
-  Kommentaren. Auch die Tests mit kaputten Vorlagen gehen durch `Template.of`.
-
-  Die Tabellenzeilen sind
-  Makros (`\positionszeile` mit
-  sieben Argumenten, das erste die laufende Nummer, das sechste der Rabatt)
-  – damit steht die
-  Spaltenzahl nur an einer Stelle, statt in
-  Vorlage und Kotlin getrennt getroffen zu werden. Welche Makros der Renderer
-  aufruft, zählt das Enum `TemplateMacro` auf; beim Bau der Vorlage wird geprüft, dass sie
-  jedes davon mit derselben Stelligkeit kennt. Vorher fiel ein vertippter
-  Name erst im LuaLaTeX-Lauf auf, also im Integrationstest. Die Vorlage darf
-  weitere Makros für sich behalten (`\kopfperson`, `\blocktrenner`). **Nicht** eingeebnet
-  wurde dabei der Unterschied im Einzug zwischen der gedämpften Zweitzeile einer
-  Position und der eines Abschlags: Das ist Satzbild und gehört vor Augen, nicht
-  in einen Umbau.
-  Auch der Satzabstand ist Satzbild (#143): Im ganzen Dokument gilt
-  `\frenchspacing`, weil TeX sonst jeden Punkt nach Kleinbuchstabe oder Ziffer
-  für ein Satzende hält ("Dr. Erika") und sich in Eingabedaten nicht erkennen
-  lässt, wo ein Satz wirklich endet. Den breiten Abstand nach `.` `?` `!` setzt
-  allein `\hinweisabsatz`, der die eigenen Sätze des Programms trägt –
-  Eingabedaten gehören deshalb nicht hinein. Ein Datum schreibt
-  `GermanFormat.date` mit `~` hinter dem Tag, damit es auch dort keine Lücke
-  bekommt; in den XMP-Metadaten wäre `~` aber ein Zeichen, dort gilt
-  `dateInMetadata`. Erwogen und verworfen: ein zweiter Weg in `escapeLatex`,
-  der in Daten jeden Punkt entschärft – 74 Aufrufe hätten ihre Bedeutung
-  geändert, für eine Entscheidung, die in die Vorlage gehört.
 - **Designs** (ADR-0011): Die Stammdaten wählen das Design, `design: balken`
   oder `design: raster`, ohne Eintrag `balken`. Jedes ist eine eingebaute
   Vorlage, die derselbe Renderer füllt – kein zweiter Renderer, kein Schalter,
-  keine mitgebrachte Vorlage. `raster` kommt mit dem Vokabular aus #188 aus;
-  wer für ein weiteres Design ein Wort braucht, das `TemplateMacro` und
-  `TemplateValue` nicht haben, stellt die Frage aus #188 neu und baut nicht am
-  Renderer vorbei. Feste Texte gehören zum Design, ein Wortlaut mit fachlicher
-  Aussage kommt aus Kotlin, auch als Beschriftung. Die Bank steht in `raster`
-  nur im Fuß, `\bankblock` ist dort leer. Das Zahlungsziel nennt `raster`
-  nicht im Kopf, sondern als Satz unter den Summen, als Frist ab
-  Rechnungsdatum ("sofort", "1 Tag", "x Tage"): `ZAHLUNGSFRIST` liefert Kotlin
-  als ganzen Satz, weil die Fallunterscheidung über `\ifblank` hinausgeht;
-  `balken` übergeht ihn und behält `ZAHLUNGSZIEL` im Kopf (#211). Die Vergleichsdateien sind seit
-  #204 symmetrisch, je Art der Inhalt, je Design das Satzbild: fünf
-  `<art>-inhalt.tex` mit den Werten aus `values()`, für jedes Design gleich,
-  und je Design ein Volltext der gewöhnlichen Rechnung
-  (`rechnung-erwartet.tex`, `raster-rechnung-erwartet.tex`). Wie die übrigen
-  Arten auf dem Blatt stehen, prüft das Pflichtangaben-Netz
-  (`PflichtangabenTest`, je Design und Art). Ein neues Design ist eine
+  keine mitgebrachte Vorlage. Feste Texte gehören zum Design, ein Wortlaut mit
+  fachlicher Aussage kommt aus Kotlin (ADR-0017). Ein neues Design ist eine
   Vorlage, ein Eintrag in `Design`, eine Vergleichsdatei und eine Zeile im
-  Netz.
+  Pflichtangaben-Netz.
+
 - **Logo** (ADR-0012): Die Stammdaten nennen es als Datei, `logo: logo.tex`,
   relativ zu ihrem Verzeichnis; ohne Eintrag kein Logo. Die Datei definiert
   `\logozeichnung` (Pflicht, der Rumpf einer `tikzpicture`) und
-  `\logoskalierung` (optional, ein Faktor auf die Logohöhe des Designs, sonst
-  1) und bringt Farben und Schrift selbst mit (#199). Der Faktor steht dort und
-  nicht in den Stammdaten, weil die Proportionen zum Logo gehören; die Vorlage
-  begrenzt ihn nicht, man sieht ihn am Blatt. Gelesen wird die Datei in
-  `YamlLoader.loadSellerConfig`, `parseSellerConfig` lehnt den Eintrag ab. Der
-  Renderer liefert `LOGO` als Schalter und die Datei in
-  `RenderedInvoice.files`, aber nur, wenn die Vorlage `<<LOGO>>` enthält – er
-  befolgt die Vorlage und kennt kein Design. Ob das Blatt das Logo zeigt, sagt
-  er ausdrücklich (`RenderedInvoice.includesLogo`); `erzeuge` nennt es danach
-  in einer Fehlermeldung und schließt nicht aus `files` darauf, das hielte nur,
-  solange das Logo die einzige Datei ist (#203). `raster` liest die Datei per `\input` in
-  der Präambel, `balken` übergeht sie, und dann ist das PDF Byte für Byte
-  dasselbe wie ohne Eintrag. Weitere Dateien gehen über `Typesetter.typeset(files)` in das
-  Arbeitsverzeichnis und mit Namen, Länge und Inhalt in die Trailer-ID; ohne
-  sie bleibt die ID die von vorher. Keine Bilddatei: `luatex.def` gibt jedem
-  per `\includegraphics` eingebundenen PDF eine Transparenzgruppe mit, und die
-  verbietet PDF/A-1 (#197). Kommen PDF oder PNG dazu, bestimmt die Endung die
-  Art, und `\Gread@pdf` braucht eine Umdefinition.
+  `\logoskalierung` (optional) und bringt Farben und Schrift selbst mit.
+  Gelesen wird sie in `YamlLoader.loadSellerConfig`. Der Renderer liefert
+  `LOGO` als Schalter und die Datei in `RenderedInvoice.files`, aber nur, wenn
+  die Vorlage `<<LOGO>>` enthält, und sagt mit `RenderedInvoice.includesLogo`
+  ausdrücklich, ob das Blatt es zeigt. **Keine Bilddatei**: `luatex.def` gibt
+  jedem per `\includegraphics` eingebundenen PDF eine Transparenzgruppe mit,
+  und die verbietet PDF/A-1 (#197).
+
 - **Externe Prozesse**: Ausgabe wird in Dateien umgeleitet, nicht in Streams
   gelesen – sonst blockiert das Lesen bei einem hängenden Prozess, und
   die Zeitgrenze käme nie zum Zug. Zwei Dateien, denn stdout und stderr
@@ -322,8 +190,8 @@ CV/Web-Auftritt des Autors), PDF/A-Prüfung über veraPDF.
   Die Fachfehler – `InputFileException`, `ToolchainException` und die
   `RejectedException` einer Ablehnung – übersetzt ebenfalls `execute()`, einmal
   für alle Kommandos; die Kommandos werfen sie nur durch (#119). Zu Text wird
-  die Abbruchliste allein in `RejectedException`. Vorher tat jedes Kommando das
-  selbst, und in #52 liefen die Fassungen auseinander.
+  die Abbruchliste allein in `RejectedException`; täte es jedes Kommando
+  selbst, liefen die Fassungen auseinander (#52).
   `erzeuge --oeffnen` öffnet das fertige PDF über `PdfViewer`, eine eigene
   Naht im Paket `generate` und bewusst nicht in `toolchain` (#144): Dort
   liegen die Werkzeuge, ohne die kein PDF entsteht, und `checkAvailable()`
@@ -354,22 +222,19 @@ CV/Web-Auftritt des Autors), PDF/A-Prüfung über veraPDF.
   `formatted()` wieder gruppiert. Grund: Diese Werte tippt man einmal und
   schaut sie nie wieder an; ein Zahlendreher in der IBAN fällt sonst erst auf,
   wenn das Geld nicht ankommt.
-- **Rechnungsnummer**: Geprüft wird nur ihre Form – welche gilt, steht als
-  regulärer Ausdruck in den Stammdaten (`rechnungsnummer-muster`), und ohne
-  Eintrag wird gar nicht geprüft (ADR-0005). `R26-009` ist ein Format unter
-  vielen; UStAE 14.5 Abs. 10 erlaubt Ziffern und Buchstaben und verlangt keine
-  lückenlose Abfolge. Die Einmaligkeit (§14 Abs. 4 Satz 1 Nr. 4 UStG) prüft der
-  Generator nicht – beim Erzeugen sieht er eine einzige Datei (ADR-0001). Die
-  Prüfung sitzt deshalb in `InvoiceNumberRules` und nicht im Serialisierer: Ob
-  eine Nummer gültig ist, hängt an zwei Dateien, und der sieht beim Einlesen
-  immer nur eine. Leere Nummer und Leerraum am Rand brechen unabhängig vom
-  Muster ab (`RECHNUNGSNUMMER_FEHLT`, `RECHNUNGSNUMMER_MIT_LEERRAUM`), weil aus
-  der Nummer auch der Dateiname entsteht – ebenso eine, von der kein Dateiname
-  übrig bleibt (`RECHNUNGSNUMMER_OHNE_DATEINAMEN`, #150). Den Namen leitet
-  `CalculatedInvoice.fileBaseName` ab, die `AcceptedInvoice` trägt ihn sicher,
-  und `erzeuge` hat keinen eigenen Abbruch mehr dafür. Die Nummern der
-  abgesetzten Abschläge bleiben ungeprüft: Sie stammen aus früheren Rechnungen,
-  womöglich aus der Zeit vor einem Wechsel des Musters.
+- **Rechnungsnummer** (ADR-0005): Geprüft wird nur ihre Form – welche gilt,
+  steht als regulärer Ausdruck in den Stammdaten (`rechnungsnummer-muster`),
+  und ohne Eintrag wird gar nicht geprüft. Die Einmaligkeit (§14 Abs. 4 Satz 1
+  Nr. 4 UStG) prüft der Generator nicht: Beim Erzeugen sieht er eine einzige
+  Datei (ADR-0001). Die Prüfung sitzt deshalb in `InvoiceNumberRules` und nicht
+  im Serialisierer – ob eine Nummer gültig ist, hängt an zwei Dateien. Leere
+  Nummer, Leerraum am Rand und eine Nummer, von der kein Dateiname übrig
+  bleibt, brechen unabhängig vom Muster ab (`RECHNUNGSNUMMER_FEHLT`,
+  `RECHNUNGSNUMMER_MIT_LEERRAUM`, `RECHNUNGSNUMMER_OHNE_DATEINAMEN`), weil aus
+  der Nummer auch der Dateiname entsteht; abgeleitet wird er in
+  `CalculatedInvoice.fileBaseName`. Die Nummern der abgesetzten Abschläge
+  bleiben ungeprüft.
+
 - **Steuerkategorie**: `TaxCategory` (BT-151, Codeliste UNCL 5305) pro Position,
   Vorgabe S. Der Satz allein genügt nicht – ohne Kategorie lässt sich "0 %"
   nicht von "steuerbefreit" und nicht von "Steuerschuldnerschaft des
@@ -386,8 +251,8 @@ CV/Web-Auftritt des Autors), PDF/A-Prüfung über veraPDF.
   Steuerbetrag (#218): Wer einen Grund trägt (E, AE, K, O), steht im Hinweis
   unter den Summen, wer keinen trägt (S, Z), als Steuerzeile im Summenblock –
   der Nullsatz also mit "0 % … 0,00 €", denn er ist keine Befreiung, sondern
-  eine Besteuerung mit 0 %. Vorher entschied das der Steuerbetrag, und eine
-  Z-Gruppe fiel ganz vom Blatt. Die Steuerzeile nennt außerdem das Entgelt
+  eine Besteuerung mit 0 %. Entschiede das der Steuerbetrag, fiele eine
+  Z-Gruppe ganz vom Blatt. Die Steuerzeile nennt außerdem das Entgelt
   ihrer Gruppe (§14 Abs. 4 Nr. 7 UStG), sobald es mehr als eine gibt; bei
   einer wäre es die Zwischensumme und stünde doppelt da. Geprüft wird das an
   `gemischte-steuersaetze.yaml` im Netz, mit zwei Positionen je Satz – bei
@@ -419,123 +284,66 @@ CV/Web-Auftritt des Autors), PDF/A-Prüfung über veraPDF.
 - **Rechnungsart**: `InvoiceType` (BT-3, Codeliste UNTDID 1001) mit Vorgabe
   `rechnung`, geschlossene Menge wie `Unit` und `TaxCategory`. Sie ist keine
   Beschriftung: Wer einen Abschlag wie eine gewöhnliche Rechnung abrechnet und
-  später noch einmal die Gesamtleistung, weist die Umsatzsteuer zweimal aus und
-  schuldet sie nach §14c Abs. 1 UStG auch zweimal. Die YAML-Werte heißen wie die
-  Dokumente in `CONTEXT.md` (`abschlagsrechnung`, nicht `anzahlung`), nicht wie
-  die Codeliste. Die Schlussrechnung trägt denselben Code 380 wie die
-  gewöhnliche Rechnung – sie *ist* die Rechnung über die Gesamtleistung,
-  kenntlich an der Absetzung, nicht am Dokumenttyp. Aus der einen Tatsache
-  `servicePeriodIsForecast` folgen beide Zeitraum-Beschriftungen und die
-  Schreibweise des Datums (Kalendermonate, UStAE 14.8 Abs. 1 und 4): Auf einer
-  Abschlagsrechnung ist der Zeitraum eine Prognose, und auf den Tag genau
-  genannt behauptete er eine Genauigkeit, die er nicht hat.
+  später noch einmal die Gesamtleistung, schuldet die Umsatzsteuer nach §14c
+  Abs. 1 UStG zweimal. Die YAML-Werte heißen wie die Dokumente in `CONTEXT.md`
+  (`abschlagsrechnung`, nicht `anzahlung`), nicht wie die Codeliste; die
+  Schlussrechnung trägt denselben Code 380 wie die gewöhnliche Rechnung, weil
+  sie *ist* die Rechnung über die Gesamtleistung. `servicePeriodIsForecast`,
+  `chargesForService` und `mandatoryNote` haben **keine** Vorgabewerte – jeder
+  Eintrag nennt sie ausdrücklich, damit eine neue Art nicht still die Antworten
+  der gewöhnlichen Rechnung erbt (ADR-0009, ADR-0008).
 
-  Diese Eigenschaft, `chargesForService` und `mandatoryNote` haben **keine**
-  Vorgabewerte: Jeder Eintrag nennt sie ausdrücklich, damit eine neue Art
-  nicht still die Antworten der gewöhnlichen Rechnung erbt – samt
-  Zahlungsziel und Bankverbindung. Das hält die Zusage aus ADR-0008 an der
-  Stelle, an der die Art entsteht. Das flache Modell hinter
-  `AcceptedInvoice.calculated` bleibt dafür bewusst lesbar (ADR-0009).
-
-  Dazu gehört ein Sicherungsnetz: `src/test/resources/rechnung-erwartet.tex` ist
-  das erwartete LaTeX der Beispielrechnung, zeichengleich verglichen. Der Satz
-  einer gewöhnlichen Rechnung soll sich nicht nebenbei ändern, während die
-  anderen Arten dazukommen. Wird der Test rot, ist das eine Frage und keine
-  Aufgabe: erst nachsehen, ob die Änderung gewollt ist, dann die Datei neu
+  Dazu ein Sicherungsnetz: `src/test/resources/rechnung-erwartet.tex` ist das
+  erwartete LaTeX der Beispielrechnung, zeichengleich verglichen, daneben je
+  Art eine Inhalts-Datei `<art>-inhalt.tex` und je Design ein Volltext der
+  gewöhnlichen Rechnung. Wird einer rot, ist das **eine Frage und keine
+  Aufgabe**: erst nachsehen, ob die Änderung gewollt ist, dann die Datei neu
   erzeugen – und das erzeugte PDF gegen das vorherige prüfen. Gleiche Prüfsumme
-  des PDF heißt: nichts geändert. Weicht sie ab, entscheidet das Bild
-  (`pdftoppm` und dessen Prüfsumme), denn eine geänderte Leerzeile der
-  Vorlage ändert die Trailer-ID, aber nicht das Satzbild. Kommentarzeilen der
-  Vorlage kommen gar nicht erst im `.tex` an: Der Renderer streicht ganze
-  `%`-Zeilen vor den Prüfungen, nachgestellte Kommentare bleiben, weil ein `%`
-  am Zeilenende in LaTeX Bedeutung hat (#149). Die übrigen Arten sichert
-  daneben je eine Inhalts-Datei, `<art>-inhalt.tex`: nur die nicht leeren
-  Werte der Vorlage, je Wert `<<NAME>>` und darunter der Wert (#204, Nachtrag
-  zu ADR-0011). Eine Änderung am Satzbild berührt dann eine Datei je Design
-  statt eine je Art, und wird der Volltext rot, zeigt die Inhalts-Datei, ob
-  sich der Inhalt geändert hat oder nur das Satzbild. Für sie gilt dasselbe:
-  eine Frage, keine Aufgabe, und keinen Schalter zum Neu-Erzeugen. Welche
-  Beispieldatei zu welcher Art gehört, steht einmal in `exampleInvoices`
+  heißt: nichts geändert; weicht sie ab, entscheidet das Bild (`pdftoppm`),
+  denn eine geänderte Leerzeile der Vorlage ändert die Trailer-ID, aber nicht
+  das Satzbild. Einen Schalter zum Neu-Erzeugen gibt es nicht. Welche
+  Beispieldatei zu welcher Art gehört, steht in `exampleInvoices`
   (`model/TestFixtures.kt`).
-- **Storno**: Eine falsche Rechnung wird nicht überschrieben, sondern
-  aufgehoben – `art: stornorechnung` mit eigener Nummer, dem Bezug auf die
-  Ursprungsrechnung unter `storniert` (EN 16931 BG-3, Pflicht) und den
-  Positionen der Ursprungsrechnung mit negativer Menge (ADR-0006). Code 384 und
-  nicht 381: Die KoSIT führt 381 für die kaufmännische Gutschrift **ohne**
-  Bezug, 384 für Korrektur und Storno mit Bezug, 389 für die Gutschrift im
-  Sinne des §14 Abs. 2 Satz 2 UStG. Negativ wird die Menge und nie der
-  Einzelpreis, den BR-27 verbietet – genau so war das Projekt schon gebaut, die
-  seit #47 offene Frage nach der negativen Menge ist damit beantwortet. Das
-  Vorzeichen des Gesamtbetrags gehört seither zur Rechnungsart: im Storno
-  Pflicht, überall sonst verboten. Null ist nur für die Abschlagsrechnung zu
-  wenig (`ABSCHLAGSRECHNUNG_OHNE_BETRAG`); Rechnung und Teilrechnung über null
-  entstehen mit einem Hinweis (`GESAMTBETRAG_NULL`), weil eine ganz erlassene
-  Leistung gewollt sein kann. Zahlungsziel und Bank entfallen dort ohnehin,
-  `requestsPayment` verlangt einen positiven Betrag (#214). Fälligkeit und
-  Bankverbindung entfallen, weil ein Storno kein Geld fordert; dafür wurde der
-  Bankblock zum Makro der Vorlage, sonst bliebe die Überschrift ohne Konto
-  stehen. Die Ursprungsrechnung nennt
-  der Pflichtsatz mit Nummer und Datum, über die Platzhalter
-  `<<URSPRUNGSNUMMER>>` und `<<URSPRUNGSDATUM>>`, die `InvoiceVariableResolver`
-  beim Setzen auflöst; eine eigene Zeile im Kopf gibt es nicht mehr (ADR-0010).
-  Im Modell bleibt der Bezug Struktur. Das Wort **Gutschrift** fällt
-  nicht: Umsatzsteuerlich ist das eine Rechnung des Leistungsempfängers. Nur
-  ganz, nicht teilweise. Eine Teilberichtigung kennt das Projekt nicht: Falsche
-  Angaben, falsche Beträge und zu viel ausgewiesene Steuer laufen über Storno
-  und neue Rechnung. Offen wäre allein die nachträgliche Entgeltminderung
-  (§17 UStG), ein eigener Vorgang. Erwogen und mangels Anlass geschlossen in
-  #64. Über die eigene Datei hinaus wirkt ein Storno nur dort, wo jemand das
-  Ablageverzeichnis liest, also im Skript `offene-abschlaege.py` (#66): Eine
-  stornierte Abschlagsrechnung ist nicht offen, und die Abschläge einer
-  stornierten Schlussrechnung sind es wieder. Beide Richtungen kosten Geld –
-  die eine setzt Zurückgezahltes ab, die andere lässt zweimal zahlen –, deshalb
-  bleibt keine still: Jede vermerkt das Skript auf stderr, auch den Fall, der
-  weder offen noch in Ordnung ist (ein stornierter Abschlag, den eine gültige
-  Schlussrechnung absetzt).
-- **Absetzung**: Die Schlussrechnung trägt die vereinnahmten Abschläge unter
-  `abschlaege` ausgeschrieben, mit `steueranteile` je Kombination aus Kategorie
-  und Satz. Nachgeschlagen wird nichts (ADR-0001): Zwischen Abschlag und
-  Schlussrechnung liegen Monate, in denen Dateien in Jahresordner wandern; eine
-  Rechnung, die beim Erzeugen fremde Dateien liest, ergibt nicht zweimal
-  dasselbe PDF. Das Abtippen übernimmt `rechnungsgenerator abschlaege`
-  (ADR-0003): Es rechnet die Abschlagsrechnungen zu derselben
-  `CalculatedInvoice` wie beim PDF und gibt den Block auf stdout aus – alles oder nichts, ohne Datum
-  und Pfad, ein fehlendes `vereinnahmt-am` als leeres Feld. Das "alles oder
-  nichts" hält der Typ: `prepaymentsOf` liefert ein versiegeltes
-  `CollectedPrepayments`, vollständig oder abgelehnt, und die Einträge tragen
-  den Namen ihrer Datei selbst (#118). Vorher war es eine Liste neben den
-  Befunden, "nur vollständig, wenn kein Abbruch" laut Kommentar, und das
-  Kommando filterte und paarte per `zip` – dieselbe Sorte Disziplin, die
-  ADR-0007 beim Renderer abgeschafft hat. Eingefügt wird von
-  Hand, und danach kann der Block geändert oder ganz von Hand geschrieben sein.
-  Deshalb bleiben die Abbruchregeln bei der Schlussrechnung, in
-  `FinalInvoiceRules` – darunter die Prüfsumme `netto × satz = ust`
-  (`ABSCHLAG_PRUEFSUMME`) und die Forderung, dass Kategorie und Satz in der
-  Schlussrechnung überhaupt vorkommen (`ABSCHLAG_KOMBINATION_FEHLT`).
-  `ABSCHLAG_DOPPELT` fängt dieselbe Nummer zweimal aber nur *innerhalb* einer
-  Datei; dass zwei Schlussrechnungen denselben
-  Abschlag absetzen, sieht allein `offene-abschlaege.py` (#67), weil nur es das
-  Verzeichnis liest. Abgesetzt wird nur, was
-  **vereinnahmt** ist (§14 Abs. 5 Satz 2 UStG); ein unbezahlter Abschlag ist
-  eine offene Forderung.
 
-  Im PDF steht die Absetzung unter dem Gesamtbetrag und nie als Position
-  (ADR-0002): Eine negative Position senkte die Bemessungsgrundlage und damit
-  die ausgewiesene Umsatzsteuer, die aber in voller Höhe geschuldet wird.
-  Restbetrag null bekommt einen Satz statt einer Zahl, und dann entfallen auch
-  Zahlungsziel und Bankverbindung – sonst stünden zwei verschiedene Aussagen auf
-  einem Blatt. Beide folgen aus `requestsPayment`, das neben der Rechnungsart
-  den Restbetrag kennt: Eine voll abgesetzte Schlussrechnung rechnet ab, ohne
-  Geld zu fordern (#94).
-  `prepaymentTotal`, `remainingAmount` und das Zahlungsziel sind abgeleitet,
-  nicht gespeichert, und seit #172 gilt das für alle Summen: Im Konstruktor der
-  `CalculatedInvoice` stehen nur Rechnung und Stammdaten, der Rumpf rechnet den
-  Rest aus. Ein Paar aus einer Rechnung und den Summen einer anderen ist damit
-  nicht baubar, auch nicht über `copy()`. Vorher standen die Summen im
-  Konstruktor, und das hielt nur, weil allein `InvoiceCalculator.calculate` ihn
-  aufrief. Verworfen: ein privater Konstruktor wie bei `AcceptedInvoice` – das
-  `copy()` einer Data Class bliebe trotzdem öffentlich, und die Summen blieben
-  gespeichert.
+- **Storno** (ADR-0006): Eine falsche Rechnung wird nicht überschrieben,
+  sondern aufgehoben – `art: stornorechnung` mit eigener Nummer, dem Bezug auf
+  die Ursprungsrechnung unter `storniert` (BG-3, Pflicht) und den Positionen
+  der Ursprungsrechnung mit **negativer Menge**, nie negativem Einzelpreis
+  (BR-27 verbietet ihn). Code 384 und nicht 381: Die KoSIT führt 381 für die
+  kaufmännische Gutschrift ohne Bezug. Zahlungsziel und Bankverbindung
+  entfallen, weil ein Storno kein Geld fordert; die Ursprungsrechnung nennt der
+  Pflichtsatz über `<<URSPRUNGSNUMMER>>` und `<<URSPRUNGSDATUM>>` (ADR-0010),
+  eine eigene Zeile im Kopf gibt es nicht. Das Wort **Gutschrift** fällt nicht:
+  Umsatzsteuerlich ist das eine Rechnung des Leistungsempfängers. Nur ganz,
+  nicht teilweise – eine Teilberichtigung kennt das Projekt nicht, erwogen und
+  mangels Anlass geschlossen in #64. Über die eigene Datei hinaus wirkt ein
+  Storno nur dort, wo jemand das Ablageverzeichnis liest, also in
+  `offene-abschlaege.py` (#66).
+
+- **Absetzung** (ADR-0001, ADR-0002): Die Schlussrechnung trägt die
+  vereinnahmten Abschläge unter `abschlaege` ausgeschrieben, mit
+  `steueranteile` je Kombination aus Kategorie und Satz. Nachgeschlagen wird
+  nichts: Eine Rechnung, die beim Erzeugen fremde Dateien liest, ergibt nicht
+  zweimal dasselbe PDF. Das Abtippen übernimmt `rechnungsgenerator abschlaege`
+  (ADR-0003) – alles oder nichts, gehalten vom Typ `CollectedPrepayments`.
+  Eingefügt wird von Hand, deshalb bleiben die Abbruchregeln bei der
+  Schlussrechnung, in `FinalInvoiceRules`: darunter die Prüfsumme
+  `netto × satz = ust` (`ABSCHLAG_PRUEFSUMME`) und die Forderung, dass
+  Kategorie und Satz in der Schlussrechnung überhaupt vorkommen
+  (`ABSCHLAG_KOMBINATION_FEHLT`). `ABSCHLAG_DOPPELT` fängt dieselbe Nummer nur
+  *innerhalb* einer Datei; dass zwei Schlussrechnungen denselben Abschlag
+  absetzen, sieht allein `offene-abschlaege.py`. Abgesetzt wird nur, was
+  **vereinnahmt** ist (§14 Abs. 5 Satz 2 UStG).
+
+  Im PDF steht die Absetzung unter dem Gesamtbetrag und nie als Position: Eine
+  negative Position senkte die Bemessungsgrundlage und damit die ausgewiesene
+  Umsatzsteuer, die aber in voller Höhe geschuldet wird. Restbetrag null
+  bekommt einen Satz statt einer Zahl, und dann entfallen auch Zahlungsziel und
+  Bankverbindung – beides folgt aus `requestsPayment`, das neben der
+  Rechnungsart den Restbetrag kennt. Alle Summen sind abgeleitet und nicht
+  gespeichert: Im Konstruktor der `CalculatedInvoice` stehen nur Rechnung und
+  Stammdaten, der Rumpf rechnet den Rest aus (#172).
+
 - **Skonto**: Ein im Voraus vereinbartes Skonto (§14 Abs. 4 Satz 1 Nr. 7 UStG)
   steht als Liste von Skontostufen unter `skonto`, je `satz` und `tage` ab
   Rechnungsdatum (#183). Auf dem Blatt nennt es ein Satz unter den Summen, nach
@@ -556,74 +364,46 @@ CV/Web-Auftritt des Autors), PDF/A-Prüfung über veraPDF.
     Geld.
 - **Rabatt** (ADR-0013): Eine Position trägt ihn als Satz, `rabatt: 30`, oder
   als Betrag, `rabatt-betrag: 200.00`, und er mindert den Positionsbetrag,
-  nicht den Einzelpreis – EN 16931 BG-27 und nicht BT-147. Basis und
-  Rabattbetrag sind je auf Cent gerundet, das Netto ist ihre Differenz;
-  `CalculatedLine` rechnet das im Rumpf und kennt im Konstruktor nur die
-  Position (#213). Zulässig ist ein Satz über 0 bis 100 %
+  nicht den Einzelpreis (BG-27 und nicht BT-147). Basis und Rabattbetrag sind
+  je auf Cent gerundet, das Netto ist ihre Differenz. Zulässig ist **genau
+  eines** von beidem (`RABATT_DOPPELT`), ein Satz über 0 bis 100 %
   (`RABATT_AUSSERHALB_BEREICH`) oder ein Betrag über 0,00 bis zur Basis
-  (`RABATT_BETRAG_AUSSERHALB_BEREICH`), auf jeder Art und **genau eines** von
-  beidem (`RABATT_DOPPELT`). Das Vorzeichen bringt der Satz selbst mit, der
-  Betrag bekommt das der Basis: Er steht positiv in der Datei, und ein Storno
-  bleibt damit das, was ADR-0006 sagt – Positionen übernehmen, vor die Menge
-  ein Minus (#233). Die Spalte steht nur, wenn eine Position einen Rabatt hat:
-  Der Renderer liefert Satz oder Betrag als siebtes Argument von
-  `\positionszeile` und den Schalter `RABATTSPALTE`, die Vorlage entscheidet
-  mit `\ifblank` (`\mitrabatt`, Spaltentyp `R`). In der Spalte steht, was
-  vereinbart wurde – nicht stets der Rabattbetrag, sonst fiele der Satz vom
-  Blatt. Im Modell ist der Rabatt ein Typ: Die zwei YAML-Schlüssel sind private
-  Eigenschaften von `LineItem`, nach draußen geht `discount: Discount?`
-  (`values`, mit `Rate` und `Amount`), und wer ihn auswertet, entscheidet in
-  einem `when` ohne `else`. Bewusst **nicht**: zwei Abschläge auf einer
-  Position, eine Rabattzeile im Summenblock (sähe aus wie BG-20), ein
-  Freitextgrund – der Export setzt später Code 95.
+  (`RABATT_BETRAG_AUSSERHALB_BEREICH`), auf jeder Art. Der Betrag steht positiv
+  in der Datei und bekommt das Vorzeichen der Basis, damit ein Storno bleibt,
+  was ADR-0006 sagt. Im Modell ist der Rabatt ein Typ: Die zwei YAML-Schlüssel
+  sind private Eigenschaften von `LineItem`, nach draußen geht
+  `discount: Discount?`, und wer ihn auswertet, entscheidet in einem `when`
+  ohne `else`. In der Spalte steht, was vereinbart wurde – Satz oder Betrag,
+  nicht stets der Rabattbetrag.
+
 - **ZUGFeRD-Vorbereitung**: Datenmodell enthält von Anfang an alle
   EN-16931-Pflichtfelder (Leistungsdatum, Steuerkategorie, Kennungen), damit
   ZUGFeRD (PDF/A-3 + XML) später ein zusätzlicher Ausgabemodus wird, kein Umbau.
   Bis dahin bewusst nur PDF/A-1b (Archivierungsanforderungen der E-Rechnung
   noch offen).
-- **Befunde statt Abbruch beim ersten Fehler**: Die Prüfung wirft nicht,
-  sondern liefert eine Liste von Befunden. Ein Befund trägt eine
-  Kennung, eine Schwere (Abbruch oder Hinweis), den Gegenstand (Rechnung,
-  Position, Abschlag) und die Meldung; den Gegenstand nennt die Meldung nicht
-  selbst, das tut die Ausgabe. Abgebrochen wird im Kommando – und dann stehen
-  alle Gründe auf einmal da, statt dass fünf Fehler fünf Läufe brauchen.
-  `CalculatedInvoice` rechnet nur. Geprüft wird in Regelgruppen im Paket `rules`, je
-  eine Datei neben ihrem gleichnamigen Test, jede gegen das fertig gerechnete
-  Ergebnis (#71). Vorher standen Regeln zwischen den Rechenschritten, und weil
-  zwei die Summen brauchten, entstand das Ergebnis zweimal. Den Prüflauf führt
-  `AcceptedInvoice.check`, nicht die `CalculatedInvoice`: Befunde sind ein
-  Urteil über die Rechnung und kein abgeleiteter Wert wie `dueDate`. Als `lazy`
-  auf ihr hatte die Prüfung keinen Besitzer – die Rechnungsart wurde dort
-  gemerkt, und dass eine Ablehnung ihre Gründe nannte, hing an einem Eintrag in
-  der Liste der Regelgruppen (#105). Setzen lässt sich nur eine
-  `AcceptedInvoice`, und die gibt es nur ohne Abbruch: Renderer und das
-  Zusammentragen der Abschläge (`prepaymentsOf`) verlangen sie, damit hält der
-  Compiler die Zusage aus ADR-0004 und nicht mehr die Disziplin der Kommandos
-  (ADR-0007, #70). Sie trägt die Rechnungsart als Typ (`InvoiceKind`): Nach
-  Bezug, Vereinnahmung und Abschlägen fragen Renderer und `prepaymentsOf`
-  dort, nicht im flachen Modell.
-  Gebaut wird er in `InvoiceKindRules`, zusammen mit den sechs Regeln, ohne die
-  er nicht baubar ist (ADR-0008).
-  Die Regelgruppe einer Rechnungsart (`PrepaymentRules`, der Bezug in
-  `CancellationRules`, `FinalInvoiceRules`) prüft nur auf dieser Art – als
-  `when` über alle Arten ohne `else`, damit eine neue Art dort
-  entscheiden muss (#121). Steht
-  ihr Feld auf einer anderen, bleibt allein der Befund aus `InvoiceKindRules` –
-  sonst stünden Sätze über "diese Schlussrechnung" unter einer gewöhnlichen
-  Rechnung (#97). Der Preis: Wer nur `art` falsch gesetzt hat, sieht Fehler
-  in den Angaben der gemeinten Art erst im zweiten Lauf.
-  Ebenso fragt der Renderer die `InvoiceKind`: Vereinnahmung und Absetzung je
-  in einem `when` ohne `else`, zwei Stellen für zwei Entscheidungen (#128).
-  Ebenso fragt `InvoiceVariableResolver` den Bezug (ADR-0010). Nur
-  `prepaymentOf` behält sein `else` – dort ist genau eine Art richtig.
-  Die Kennungen sind deutsch benannt wie die Regeln und **nicht** nummeriert:
-  Die Nummern standen nur in Kommentaren und Testnamen und liefen dort
-  auseinander. Tests prüfen die Kennung statt des Wortlauts und brauchen dafür
-  keine sonst makellose Rechnung mehr; wo früher "wirft nicht" die stille
-  Zusage war, steht jetzt `aborts().shouldBeEmpty()`. Der Umbau selbst hat
-  prompt eine Regel entlarvt, die sich auf einer Rechnung ganz ohne Abschläge
-  meldete ("mehr Abschläge abgesetzt (0.00)") – solange der erste Wurf gewann,
-  sah das niemand.
+- **Befunde statt Abbruch beim ersten Fehler** (ADR-0004): Die Prüfung wirft
+  nicht, sondern liefert eine Liste von Befunden – Kennung, Schwere (Abbruch
+  oder Hinweis), Gegenstand und Meldung; den Gegenstand nennt die Ausgabe und
+  nicht die Meldung. Abgebrochen wird im Kommando, und dann stehen alle Gründe
+  auf einmal da. `CalculatedInvoice` rechnet nur; geprüft wird in Regelgruppen
+  im Paket `rules`, je eine Datei neben ihrem gleichnamigen Test, jede gegen
+  das fertig gerechnete Ergebnis. Den Prüflauf führt `AcceptedInvoice.check`,
+  nicht die `CalculatedInvoice`: Befunde sind ein Urteil über die Rechnung und
+  kein abgeleiteter Wert wie `dueDate`.
+
+  Setzen lässt sich nur eine `AcceptedInvoice`, und die gibt es nur ohne
+  Abbruch: Renderer und `prepaymentsOf` verlangen sie, damit hält der Compiler
+  die Zusage aus ADR-0004 und nicht die Disziplin der Kommandos (ADR-0007). Sie
+  trägt die Rechnungsart als Typ (`InvoiceKind`), gebaut in `InvoiceKindRules`
+  zusammen mit den Regeln, ohne die er nicht baubar ist (ADR-0008). Die
+  Regelgruppe einer Rechnungsart prüft nur auf dieser Art – als `when` über
+  alle Arten ohne `else`, damit eine neue Art dort entscheiden muss; ebenso
+  fragen Renderer und `InvoiceVariableResolver` die `InvoiceKind`. Nur
+  `prepaymentOf` behält sein `else`, dort ist genau eine Art richtig.
+
+  Die Kennungen sind deutsch benannt wie die Regeln und **nicht** nummeriert.
+  Tests prüfen die Kennung statt des Wortlauts (`aborts().shouldBeEmpty()`).
+
 - **Die PDF/A-Prüfung ist Teil der Tests**: erzeugte PDFs werden geprüft; ohne
   gültiges PDF/A kein grüner Build. Das gilt seit ADR-0014 mit dem eingebauten
   Prüfer, und deshalb auch ohne installiertes veraPDF. Die zwei Tests, die das
@@ -641,9 +421,8 @@ CV/Web-Auftritt des Autors), PDF/A-Prüfung über veraPDF.
   Darunter der gemeinsame Kern, in dem jede Kante nach unten zeigt: `rules`
   (Befunde, Regelgruppen, `AcceptedInvoice.check`, `InvoiceKind`) →
   `calculation` (`CalculatedInvoice`) → `model` (samt
-  `YamlLoader`) → `values`. In der Wurzel steht nur `Main.kt`. Vorher war die
-  Wurzel Kern und CLI zugleich, und daraus entstanden die beiden einzigen
-  Zyklen des Projekts: Wurzel ↔ `rules` und Wurzel ↔ `render` (#107). Der
+  `YamlLoader`) → `values`. In der Wurzel steht nur `Main.kt`: Wäre sie Kern
+  und CLI zugleich, entstünden dort Zyklen (#107). Der
   Schnitt trennt den Rand, nicht die Mitte – was beide Kommandos brauchen, ist
   der größere Teil. Die Grenze zwischen `rules` und `calculation` ist die aus
   ADR-0004: `CalculatedInvoice` rechnet nur, `check` prüft und urteilt. Deshalb liegt
