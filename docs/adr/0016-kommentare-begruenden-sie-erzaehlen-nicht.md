@@ -74,8 +74,7 @@ wollte, müsste an die Begründungen, und die stehen mit Absicht dort.
   Architekturdokuments trägt, sind verschiedene Fragen mit verschiedenen Lesern.
 - **Die heimatlosen Begründungen werden sichtbar.** Was beim Streichen auffällt
   und nirgends sonst steht, sammelt der Pull Request in einer Liste. Jede davon
-  wird ein ADR, eine Notiz oder gar nichts – von Hand entschieden. #283 ist ein
-  solcher Fall, von Hand gefunden, bevor diese Regel galt.
+  wird ein ADR, eine Notiz oder gar nichts – von Hand entschieden.
 - **Das Pflichtangaben-Netz bekommt seinen Namen.** An fünf Stellen hieß es
   „das Netz aus #187“; dort war die Nummer tatsächlich tragend, weil der Name
   nie in den Code kam. Der Test heißt `PflichtangabenTest`, gemeint ist „das
