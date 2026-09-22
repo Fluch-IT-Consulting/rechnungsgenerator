@@ -48,7 +48,7 @@ class ItemRulesTest : FunSpec({
                     messageFor(testInvoice(items = listOf(testItem(discount = rabatt))), Rule.RABATT_AUSSERHALB_BEREICH)
 
                 message shouldContain "Position 1"
-                message shouldContain "über 0 % bis einschließlich 100 %"
+                message shouldContain "über 0% bis einschließlich 100%"
             }
         }
 

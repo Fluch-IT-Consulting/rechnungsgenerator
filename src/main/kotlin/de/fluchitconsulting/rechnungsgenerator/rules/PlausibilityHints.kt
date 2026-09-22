@@ -21,7 +21,7 @@ internal object PlausibilityHints {
                         Finding(
                             Rule.MENGE_NULL,
                             Subject.Item(index, item.name),
-                            "Menge 0 – die Position steht mit 0,00 € auf der Rechnung. Ist das gewollt?",
+                            "Menge 0 – die Position steht mit 0.00 auf der Rechnung. Ist das gewollt?",
                         ),
                     )
                 }
@@ -43,7 +43,7 @@ internal object PlausibilityHints {
                     Finding(
                         Rule.GESAMTBETRAG_NULL,
                         Subject.WholeInvoice,
-                        "Gesamtbetrag 0,00 € – das Dokument fordert nichts. Ist das gewollt?",
+                        "Gesamtbetrag 0.00 – das Dokument fordert nichts. Ist das gewollt?",
                     ),
                 )
             }

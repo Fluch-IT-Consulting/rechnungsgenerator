@@ -46,7 +46,7 @@ internal object FinalInvoiceRules {
                         Finding(
                             Rule.ABSCHLAG_DOPPELT,
                             Subject.Prepayment(number),
-                            "Der Abschlag steht ${duplicates.size}-mal in dieser Schlussrechnung.",
+                            "steht ${duplicates.size}-mal in dieser Schlussrechnung.",
                         ),
                     )
                 }
