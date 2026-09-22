@@ -60,10 +60,8 @@ internal object MetadataBlocks {
      * Pflichtangaben. Leer auf jeder anderen Art und solange er nicht
      * feststeht.
      *
-     * `when` mit Subjekt macht `kind` in jedem Zweig zu dessen Variante
-     * ("smart cast"). Ohne `else`: Kommt eine Variante dazu, übersetzt diese
-     * Stelle erst, wenn entschieden ist, ob sie eine Vereinnahmung nennt
-     * (#128).
+     * Ohne `else`: Kommt eine Variante dazu, übersetzt diese Stelle erst, wenn
+     * entschieden ist, ob sie eine Vereinnahmung nennt (#128).
      */
     fun receivedOn(acceptedInvoice: AcceptedInvoice): Latex =
         when (val kind = acceptedInvoice.kind) {

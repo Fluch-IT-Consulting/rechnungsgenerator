@@ -89,10 +89,7 @@ internal object DeductionBlocks {
      */
     private fun describePrepayment(abgesetzt: Deduction): Latex {
         val abschlag = abgesetzt.deducted.prepayment
-        // Hier stand bis #70 ein checkNotNull: Die Vereinnahmung war im Modell
-        // optional, und der Renderer verließ sich darauf, dass die Prüfung einen
-        // Abschlag ohne sie nie durchlässt. Eine Deduction gibt es nur mit
-        // Datum (ADR-0008).
+        // Ohne checkNotNull: Eine Deduction gibt es nur mit Datum (ADR-0008).
         val vereinnahmtAm = abgesetzt.receivedOn
         val heading =
             "Abschlagsrechnung ".escapeLatex() + abschlag.invoiceNumber.escapeLatex() + " vom ".escapeLatex() +

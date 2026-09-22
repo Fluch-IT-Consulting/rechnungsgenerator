@@ -21,9 +21,8 @@ import de.fluchitconsulting.rechnungsgenerator.setup.SetupCommand
 import java.io.PrintStream
 import kotlin.system.exitProcess
 
-// Einstiegspunkt. Eine Top-Level-Funktion `main` genügt in Kotlin – keine Klasse
-// nötig. Die JVM sieht sie als statische Methode der generierten Klasse "MainKt"
-// (daher der Eintrag mainClass in build.gradle.kts).
+// Einstiegspunkt. Die JVM sieht `main` als statische Methode der generierten
+// Klasse "MainKt" (daher der Eintrag mainClass in build.gradle.kts).
 //
 // Die eigentliche Arbeit steht in execute(): Sie bekommt die beiden Kanäle
 // gereicht und liefert den Exitcode, statt den Prozess selbst zu beenden. So
@@ -60,8 +59,7 @@ fun execute(
     typesetter: TypesetterFactory = ::LuaLatexTypesetter,
     // Wie der Typesetter eine Naht für den Test (#153): Nur so lässt sich
     // prüfen, dass ein gescheiterter Viewer mit Exitcode 0 endet und sein
-    // Hinweis auf stdout steht. Vorher nahm das Kommando ihn, execute nicht –
-    // der Exitcode wurde aus "keine Ausnahme" abgeleitet statt gelesen.
+    // Hinweis auf stdout steht.
     viewer: PdfViewer = SystemPdfViewer,
 ): Int {
     val command = RechnungsgeneratorCommand(typesetter, viewer)
@@ -86,11 +84,9 @@ fun execute(
  * Meldung aus und beendet mit Exitcode 1, ohne Stacktrace. Ein Tippfehler in der
  * YAML soll nicht wie ein Programmabsturz aussehen.
  *
- * Hier und nicht in jedem Kommando (#119): Vorher übersetzte jedes für sich, und
- * in #52 liefen die Fassungen auseinander – `abschlaege` fing den Lesefehler gar
- * nicht. Jedes Kommando, das dazukommt, bekommt die Übersetzung jetzt umsonst.
- * Was nur ein Kommando betrifft, bleibt dort, etwa das Schreiben der Zieldatei
- * in `erzeuge`.
+ * Hier und nicht in jedem Kommando (#119): Jedes Kommando, das dazukommt,
+ * bekommt die Übersetzung umsonst. Was nur ein Kommando betrifft, bleibt dort,
+ * etwa das Schreiben der Zieldatei in `erzeuge`.
  */
 private fun parseReportingFailures(command: CoreCliktCommand, args: Array<String>) {
     try {

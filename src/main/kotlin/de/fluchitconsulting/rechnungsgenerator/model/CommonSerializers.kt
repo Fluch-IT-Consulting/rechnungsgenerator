@@ -20,9 +20,8 @@ typealias IsoDate =
     @Serializable(with = LocalDateSerializer::class)
     LocalDate
 
-// `object` = Singleton-Deklaration: genau eine Instanz, ideal für zustandslose
-// Helfer. Das Gerüst darunter kommt aus stringSerializer – hier steht nur noch,
-// wie aus dem Wert Text wird und zurück.
+// Das Gerüst darunter kommt aus stringSerializer – hier steht nur noch, wie aus
+// dem Wert Text wird und zurück.
 object BigDecimalSerializer :
     KSerializer<BigDecimal> by stringSerializer(
         name = "BigDecimal",

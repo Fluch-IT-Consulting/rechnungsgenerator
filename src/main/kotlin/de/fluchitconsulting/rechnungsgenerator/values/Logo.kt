@@ -29,8 +29,6 @@ class Logo(
 
     override fun toString(): String = "Logo($source, ${content.size} Bytes)"
 
-    // `companion object`: was zur Klasse gehört, aber an keinem Exemplar hängt –
-    // hier die Prüfung, die schon vor dem Lesen der Datei gilt.
     companion object {
         val EXTENSIONS = listOf("tex")
 

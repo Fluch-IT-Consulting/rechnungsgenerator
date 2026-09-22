@@ -16,21 +16,21 @@ package de.fluchitconsulting.rechnungsgenerator.generate.render
  * Rechnung hängt – ließe ein Design sie weg, fehlte auf einem Teil der
  * Rechnungen eine Angabe, und kein Beispiel zeigte es. Für die
  * Stammdaten gibt es keine solche Pflicht: "Steuernummer **oder** USt-IdNr."
- * lässt sich als Kennzeichen nicht ausdrücken. Das prüft das Netz aus #187 am
- * fertigen PDF.
+ * lässt sich als Kennzeichen nicht ausdrücken. Das prüft das
+ * Pflichtangaben-Netz am fertigen PDF.
  *
  * An beiden Hälften fällt etwas heraus (#248). Ein **Schalter** hat gar keinen
  * Inhalt: Er sagt der Vorlage nicht, *was* dasteht, sondern *ob* sie ein
  * Mittel einsetzt – [LOGO] die Einbindung, [RABATTSPALTE] die Spalte. Eine
  * Vorlage, die das Mittel nicht kennt, braucht ihn nicht; dass die Spalte
  * genau dann steht, wenn eine Position einen Rabatt hat, hält ohnehin das
- * Netz aus #187 an `teilrechnung`. Und die [EINLEITUNG] darf ein Design
+ * Pflichtangaben-Netz an `teilrechnung`. Und die [EINLEITUNG] darf ein Design
  * weglassen (#209): Sie begleitet die Rechnung, statt eine ihrer Angaben zu
  * sein.
  *
  * Freiwillig heißt aber nicht frei: [KUNDENNUMMER] (#190) und
- * [AUFTRAGSNUMMER] (#191) bleiben Pflicht, so entschieden in ihren Issues,
- * und mit ihnen [KUNDENREFERENZ] und [SCHLUSSSATZ]. Das sind Angaben und
+ * [AUFTRAGSNUMMER] (#191) bleiben Pflicht, und mit ihnen [KUNDENREFERENZ]
+ * und [SCHLUSSSATZ]. Das sind Angaben und
  * keine Begleitsätze – jemand hat sie für diese Rechnung hingeschrieben –,
  * und Kundennummer, Auftragsnummer und `bemerkung` nennt kein Beispiel: Ein
  * Design, das sie weglässt, verschluckt sie, und nichts sieht es.
@@ -97,13 +97,13 @@ enum class TemplateValue(
     // Keine Pflicht (#209): Der Satz begleitet die Rechnung, statt eine ihrer
     // Angaben zu sein – was berechnet wird, steht in den Positionen. Ein
     // Design ohne Absatz über der Tabelle darf ihn weglassen, und kein Netz
-    // hält das auf. Genau diese Freiheit wollte #209, und bis #248 war sie zu.
+    // hält das auf.
     EINLEITUNG(false),
 
     // Ein Schalter wie LOGO (#213): nicht leer, wenn eine Position einen Rabatt
     // hat. Dann setzt die Vorlage die Spalte, sonst nicht. Und keine Pflicht,
     // wie LOGO keine ist – ein Schalter ist kein Inhalt. Dass ein Design den
-    // geminderten Betrag nicht ohne Grund zeigt, hält das Netz aus #187:
+    // geminderten Betrag nicht ohne Grund zeigt, hält das Pflichtangaben-Netz:
     // `teilrechnung` hat einen Rabatt, und dort wird je Design geprüft, dass
     // die Spalte genau dann steht.
     RABATTSPALTE(false),
@@ -139,7 +139,7 @@ enum class TemplateValue(
          * keinen setzt, ließe die Zahlung ganz vom Blatt.
          *
          * Geprüft beim Bau der Vorlage statt am fertigen PDF: Sonst fiele es
-         * erst im Netz aus #187 auf, im Lauf mit den echten Werkzeugen.
+         * erst im Pflichtangaben-Netz auf, im Lauf mit den echten Werkzeugen.
          *
          * Eine benannte Regel und keine allgemeine Liste von Gruppen (#249):
          * Es gibt genau diesen einen Fall. Ein zweiter soll nicht als

@@ -6,11 +6,10 @@ import de.fluchitconsulting.rechnungsgenerator.calculation.CalculatedInvoice
  * Die Bankverbindung, der einzige Block aus den Stammdaten, über dessen
  * Erscheinen der Renderer entscheidet.
  *
- * Die übrigen Stammdaten kommen seit #188 einzeln in die Vorlage (siehe
- * [TemplateValue]), und wie Briefkopf und Fuß daraus werden, mit welchem
- * Trenner und welcher Beschriftung, entscheidet sie. Vorher standen hier
- * Satzbild-Entscheidungen eines Designs: der Fuß ohne Steuernummer, der Kopf
- * ohne Webseite, der Trenner ` · `.
+ * Die übrigen Stammdaten kommen einzeln in die Vorlage (siehe [TemplateValue],
+ * #188), und wie Briefkopf und Fuß daraus werden, mit welchem Trenner und
+ * welcher Beschriftung, entscheidet sie – ein Satzbild-Entscheid eines Designs
+ * steht nicht hier.
  */
 internal object SellerBlocks {
     /**

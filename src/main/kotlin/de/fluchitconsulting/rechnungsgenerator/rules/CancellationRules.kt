@@ -16,8 +16,7 @@ import de.fluchitconsulting.rechnungsgenerator.values.InvoiceType
  *
  * Das Vorzeichen steht hier und nicht bei den Positionen, weil es zur
  * Rechnungsart gehört: Ein Storno ist negativ, jedes andere Dokument nicht.
- * Früher stand es mitten in `calculate`, weil es die Summen braucht – jetzt
- * liegen die ohnehin fertig vor.
+ * Die Summen, die es dafür braucht, liegen hier fertig vor.
  */
 internal object CancellationRules {
     fun check(calculated: CalculatedInvoice): List<Finding> = reference(calculated.invoice) + sign(calculated)

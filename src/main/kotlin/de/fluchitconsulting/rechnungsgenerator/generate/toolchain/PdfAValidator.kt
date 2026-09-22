@@ -147,9 +147,9 @@ class ExternalPdfAValidator(private val runner: ProcessRunner) : PdfAValidator {
     /**
      * Schneidet weg, was vor dem XML steht.
      *
-     * Gelesen wird seit #227 allein stdout, und dort steht der Bericht für
-     * sich: Sein Protokoll schreibt veraPDF auf stderr, die JVM ihre Warnungen
-     * ebenfalls. Nötig ist das Abschneiden damit nicht mehr – es bleibt als
+     * Gelesen wird allein stdout, und dort steht der Bericht für sich: Sein
+     * Protokoll schreibt veraPDF auf stderr, die JVM ihre Warnungen ebenfalls
+     * (#227). Nötig ist das Abschneiden damit nicht – es bleibt als
      * Sicherung, weil ein fremdes Programm jederzeit etwas auf stdout legen
      * kann und der Parser sonst mit "Content is not allowed in prolog"
      * abbräche. Drei Zeilen gegen eine Ausnahme, die der Benutzerin als

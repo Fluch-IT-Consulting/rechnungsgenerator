@@ -89,8 +89,8 @@ internal object ItemBlocks {
      * [taxNotes] darunter. Der Nullsatz (Kategorie Z) trägt keinen Grund und
      * steht deshalb hier: Er ist keine Befreiung, sondern eine Besteuerung mit
      * 0 %, und §14 Abs. 4 Nr. 8 UStG verlangt dafür Satz und Steuerbetrag
-     * (#218). Vorher entschied das der Steuerbetrag von null, und eine
-     * Z-Gruppe fiel ganz vom Blatt.
+     * (#218). Nicht der Steuerbetrag von null: Danach fiele eine Z-Gruppe ganz
+     * vom Blatt.
      */
     fun totalsBlock(calculatedInvoice: CalculatedInvoice): Latex =
         buildList {
@@ -204,8 +204,8 @@ internal object ItemBlocks {
      *
      * Gefragt wird nur nach dem Grund, nicht zusätzlich nach dem Steuerbetrag
      * null: Einen Grund tragen nur Kategorien, die auch den Satz 0 verlangen –
-     * das hält ein Test am Enum fest. Vorher stand beides hier, und der
-     * Renderer entschied selbst, was die Gruppe schon wusste (#148).
+     * das hält ein Test am Enum fest. Stünde beides hier, entschiede der
+     * Renderer selbst, was die Gruppe schon weiß (#148).
      */
     fun taxNotes(calculatedInvoice: CalculatedInvoice): Latex =
         calculatedInvoice.vatGroups

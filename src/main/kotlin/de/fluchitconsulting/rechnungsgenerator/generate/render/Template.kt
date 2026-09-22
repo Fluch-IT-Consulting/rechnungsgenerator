@@ -9,10 +9,8 @@ import de.fluchitconsulting.rechnungsgenerator.values.Design
  *
  * Derselbe Zug wie bei der `AcceptedInvoice`: Was ungeprüft ist, lässt sich
  * nicht bauen. Der Konstruktor ist privat, gebaut wird über [of], und dort
- * laufen Streichen und Prüfen in der einzigen Reihenfolge, die stimmt. Vorher
- * waren das fünf Funktionen im Renderer, die alle `template: String`
- * herumreichten, und wer eine davon einzeln rief, musste die Reihenfolge
- * selbst kennen – ein Test tat es in 553ff49 nicht.
+ * laufen Streichen und Prüfen in der einzigen Reihenfolge, die stimmt – wer
+ * sie einzeln aufriefe, müsste sie selbst kennen.
  *
  * Der Bau aus Quelltext gehört zum Interface und ist kein Testfenster: Die
  * Tests mit kaputten Vorlagen gehen durch dieselbe Tür wie der Betrieb.
@@ -180,8 +178,8 @@ class Template private constructor(
          * Webseite noch Steuernummer. Ließe es den Pflichtsatz der Art weg, fehlte
          * er dagegen genau auf den Rechnungen, die keines der Beispiele zeigt.
          * Diese Prüfung deckt ab, was kein Beispiel enthält (Skonto,
-         * Befreiungsgrund); ob die Angaben der Stammdaten dastehen, prüft das Netz
-         * aus #187 am fertigen PDF.
+         * Befreiungsgrund); ob die Angaben der Stammdaten dastehen, prüft das
+         * Pflichtangaben-Netz am fertigen PDF.
          *
          * Dazu einen aus [TemplateValue.ZAHLUNGSANGABE]: Dass die Vorlage
          * über die Zahlung etwas sagt, verlangt der Bau, welches von beiden

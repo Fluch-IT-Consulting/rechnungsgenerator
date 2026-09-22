@@ -43,7 +43,7 @@ sealed interface InvoiceKind {
  *
  * §14 Abs. 5 Satz 2 UStG setzt ab, was vereinnahmt wurde. Im flachen Modell ist
  * [receivedOn] optional, damit ABSCHLAG_OHNE_VEREINNAHMUNG erklären kann, warum
- * ein unbezahlter Abschlag nicht abgesetzt wird. Hier ist es das nicht mehr –
- * vorher brauchte der Renderer dafür ein `checkNotNull`.
+ * ein unbezahlter Abschlag nicht abgesetzt wird. Hier ist es das nicht mehr,
+ * und der Renderer braucht dafür kein `checkNotNull`.
  */
 data class Deduction(val deducted: DeductedPrepayment, val receivedOn: LocalDate)

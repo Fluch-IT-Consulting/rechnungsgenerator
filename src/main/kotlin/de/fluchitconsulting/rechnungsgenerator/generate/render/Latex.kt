@@ -4,11 +4,11 @@ package de.fluchitconsulting.rechnungsgenerator.generate.render
  * Ein fertiges Stück LaTeX – gesetzt aus Text, der maskiert wurde, oder aus
  * Markup, das der Renderer bewusst selbst schreibt.
  *
- * Der Typ ersetzt eine Disziplin durch eine Prüfung. Vorher entschied jede
- * Aufrufstelle für sich, ob ein Wert durch [escapeLatex] muss; ein vergessener
- * Aufruf war kein Übersetzungsfehler, sondern ein zerlegter Satz – ein `&`
- * beendet die Tabellenspalte, ein `%` verschluckt den Rest der Zeile. Jetzt
- * kommt nichts mehr ins Dokument, das nicht einen der drei Wege genommen hat:
+ * Der Typ ersetzt eine Disziplin durch eine Prüfung: Entschiede jede
+ * Aufrufstelle für sich, ob ein Wert durch [escapeLatex] muss, wäre ein
+ * vergessener Aufruf kein Übersetzungsfehler, sondern ein zerlegter Satz – ein
+ * `&` beendet die Tabellenspalte, ein `%` verschluckt den Rest der Zeile. So
+ * kommt nichts ins Dokument, das nicht einen der drei Wege genommen hat:
  *
  *  - [escapeLatex] für alles, was aus den YAML-Dateien stammt,
  *  - [GermanFormat] für Beträge, Sätze, Mengen und Daten,
@@ -50,8 +50,8 @@ value class Latex private constructor(val tex: String) {
          *
          * Der einzige Weg zu einem Makroaufruf. Der Name steht nicht als
          * Zeichenkette da, sondern als [TemplateMacro] – und damit ist er
-         * prüfbar. Eine Fassung mit `name: String` gab es bis #76; über sie
-         * schrieb der Renderer `\mbox` an der Prüfung vorbei.
+         * prüfbar (#76): Mit einem Namen als Zeichenkette schriebe der Renderer
+         * `\mbox` an der Prüfung vorbei.
          *
          * Eine Liste statt `vararg`, weil Kotlin `vararg` für einen
          * `value class` verbietet – und einer ist [Latex]. Die Stelligkeit prüft

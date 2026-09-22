@@ -10,9 +10,9 @@ import de.fluchitconsulting.rechnungsgenerator.calculation.CalculatedInvoice
  * immer nur eine.
  *
  * Warum nicht auch die Nummern der abgesetzten Abschläge: Die stammen aus
- * früheren Rechnungen, womöglich aus der Zeit vor einem Wechsel des
- * Musters. Gegen das heutige Muster geprüft, hielte eine korrekte alte
- * Nummer die Schlussrechnung auf.
+ * früheren Rechnungen, womöglich aus der Zeit vor einem Wechsel des Musters.
+ * Gegen das heutige Muster geprüft, hielte eine korrekte alte Nummer die
+ * Schlussrechnung auf.
  *
  * Eine Regel erübrigt die nächste: Eine fehlende Nummer passt zu keinem Muster,
  * und das zu melden hieße, denselben Fehler zweimal zu nennen. `return` statt

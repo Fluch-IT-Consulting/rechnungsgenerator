@@ -3,11 +3,11 @@ package de.fluchitconsulting.rechnungsgenerator.rules
 /**
  * Was bei der Prüfung einer Rechnung auffällt – ein Befund.
  *
- * Vorher warf der Calculator beim ersten Verstoß. Damit gehörten die
- * Reihenfolge seiner Regeln und die vollständige Menge seiner Hinweise zu
- * seiner Schnittstelle: Wer eine Regel prüfen wollte, brauchte eine Rechnung,
- * die alle anderen besteht und keinen fremden Hinweis auslöst. Jetzt sammelt er
- * und überlässt das Abbrechen dem Kommando.
+ * Gesammelt und nicht beim ersten Verstoß geworfen: Sonst gehörten die
+ * Reihenfolge der Regeln und die vollständige Menge der Hinweise zur
+ * Schnittstelle der Prüfung, und wer eine Regel prüfen wollte, bräuchte eine
+ * Rechnung, die alle anderen besteht und keinen fremden Hinweis auslöst. Das
+ * Abbrechen bleibt dem Kommando.
  */
 data class Finding(val rule: Rule, val subject: Subject, val message: String) {
     val severity: Severity get() = rule.severity
@@ -21,13 +21,12 @@ data class Finding(val rule: Rule, val subject: Subject, val message: String) {
  *
  * Beide Kommandos lehnen ab, `erzeuge` mit `Verdict.Rejected` und `abschlaege`
  * mit `CollectedPrepayments.Rejected`. Zu Text wird die Liste nur hier, und
- * übersetzt wird die Ausnahme nur in `execute()` (#119). Vorher baute jedes
- * Kommando seine eigene Zeile und seinen eigenen `CliktError` – so sind in #52
- * zwei Fassungen derselben Regel auseinandergelaufen.
+ * übersetzt wird die Ausnahme nur in `execute()` (#119). Baute jedes Kommando
+ * seine eigene Zeile und seinen eigenen `CliktError`, liefen zwei Fassungen
+ * derselben Regel auseinander (#52).
  *
- * `: Exception(…)` ruft den Konstruktor der Oberklasse gleich in der
- * Klassenzeile auf: Die Meldung entsteht beim Bauen, und [aborts] bleibt für
- * Tests als Liste erreichbar, die nach Kennungen fragen statt nach Wortlaut.
+ * Die Meldung entsteht beim Bauen, und [aborts] bleibt für Tests als Liste
+ * erreichbar, die nach Kennungen fragen statt nach Wortlaut.
  */
 class RejectedException(val aborts: List<Finding>) : Exception(aborts.joinToString("\n") { it.describe() })
 

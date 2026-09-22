@@ -38,10 +38,10 @@ object GermanFormat {
      * Zahl mit so vielen Nachkommastellen, wie der Wert hat – mindestens
      * [minFraction], höchstens so viele, wie tatsächlich da sind.
      *
-     * Feste Muster haben hier vorher stillschweigend gerundet: `#,##0.00##`
-     * machte aus einem Einzelpreis von 0,00001 € ein `0,00`, und dann steht auf
-     * der Rechnung "10.000 Stück zu 0,00 € = 0,10 €". Die Summen stimmten – der
-     * Calculator rechnet mit dem exakten Wert –, aber nachrechnen konnte das
+     * Ein festes Muster rundete hier stillschweigend: `#,##0.00##` machte aus
+     * einem Einzelpreis von 0,00001 € ein `0,00`, und dann stünde auf der
+     * Rechnung "10.000 Stück zu 0,00 € = 0,10 €". Die Summen stimmten – der
+     * Calculator rechnet mit dem exakten Wert –, aber nachrechnen könnte das
      * niemand. Genau das soll eine Rechnung erlauben.
      *
      * Der Preis dafür ist eine breitere Spalte in genau den Fällen, in denen

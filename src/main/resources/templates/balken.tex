@@ -98,8 +98,8 @@
 %% \rubrik statt \label, das ist in LaTeX vergeben.
 \newlength{\balkenhoehe}
 
-%% Abstände als benannte Längen (#51): Vorher standen die Millimeter in Kotlin –
-%% wer das Satzbild ändern wollte, musste zwei Dateien anfassen und beide treffen.
+%% Abstände als benannte Längen (#51): Wer das Satzbild ändert, fasst diese
+%% Datei an und keine zweite.
 %%
 %% 2.5mm zwischen Positionen statt 1.5mm: Sobald eine Position eine Zusatzzeile
 %% hat, verschmilzt sie bei knappem Abstand optisch mit der nächsten. Dasselbe
@@ -110,10 +110,9 @@
 \newlength{\ustidabstand}\setlength{\ustidabstand}{2mm}
 
 %% Die Zeilenwechsel, die diese Abstände tragen (#76). Der Renderer ruft nur das
-%% Makro auf und kennt die Länge nicht. Vorher schrieb er \\[\positionsabstand]
-%% selbst, und ein vertippter Längenname fiel erst LuaLaTeX auf – ein Makro prüft
-%% das Setzen, eine Länge nicht. \blocktrenner und \ustidtrenner ruft seit #188
-%% nur noch diese Vorlage selbst auf.
+%% Makro auf und kennt die Länge nicht: Ein vertippter Längenname fiele erst
+%% LuaLaTeX auf – ein Makro prüft das Setzen, eine Länge nicht. \blocktrenner und
+%% \ustidtrenner ruft nur diese Vorlage selbst auf (#188).
 \newcommand{\positionstrenner}{\\[\positionsabstand]}
 \newcommand{\summentrenner}{\\[\summenabstand]}
 \newcommand{\blocktrenner}{\\[\blockabstand]}
@@ -197,8 +196,7 @@
 \newcommand{\positionsdetail}[1]{\newline{\footnotesize\color{gedaempft} #1}}
 
 %% Eine Zeile der Positionstabelle. Damit steht die Zahl der Spalten nur noch
-%% hier: Vorher zählte die Vorlage fünf und der Renderer verband fünf Zellen mit
-%% kaufmännischem Und, ohne dass etwas die beiden Zahlen verglich.
+%% hier und nicht ein zweites Mal im Renderer, wo nichts sie vergliche.
 %%
 %% Das erste Argument ist die laufende Nummer der Position. Dieses Design setzt
 %% sie nicht. Das sechste ist der Rabatt; seine Spalte steht nur, wenn eine
@@ -344,7 +342,7 @@
 %%
 %% Dahinter das Skonto als \hinweisabsatz: nach der Absetzung, weil es das
 %% betrifft, was zu zahlen ist. Auf derselben Zeile, damit eine Rechnung ohne
-%% Skonto kein Zeichen mehr im .tex hat als vorher.
+%% Skonto kein Zeichen mehr im .tex hat.
 <<ABSETZUNG>><<SKONTO>>
 
 \vspace{5mm}
@@ -373,7 +371,7 @@ Mit freundlichen Grüßen\\[7mm]
 %% Rechnung: erst die gesellschaftsrechtlichen Angaben (§35a GmbHG),
 %% dann die steuerlichen und die Bankverbindung.
 %% Beide Zeilen passen in den Satzspiegel (nachgemessen 152 mm bzw. 138 mm bei
-%% 165 mm Breite), deshalb ohne den früheren Trick mit negativem \hspace.
+%% 165 mm Breite), deshalb ohne Trick mit negativem \hspace.
 %%
 %% Bewusst OHNE Steuernummer: §14 Abs. 4 Nr. 2 UStG verlangt die Steuernummer
 %% ODER die USt-IdNr., nicht beides. Mit beiden wurde die zweite Zeile 178 mm

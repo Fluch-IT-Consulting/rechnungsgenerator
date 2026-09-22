@@ -11,12 +11,6 @@ import kotlin.io.path.readText
 /**
  * Wird geworfen, wenn eine Eingabedatei nicht zu lesen ist – mit der Datei und
  * dem Grund in der Meldung.
- *
- * Vorher übersetzte jedes Kommando die Fehler des Lesens selbst, und die beiden
- * Fassungen liefen auseinander (#52): `erzeuge` meldete einen Lesefehler als
- * "Die Datei konnte nicht geschrieben werden", weil sein IOException-Zweig für
- * das Ziel gedacht war und das Lesen mitfing; `abschlaege` fing ihn gar nicht,
- * und weil `Main` nur CliktError fängt, endete der Aufruf im Stacktrace.
  */
 class InputFileException(message: String) : Exception(message)
 
