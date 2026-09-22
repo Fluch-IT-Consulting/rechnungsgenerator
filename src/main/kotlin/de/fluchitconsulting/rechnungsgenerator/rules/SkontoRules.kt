@@ -73,8 +73,8 @@ internal object SkontoRules {
                     Finding(
                         Rule.SKONTOSATZ_UNGUELTIG,
                         Subject.WholeInvoice,
-                        "Der Skontosatz ${stufe.rate} ist ungültig. Zulässig sind Sätze über 0 % und " +
-                            "unter 100 % mit höchstens zwei Nachkommastellen.",
+                        "Der Skontosatz ${stufe.rate} ist ungültig. Zulässig sind Sätze über 0% und " +
+                            "unter 100% mit höchstens zwei Nachkommastellen.",
                     ),
                 )
             }

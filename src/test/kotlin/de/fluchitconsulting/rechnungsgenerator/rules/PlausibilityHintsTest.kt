@@ -38,7 +38,7 @@ class PlausibilityHintsTest : FunSpec({
         test("eine Rechnung über null bekommt einen Hinweis") {
             val hint = ueberNull(InvoiceType.INVOICE).messageOf(Rule.GESAMTBETRAG_NULL)
 
-            hint shouldContain "0,00"
+            hint shouldContain "0.00"
             hint shouldContain "gewollt"
         }
 

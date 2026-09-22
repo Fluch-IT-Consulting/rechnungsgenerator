@@ -23,7 +23,7 @@ internal object TaxCategoryRules {
                         Finding(
                             Rule.SATZ_MUSS_NULL_SEIN,
                             position,
-                            "Kategorie ${kategorie.code} (${kategorie.label}) verlangt einen Steuersatz von 0 %, " +
+                            "Kategorie ${kategorie.code} (${kategorie.label}) verlangt einen Steuersatz von 0%, " +
                                 "angegeben ist ${item.vatRate}.",
                         ),
                     )
@@ -33,7 +33,7 @@ internal object TaxCategoryRules {
                         Finding(
                             Rule.REGELSATZ_MIT_NULL,
                             position,
-                            "Kategorie S (Regelsatz) mit 0 % ist widersprüchlich. Gemeint ist vermutlich " +
+                            "Kategorie S (Regelsatz) mit 0% ist widersprüchlich. Gemeint ist vermutlich " +
                                 "Z (Nullsatz), E (steuerbefreit) oder AE (Steuerschuldnerschaft des Leistungsempfängers).",
                         ),
                     )
@@ -68,7 +68,7 @@ internal object TaxCategoryRules {
                         Rule.KUNDEN_UST_ID_FEHLT,
                         Subject.WholeInvoice,
                         "Kategorie ${brauchtKundenUstId.first().code} verlangt die USt-IdNr. des Kunden – " +
-                            "bitte 'umsatzsteuer-id' unter 'kunde' angeben.",
+                            "bitte 'kunde: umsatzsteuer-id' angeben.",
                     ),
                 )
             }

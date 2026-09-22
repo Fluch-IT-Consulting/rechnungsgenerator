@@ -67,7 +67,7 @@ internal object ItemRules {
                                     Rule.RABATT_AUSSERHALB_BEREICH,
                                     Subject.Item(index, item.name),
                                     "Der Rabatt ${discount.rate} liegt außerhalb des zulässigen Bereichs. " +
-                                        "Zulässig sind Sätze über 0 % bis einschließlich 100 %.",
+                                        "Zulässig sind Sätze über 0% bis einschließlich 100%.",
                                 ),
                             )
                         }
@@ -85,7 +85,7 @@ internal object ItemRules {
                                     Rule.RABATT_BETRAG_AUSSERHALB_BEREICH,
                                     Subject.Item(index, item.name),
                                     "Der Rabattbetrag ${discount.amount} liegt außerhalb des zulässigen Bereichs. " +
-                                        "Zulässig ist mehr als 0,00 und höchstens die Basis der Position " +
+                                        "Zulässig ist mehr als 0.00 und höchstens die Basis der Position " +
                                         "(${line.base.abs()} = Menge × Einzelpreis).",
                                 ),
                             )
