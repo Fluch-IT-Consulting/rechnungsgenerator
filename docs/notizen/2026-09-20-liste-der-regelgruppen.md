@@ -153,3 +153,43 @@ ohne dass ein Test rot wird.
 - Die Reihenfolge der Befunde als fachliche Sortierung (nach Schwere, dann
   Gegenstand). Das änderte die Ausgabe jeder abgelehnten Rechnung und braucht
   einen eigenen Anlass.
+
+## Nachtrag vom 22.09.2026: die Meldungen neben ihren Regeln (#282)
+
+Dieselbe Durchsicht fragte auch, ob sich der Preis von ADR-0004 schon zeigt.
+Dort steht die Meldung bewusst neben ihrer Bedingung, und damit schreibt die
+Schicht `rules` die Sätze der Ausgabe selbst. Sichtbar wäre der Preis an drei
+Dingen: Zwei Gruppen nennen dieselbe Sache verschieden, eine Meldung
+formatiert Werte anders als eine andere, oder ein zweiter Kanal braucht die
+Befunde ohne Satz.
+
+**Gemessen an allen 65 Meldungen**, auch den drei aus `prepayments`:
+
+- **Kein zweiter Kanal.** Auch `abschlaege` gibt die Befunde nur über
+  `describe()` aus.
+- **Die eingesetzten Werte formatiert schon eine Stelle**, nämlich
+  `toString()` von `Money`, `Price`, `Percent` und `LocalDate`. Das ist die
+  Form aus #4: Punkt statt Komma, ohne Währung, `19%`, ISO-Datum wie in der
+  YAML. Die „gemeinsame Formatierung im Kern“, die #282 als Richtung
+  vorschlug, gab es also schon.
+- **Auseinander liefen die getippten Zahlen im Satz**, in sieben Meldungen:
+  „0,00 €“ in `GESAMTBETRAG_NULL`, aber „0.00“ in
+  `ABSCHLAGSRECHNUNG_OHNE_BETRAG`, und „von 0 %, angegeben ist 7%“ in einem
+  einzigen Satz. Kein Formatierer hätte das verhindert, denn diese Zahlen
+  sind keine eingesetzten Werte. Ebenso wenig hätte es eine Tabelle mit den
+  Wortlauten verhindert: Es ist kein Preis von ADR-0004.
+- **Benennung:** Nichts Sachliches, zwei Kleinigkeiten. Ein verschachtelter
+  Schlüssel stand in zwei Schreibweisen da, und `ABSCHLAG_DOPPELT` nannte
+  seinen Gegenstand zweimal.
+
+Behoben in #282. Das Netz steht in `CheckHelpers`: Eine Meldung in der Form
+von `GermanFormat` lässt den Regeltest scheitern, der sie auslöst. Es gilt
+also nur für Meldungen, die ein Test auslöst. Heute steht jede Kennung aus
+`rules` in einem Regeltest; die drei aus `prepayments` gehen nicht durch
+`CheckHelpers`, tragen aber auch keine Zahlen.
+
+**Woran sich die Frage neu stellen ließe:** an einem Leser der Befunde, der
+keinen Satz will – ein Export, der Kennung und Werte braucht. Dann ist der
+große Schritt dran, den #282 als verworfen führt: Kennung plus Parameter,
+der Wortlaut an einer Stelle. Solange die Befunde nur auf stderr landen,
+bleibt die Meldung neben ihrer Bedingung.
