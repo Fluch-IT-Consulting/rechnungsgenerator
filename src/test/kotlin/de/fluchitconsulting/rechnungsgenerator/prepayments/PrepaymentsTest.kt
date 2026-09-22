@@ -79,8 +79,8 @@ class PrepaymentsTest : FunSpec({
     }
 
     test("jeder Eintrag trägt den Namen seiner Rechnung, in der übergebenen Reihenfolge") {
-        // Bis #118 heftete das Kommando die Dateinamen per zip an – nach der
-        // Position, und ohne dass ein Test die Paarung sah.
+        // Den Namen trägt der Eintrag selbst und nicht eine Paarung per zip
+        // im Kommando, die kein Test sähe (#118).
         val second = abschlagsrechnung.copy(number = "R26-002")
 
         val entries = prepaymentsOf(named(second, abschlagsrechnung), config).complete().entries
@@ -173,8 +173,7 @@ class PrepaymentsTest : FunSpec({
     }
 
     test("eine Nummer mit Leerraum ist kein Duplikat, aber auch kein Abschlag") {
-        // Bis #70 stand "R26-009 " im vorigen Test als dritter Abschlag. Seit
-        // ADR-0005 ist Leerraum am Rand ein Abbruch – und aus einer Rechnung mit
+        // Seit ADR-0005 ist Leerraum am Rand ein Abbruch – und aus einer Rechnung mit
         // Abbruch wird kein Abschlag (ADR-0007), also auch kein Block (#118).
         // Exakt verglichen wird trotzdem: Als Duplikat von "R26-009" gilt sie nicht.
         val upper = abschlagsrechnung.copy(number = "R26-009")

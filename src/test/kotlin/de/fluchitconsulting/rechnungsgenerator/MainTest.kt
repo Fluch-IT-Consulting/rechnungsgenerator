@@ -59,8 +59,8 @@ class MainTest : FunSpec({
     }
 
     test("bei zwei Eingabedateien nennt die Meldung die schuldige") {
-        // erzeuge liest Rechnung und Stammdaten. Vorher hieß es nur "Die
-        // Eingabedateien konnten nicht gelesen werden", und man durfte raten.
+        // erzeuge liest Rechnung und Stammdaten; ein "Die Eingabedateien
+        // konnten nicht gelesen werden" ließe raten, welche der beiden es war.
         val kaputteStammdaten =
             eingaben.resolve("stammdaten-kaputt.yaml").also { it.writeText("firma: Muster\ngibtsnicht: 1\n") }
 

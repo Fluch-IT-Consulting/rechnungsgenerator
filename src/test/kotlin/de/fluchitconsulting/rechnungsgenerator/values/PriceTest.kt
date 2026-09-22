@@ -33,9 +33,9 @@ class PriceTest : FunSpec({
     }
 
     context("Arithmetik bleibt exakt") {
-        // Price trägt seit #32 nur noch, was die Domäne braucht: Menge mal
-        // Einzelpreis und den Übergang zu Money. Addition und Vorzeichen sind
-        // entfallen – zwei Einzelpreise zu addieren ergibt keinen Einzelpreis.
+        // Price trägt nur, was die Domäne braucht: Menge mal Einzelpreis und
+        // den Übergang zu Money (#32). Keine Addition und kein Vorzeichen –
+        // zwei Einzelpreise zu addieren ergibt keinen Einzelpreis.
         test("Menge 1 ist neutral") { checkAll(price) { a -> a * BigDecimal.ONE shouldBe a } }
         test("Menge × Einzelpreis, ohne jede Rundung") {
             assertSoftly {

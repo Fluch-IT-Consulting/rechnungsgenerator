@@ -76,8 +76,9 @@ class ServicePeriodRulesTest : FunSpec({
             // Ein Storno rechnet nichts ab, es hebt auf (InvoiceType.chargesForService).
             // Sein Zeitraum stammt aus der Ursprungsrechnung – war die eine
             // Abschlagsrechnung, ist er eine Prognose und endet nach dem
-            // Rechnungsdatum des Stornos. Bis #151 brach das ab, mit dem Rat, es
-            // sei dann eine Abschlagsrechnung: Das war es ja gerade (#66).
+            // Rechnungsdatum des Stornos. Ein Abbruch riete, es sei dann eine
+            // Abschlagsrechnung: Das ist die Ursprungsrechnung ja gerade
+            // (#151, #66).
             val storno =
                 testInvoice(
                     type = InvoiceType.CANCELLATION,

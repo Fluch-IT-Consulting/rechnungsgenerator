@@ -53,9 +53,9 @@ private data class Design(
 )
 
 /**
- * Das Netz unter jedem Design (#187): Für jede Rechnungsart entsteht das PDF
- * mit den echten Werkzeugen, veraPDF bestätigt PDF/A-1b, und `pdftotext` liest
- * zurück, ob die Pflichtangaben auf dem Blatt stehen.
+ * Das Pflichtangaben-Netz unter jedem Design: Für jede Rechnungsart entsteht
+ * das PDF mit den echten Werkzeugen, veraPDF bestätigt PDF/A-1b, und
+ * `pdftotext` liest zurück, ob die Pflichtangaben auf dem Blatt stehen.
  *
  * Die Vergleichsdateien im `InvoiceRendererTest` schützen Zeichen, nicht das
  * Blatt: je Rechnungsart die Werte, die in die Vorlage gehen

@@ -29,10 +29,6 @@ class TaxCategoryRulesTest : FunSpec({
         // Kategorie nicht durchrutschen zu lassen: Wer eine ergänzt, ohne hier
         // eine Zeile hinzuzufügen, bekommt einen roten Test statt einer stillen
         // Vorgabe.
-        //
-        // Vorher stand dieselbe Frage als Konstantenvergleich an drei Stellen
-        // im Calculator, und G, Z und O kamen in keiner davon vor. Ob das
-        // Absicht war, sah man dem Enum nicht an.
         val erwartet =
             mapOf(
                 TaxCategory.STANDARD to (false to VatIdConfirmation.NEVER),

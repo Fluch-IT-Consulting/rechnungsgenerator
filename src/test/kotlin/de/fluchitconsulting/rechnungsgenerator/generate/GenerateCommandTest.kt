@@ -221,10 +221,10 @@ class GenerateCommandTest : FunSpec({
     }
 
     /**
-     * Die Metadaten gehen denselben Weg wie der Quelltext (#202). Vorher
-     * merkte der Fake sie sich nicht, und dass das Kommando sie überhaupt
-     * weiterreicht, belegte allein der Lauf mit den echten Werkzeugen – ohne
-     * sie gibt es kein gültiges PDF/A, aber das sagt erst veraPDF.
+     * Die Metadaten gehen denselben Weg wie der Quelltext (#202). Merkte der
+     * Fake sie sich nicht, belegte allein der Lauf mit den echten Werkzeugen,
+     * dass das Kommando sie überhaupt weiterreicht – ohne sie gibt es kein
+     * gültiges PDF/A, aber das sagt erst veraPDF.
      */
     test("die Metadaten kommen beim Typesetter an") {
         val fake = FakeTypesetter()

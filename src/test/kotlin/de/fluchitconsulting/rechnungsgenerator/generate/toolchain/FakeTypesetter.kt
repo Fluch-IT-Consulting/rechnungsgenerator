@@ -18,9 +18,9 @@ class FakeTypesetter(
     var workingDir: Path? = null
     var jobName: String? = null
 
-    // Die Quellen als Ganzes (#202): Vorher merkte er sich fünf von sechs
-    // Parametern, und ausgerechnet die Metadaten fehlten – dass das Kommando
-    // sie weiterreicht, prüfte allein der Lauf mit den echten Werkzeugen.
+    // Die Quellen als Ganzes (#202): Einzeln gemerkt fehlte leicht einer –
+    // und dass das Kommando ihn weiterreicht, prüfte dann allein der Lauf mit
+    // den echten Werkzeugen.
     var sources: PdfSources? = null
 
     override fun checkAvailable() = Unit

@@ -58,9 +58,9 @@ class InvoiceNumberRulesTest : FunSpec({
         }
 
         test("eine Nummer, von der kein Dateiname übrig bleibt, wird abgelehnt und nennt die Zeichen") {
-            // Bis #150 fiel sie erst in `erzeuge` auf, nachdem die Rechnung
-            // angenommen war – mit weiteren Abbrüchen in der Datei also erst im
-            // zweiten Lauf (ADR-0004).
+            // Ohne diese Regel fiele sie erst in `erzeuge` auf, nachdem die
+            // Rechnung angenommen ist – mit weiteren Abbrüchen in der Datei
+            // also erst im zweiten Lauf (ADR-0004, #150).
             val message =
                 CalculatedInvoice(testInvoice(number = "///"), ohneMuster)
                     .messageOf(Rule.RECHNUNGSNUMMER_OHNE_DATEINAMEN)

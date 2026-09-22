@@ -81,8 +81,9 @@ class FinalInvoiceRulesTest : FunSpec({
         }
 
         test("zwei verschiedene Nummern je doppelt geben zwei Befunde") {
-            // ADR-0004 will alle Gründe auf einmal. Bis #152 nannte firstOrNull
-            // nur die erste doppelte Nummer; die zweite fiel erst im nächsten Lauf auf.
+            // ADR-0004 will alle Gründe auf einmal. Mit firstOrNull stünde nur
+            // die erste doppelte Nummer da; die zweite fiele erst im nächsten
+            // Lauf auf (#152).
             val invoice =
                 schlussrechnung(
                     testPrepayment(invoiceNumber = "R26-009"),

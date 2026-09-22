@@ -24,10 +24,6 @@ import java.time.LocalDate
 /**
  * Die Rechnungsart als Typ und die Regeln, ohne die er nicht baubar ist
  * (ADR-0008).
- *
- * Die Tests unter "was den Typ unbaubar macht" standen bis #70 in
- * `CancellationRulesTest`, `PrepaymentRulesTest` und `FinalInvoiceRulesTest`;
- * ihre Rümpfe sind unverändert.
  */
 class InvoiceKindRulesTest : FunSpec({
 
@@ -201,8 +197,7 @@ class InvoiceKindRulesTest : FunSpec({
 
         test("die Ablehnung nennt die Befunde, die den Bau verhindert haben") {
             // Das Gegenstück zum Test davor: Abbruch sein genügt nicht, der Befund
-            // muss auch in der Ablehnung ankommen. Bis #105 hing das an einem Eintrag
-            // in der Liste der Regelgruppen. Gebaut wird hier eigens, damit
+            // muss auch in der Ablehnung ankommen (#105). Gebaut wird hier eigens, damit
             // der Test nicht mitliest, was AcceptedInvoice.check selbst gebaut hat.
             unbaubar().forEach { invoice ->
                 val calculated = CalculatedInvoice(invoice, config)
