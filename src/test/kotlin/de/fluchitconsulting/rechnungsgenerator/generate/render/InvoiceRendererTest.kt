@@ -82,8 +82,8 @@ class InvoiceRendererTest : FunSpec({
         val tex = renderMit(testItem())
 
         tex shouldContain "Testposition"
-        // Kein Umbruch, keine zweite Zeile: Die schlichte Position soll so
-        // schlicht aussehen wie vorher auch.
+        // Kein Umbruch, keine zweite Zeile: Die schlichte Position soll
+        // schlicht bleiben.
         // Nicht bloß "positionsdetail": Die Vorlage definiert das Makro, das
         // Wort steht also ohnehin im Text. Gemeint ist der Aufruf dahinter.
         tex shouldNotContain "Testposition\\positionsdetail"
@@ -183,8 +183,8 @@ class InvoiceRendererTest : FunSpec({
     /**
      * Das Satzbild von raster, gesichert an der Rechnung (ADR-0011). Die
      * übrigen Arten sichern hier wie in balken ihre Inhalts-Dateien und das
-     * Netz aus #187; eine Vergleichsdatei je Design und Art änderte sich mit
-     * jeder Vorlage.
+     * Pflichtangaben-Netz; eine Vergleichsdatei je Design und Art änderte sich
+     * mit jeder Vorlage.
      */
     test("eine Rechnung im Design raster wird gesetzt wie festgehalten") {
         // Mit Logo (#198): Das zeigt raster, und ohne Logo stünde in der
@@ -272,17 +272,17 @@ class InvoiceRendererTest : FunSpec({
         }
 
         test("ein kleingeschriebenes Land ist dasselbe Land") {
-            // Der Defekt, der diesen Typ ausgelöst hat: Vorher stand hier eine
+            // Der Defekt, gegen den dieser Typ steht: Ohne ihn stünde hier eine
             // Zeile "de" unter der Anschrift, während der Calculator dieselbe
-            // Rechnung als Inlandsrechnung behandelte.
+            // Rechnung als Inlandsrechnung behandelt.
             anschrift(kundenland = "de", stellerland = "DE") shouldBe
                 """Beispiel Software GmbH\zeilenwechsel{}Industriestraße 1\zeilenwechsel{}90402 Nürnberg"""
         }
 
         test("Inland ist relativ zum Rechnungssteller, nicht zu Deutschland") {
             // Sitzt der Rechnungssteller in Österreich, ist ein deutscher Kunde
-            // für ihn Ausland – und bekommt sein Land genannt. Vorher stand
-            // "DE" fest im Code, und diese Rechnung hätte es verschwiegen.
+            // für ihn Ausland – und bekommt sein Land genannt. Stünde "DE"
+            // fest im Code, verschwiege diese Rechnung es.
             anschrift(kundenland = "DE", stellerland = "AT") shouldBe
                 """Beispiel Software GmbH\zeilenwechsel{}Industriestraße 1\zeilenwechsel{}90402 Nürnberg\zeilenwechsel{}DE"""
         }
@@ -294,8 +294,9 @@ class InvoiceRendererTest : FunSpec({
     }
 
     test("ein Kleinstpreis steht so da, dass man die Zeile nachrechnen kann") {
-        // Der Fall aus #14: Vorher stand hier "10.000 & Std. & 0,00 € & 0,10 €"
-        // – die Summe stimmte, aber der Einzelpreis war gerundet.
+        // Der Fall aus #14: Mit gerundetem Einzelpreis stünde hier
+        // "10.000 & Std. & 0,00 € & 0,10 €" – die Summe stimmt, aber
+        // nachrechnen ließe sie sich nicht.
         val tex = renderMit(testItem(quantity = "10000", unitPrice = "0.00001"))
 
         tex shouldContain "{10.000}{Std.}{0,00001~€}{}{0,10~€}"
@@ -424,9 +425,7 @@ class InvoiceRendererTest : FunSpec({
             val tex = schlussrechnung(listOf(testItem(quantity = "1", unitPrice = "4000.00")), testPrepayment())
 
             tex shouldContain "es verbleibt kein Restbetrag"
-            // Keine Abschlusszeile mit Betrag. Bis #94 stand hier
-            // "\textbf{Restbetrag}" – das schreibt der Renderer seit #76 nirgends,
-            // die Zeile bestand also immer.
+            // Keine Abschlusszeile mit Betrag (#94).
             tex shouldNotContain "\\abschlusszeile{Restbetrag}"
             // Und kein Zahlungsziel daneben: Das wäre die zweite, andere
             // Aussage desselben Blattes. Die Gegenprobe: Eine gewöhnliche
@@ -521,9 +520,9 @@ class InvoiceRendererTest : FunSpec({
     }
 
     context("Pflichtangaben und was fehlen darf") {
-        // Keine dieser Angaben stand bis #95 in einem Test oder einer der
-        // Vergleichsdateien: Deren Stammdaten haben alles, und keine ihrer
-        // Rechnungen ist steuerfrei. Geprüft wird am Inhalt, nicht am Makro.
+        // Keine dieser Angaben steht in einer der Vergleichsdateien (#95):
+        // Deren Stammdaten haben alles, und keine ihrer Rechnungen ist
+        // steuerfrei. Geprüft wird am Inhalt, nicht am Makro.
 
         fun render(invoice: Invoice, stammdaten: SellerConfig = config): String =
             InvoiceRenderer.render(CalculatedInvoice(invoice, stammdaten).accepted()).sources.tex
@@ -589,7 +588,7 @@ class InvoiceRendererTest : FunSpec({
 
         test("die Einleitung kommt maskiert, und ohne sie ist der Wert leer") {
             // #209. Leer heißt: Die Vorlage setzt über der Tabelle nichts, und
-            // der Abstand bleibt der von vorher.
+            // der Abstand ändert sich nicht.
             wert(TemplateValue.EINLEITUNG, testInvoice(introduction = "Für Projekt A & B:")) shouldBe
                 "Für Projekt A \\& B:"
             wert(TemplateValue.EINLEITUNG) shouldBe ""

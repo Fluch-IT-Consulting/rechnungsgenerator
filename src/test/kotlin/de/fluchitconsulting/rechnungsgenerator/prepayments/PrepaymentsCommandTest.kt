@@ -95,9 +95,9 @@ class PrepaymentsCommandTest : FunSpec({
         result.err shouldContain "gibtsnicht"
     }
 
-    // Dass eine unlesbare Datei nicht im Stacktrace endet, stand hier bis #119
-    // noch einmal eigens für dieses Kommando. Das hält jetzt execute() für alle,
-    // geprüft in MainTest.
+    // Dass eine unlesbare Datei nicht im Stacktrace endet, hält execute() für
+    // alle Kommandos (#119), geprüft in MainTest – hier steht es nicht noch
+    // einmal eigens.
 
     context("ohne -s kommen die Stammdaten aus der Wurzel (ADR-0015)") {
         /** Eine Ablage mit den Beispiel-Stammdaten in ihrem Ordner. */

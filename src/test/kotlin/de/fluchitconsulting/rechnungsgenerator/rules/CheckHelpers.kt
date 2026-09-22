@@ -4,8 +4,8 @@ import de.fluchitconsulting.rechnungsgenerator.calculation.CalculatedInvoice
 
 // Wie die Regeltests prüfen, seit der Calculator sammelt statt zu werfen (#49):
 // nach der Kennung der eigenen Regel, nicht nach dem Wortlaut irgendeiner
-// Meldung. Andere Befunde stören den Test damit nicht mehr – vorher musste jede
-// Testrechnung alle übrigen Regeln bestehen und durfte keinen Hinweis auslösen.
+// Meldung. Andere Befunde stören den Test damit nicht: Sonst müsste jede
+// Testrechnung alle übrigen Regeln bestehen und dürfte keinen Hinweis auslösen.
 //
 // Die Befunde kommen aus der Prüfung selbst, gleich ob sie annimmt oder ablehnt
 // (#105).

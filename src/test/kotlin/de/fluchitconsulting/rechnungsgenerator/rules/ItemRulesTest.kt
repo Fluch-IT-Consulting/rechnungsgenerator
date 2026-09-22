@@ -121,8 +121,8 @@ class ItemRulesTest : FunSpec({
 
         message shouldContain "Gesamtbetrag"
         message shouldContain "Stornorechnung"
-        // Bis #47 schlug hier RESTBETRAG_NEGATIV zu. Seine Meldung spricht von
-        // abgesetzten Abschlägen – bei einer Rechnung, die gar keine hat.
+        // Nicht RESTBETRAG_NEGATIV (#47): Seine Meldung spricht von abgesetzten
+        // Abschlägen – bei einer Rechnung, die gar keine hat.
         message shouldNotContain "Abschläge"
         // Und sie meldet sich auch nicht daneben: Seit alle Befunde erscheinen
         // (#49), fiele eine zweite, unsinnige Zeile sofort auf.
