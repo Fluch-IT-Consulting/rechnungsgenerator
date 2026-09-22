@@ -665,9 +665,12 @@ CV/Web-Auftritt des Autors), PDF/A-Prüfung über veraPDF.
 
 ## Konventionen
 
-- Bezeichner Englisch, Kommentare Deutsch. Kommentare sind lernorientiert
-  (der Autor lernt Kotlin), aber knapp: Kotlin-Idiome kurz erklären, wo sie
-  zum ersten Mal auftauchen – nicht jede Zeile kommentieren.
+- Bezeichner Englisch, Kommentare Deutsch. Ein Kommentar **begründet** und
+  erzählt nicht (ADR-0016): Er sagt, warum eine Stelle so ist und welche
+  Alternative sie ausschließt – nicht, was vorher dort stand, wann sie so wurde
+  und in welchem Issue. Eine Issue-Nummer in Klammern bleibt trotzdem, sie ist
+  ein Verweis wie ein ADR-Verweis. Kotlin-Idiome werden nicht erklärt, die kann
+  man nachschlagen; ein LaTeX-Fallstrick in einer Vorlage ist kein Idiom.
 
   **Ausnahme: die Fachbegriffe aus `CONTEXT.md`.** `abschlag`, `anteil`,
   `restbetrag`, `vereinnahmt`, `zeitraum` heißen auch in lokalen Variablen und

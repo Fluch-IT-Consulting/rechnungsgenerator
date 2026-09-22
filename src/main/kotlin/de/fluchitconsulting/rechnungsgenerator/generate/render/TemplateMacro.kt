@@ -5,23 +5,21 @@ package de.fluchitconsulting.rechnungsgenerator.generate.render
  *
  * Zugegeben eine zweite Liste neben der Vorlage, aber nur der Namen und nicht
  * des Satzes: Wie eine Position aussieht, steht weiterhin ausschließlich in
- * den Vorlagen. Der Zweck ist die Prüfung. Vorher fiel ein vertippter
- * Makroname erst im LuaLaTeX-Lauf auf, also im Integrationstest; jetzt beim
- * Setzen der Vorlage, mit einer Meldung, die den Namen nennt – dasselbe, was
- * #30 für die Platzhalter eingeführt hat.
+ * den Vorlagen. Der Zweck ist die Prüfung: Ein vertippter Makroname fällt beim
+ * Setzen der Vorlage auf, mit einer Meldung, die den Namen nennt, statt erst im
+ * LuaLaTeX-Lauf – dasselbe, was #30 für die Platzhalter tut.
  *
- * Der Renderer ruft kein anderes Makro auf, auch keines von LaTeX selbst: Wo er
- * früher `\mbox` oder `\\[\positionsabstand]` schrieb, stehen heute `ZUSAMMEN`
- * und die Trenner (#76), wo er `\\` schrieb, `ZEILENWECHSEL` und das
- * Zeilenende in `ABSCHLUSSZEILE` (#147). Dass keines mehr hineinkommt,
- * prüft [Template.fillIn]. Einzige Ausnahme sind die Felder der
- * pdfx-Metadaten – sie gehören in die .xmpdata-Datei und nicht in diese
- * Vorlage.
+ * Der Renderer ruft kein anderes Makro auf, auch keines von LaTeX selbst:
+ * Statt `\mbox` oder `\\[\positionsabstand]` stehen `ZUSAMMEN` und die Trenner
+ * (#76), statt `\\` `ZEILENWECHSEL` und das Zeilenende in `ABSCHLUSSZEILE`
+ * (#147). Dass keines hineinkommt, prüft [Template.fillIn]. Einzige Ausnahme
+ * sind die Felder der pdfx-Metadaten – sie gehören in die .xmpdata-Datei und
+ * nicht in diese Vorlage.
  *
- * Die Vorlage darf mehr Makros definieren und nutzen, als hier stehen. Seit
- * #188 setzt sie Briefkopf, Fuß und Kopfangaben selbst aus einzelnen Werten
- * ([TemplateValue]) zusammen; `\kopfperson`, `\blocktrenner` und
- * `\ustidtrenner` ruft seitdem nur noch sie auf.
+ * Die Vorlage darf mehr Makros definieren und nutzen, als hier stehen. Sie
+ * setzt Briefkopf, Fuß und Kopfangaben selbst aus einzelnen Werten
+ * ([TemplateValue], #188) zusammen; `\kopfperson`, `\blocktrenner` und
+ * `\ustidtrenner` ruft nur sie auf.
  */
 enum class TemplateMacro(val macroName: String, val arity: Int) {
     POSITIONSTRENNER("positionstrenner", 0),

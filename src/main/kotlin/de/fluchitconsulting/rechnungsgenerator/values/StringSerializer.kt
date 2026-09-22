@@ -11,9 +11,8 @@ import kotlinx.serialization.encoding.Encoder
 /**
  * Das Gerüst für einen Werttyp, der in der YAML als Zeichenkette steht.
  *
- * Zwölfmal stand hier dasselbe: ein [PrimitiveSerialDescriptor], ein
- * `encodeString`, ein `decodeString`. Interessant an einem Serializer sind nur
- * die beiden Umwandlungen – [encode] und [decode] –, alles andere ist Form.
+ * Interessant an einem Serializer sind nur die beiden Umwandlungen – [encode]
+ * und [decode] –, alles andere ist Form.
  *
  * Benutzt wird er per Delegation, damit der Serializer ein benanntes Objekt
  * bleibt und `@Serializable(with = …)` weiter darauf zeigen kann:

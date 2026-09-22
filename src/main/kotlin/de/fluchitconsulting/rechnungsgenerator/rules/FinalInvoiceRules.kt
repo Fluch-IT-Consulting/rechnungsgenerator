@@ -14,9 +14,8 @@ import de.fluchitconsulting.rechnungsgenerator.values.InvoiceType
  * (#97).
  *
  * Zwei Teile: die Angaben je Abschlag, die sich ohne die Summen der Rechnung
- * prüfen lassen, und die Absetzung gegen die Rechnung selbst. Vorher standen
- * sie in zwei Funktionen des Calculators, und für den zweiten Teil entstand
- * das Ergebnis eigens ein zweites Mal – jetzt liegt es fertig vor (#71).
+ * prüfen lassen, und die Absetzung gegen die Rechnung selbst – für die liegt
+ * das fertig gerechnete Ergebnis vor (#71).
  */
 internal object FinalInvoiceRules {
     // Nur auf einer Schlussrechnung; warum, steht bei InvoiceKindRules (#97).
@@ -35,8 +34,8 @@ internal object FinalInvoiceRules {
             // der Generator nicht.
             // Jede mehrfach genannte Nummer bekommt ihren eigenen Befund (#152):
             // Der Gegenstand am Befund ist eine Nummer, also heißt zwei Nummern
-            // auch zwei Befunde – vorher nannte firstOrNull nur die erste, und
-            // die zweite fiel erst im nächsten Lauf auf (ADR-0004). Die Meldung
+            // auch zwei Befunde; mit firstOrNull stünde nur die erste da, und
+            // die zweite fiele erst im nächsten Lauf auf (ADR-0004). Die Meldung
             // nennt die Anzahl: Wer "zweimal" liest, wo es drei sind, löscht
             // eine Zeile und läuft in denselben Abbruch.
             invoice.prepayments
@@ -153,10 +152,9 @@ internal object FinalInvoiceRules {
             // richtig.
             //
             // Nur bei Abschlägen: Ohne sie ist ein negativer Restbetrag schlicht
-            // ein negativer Gesamtbetrag, und den meldet die Regel dafür. Vorher
-            // fiel das nicht auf, weil der erste Wurf gewann – seit alle Befunde
-            // erscheinen, stünde hier sonst "mehr Abschläge abgesetzt (0.00)"
-            // unter einer Rechnung, die gar keine hat (#47).
+            // ein negativer Gesamtbetrag, und den meldet die Regel dafür. Sonst
+            // stünde "mehr Abschläge abgesetzt (0.00)" unter einer Rechnung, die
+            // gar keine hat (#47).
             if (prepayments.isNotEmpty() && calculated.remainingAmount.isNegative()) {
                 add(
                     Finding(

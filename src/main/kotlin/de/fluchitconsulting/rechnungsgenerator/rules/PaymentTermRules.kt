@@ -5,9 +5,9 @@ import de.fluchitconsulting.rechnungsgenerator.calculation.CalculatedInvoice
 /**
  * Das Zahlungsziel.
  *
- * Bestimmt wird es an genau einer Stelle, [CalculatedInvoice.paymentTermDays].
- * Vorher rechnete `calculate` es für diese Regel noch einmal selbst aus, mit
- * derselben Zeile – zwei Stellen, die nur zufällig übereinstimmten (#71).
+ * Bestimmt wird es an genau einer Stelle, [CalculatedInvoice.paymentTermDays],
+ * und nicht für diese Regel noch einmal: Zwei Stellen mit derselben Zeile
+ * stimmten nur zufällig überein (#71).
  */
 internal object PaymentTermRules {
     fun check(calculated: CalculatedInvoice): List<Finding> {

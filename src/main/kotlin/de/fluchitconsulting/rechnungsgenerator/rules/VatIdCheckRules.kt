@@ -13,9 +13,9 @@ import java.time.temporal.ChronoUnit
  *
  * **Welche** Kategorie was verlangt, steht am Enum: [VatIdConfirmation]
  * und die Werte in [TaxCategory]. Dort und nicht hier, weil es eine
- * Eigenschaft der Kategorie ist und keine dieser Regeln – vorher stand
- * die Fallunterscheidung als Konstantenvergleich im Calculator, und wer
- * wissen wollte, was für "G" gilt, musste ihn ganz lesen.
+ * Eigenschaft der Kategorie ist und keine dieser Regeln: Stünde die
+ * Fallunterscheidung hier, müsste ganz lesen, wer wissen will, was für "G"
+ * gilt.
  *
  * Hier steht nur noch, wie daraus eine Pflicht wird: Der Nachweis muss
  * vorliegen, er muss vor dem Rechnungsdatum erbracht sein, und fehlt er,
@@ -34,10 +34,9 @@ internal object VatIdCheckRules {
             val invoice = calculated.invoice
             // Ausgewählt wird über den Nachweis und nicht über
             // requiresCustomerVatId: Das eine ist eine Angabe auf dem Papier,
-            // das andere diese Pflicht. Vorher stand hier das Papier – heute
-            // ohne Folgen, weil beide bei AE und K anschlagen, aber eine
-            // Kategorie mit Nachweis und ohne Angabe wäre still ungeprüft
-            // geblieben (#148).
+            // das andere diese Pflicht. Stünde hier das Papier, bliebe eine
+            // Kategorie mit Nachweis und ohne Angabe still ungeprüft – heute
+            // ohne Folgen, weil beide bei AE und K anschlagen (#148).
             val kategorien = calculated.taxCategories.filter { it.vatIdConfirmation != VatIdConfirmation.NEVER }
             if (kategorien.isEmpty()) return@buildList
             val kunde = invoice.customer

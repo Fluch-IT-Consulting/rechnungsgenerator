@@ -47,10 +47,7 @@ class CodeLookup<T>(
  * Der ganze Weg von einer YAML-Schreibweise zu einem Enum-Wert, an einer
  * Stelle: zulässige Werte, Normalisierung, Meldung bei einem Tippfehler.
  *
- * Vorher deklarierte jedes Enum dafür drei Dinge – ein privates [CodeLookup],
- * eine `fromLabel`-Funktion und daneben den Serializer. Wer wissen wollte, was
- * unter `einheit:` stehen darf und was bei einem Tippfehler passiert, las fünf
- * Dateien. Jetzt steht es in einem Aufruf:
+ * Ein Aufruf sieht so aus:
  *
  * ```
  * object UnitSerializer : KSerializer<Unit> by enumSerializer(

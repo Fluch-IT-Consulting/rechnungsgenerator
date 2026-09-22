@@ -116,8 +116,8 @@ internal object SkontoRules {
                         "(${frueher.rate} und ${spaeter.rate}). Welcher Satz gilt, bliebe offen.",
                 )
             }
-            // Wer später zahlt, bekäme mindestens so viel – die frühere Stufe
-            // nutzte niemand. Meist sind die Sätze vertauscht.
+            // Wer später zahlt, bekäme mindestens so viel – die Stufe mit der
+            // kürzeren Frist nutzte niemand. Meist sind die Sätze vertauscht.
             spaeter.rate.valueAsPercentage >= frueher.rate.valueAsPercentage -> {
                 Finding(
                     Rule.SKONTOSTUFE_WERTLOS,

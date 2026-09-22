@@ -34,11 +34,9 @@ data class CollectedPrepayment(val name: String, val prepayment: Prepayment)
  * keiner geschrieben wird (#118).
  *
  * `sealed` wie [Verdict]: genau diese beiden Fälle, und ein `when` darüber
- * braucht keinen `else`. Bis #118 war das ein Paar aus einer Liste und den
- * Befunden, und die Liste war laut Kommentar "nur vollständig, wenn kein
- * Abbruch gemeldet ist" – geprüft hat das das Kommando. Jetzt gibt es die
- * Liste nur, wenn sie vollständig ist (ADR-0003: alles oder nichts), und die
- * Zusage hält der Typ, nicht ein Filter im Aufrufer.
+ * braucht keinen `else`. Die Liste gibt es nur, wenn sie vollständig ist
+ * (ADR-0003: alles oder nichts), und die Zusage hält der Typ, nicht ein Filter
+ * im Aufrufer.
  *
  * Hinweise trägt keiner der beiden Fälle: Die der einzelnen Abschlagsrechnungen
  * fallen weg (ADR-0003), und die Regeln des Zusammentragens selbst sind alle
@@ -61,8 +59,7 @@ sealed interface CollectedPrepayments {
  *
  * Ein Dokument anderer Art wird gar nicht erst gerechnet und geprüft: Es fliegt
  * ohnehin aus dem Aufruf, und seine übrigen Befunde hülfen niemandem – sie
- * gälten einem Dokument, das hier nichts zu suchen hat. Bis #118 lief die
- * ganze Prüfung trotzdem darüber.
+ * gälten einem Dokument, das hier nichts zu suchen hat.
  *
  * Die Hinweise der einzelnen Rechnungen fallen weg: Sie galten der
  * Abschlagsrechnung, als sie entstand, nicht der Schlussrechnung von heute.
@@ -155,7 +152,7 @@ fun prepaymentsOf(abschlagsrechnungen: List<NamedInvoice>, config: SellerConfig)
  *
  * `private`: Der einzige Aufrufer steht darüber, und der hat die Art schon
  * geprüft. Deshalb ist der `else`-Zweig unten unerreichbar. Gewollt ist er
- * trotzdem, und kein vergessenes `when` wie im Renderer vor #128: Dort braucht
+ * trotzdem, und kein vergessenes `when` wie im Renderer (#128): Dort braucht
  * jede Rechnungsart eine eigene Entscheidung, hier ist genau eine richtig, und
  * eine neue gehört zu Recht zu den übrigen. Die Vorprüfung am flachen Modell
  * bleibt, damit ein fremdes Dokument gar nicht erst gerechnet wird (#118).

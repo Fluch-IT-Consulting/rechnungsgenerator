@@ -99,8 +99,6 @@ object InvoiceRenderer {
         val address = config.address
         val bank = config.bank
         val taxNumber = config.taxNumber
-        // `orEmpty()` macht aus null eine leere Zeichenkette: Eine fehlende
-        // Angabe der Stammdaten wird ein leerer Wert.
         return when (key) {
             TemplateValue.FIRMA -> config.companyName.escapeLatex()
             TemplateValue.INHABER -> config.ownerName.escapeLatex()
@@ -191,8 +189,7 @@ object InvoiceRenderer {
     /**
      * Ein Feld der .xmpdata-Datei: `\Title{…}`. Kein [TemplateMacro]: Diese
      * Felder definiert pdfx und nicht die Vorlage, die Prüfung fände sie dort
-     * nicht. Deshalb privat und nur hier – bis #76 war das `Latex.macro` mit
-     * einem Namen als Zeichenkette, und darüber lief auch `\mbox`.
+     * nicht. Deshalb privat und nur hier (#76).
      */
     private fun xmpField(name: String, content: Latex): Latex = Latex.raw("\\$name{") + content + Latex.raw("}")
 }

@@ -112,9 +112,7 @@ data class DeductedPrepayment(
  *
  * Im Konstruktor stehen nur die Eingaben, alles Weitere rechnet der Rumpf aus.
  * Ein Paar aus einer Rechnung und den Summen einer anderen ist damit nicht
- * baubar – auch nicht über `copy()`, denn das baut neu und rechnet neu. Vorher
- * standen die Summen im Konstruktor, und dass sie zur Rechnung passten, hielt
- * allein, dass nur `InvoiceCalculator.calculate` ihn aufrief (#172).
+ * baubar – auch nicht über `copy()`, denn das baut neu und rechnet neu (#172).
  *
  * Verworfen: ein privater Konstruktor wie bei `AcceptedInvoice`. `copy()`
  * einer Data Class bleibt in Kotlin 2.4 trotzdem öffentlich, erst
@@ -192,11 +190,10 @@ data class CalculatedInvoice(
      * Decken die vereinnahmten Abschläge den Rechnungsbetrag genau? Dann steht
      * statt eines Restbetrags von null ein Satz auf dem Blatt.
      *
-     * Hier und nicht im Renderer, der vorher selbst `remainingAmount.isZero()`
-     * fragte, während Zahlungsziel und Bankverbindung [requestsPayment]
-     * folgten (#148). Beides bleibt getrennt: "ausgeglichen" heißt genau null,
-     * "fordert kein Geld" heißt nicht positiv. Ausgeglichen *und* Konto ist
-     * damit nicht baubar, weil null nicht positiv ist.
+     * Hier und nicht im Renderer (#148). Von [requestsPayment] bleibt es
+     * getrennt: "ausgeglichen" heißt genau null, "fordert kein Geld" heißt
+     * nicht positiv. Ausgeglichen *und* Konto ist damit nicht baubar, weil null
+     * nicht positiv ist.
      *
      * Ohne Abschläge ist nichts ausgeglichen, auch nicht bei Gesamtbetrag null.
      */
@@ -210,10 +207,9 @@ data class CalculatedInvoice(
      * Rechnung darüber –, fordert aber kein Geld mehr. Die Stornorechnung tut
      * beides nicht (ADR-0006).
      *
-     * Aus dieser einen Aussage folgen Zahlungsziel und Bankverbindung. Vorher
-     * fragte jedes für sich, und unter "es verbleibt kein Restbetrag" stand ein
-     * Konto (#94). Die Entscheidung fällt hier und nicht im Renderer – der setzt,
-     * was dasteht, und entscheidet nicht, was dastehen soll.
+     * Aus dieser einen Aussage folgen Zahlungsziel und Bankverbindung (#94).
+     * Die Entscheidung fällt hier und nicht im Renderer – der setzt, was
+     * dasteht, und entscheidet nicht, was dastehen soll.
      *
      * Positiv und nicht bloß "nicht null": Ein negativer Betrag fordert kein
      * Geld, gleich was die Art abrechnet. Auf ein PDF kommt er heute ohnehin
@@ -266,10 +262,8 @@ data class CalculatedInvoice(
      * andere Aussage desselben Blattes.
      *
      * Abgeleitet und nicht gesetzt, aus demselben Grund wie [remainingAmount]:
-     * Vorher entstand das Ergebnis erst ohne Zahlungsziel und wurde danach
-     * kopiert, und wer eines in der Hand hielt, sah ihm nicht an, ob die
-     * Entscheidung schon gefallen war. Jetzt ist ein Ergebnis mit Zahlungsziel
-     * *und* Restbetrag null nicht mehr baubar – nicht bloß ungebaut.
+     * Ein Ergebnis mit Zahlungsziel *und* Restbetrag null ist damit nicht
+     * baubar – nicht bloß ungebaut.
      */
     val dueDate: LocalDate? get() =
         if (!requestsPayment) {

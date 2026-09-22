@@ -13,7 +13,7 @@ import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
 
 // Stammdaten des Rechnungsstellers – auf jeder Rechnung gleich, kommen aus der
-// Konfigurationsdatei. `data class` erzeugt equals/hashCode/toString/copy automatisch.
+// Konfigurationsdatei.
 // @SerialName mappt die deutschen YAML-Schlüssel auf englische Property-Namen.
 @Serializable
 data class SellerConfig(

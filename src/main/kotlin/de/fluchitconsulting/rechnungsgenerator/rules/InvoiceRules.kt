@@ -9,16 +9,15 @@ import de.fluchitconsulting.rechnungsgenerator.calculation.CalculatedInvoice
  * Gesammelt statt geworfen (ADR-0004): Wer eine Regel prüft, soll nicht erst
  * eine Rechnung bauen müssen, die alle anderen besteht.
  *
- * Jede Gruppe prüft das fertig gerechnete Ergebnis (#71). Vorher standen die
- * Regeln im Calculator zwischen den Rechenschritten, und weil zwei davon die
- * Summen brauchten, entstand das Ergebnis zweimal.
+ * Jede Gruppe prüft das fertig gerechnete Ergebnis (#71) und nicht einen
+ * Zwischenstand: Zwei Gruppen brauchen die Summen, und zwischen den
+ * Rechenschritten entstünde das Ergebnis zweimal.
  *
- * Eine Gruppe je Datei, und je Datei ein Test gleichen Namens – so waren die
- * Tests schon lange geteilt. Nicht je Regel eine Funktion: Das hat ADR-0004
- * verworfen, die Meldung steht weiter neben ihrer Bedingung.
+ * Eine Gruppe je Datei, und je Datei ein Test gleichen Namens. Nicht je Regel
+ * eine Funktion: Das hat ADR-0004 verworfen, die Meldung steht weiter neben
+ * ihrer Bedingung.
  *
- * `internal` heißt: sichtbar im ganzen Modul, aber nicht darüber hinaus. Nach
- * außen bleibt `AcceptedInvoice.check` die einzige Schnittstelle.
+ * Nach außen bleibt `AcceptedInvoice.check` die einzige Schnittstelle.
  */
 internal object InvoiceRules {
     /**

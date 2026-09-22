@@ -7,21 +7,16 @@ import de.fluchitconsulting.rechnungsgenerator.calculation.CalculatedInvoice
  * oder als Abschlag übernehmen lässt (ADR-0007).
  *
  * ADR-0004 sagt: "Die Zahlen entstehen, gesetzt werden sie nie: Das Kommando
- * bricht vorher ab." Bis #70 stimmte das nur, weil beide Kommandos daran
- * dachten. `InvoiceRenderer.render` und das Zusammentragen der Abschläge
- * nahmen jede [CalculatedInvoice] an, auch eine mit Abbrüchen. Jetzt verlangen
- * sie diesen Typ, und den gibt es nur über [check]: Eine Rechnung mit Abbruch
- * ist nicht mehr ungesetzt, sondern nicht setzbar – derselbe Zug wie beim
- * Zahlungsziel.
+ * bricht vorher ab." Dass das hält, verlangt der Compiler und nicht die
+ * Disziplin der Kommandos (#70): `InvoiceRenderer.render` und das
+ * Zusammentragen der Abschläge verlangen diesen Typ, und den gibt es nur über
+ * [check]. Eine Rechnung mit Abbruch ist nicht ungesetzt, sondern nicht
+ * setzbar – derselbe Zug wie beim Zahlungsziel.
  *
  * Sie trägt die Rechnungsart als Typ, [kind] (ADR-0008). Wer wissen will, ob
  * und worauf sich ein Storno bezieht oder welche Abschläge abgesetzt werden,
  * fragt dort und nicht im flachen Modell hinter [calculated].
  *
- * `private constructor`: Außerhalb dieser Klasse lässt sich keine
- * `AcceptedInvoice(...)` bauen, auch nicht im selben Paket. Der einzige Weg
- * führt durch [check], das den Konstruktor aus dem `companion object` heraus
- * aufrufen darf.
  */
 class AcceptedInvoice private constructor(
     val calculated: CalculatedInvoice,
@@ -48,13 +43,10 @@ class AcceptedInvoice private constructor(
          *
          * Geprüft wird hier und nicht in [CalculatedInvoice] (#105). Das
          * Zahlungsziel ist ein abgeleiteter Wert, die Befunde sind ein Urteil
-         * über die Rechnung. Als `lazy` auf ihr hatte die Prüfung keinen Besitzer:
-         * Die Rechnungsart wurde dort gemerkt, damit Regelgruppe und diese Stelle
-         * aus einem Bau lasen (#93), und dass eine Ablehnung ihre Gründe nannte,
-         * hing an einem Eintrag in der Liste der Regelgruppen. Jetzt ist der Bau
-         * eine lokale Variable, und seine Befunde reicht diese Stelle selbst
-         * weiter. Dass jeder davon ein Abbruch ist, verlangt ein Test in
-         * `InvoiceKindRulesTest`.
+         * über die Rechnung. Als `lazy` auf ihr hätte die Prüfung keinen
+         * Besitzer. Der Bau der Rechnungsart ist deshalb eine lokale Variable,
+         * und seine Befunde reicht diese Stelle selbst weiter; dass jeder davon
+         * ein Abbruch ist, verlangt ein Test in `InvoiceKindRulesTest`.
          *
          * Einen Einstieg, der gleich aus Rechnung und Stammdaten ein [Verdict]
          * macht, gibt es bewusst nicht. Aufgerufen wird die Folge aus
@@ -89,10 +81,6 @@ class AcceptedInvoice private constructor(
 /**
  * Das Urteil der Prüfung ([AcceptedInvoice.check]): angenommen oder abgelehnt,
  * wie im Glossar.
- *
- * Bis #125 hieß der Typ nach dem Vorgang statt nach dem Ergebnis. Der Name
- * sagte nur, dass geprüft wurde – nicht was, und nicht, was herauskam; die
- * Bedeutung trugen allein die beiden Fälle.
  *
  * `sealed`: Es gibt genau diese beiden Fälle, und der Compiler weiß das. Ein
  * `when` darüber braucht deshalb keinen `else`-Zweig – und kommt ein dritter
