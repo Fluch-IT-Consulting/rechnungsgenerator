@@ -5,7 +5,9 @@ Schreibweise wie in `invoice.tex`. Beim Setzen löst sie ein `VariableResolver`
 auf: `String.escapeLatex(resolver)` zerlegt den Satz an den Platzhaltern,
 maskiert nur den festen Text und setzt die Werte als fertiges `Latex` ein.
 Die Werte einer angenommenen Rechnung liefert `InvoiceVariableResolver`,
-vorerst `URSPRUNGSNUMMER` und `URSPRUNGSDATUM`.
+vorerst `URSPRUNGSNUMMER` und `URSPRUNGSDATUM`. (Aufgehoben, was Zerlegen und
+Resolver angeht: Der Satz ist ein `TextTemplate`, der Resolver liefert Werte
+ohne Format, siehe ADR-0019.)
 
 Die Stornorechnung nennt ihre Ursprungsrechnung damit im Pflichtsatz – "hebt
 die Rechnung R26-042 vom 14. August 2026 vollständig auf" –, und die Zeile
@@ -28,8 +30,10 @@ eine davon:
   wirft beim Setzen, und jede Rechnungsart mit Pflichtsatz hat eine
   Vergleichsdatei `*-erwartet.tex`. Das ist dieselbe Stufe, auf der
   `TemplateMacro` gegen die Vorlage geprüft wird – nicht erst im PDF.
+  (Aufgehoben: Die Namen sind ein Enum, siehe ADR-0019.)
 - **Wortlaut und Werteliste stehen getrennt**, der Satz in `InvoiceType`, die
-  Namen in `InvoiceVariableResolver`. Das bleibt.
+  Namen in `InvoiceVariableResolver`. Das bleibt. (Die Namen stehen seit
+  ADR-0019 in `InvoiceVariable`.)
 
 Das Argument, der Bezug sei in EN 16931 Struktur (BG-3, BT-25, BT-26) und keine
 Prosa, trifft das Modell und nicht das PDF. Dort bleibt er Struktur, in
