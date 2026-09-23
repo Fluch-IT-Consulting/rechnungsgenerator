@@ -1,5 +1,6 @@
 package de.fluchitconsulting.rechnungsgenerator.generate.toolchain
 
+import org.verapdf.core.VeraPDFException
 import org.verapdf.gf.foundry.VeraGreenfieldFoundryProvider
 import org.verapdf.pdfa.Foundries
 import org.verapdf.pdfa.flavours.PDFAFlavour
@@ -46,6 +47,16 @@ interface PdfAValidator {
      */
     fun checkAvailable()
 
+    /**
+     * Urteilt über [pdf]: gültig oder nicht, und wenn nicht, welche Regeln es
+     * verletzt. Ein nicht konformes PDF ist ein Ergebnis und keine Ausnahme.
+     *
+     * Kann der Prüfer gar nicht urteilen – die Datei ist kein lesbares PDF,
+     * das Werkzeug bricht mitten in der Prüfung ab –, wirft er
+     * [ToolchainException]. Die Zusage steht hier und nicht in einem Adapter,
+     * weil `execute()` genau diese Ausnahme als Meldung ausgibt; jede andere
+     * verließe `main` als Stacktrace (#294).
+     */
     fun validate(pdf: Path): ValidationResult
 }
 
@@ -83,9 +94,17 @@ object BuiltInPdfAValidator : PdfAValidator {
     override fun validate(pdf: Path): ValidationResult {
         profile // erzwingt das Laden, bevor die Foundry gefragt wird
         val validator = Foundries.defaultInstance().createValidator(flavour, false)
+        // Gefangen wird VeraPDFException und nicht mehr: Sie ist die gemeinsame
+        // Oberklasse dessen, was beide Aufrufe deklarieren, also genau "konnte
+        // nicht urteilen". Eine RuntimeException aus der Bibliothek ist ein
+        // Programmfehler, und den soll ein Stacktrace zeigen, keine Meldung.
         val result =
-            Foundries.defaultInstance().createParser(pdf.toFile(), flavour).use { parser ->
-                validator.validate(parser)
+            try {
+                Foundries.defaultInstance().createParser(pdf.toFile(), flavour).use { parser ->
+                    validator.validate(parser)
+                }
+            } catch (e: VeraPDFException) {
+                throw ToolchainException("veraPDF konnte $pdf nicht prüfen: ${reasons(e)}", e)
             }
         return ValidationResult(
             valid = result.isCompliant,
@@ -106,6 +125,18 @@ object BuiltInPdfAValidator : PdfAValidator {
                     },
         )
     }
+
+    /**
+     * Alle Meldungen der Ursachenkette, von außen nach innen. veraPDF sagt
+     * außen nur, *dass* es scheiterte ("Couldn't parse stream"), und legt das
+     * *Warum* in die Ursache ("End of file is reached"). `execute()` gibt die
+     * Ursache nicht aus, also muss sie in die Meldung.
+     */
+    private fun reasons(e: Throwable): String =
+        generateSequence(e) { it.cause }
+            .mapNotNull { it.message }
+            .distinct()
+            .joinToString(": ")
 }
 
 /**
