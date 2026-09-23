@@ -150,6 +150,11 @@ build/install/rechnungsgenerator/bin/rechnungsgenerator erzeuge \
   -o "$RECHNUNGEN_DIR/Outgoing/Rechnung_R26-012-beispiel.pdf"
 ```
 
+Mit `-o`, obwohl das PDF ohne es an denselben Ort käme: Ist `build/install/…`
+nicht neu gebaut, legt eine ältere Fassung es ins Arbeitsverzeichnis, also ins
+Projektverzeichnis, wo `*.pdf` nicht ignoriert ist – ein ausdrückliches Ziel
+hängt an keiner Fassung.
+
 Ohne `-s`: Die Stammdaten findet der Generator selbst, über der Rechnungsdatei.
 Meldet er, dass er keine findet, fehlt der Ordner `.rechnungsgenerator/` –
 siehe oben.

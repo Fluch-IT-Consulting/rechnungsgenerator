@@ -34,6 +34,8 @@ CV/Web-Auftritt des Autors), PDF/A-Prüfung über veraPDF.
   Cache legt das Programm dort ab (ADR-0001). Der `rechnung`-Skill ruft deshalb
   ohne `-s` auf; `naechste-nummer.py` behält `--stammdaten` mit
   ausgeschriebenem Pfad.
+- **Zieldatei** (ADR-0018): Ohne `-o` entsteht das PDF neben der
+  Rechnungsdatei und heißt wie sie, nicht nach der Nummer.
 
 - **`einrichten`** (#276) legt `.rechnungsgenerator/stammdaten.yaml` im
   Arbeitsverzeichnis an – ein Gerüst und kein `git init`: eine Datei, die
@@ -231,9 +233,9 @@ CV/Web-Auftritt des Autors), PDF/A-Prüfung über veraPDF.
   Nummer, Leerraum am Rand und eine Nummer, von der kein Dateiname übrig
   bleibt, brechen unabhängig vom Muster ab (`RECHNUNGSNUMMER_FEHLT`,
   `RECHNUNGSNUMMER_MIT_LEERRAUM`, `RECHNUNGSNUMMER_OHNE_DATEINAMEN`), weil aus
-  der Nummer auch der Dateiname entsteht; abgeleitet wird er in
-  `CalculatedInvoice.fileBaseName`. Die Nummern der abgesetzten Abschläge
-  bleiben ungeprüft.
+  der Nummer der Jobname für LuaLaTeX entsteht – ob das die Regeln noch trägt,
+  klärt #297; abgeleitet wird er in `CalculatedInvoice.fileBaseName`. Die
+  Nummern der abgesetzten Abschläge bleiben ungeprüft.
 
 - **Steuerkategorie**: `TaxCategory` (BT-151, Codeliste UNCL 5305) pro Position,
   Vorgabe S. Der Satz allein genügt nicht – ohne Kategorie lässt sich "0 %"
