@@ -61,10 +61,11 @@ class GenerateCommandTest : FunSpec({
         viewer: PdfViewer = FakePdfViewer(),
         ausgabe: MutableList<String> = mutableListOf(),
         stammdatenDatei: Path = stammdaten,
+        rechnungsDatei: Path = rechnung,
     ): List<String> {
         val command = RechnungsgeneratorCommand({ typesetter }, viewer)
         command.context { echoMessage = { _, message, _, _ -> ausgabe += message.toString() } }
-        command.parse(arrayOf("erzeuge", rechnung.toString(), "-s", stammdatenDatei.toString()) + args)
+        command.parse(arrayOf("erzeuge", rechnungsDatei.toString(), "-s", stammdatenDatei.toString()) + args)
         return ausgabe
     }
 
@@ -207,9 +208,114 @@ class GenerateCommandTest : FunSpec({
 
         lauf(fake, "-o", eingaben.resolve("jobname.pdf").toString())
 
-        // Ohne -o landete die Datei im Arbeitsverzeichnis des Prozesses, also
-        // im Projektverzeichnis – dafür legt dieser Test keine Datei an.
         fake.jobName shouldBe "Rechnung-R26-042"
+    }
+
+    /**
+     * Die Vorgabe hängt nicht mehr am Standort des Aufrufs – deshalb wechselt
+     * hier kein Test das Arbeitsverzeichnis. Jeder bekommt ein eigenes
+     * Verzeichnis, denn ohne -o entscheidet der Name der Rechnungsdatei, wo
+     * das PDF entsteht.
+     */
+    context("ohne -o entsteht das PDF neben der Rechnungsdatei (ADR-0018)") {
+        fun rechnungsDatei(name: String) =
+            createTempDirectory("ohne-ausgabe").resolve(name).also { it.writeText(quelle("rechnung.yaml")) }
+
+        test("im Verzeichnis der Rechnungsdatei und mit ihrem Namen, nicht mit dem aus der Nummer") {
+            val datei = rechnungsDatei("R.yaml")
+            val fake = FakeTypesetter()
+
+            val ausgabe = lauf(fake, rechnungsDatei = datei)
+
+            val pdf = datei.resolveSibling("R.pdf")
+            pdf.readText() shouldContain "%PDF"
+            ausgabe.first() shouldBe pdf.toString()
+            // Der Jobname bleibt, was er war; der Name des PDF hängt nicht an ihm.
+            fake.jobName shouldBe "Rechnung-R26-042"
+        }
+
+        test("aus .yml wird .pdf") {
+            val datei = rechnungsDatei("R.yml")
+
+            lauf(FakeTypesetter(), rechnungsDatei = datei)
+
+            datei.resolveSibling("R.pdf").exists() shouldBe true
+        }
+
+        test("eine Datei ohne Endung bekommt .pdf angehängt") {
+            val datei = rechnungsDatei("R")
+
+            lauf(FakeTypesetter(), rechnungsDatei = datei)
+
+            datei.resolveSibling("R.pdf").exists() shouldBe true
+        }
+
+        test("die Ausgabe nennt das Ziel so, wie die Rechnungsdatei angegeben wurde") {
+            // Relativ zum Arbeitsverzeichnis des Testlaufs, also mit ../ bis ins
+            // Temp-Verzeichnis – aber relativ, und so bleibt es.
+            val datei = rechnungsDatei("R.yaml")
+            val relativ = Path.of("").toAbsolutePath().relativize(datei)
+
+            val ausgabe = lauf(FakeTypesetter(), rechnungsDatei = relativ)
+
+            ausgabe.first() shouldBe relativ.resolveSibling("R.pdf").toString()
+        }
+
+        test("der Überschreibschutz greift auch hier") {
+            val datei = rechnungsDatei("R.yaml")
+            val pdf = datei.resolveSibling("R.pdf").also { it.writeText("das verschickte Original") }
+
+            val fehler = shouldThrow<CliktError> { lauf(FakeTypesetter(), rechnungsDatei = datei) }
+
+            fehler.message!! shouldContain "--ueberschreiben"
+            pdf.readText() shouldBe "das verschickte Original"
+        }
+    }
+
+    /**
+     * `--ueberschreiben` ist fürs Nachbessern eines Entwurfs da. Die Eingabe
+     * zu zerstören ist kein Nachbessern – deshalb gilt der Schalter hier nicht.
+     */
+    context("das Ziel ist nie die Rechnungsdatei") {
+        fun rechnungsDatei(name: String) =
+            createTempDirectory("ziel-eingabe").resolve(name).also { it.writeText(quelle("rechnung.yaml")) }
+
+        listOf(emptyList(), listOf("--ueberschreiben")).forEach { schalter ->
+            test("-o auf die Rechnungsdatei bricht ab ${if (schalter.isEmpty()) "ohne" else "mit"} --ueberschreiben") {
+                val datei = rechnungsDatei("R.yaml")
+                val fake = FakeTypesetter()
+
+                val fehler =
+                    shouldThrow<CliktError> {
+                        lauf(fake, "-o", datei.toString(), *schalter.toTypedArray(), rechnungsDatei = datei)
+                    }
+
+                fehler.statusCode shouldBe 1
+                fehler.message!! shouldContain "Rechnungsdatei selbst"
+                datei.readText() shouldBe quelle("rechnung.yaml")
+                fake.workingDir shouldBe null
+            }
+        }
+
+        test("auch unter anderer Schreibweise derselben Datei") {
+            val datei = rechnungsDatei("R.yaml")
+
+            shouldThrow<CliktError> {
+                lauf(FakeTypesetter(), "-o", datei.resolveSibling("./R.yaml").toString(), "--ueberschreiben", rechnungsDatei = datei)
+            }
+
+            datei.readText() shouldBe quelle("rechnung.yaml")
+        }
+
+        test("heißt die Rechnungsdatei selbst .pdf, bricht auch der Lauf ohne -o ab") {
+            val datei = rechnungsDatei("R.pdf")
+
+            val fehler =
+                shouldThrow<CliktError> { lauf(FakeTypesetter(), "--ueberschreiben", rechnungsDatei = datei) }
+
+            fehler.message!! shouldContain "Rechnungsdatei selbst"
+            datei.readText() shouldBe quelle("rechnung.yaml")
+        }
     }
 
     test("das PDF trägt das Rechnungsdatum als Erstellungsdatum") {

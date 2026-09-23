@@ -21,10 +21,11 @@ import de.fluchitconsulting.rechnungsgenerator.rules.AcceptedInvoice
 import de.fluchitconsulting.rechnungsgenerator.rules.RejectedException
 import de.fluchitconsulting.rechnungsgenerator.rules.Verdict
 import java.io.IOException
-import java.nio.file.Path
 import kotlin.io.path.copyTo
 import kotlin.io.path.createTempDirectory
 import kotlin.io.path.exists
+import kotlin.io.path.isSameFileAs
+import kotlin.io.path.nameWithoutExtension
 
 /**
  * `rechnungsgenerator erzeuge`: aus einer Rechnungsdatei ein geprüftes PDF.
@@ -59,8 +60,13 @@ class GenerateCommand(
         help = "Stammdaten des Rechnungsstellers; ohne Angabe aus der Wurzel über der Rechnungsdatei",
     ).path(mustExist = true, canBeDir = false)
 
-    private val outputFile by option("-o", "--ausgabe", help = "Zieldatei; Vorgabe ist der Name aus der Rechnungsnummer")
-        .path(canBeDir = false)
+    // Relativ zum Arbeitsverzeichnis wie -s: Ein getippter Pfad meint, was die
+    // Shell darunter versteht. Nur die Vorgabe hängt an der Rechnungsdatei.
+    private val outputFile by option(
+        "-o",
+        "--ausgabe",
+        help = "Zieldatei; ohne Angabe neben der Rechnungsdatei, mit .pdf statt ihrer Endung",
+    ).path(canBeDir = false)
 
     private val keepWorkFiles by option("--arbeitsdateien-behalten", help = "Das .tex und die LaTeX-Hilfsdateien nicht löschen")
         .flag()
@@ -117,7 +123,20 @@ class GenerateCommand(
         // Ob die Nummer einen Dateinamen ergibt, hat die Prüfung schon gesagt
         // (#150); eine angenommene Rechnung hat immer einen.
         val jobName = acceptedInvoice.fileBaseName
-        val target = outputFile ?: Path.of("$jobName.pdf")
+        // Neben der Rechnungsdatei und nach ihr benannt, nicht nach der Nummer
+        // (ADR-0018): Wer die Datei benannt hat, hat den Namen schon
+        // entschieden. resolveSibling hält einen relativen Pfad relativ, so
+        // steht das Ziel in der Ausgabe, wie die Rechnungsdatei angegeben wurde.
+        val target = outputFile ?: invoiceFile.resolveSibling("${invoiceFile.nameWithoutExtension}.pdf")
+        // Vor dem Überschreibschutz, denn --ueberschreiben gilt einem Entwurf
+        // und nicht der Eingabe. isSameFileAs statt eines Vergleichs der Pfade:
+        // ./R.yaml, ein Symlink und auf macOS r.YAML sind dieselbe Datei.
+        if (target.exists() && target.isSameFileAs(invoiceFile)) {
+            throw CliktError(
+                "Die Zieldatei $target ist die Rechnungsdatei selbst und wird nie ersetzt, auch nicht mit " +
+                    "--ueberschreiben. Mit -o ein anderes Ziel angeben.",
+            )
+        }
         // Eine vorhandene Datei kann die verschickte Rechnung sein. Ersetzt wird
         // sie nur auf ausdrücklichen Wunsch – und geprüft wird vor dem Satz,
         // denn ein LuaLaTeX-Lauf, dessen Ergebnis nirgends hin darf, wäre vergeudet.
