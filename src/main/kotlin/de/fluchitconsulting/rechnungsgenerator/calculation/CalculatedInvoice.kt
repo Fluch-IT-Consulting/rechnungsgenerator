@@ -137,6 +137,15 @@ data class CalculatedInvoice(
 
     // USt. je Gruppe auf die summierte Bemessungsgrundlage berechnen
     // (nicht je Position!), so verlangt es EN 16931 (BG-23).
+    //
+    // Die Reihenfolge ist fest und hängt nicht an der Datei: nach Kategorie,
+    // wie TaxCategory sie aufzählt, darin der höhere Satz zuerst. Sie steht
+    // auf dem Blatt – Steuerzeilen und Hinweise zu den Befreiungen – und in
+    // den steueranteilen, die `abschlaege` ausgibt; tauschen Positionen die
+    // Plätze, soll sich keins davon ändern. Welche der beiden Stufen vorn
+    // steht, sieht man auf einer angenommenen Rechnung nicht: S hat immer
+    // einen Satz über 0, jede andere Kategorie 0 (REGELSATZ_MIT_NULL,
+    // SATZ_MUSS_NULL_SEIN).
     val vatGroups: List<VatGroup> =
         lines
             .groupBy { it.item.taxCategory to it.item.vatRate }
@@ -150,7 +159,7 @@ data class CalculatedInvoice(
                     amount = base * rate,
                     reasons = group.mapNotNull { it.item.taxExemptionReason }.toSet(),
                 )
-            }.sortedWith(compareBy({ it.category.ordinal }, { -it.rate.valueAsPercentage.toDouble() }))
+            }.sortedWith(compareBy<VatGroup> { it.category }.thenByDescending { it.rate.valueAsPercentage })
 
     val grossTotal: Money = netTotal + vatGroups.sumOf { it.amount }
 
