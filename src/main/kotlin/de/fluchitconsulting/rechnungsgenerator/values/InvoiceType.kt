@@ -148,7 +148,7 @@ enum class InvoiceType(
 
     /**
      * Der Name des Dokuments, wie CONTEXT.md ihn führt – für Titelbalken,
-     * Dateiname und die XMP-Metadaten. Abgeleitet statt als eigenes Feld
+     * Jobname und die XMP-Metadaten. Abgeleitet statt als eigenes Feld
      * geführt: Er ist das Label mit großem Anfangsbuchstaben, und zwei Felder
      * mit derselben Aussage laufen irgendwann auseinander.
      */

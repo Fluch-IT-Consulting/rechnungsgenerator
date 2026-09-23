@@ -1,5 +1,9 @@
 package de.fluchitconsulting.rechnungsgenerator.generate.toolchain
 
+import de.fluchitconsulting.rechnungsgenerator.calculation.CalculatedInvoice
+import de.fluchitconsulting.rechnungsgenerator.generate.render.InvoiceRenderer
+import de.fluchitconsulting.rechnungsgenerator.model.YamlLoader
+import de.fluchitconsulting.rechnungsgenerator.rules.accepted
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.assertions.withClue
 import io.kotest.core.Tag
@@ -11,7 +15,9 @@ import io.kotest.matchers.doubles.plusOrMinus
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.string.shouldContain
 import java.nio.file.Path
+import java.security.MessageDigest
 import java.time.LocalDate
+import java.util.HexFormat
 import kotlin.io.path.copyTo
 import kotlin.io.path.createTempDirectory
 import kotlin.io.path.fileSize
@@ -90,6 +96,37 @@ class ToolchainIntegrationTest : FunSpec({
         // PDF nach Text suchen, ohne dass der Binärteil beim Dekodieren stört.
         // Die Rechnung ist auf den 14.08.2026 datiert.
         String(bytes, Charsets.ISO_8859_1) shouldContain "/CreationDate(D:20260814000000+00'00')"
+    }
+
+    /**
+     * Der Jobname steht nicht in [PdfSources] und bestimmt trotzdem Bytes:
+     * pdfx bildet die `xmpMM:DocumentID` aus der MD5-Summe über
+     * "<Jobname>.pdf" (#297). Deshalb bleibt er Rechnungsart und -nummer –
+     * ein fester Name gäbe allen Rechnungen dieselbe DocumentID, ein anderer
+     * änderte jedes PDF.
+     *
+     * Beides hält dieser Test fest: woraus die DocumentID entsteht, und dass
+     * sie das Einzige ist, was am Jobnamen hängt. Bildet pdfx sie eines Tages
+     * anders, wird er rot, und die Begründung in ADR-0005 gehört neu geprüft.
+     */
+    test("der Jobname bestimmt allein die DocumentID, und die bildet pdfx aus ihm") {
+        val invoice = YamlLoader.loadInvoice(Path.of("src/test/resources/rechnung.yaml"))
+        val config = YamlLoader.loadSellerConfig(Path.of("src/test/resources/stammdaten.yaml"))
+        val accepted = CalculatedInvoice(invoice, config).accepted()
+        val sources = InvoiceRenderer.render(accepted).sources
+
+        val jobNames = listOf(accepted.fileBaseName, "rechnung")
+        val pdfs =
+            jobNames.map { jobName ->
+                val eigenesVerzeichnis = createTempDirectory(workDir, "jobname")
+                String(LatexCompiler(ExternalTool).compile(eigenesVerzeichnis, jobName, sources).readBytes(), Charsets.ISO_8859_1)
+            }
+
+        val documentId = Regex("<xmpMM:DocumentID>uuid:([0-9A-F-]+)</xmpMM:DocumentID>")
+        jobNames.zip(pdfs).forEach { (jobName, pdf) ->
+            documentId.find(pdf)!!.groupValues[1] shouldBe pdfxUuid("$jobName.pdf")
+        }
+        pdfs.map { documentId.replace(it, "") }.distinct().size shouldBe 1
     }
 
     /**
@@ -332,3 +369,10 @@ class ToolchainIntegrationTest : FunSpec({
         fehler.message!! shouldContain "gibtesnicht"
     }
 })
+
+/** Die UUID, wie pdfx sie aus einem Text bildet: dessen MD5-Summe, gruppiert 8-4-4-4-12. */
+private fun pdfxUuid(text: String): String {
+    val md5 = HexFormat.of().withUpperCase().formatHex(MessageDigest.getInstance("MD5").digest(text.toByteArray()))
+    return listOf(md5.substring(0, 8), md5.substring(8, 12), md5.substring(12, 16), md5.substring(16, 20), md5.substring(20))
+        .joinToString("-")
+}

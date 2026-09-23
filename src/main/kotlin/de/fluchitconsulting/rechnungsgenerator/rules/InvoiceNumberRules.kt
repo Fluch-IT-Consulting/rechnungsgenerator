@@ -23,15 +23,18 @@ internal object InvoiceNumberRules {
         val number = calculated.invoice.number
 
         // Leer, Leerraum und der Dateiname gelten unabhängig vom Muster, also
-        // auch ohne Eintrag in den Stammdaten: Aus der Nummer entsteht der
-        // Dateiname des PDF, und ein gequotetes ' R26-009' ergäbe still eine
-        // andere Datei.
+        // auch ohne Eintrag in den Stammdaten (ADR-0005). Andere Dateien nennen
+        // die Nummer später – die Schlussrechnung unter `abschlaege`, das
+        // Storno unter `storniert` –, und verglichen wird Zeichen für Zeichen
+        // (#53): Ein gequotetes ' R26-009' ließe den Verweis still ins Leere
+        // gehen. Aus der Nummer entsteht außerdem der Jobname, und aus dem
+        // bildet pdfx die DocumentID des PDF (#297).
         if (number.isBlank()) {
             return listOf(
                 Finding(
                     Rule.RECHNUNGSNUMMER_FEHLT,
                     Subject.WholeInvoice,
-                    "Die Rechnungsnummer fehlt – 'nummer' ist leer. Aus ihr entsteht auch der Dateiname des PDF.",
+                    "Die Rechnungsnummer fehlt – 'nummer' ist leer.",
                 ),
             )
         }

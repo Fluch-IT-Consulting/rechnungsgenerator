@@ -33,11 +33,11 @@ class InvoiceNumberRulesTest : FunSpec({
         }
 
         test("eine leere Nummer wird trotzdem abgelehnt") {
-            // Unabhängig vom Muster: Aus der Nummer entsteht der Dateiname.
+            // Unabhängig vom Muster: Ohne Nummer gibt es keinen Jobnamen und
+            // nichts, worauf eine Schlussrechnung oder ein Storno verweisen kann.
             val message = CalculatedInvoice(testInvoice(number = ""), ohneMuster).messageOf(Rule.RECHNUNGSNUMMER_FEHLT)
 
             message shouldContain "fehlt"
-            message shouldContain "Dateiname"
         }
 
         test("eine Nummer aus lauter Leerzeichen fehlt, sie trägt nicht bloß Leerraum") {
