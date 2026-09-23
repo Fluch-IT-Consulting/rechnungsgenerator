@@ -94,3 +94,49 @@ Der Stand des Gesprächs vor dieser Entscheidung steht in
   Doppelung bleibt, kann aber nicht mehr still auseinanderlaufen.
 
 Umgesetzt in #54.
+
+## Nachtrag vom 23.09.2026: aus der Nummer entsteht kein Dateiname mehr
+
+Die Begründung unter „Konsequenzen“ – „Aus der Nummer entsteht der Dateiname“
+– ist aufgehoben. Seit ADR-0018 heißt das PDF wie die Rechnungsdatei. Aus der
+Nummer entsteht nur noch der Jobname für LuaLaTeX, `fileBaseName`, und der
+gilt in einem Arbeitsverzeichnis, das nach dem Lauf gelöscht wird.
+
+**Der Jobname ist trotzdem nicht beliebig.** pdfx bildet aus ihm die
+`xmpMM:DocumentID` im XMP, als MD5-Summe über `\jobname.pdf`. Nachgemessen am
+23.09.2026 mit TeX Live 2026: Alle fünf Beispielrechnungen, in beiden Designs
+und mit Logo, unter drei Jobnamen gesetzt, unterscheiden sich in genau diesen
+36 Bytes und sonst in keinem. Ein Test in `ToolchainIntegrationTest` hält das
+fest. Der Jobname bleibt deshalb Rechnungsart und Nummer: So ist die
+DocumentID je Rechnung verschieden, und kein schon erzeugtes PDF ändert sich.
+
+Die drei Abbrüche tragen damit andere Begründungen:
+
+- **`RECHNUNGSNUMMER_FEHLT` und `RECHNUNGSNUMMER_MIT_LEERRAUM`**: Andere
+  Dateien nennen die Nummer später – die Schlussrechnung unter `abschlaege`,
+  das Storno unter `storniert` –, und verglichen wird Zeichen für Zeichen
+  (#53). Ein gequotetes `' R26-009'` ließe den Verweis still ins Leere gehen.
+  Die alte Begründung des Leerraums trug übrigens nie: `fileBaseName`
+  schneidet den Rand ab, `' R26-009'` ergab denselben Namen wie `'R26-009'`.
+- **`RECHNUNGSNUMMER_OHNE_DATEINAMEN`**: Der Jobname ist der Name der `.tex`
+  im Arbeitsverzeichnis und die Quelle der DocumentID. Eine Nummer, von der
+  kein Name übrig bleibt, ergibt keinen. Die Kennung bleibt, wie sie heißt –
+  ein Dateiname ist er ja weiterhin.
+
+**Die Rechnung ohne Nummer bleibt ausgeschlossen, aber nicht mehr mit dem
+Dateinamen.** Ob sie möglich werden soll, ist eine fachliche Frage (Notiz vom
+11.09.2026). Stellt sie sich, ist der Jobname kein Hindernis mehr, sondern nur
+noch die Frage, woraus dann die DocumentID entsteht.
+
+Verworfen:
+
+- **Ein fester Jobname** wie `rechnung`. Alle Rechnungen trügen dieselbe
+  DocumentID, und jedes schon erzeugte PDF sähe beim nächsten Lauf anders aus.
+  Gespart wären `fileBaseName`, sein Feld auf der `AcceptedInvoice` und
+  `RECHNUNGSNUMMER_OHNE_DATEINAMEN`.
+- **Ein fester Jobname und die DocumentID selbst gesetzt**, aus Art und
+  Nummer. Das ginge nur über `\xmp@docid`, ein internes Makro von pdfx ohne
+  zugesicherte Schnittstelle – eine Vereinfachung in Kotlin gegen einen
+  Eingriff in ein fremdes Paket.
+
+Umgesetzt in #297.
