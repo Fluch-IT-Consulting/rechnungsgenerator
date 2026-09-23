@@ -1,4 +1,4 @@
-package de.fluchitconsulting.rechnungsgenerator.rules
+package de.fluchitconsulting.rechnungsgenerator.accepted
 
 import de.fluchitconsulting.rechnungsgenerator.calculation.CalculatedInvoice
 import de.fluchitconsulting.rechnungsgenerator.model.testCancelled

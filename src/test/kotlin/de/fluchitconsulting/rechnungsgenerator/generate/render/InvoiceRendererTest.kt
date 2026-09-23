@@ -1,5 +1,6 @@
 package de.fluchitconsulting.rechnungsgenerator.generate.render
 
+import de.fluchitconsulting.rechnungsgenerator.accepted.accepted
 import de.fluchitconsulting.rechnungsgenerator.calculation.CalculatedInvoice
 import de.fluchitconsulting.rechnungsgenerator.model.Invoice
 import de.fluchitconsulting.rechnungsgenerator.model.LineItem
@@ -13,7 +14,6 @@ import de.fluchitconsulting.rechnungsgenerator.model.testInvoice
 import de.fluchitconsulting.rechnungsgenerator.model.testItem
 import de.fluchitconsulting.rechnungsgenerator.model.testPrepayment
 import de.fluchitconsulting.rechnungsgenerator.model.testSellerConfig
-import de.fluchitconsulting.rechnungsgenerator.rules.accepted
 import de.fluchitconsulting.rechnungsgenerator.values.CountryCode
 import de.fluchitconsulting.rechnungsgenerator.values.Design
 import de.fluchitconsulting.rechnungsgenerator.values.InvoiceType

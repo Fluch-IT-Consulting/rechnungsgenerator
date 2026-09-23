@@ -1,8 +1,8 @@
 package de.fluchitconsulting.rechnungsgenerator.generate.render
 
+import de.fluchitconsulting.rechnungsgenerator.accepted.AcceptedInvoice
 import de.fluchitconsulting.rechnungsgenerator.calculation.CalculatedInvoice
 import de.fluchitconsulting.rechnungsgenerator.model.Address
-import de.fluchitconsulting.rechnungsgenerator.rules.AcceptedInvoice
 import de.fluchitconsulting.rechnungsgenerator.rules.InvoiceKind
 
 /**

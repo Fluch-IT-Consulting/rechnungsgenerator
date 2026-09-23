@@ -41,18 +41,36 @@ class PackageStructureTest : FunSpec({
                     "$root.model",
                 ),
             "$root.generate" to
-                setOf("$root.generate.render", "$root.generate.toolchain", "$root.rules", "$root.calculation", "$root.model"),
+                setOf(
+                    "$root.generate.render",
+                    "$root.generate.toolchain",
+                    "$root.accepted",
+                    "$root.rules",
+                    "$root.calculation",
+                    "$root.model",
+                ),
             // generate.toolchain für PdfSources: Der Renderer liefert die
             // Quellen des PDF im Eingabetyp der Werkzeuge (#202). Die Kante
             // zeigt nach unten auf ein Blatt – toolchain selbst importiert
             // nichts aus dem Projekt.
             "$root.generate.render" to
-                setOf("$root.generate.toolchain", "$root.rules", "$root.calculation", "$root.model", "$root.values"),
+                setOf(
+                    "$root.generate.toolchain",
+                    "$root.accepted",
+                    "$root.rules",
+                    "$root.calculation",
+                    "$root.model",
+                    "$root.values",
+                ),
             "$root.generate.toolchain" to emptySet(),
-            "$root.prepayments" to setOf("$root.rules", "$root.calculation", "$root.model", "$root.values"),
+            "$root.prepayments" to setOf("$root.accepted", "$root.rules", "$root.calculation", "$root.model", "$root.values"),
             // setup kennt aus dem Kern nur die Wurzel: den Namen ihres
             // Ordners und die Frage, ob oberhalb schon eine liegt (#275).
             "$root.setup" to setOf("$root.model"),
+            // Über rules, weil AcceptedInvoice.check die Regeln aufruft. Was
+            // die Regeln bauen – InvoiceKind, Deduction –, bleibt dort: Ein
+            // Typ wohnt, wo er gebaut wird, sonst zeigte rules nach oben (#304).
+            "$root.accepted" to setOf("$root.rules", "$root.calculation", "$root.model", "$root.values"),
             "$root.rules" to setOf("$root.calculation", "$root.model", "$root.values"),
             "$root.calculation" to setOf("$root.model", "$root.values"),
             "$root.model" to setOf("$root.values"),

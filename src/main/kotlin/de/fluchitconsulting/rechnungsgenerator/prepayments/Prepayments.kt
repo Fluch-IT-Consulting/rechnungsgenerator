@@ -1,16 +1,16 @@
 package de.fluchitconsulting.rechnungsgenerator.prepayments
 
+import de.fluchitconsulting.rechnungsgenerator.accepted.AcceptedInvoice
+import de.fluchitconsulting.rechnungsgenerator.accepted.Verdict
 import de.fluchitconsulting.rechnungsgenerator.calculation.CalculatedInvoice
 import de.fluchitconsulting.rechnungsgenerator.model.Invoice
 import de.fluchitconsulting.rechnungsgenerator.model.Prepayment
 import de.fluchitconsulting.rechnungsgenerator.model.SellerConfig
 import de.fluchitconsulting.rechnungsgenerator.model.TaxShare
-import de.fluchitconsulting.rechnungsgenerator.rules.AcceptedInvoice
 import de.fluchitconsulting.rechnungsgenerator.rules.Finding
 import de.fluchitconsulting.rechnungsgenerator.rules.InvoiceKind
 import de.fluchitconsulting.rechnungsgenerator.rules.Rule
 import de.fluchitconsulting.rechnungsgenerator.rules.Subject
-import de.fluchitconsulting.rechnungsgenerator.rules.Verdict
 import de.fluchitconsulting.rechnungsgenerator.values.InvoiceType
 
 // Der fachliche Teil von `rechnungsgenerator abschlaege` (ADR-0003): Aus

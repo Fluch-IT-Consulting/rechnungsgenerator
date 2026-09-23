@@ -436,17 +436,21 @@ CV/Web-Auftritt des Autors), PDF/A-Prüfung über veraPDF.
   `setup` mit der Vorlage der Stammdaten (#276) – es kennt aus dem Kern nur
   `model`, weil `einrichten` den Namen des Wurzelordners braucht und die Frage,
   ob oberhalb schon eine Wurzel liegt.
-  Darunter der gemeinsame Kern, in dem jede Kante nach unten zeigt: `rules`
-  (Befunde, Regelgruppen, `AcceptedInvoice.check`, `InvoiceKind`) →
-  `calculation` (`CalculatedInvoice`) → `model` (samt
+  Darunter der gemeinsame Kern, in dem jede Kante nach unten zeigt:
+  `accepted` (`AcceptedInvoice` samt `check`, `Verdict`,
+  `InvoiceVariableResolver`) → `rules` (Befunde, Regelgruppen, `InvoiceKind`,
+  `Deduction`) → `calculation` (`CalculatedInvoice`) → `model` (samt
   `YamlLoader`) → `values`. In der Wurzel steht nur `Main.kt`: Wäre sie Kern
   und CLI zugleich, entstünden dort Zyklen (#107). Der
   Schnitt trennt den Rand, nicht die Mitte – was beide Kommandos brauchen, ist
   der größere Teil. Die Grenze zwischen `rules` und `calculation` ist die aus
-  ADR-0004: `CalculatedInvoice` rechnet nur, `check` prüft und urteilt. Deshalb liegt
-  die `AcceptedInvoice` bei den Regeln, und der Renderer importiert aus
-  `rules`. Aus demselben Grund liegt dort `InvoiceKind`: Die Rechnungsart ist
-  das Ergebnis der Prüfung, gebaut in `InvoiceKindRules` (#180). Kotlin hält keine Paketgrenze (`internal` gilt pro Modul, nicht pro
+  ADR-0004: `CalculatedInvoice` rechnet nur, `check` prüft und urteilt.
+  `accepted` liegt **über** den Regeln, weil `check` sie aufruft, und enthält,
+  was eine angenommene Rechnung ist und wie man sie liest – nichts davon ist
+  Regel oder Befund, und die Rand-Pakete brauchen fast nur das (#304).
+  `InvoiceKind` und `Deduction` bleiben trotzdem in `rules`: Ein Typ wohnt,
+  wo er gebaut wird, und gebaut werden sie in `InvoiceKindRules` (#180); eine
+  Etage höher zeigte `rules` nach oben. Kotlin hält keine Paketgrenze (`internal` gilt pro Modul, nicht pro
   Paket); `PackageStructureTest` hält sie stattdessen (#112): eine Tabelle, wer
   woher importieren darf, gegen die Importe aller Quellen unter `src/main`,
   gelesen mit Konsist. Ein neues Paket muss dort eingetragen werden. Derselbe
@@ -456,7 +460,8 @@ CV/Web-Auftritt des Autors), PDF/A-Prüfung über veraPDF.
   dann fällt ein Import von `generate.render` nach `generate` nicht auf.
   Die Testpakete spiegeln die Hauptpakete, geteilte Helfer liegen im Testpaket
   dessen, was sie bauen oder prüfen (`model/TestFixtures.kt`,
-  `rules/CheckHelpers.kt`); ein Test darf aber jedes Paket sehen. Kein ADR:
+  `rules/CheckHelpers.kt`, `accepted/AcceptedHelpers.kt`); ein Test darf aber
+  jedes Paket sehen. Kein ADR:
   Die Alternative war "so lassen", der Grund sind die Zyklen. Kommt ZUGFeRD als
   weiterer Ausgabemodus, ist das der Moment für eines.
 

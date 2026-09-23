@@ -1,6 +1,7 @@
-package de.fluchitconsulting.rechnungsgenerator.rules
+package de.fluchitconsulting.rechnungsgenerator.accepted
 
 import de.fluchitconsulting.rechnungsgenerator.model.CancelledInvoice
+import de.fluchitconsulting.rechnungsgenerator.rules.InvoiceKind
 import de.fluchitconsulting.rechnungsgenerator.values.InvoiceVariable
 import de.fluchitconsulting.rechnungsgenerator.values.TextValue
 import de.fluchitconsulting.rechnungsgenerator.values.VariableResolver

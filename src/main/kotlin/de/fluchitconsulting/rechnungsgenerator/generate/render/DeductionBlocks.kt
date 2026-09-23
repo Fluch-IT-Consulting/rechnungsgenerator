@@ -1,6 +1,6 @@
 package de.fluchitconsulting.rechnungsgenerator.generate.render
 
-import de.fluchitconsulting.rechnungsgenerator.rules.AcceptedInvoice
+import de.fluchitconsulting.rechnungsgenerator.accepted.AcceptedInvoice
 import de.fluchitconsulting.rechnungsgenerator.rules.Deduction
 import de.fluchitconsulting.rechnungsgenerator.rules.InvoiceKind
 
