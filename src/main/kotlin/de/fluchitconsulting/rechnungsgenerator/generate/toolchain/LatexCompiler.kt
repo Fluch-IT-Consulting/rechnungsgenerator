@@ -1,5 +1,6 @@
 package de.fluchitconsulting.rechnungsgenerator.generate.toolchain
 
+import java.io.IOException
 import java.nio.file.Path
 import java.security.MessageDigest
 import java.time.ZoneOffset
@@ -35,9 +36,16 @@ class LatexCompiler(private val runner: ProcessRunner) {
             require(name == Path.of(name).fileName.toString()) { "Kein schlichter Dateiname: $name" }
             require(name != "$jobName.tex" && name != "$jobName.xmpdata") { "$name ist schon vergeben" }
         }
-        workingDir.resolve("$jobName.tex").writeText(sources.tex)
-        workingDir.resolve("$jobName.xmpdata").writeText(sources.xmpMetadata)
-        sources.files.forEach { (name, content) -> workingDir.resolve(name).writeBytes(content) }
+        // Das Arbeitsverzeichnis ist ein Temp-Verzeichnis; scheitert das
+        // Schreiben dort, kommt der Satz nicht zustande – ein Fehler des
+        // Werkzeugs und nicht einer beim Schreiben der Rechnung (#300).
+        try {
+            workingDir.resolve("$jobName.tex").writeText(sources.tex)
+            workingDir.resolve("$jobName.xmpdata").writeText(sources.xmpMetadata)
+            sources.files.forEach { (name, content) -> workingDir.resolve(name).writeBytes(content) }
+        } catch (e: IOException) {
+            throw ToolchainException("Die Quellen für $PROGRAM ließen sich nicht nach $workingDir schreiben: ${e.message}", e)
+        }
 
         val id = trailerId(sources)
         val command =

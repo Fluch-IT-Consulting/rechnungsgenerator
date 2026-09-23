@@ -1,5 +1,6 @@
 package de.fluchitconsulting.rechnungsgenerator.generate.toolchain
 
+import java.io.IOException
 import java.nio.file.Path
 import kotlin.io.path.writeText
 
@@ -14,6 +15,10 @@ class FakeTypesetter(
     private val valid: Boolean = true,
     // Scheitert der Satz, wirft er, was LatexCompiler würfe.
     private val failure: String? = null,
+    // Bricht den Vertrag der Naht, der für alles Scheitern eine
+    // ToolchainException zusagt – für den Test, dass das Kommando eine
+    // IOException aus dem Satz nicht als Schreibfehler ausgibt (#300).
+    private val ioFailure: String? = null,
 ) : Typesetter {
     var workingDir: Path? = null
     var jobName: String? = null
@@ -34,6 +39,7 @@ class FakeTypesetter(
         this.jobName = jobName
         this.sources = sources
         if (failure != null) throw ToolchainException(failure)
+        if (ioFailure != null) throw IOException(ioFailure)
         val pdf = workingDir.resolve("$jobName.pdf").also { it.writeText("%PDF-1.7 kein echtes PDF") }
         val violations =
             if (valid) {

@@ -20,6 +20,7 @@ import io.kotest.matchers.shouldBe
 import io.kotest.matchers.string.shouldContain
 import io.kotest.matchers.string.shouldNotContain
 import io.kotest.matchers.types.shouldBeInstanceOf
+import java.io.IOException
 import java.nio.file.Path
 import java.time.LocalDate
 import kotlin.io.path.createDirectories
@@ -136,6 +137,29 @@ class GenerateCommandTest : FunSpec({
 
         fake.workingDir!!.exists() shouldBe true
         ausgabe.last() shouldContain "Arbeitsdateien:"
+    }
+
+    test("ein nicht beschreibbares Ziel nennt die Zieldatei") {
+        val ziel = eingaben.resolve("gibt-es-nicht").resolve("ergebnis.pdf")
+
+        val fehler = shouldThrow<CliktError> { lauf(FakeTypesetter(), "-o", ziel.toString()) }
+
+        fehler.message!! shouldContain "Die Datei $ziel konnte nicht geschrieben werden"
+    }
+
+    /**
+     * "Nicht geschrieben" meint die Zieldatei und nichts sonst (#300). Was
+     * im Satz scheitert, kommt über die Naht als ToolchainException; eine
+     * IOException von dort bricht deren Vertrag und geht unverändert durch,
+     * statt als Schreibfehler auf die falsche Stelle zu zeigen.
+     */
+    test("eine IOException aus dem Satz wird nicht zum Schreibfehler") {
+        val fehler =
+            shouldThrow<IOException> {
+                lauf(FakeTypesetter(ioFailure = "kein Platz im Temp-Verzeichnis"), "-o", eingaben.resolve("nie.pdf").toString())
+            }
+
+        fehler.message shouldBe "kein Platz im Temp-Verzeichnis"
     }
 
     test("ein ungültiges PDF/A ist ein Fehler der Werkzeuge") {

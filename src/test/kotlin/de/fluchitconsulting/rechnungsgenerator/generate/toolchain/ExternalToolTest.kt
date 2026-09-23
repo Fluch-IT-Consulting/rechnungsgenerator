@@ -41,6 +41,21 @@ class ExternalToolTest : FunSpec({
         fehler.message!! shouldContain "Programm nicht gefunden: gibt-es-nicht-lualatex"
     }
 
+    /**
+     * Steht für alles, woran der Lauf scheitert, bevor das Programm etwas tut:
+     * ein Temp-Verzeichnis, das voll oder schreibgeschützt ist, ein Start, den
+     * das Betriebssystem verweigert. Das ist ein Werkzeugfehler und keiner beim
+     * Schreiben der Rechnung – `erzeuge` meldete ihn sonst als solchen (#300).
+     */
+    test("scheitert der Lauf an einer IOException, wird sie zur ToolchainException mit dem Programm") {
+        val gibtEsNicht = arbeitsverzeichnis.resolve("gibt-es-nicht")
+
+        val fehler = shouldThrow<ToolchainException> { ExternalTool.run(listOf("true"), gibtEsNicht) }
+
+        fehler.message!! shouldContain "true"
+        fehler.message!! shouldContain gibtEsNicht.toString()
+    }
+
     test("ein hängender Prozess wird nach der Zeitgrenze abgeräumt") {
         lateinit var fehler: ToolchainException
 
