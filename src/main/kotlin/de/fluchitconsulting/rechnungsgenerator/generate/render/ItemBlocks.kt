@@ -4,8 +4,10 @@ import de.fluchitconsulting.rechnungsgenerator.calculation.CalculatedInvoice
 import de.fluchitconsulting.rechnungsgenerator.model.LineItem
 import de.fluchitconsulting.rechnungsgenerator.model.SkontoTier
 import de.fluchitconsulting.rechnungsgenerator.rules.AcceptedInvoice
+import de.fluchitconsulting.rechnungsgenerator.rules.InvoiceVariableResolver
 import de.fluchitconsulting.rechnungsgenerator.values.Discount
 import de.fluchitconsulting.rechnungsgenerator.values.InvoiceType
+import de.fluchitconsulting.rechnungsgenerator.values.InvoiceVariable
 
 /**
  * Positionstabelle, Summenblock und die Hinweise darunter: Steuerbefreiungen,
@@ -123,11 +125,11 @@ internal object ItemBlocks {
      * leere Platzhalter auch wirklich nichts einnimmt.
      *
      * Der Satz darf Werte der Rechnung nennen, als `<<NAME>>`; welche es gibt,
-     * zählt [InvoiceVariableResolver] auf.
+     * zählt [InvoiceVariable] auf, woher sie kommen, [InvoiceVariableResolver].
      */
     fun typeNote(acceptedInvoice: AcceptedInvoice): Latex =
         acceptedInvoice.calculated.invoice.type.mandatoryNote
-            ?.let { Latex.macro(TemplateMacro.HINWEISABSATZ, listOf(it.escapeLatex(InvoiceVariableResolver(acceptedInvoice)))) }
+            ?.let { Latex.macro(TemplateMacro.HINWEISABSATZ, listOf(it.toLatex(InvoiceVariableResolver(acceptedInvoice)))) }
             ?: Latex.EMPTY
 
     /**

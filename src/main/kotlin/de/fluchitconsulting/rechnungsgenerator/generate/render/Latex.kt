@@ -1,5 +1,9 @@
 package de.fluchitconsulting.rechnungsgenerator.generate.render
 
+import de.fluchitconsulting.rechnungsgenerator.values.TextTemplate
+import de.fluchitconsulting.rechnungsgenerator.values.TextValue
+import de.fluchitconsulting.rechnungsgenerator.values.VariableResolver
+
 /**
  * Ein fertiges Stück LaTeX – gesetzt aus Text, der maskiert wurde, oder aus
  * Markup, das der Renderer bewusst selbst schreibt.
@@ -123,37 +127,28 @@ fun String.escapeLatex(): Latex =
         },
     )
 
-// Ein Platzhalter: <<GROSSGESCHRIEBEN>>.
-// Die Klammer um den Namen ist eine Gruppe: groupValues[1] liefert den
-// Schlüssel ohne die spitzen Klammern.
-internal val PLACEHOLDER = Regex("<<([A-Z_]+)>>")
-
 /**
- * Maskiert einen Text mit Platzhaltern `<<NAME>>` und setzt an deren Stelle,
- * was [resolver] liefert.
+ * Setzt einen Wortlaut mit Variablen: den festen Text maskiert, jeden Wert, den
+ * [resolver] liefert, so, wie er im Fließtext stehen muss.
  *
- * Zerlegt wird **vor** dem Maskieren: Der feste Text geht durch [escapeLatex],
- * die Werte kommen als fertiges [Latex] und bleiben unberührt. Umgekehrt –
- * erst einsetzen, dann maskieren – würde ein schon maskierter Wert ein zweites
- * Mal maskiert, und aus `\&` würde `\textbackslash{}\&`.
+ * Maskiert wird jeder Teil für sich und genau einmal. Erst einsetzen und dann
+ * maskieren hieße, einen schon gesetzten Wert ein zweites Mal anzufassen – aus
+ * `\zusammen` würde `\textbackslash{}zusammen`. Und weil der Wortlaut schon
+ * beim Bau zerlegt ist, bleibt ein Wert, der selbst `<<…>>` enthält, Inhalt.
  *
- * Ersetzt wird in einem Durchgang über den Text, nicht über das Ergebnis: Ein
- * Wert, der selbst `<<…>>` enthält, ist Inhalt und wird nicht noch einmal
- * aufgelöst. Kleingeschriebenes wie `<<name>>` ist kein Platzhalter und bleibt
- * stehen.
+ * Jeder Wert steht in \zusammen: Mitten im Satz dürfte "15. Juli 2026" sonst
+ * hinter dem Tag umbrechen und eine Nummer wie "R26-042" am Bindestrich.
  */
-fun String.escapeLatex(resolver: VariableResolver): Latex {
-    val parts = mutableListOf<Latex>()
-    var textStart = 0
-    PLACEHOLDER.findAll(this).forEach { match ->
-        parts += substring(textStart, match.range.first).escapeLatex()
-        parts += resolver.resolve(match.groupValues[1])
-        // range ist ein geschlossenes Intervall, last also das letzte `>`.
-        textStart = match.range.last + 1
-    }
-    parts += substring(textStart).escapeLatex()
-    return parts.joinToLatex()
-}
+fun <V> TextTemplate<V>.toLatex(resolver: VariableResolver<V>): Latex =
+    map(
+        text = { it.escapeLatex() },
+        variable = { variable ->
+            when (val value = resolver.resolve(variable)) {
+                is TextValue.Text -> together(value.text.escapeLatex())
+                is TextValue.Date -> together(GermanFormat.date(value.date))
+            }
+        },
+    ).joinToLatex()
 
 /**
  * Fügt Fragmente zusammen. Der Trenner ist Markup und deshalb eine rohe
