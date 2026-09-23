@@ -2,6 +2,11 @@ package de.fluchitconsulting.rechnungsgenerator.generate.render
 
 import de.fluchitconsulting.rechnungsgenerator.values.Design
 
+// Ein Platzhalter der Vorlage: <<GROSSGESCHRIEBEN>>.
+// Die Klammer um den Namen ist eine Gruppe: groupValues[1] liefert den
+// Schlüssel ohne die spitzen Klammern.
+private val PLACEHOLDER = Regex("<<([A-Z_]+)>>")
+
 /**
  * Eine geprüfte Vorlage: ohne Kommentarzeilen, mit jedem Makro, das der
  * Renderer aufruft, und jedem Platzhalter, den keine Vorlage weglassen darf

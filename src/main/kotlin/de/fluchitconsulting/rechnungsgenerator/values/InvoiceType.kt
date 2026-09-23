@@ -61,10 +61,12 @@ enum class InvoiceType(
      * ist, was es ist. Hier steht der Wortlaut, nicht seine Gestalt: Wo er auf
      * der Seite landet, entscheidet die Vorlage.
      *
-     * Werte der Rechnung nennt er als Platzhalter `<<NAME>>`. Eingesetzt
-     * werden sie erst beim Setzen; der Satz selbst bleibt ohne LaTeX.
+     * Werte der Rechnung nennt er als Platzhalter `<<NAME>>`, aus
+     * [InvoiceVariable]. Zerlegt wird der Satz schon hier, sodass ein
+     * vertippter Name wirft, sobald diese Klasse geladen wird; eingesetzt
+     * werden die Werte erst beim Setzen, und der Satz selbst bleibt ohne LaTeX.
      */
-    val mandatoryNote: String?,
+    val mandatoryNote: TextTemplate<InvoiceVariable>?,
 ) {
     // Benannte Argumente, obwohl die Reihenfolge eindeutig ist: Ein nacktes
     // `false, true, null` ließe sich nur mit der Parameterliste daneben lesen.
@@ -85,8 +87,10 @@ enum class InvoiceType(
         servicePeriodIsForecast = true,
         chargesForService = true,
         mandatoryNote =
-            "Die Leistung ist noch nicht erbracht. Über die Gesamtleistung folgt eine " +
-                "Schlussrechnung, in der dieser Abschlag abgesetzt wird.",
+            TextTemplate.parse(
+                "Die Leistung ist noch nicht erbracht. Über die Gesamtleistung folgt eine " +
+                    "Schlussrechnung, in der dieser Abschlag abgesetzt wird.",
+            ),
     ),
 
     // Für die Schlussrechnung nennt keine Quelle einen eigenen Code, deshalb
@@ -129,8 +133,10 @@ enum class InvoiceType(
         servicePeriodIsForecast = false,
         chargesForService = false,
         mandatoryNote =
-            "Diese Stornorechnung hebt die Rechnung <<URSPRUNGSNUMMER>> vom <<URSPRUNGSDATUM>> vollständig auf. " +
-                "Ein bereits gezahlter Betrag wird erstattet.",
+            TextTemplate.parse(
+                "Diese Stornorechnung hebt die Rechnung <<URSPRUNGSNUMMER>> vom <<URSPRUNGSDATUM>> vollständig auf. " +
+                    "Ein bereits gezahlter Betrag wird erstattet.",
+            ),
     ),
     ;
 

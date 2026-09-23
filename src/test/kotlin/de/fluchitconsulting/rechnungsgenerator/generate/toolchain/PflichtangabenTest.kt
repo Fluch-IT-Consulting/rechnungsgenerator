@@ -4,8 +4,12 @@ import de.fluchitconsulting.rechnungsgenerator.calculation.CalculatedInvoice
 import de.fluchitconsulting.rechnungsgenerator.model.YamlLoader
 import de.fluchitconsulting.rechnungsgenerator.model.exampleInvoices
 import de.fluchitconsulting.rechnungsgenerator.values.Discount
+import de.fluchitconsulting.rechnungsgenerator.values.InvoiceVariable
 import de.fluchitconsulting.rechnungsgenerator.values.Money
 import de.fluchitconsulting.rechnungsgenerator.values.Percent
+import de.fluchitconsulting.rechnungsgenerator.values.TextTemplate
+import de.fluchitconsulting.rechnungsgenerator.values.TextValue
+import de.fluchitconsulting.rechnungsgenerator.values.VariableResolver
 import io.kotest.assertions.assertSoftly
 import io.kotest.assertions.withClue
 import io.kotest.core.spec.style.FunSpec
@@ -314,17 +318,18 @@ private fun Blatt.pruefe(
     config.managingDirector?.let { steht("Geschäftsführer", it) }
 
     // Der Pflichtsatz der Art, mit eingesetzten Werten.
+    // Die Werte holt der Test selbst und nicht über den InvoiceVariableResolver:
+    // Holte der das falsche Datum, sähe der Test sonst dasselbe falsche Datum.
     invoice.type.mandatoryNote?.let { satz ->
-        val bezug = invoice.cancelled
-        val fassungen =
-            if (bezug == null) {
-                listOf(satz)
-            } else {
-                datum(bezug.issueDate).map {
-                    satz.replace("<<URSPRUNGSNUMMER>>", bezug.invoiceNumber).replace("<<URSPRUNGSDATUM>>", it)
+        val werte =
+            VariableResolver<InvoiceVariable> { variable ->
+                val bezug = checkNotNull(invoice.cancelled) { "<<$variable>> ohne Ursprungsrechnung" }
+                when (variable) {
+                    InvoiceVariable.URSPRUNGSNUMMER -> TextValue.Text(bezug.invoiceNumber)
+                    InvoiceVariable.URSPRUNGSDATUM -> TextValue.Date(bezug.issueDate)
                 }
             }
-        steht("Pflichtsatz", *fassungen.toTypedArray())
+        steht("Pflichtsatz", satz.klartext(werte, KURZ), satz.klartext(werte, LANG))
     }
 
     // Zahlungsziel und Bankverbindung genau dann, wenn das Dokument Zahlung
@@ -374,6 +379,21 @@ private val MONAT = DateTimeFormatter.ofPattern("MMMM", Locale.GERMANY)
 private val MONAT_JAHR = DateTimeFormatter.ofPattern("MMMM yyyy", Locale.GERMANY)
 
 private fun datum(date: LocalDate): Array<String> = arrayOf(KURZ.format(date), LANG.format(date))
+
+/** Ein Wortlaut als Klartext, wie ihn pdftotext liest, mit einer Schreibweise des Datums. */
+private fun <V> TextTemplate<V>.klartext(
+    resolver: VariableResolver<V>,
+    datum: DateTimeFormatter,
+): String =
+    map(
+        text = { it },
+        variable = { variable ->
+            when (val value = resolver.resolve(variable)) {
+                is TextValue.Text -> value.text
+                is TextValue.Date -> datum.format(value.date)
+            }
+        },
+    ).joinToString("")
 
 /** Das Zahlungsziel als Frist ab Rechnungsdatum statt als Datum (#211). */
 private fun frist(tage: Int): Array<String> =

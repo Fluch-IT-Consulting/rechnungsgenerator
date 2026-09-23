@@ -1,9 +1,12 @@
 package de.fluchitconsulting.rechnungsgenerator.generate.render
 
+import de.fluchitconsulting.rechnungsgenerator.values.TextTemplate
+import de.fluchitconsulting.rechnungsgenerator.values.TextValue
 import io.kotest.assertions.assertSoftly
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import java.time.LocalDate
 
 class LatexTest : FunSpec({
 
@@ -51,36 +54,40 @@ class LatexTest : FunSpec({
             "\\zeilenwechsel{}Musterweg"
     }
 
-    context("Text mit Platzhaltern") {
-        test("maskiert nur den festen Text, die eingesetzten Werte bleiben unberührt") {
-            "50 % von <<BETRAG>> & mehr".escapeLatex { Latex.raw("\\textbf{x}") }.tex shouldBe
-                "50 \\% von \\textbf{x} \\& mehr"
+    // Das Zerlegen prüft TextTemplateTest; hier nur, was das Format dazutut.
+    context("Wortlaut mit Variablen") {
+        test("maskiert festen Text und Werte, jeden Teil genau einmal") {
+            TextTemplate
+                .parse<TestVariable>("50 % von <<NUMBER>> & mehr")
+                .toLatex { TextValue.Text("Meier & Söhne") }
+                .tex shouldBe "50 \\% von \\zusammen{Meier \\& Söhne} \\& mehr"
         }
 
-        test("löst jeden Platzhalter nach seinem Namen auf, auch am Anfang und am Ende") {
-            val values = mapOf("A" to "eins".escapeLatex(), "B" to "zwei".escapeLatex())
-            "<<A>> und <<B>>".escapeLatex { values.getValue(it) }.tex shouldBe "eins und zwei"
-        }
-
-        test("ohne Platzhalter dasselbe wie escapeLatex(), und der Resolver wird nicht gefragt") {
-            "Meier & Söhne".escapeLatex { error("nicht gefragt: $it") } shouldBe "Meier & Söhne".escapeLatex()
+        test("ein Datum steht ausgeschrieben und zusammengehalten") {
+            TextTemplate
+                .parse<TestVariable>("vom <<DATE>>")
+                .toLatex { TextValue.Date(LocalDate.of(2026, 7, 15)) }
+                .tex shouldBe "vom \\zusammen{15.~Juli 2026}"
         }
 
         test("ein Wert, der selbst einen Platzhalter enthält, ist Inhalt") {
-            "<<A>>"
-                .escapeLatex { name ->
-                    if (name == "A") "<<B>>".escapeLatex() else error("nicht gefragt: $name")
-                }.tex shouldBe "<<B>>"
+            TextTemplate
+                .parse<TestVariable>("<<NUMBER>>")
+                .toLatex { TextValue.Text("<<DATE>>") }
+                .tex shouldBe "\\zusammen{<<DATE>>}"
         }
 
-        test("kleingeschrieben ist es kein Platzhalter") {
-            "<<name>>".escapeLatex { error("nicht gefragt: $it") }.tex shouldBe "<<name>>"
+        test("ohne Variablen dasselbe wie escapeLatex(), und der Resolver wird nicht gefragt") {
+            TextTemplate.parse<TestVariable>("Meier & Söhne").toLatex { error("nicht gefragt: $it") } shouldBe
+                "Meier & Söhne".escapeLatex()
         }
 
-        test("kann der Resolver einen Namen nicht auflösen, kommt seine Ausnahme durch") {
+        test("kann der Resolver eine Variable nicht auflösen, kommt seine Ausnahme durch") {
             shouldThrow<IllegalStateException> {
-                "<<FRIMA>>".escapeLatex { error("Unbekannte Variable <<$it>>") }
-            }.message shouldBe "Unbekannte Variable <<FRIMA>>"
+                TextTemplate.parse<TestVariable>("<<DATE>>").toLatex { error("kein Wert für <<$it>>") }
+            }.message shouldBe "kein Wert für <<DATE>>"
         }
     }
 })
+
+private enum class TestVariable { NUMBER, DATE }

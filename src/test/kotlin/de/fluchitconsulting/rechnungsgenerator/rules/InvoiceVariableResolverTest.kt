@@ -1,12 +1,13 @@
-package de.fluchitconsulting.rechnungsgenerator.generate.render
+package de.fluchitconsulting.rechnungsgenerator.rules
 
 import de.fluchitconsulting.rechnungsgenerator.calculation.CalculatedInvoice
 import de.fluchitconsulting.rechnungsgenerator.model.testCancelled
 import de.fluchitconsulting.rechnungsgenerator.model.testInvoice
 import de.fluchitconsulting.rechnungsgenerator.model.testItem
 import de.fluchitconsulting.rechnungsgenerator.model.testSellerConfig
-import de.fluchitconsulting.rechnungsgenerator.rules.accepted
 import de.fluchitconsulting.rechnungsgenerator.values.InvoiceType
+import de.fluchitconsulting.rechnungsgenerator.values.InvoiceVariable
+import de.fluchitconsulting.rechnungsgenerator.values.TextValue
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
@@ -30,25 +31,14 @@ class InvoiceVariableResolverTest : FunSpec({
 
     val invoice = InvoiceVariableResolver(CalculatedInvoice(testInvoice(), config).accepted())
 
-    test("auf einer Stornorechnung: Nummer und Datum der Ursprungsrechnung, je zusammengehalten") {
-        storno.resolve("URSPRUNGSNUMMER").tex shouldBe "\\zusammen{R26-042}"
-        storno.resolve("URSPRUNGSDATUM").tex shouldBe "\\zusammen{15.~Juli 2026}"
+    test("auf einer Stornorechnung: Nummer und Datum der Ursprungsrechnung, noch ohne Format") {
+        storno.resolve(InvoiceVariable.URSPRUNGSNUMMER) shouldBe TextValue.Text("R26-042")
+        storno.resolve(InvoiceVariable.URSPRUNGSDATUM) shouldBe TextValue.Date(LocalDate.of(2026, 7, 15))
     }
 
     test("auf einer anderen Rechnungsart gibt es die Ursprungsrechnung nicht") {
         shouldThrow<IllegalStateException> {
-            invoice.resolve("URSPRUNGSDATUM")
+            invoice.resolve(InvoiceVariable.URSPRUNGSDATUM)
         }.message shouldBe "<<URSPRUNGSDATUM>> gibt es nur auf einer Stornorechnung, nicht auf einer Rechnung."
-    }
-
-    test("ein unbekannter Name wirft, auch auf der passenden Rechnungsart") {
-        shouldThrow<IllegalStateException> {
-            storno.resolve("URSPRUNGSNUMER")
-        }.message shouldBe "Unbekannte Variable <<URSPRUNGSNUMER>>."
-    }
-
-    test("im Text eingesetzt: der feste Teil maskiert, die Werte zusammengehalten") {
-        "Storno zu <<URSPRUNGSNUMMER>> vom <<URSPRUNGSDATUM>> & fertig".escapeLatex(storno).tex shouldBe
-            "Storno zu \\zusammen{R26-042} vom \\zusammen{15.~Juli 2026} \\& fertig"
     }
 })
