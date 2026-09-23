@@ -56,11 +56,17 @@ rechnungsgenerator erzeuge [OPTIONEN] <rechnung.yaml>
   -s, --stammdaten=<pfad>    Stammdaten des Rechnungsstellers
                              (ohne Angabe aus der Wurzel über der Rechnung)
   -o, --ausgabe=<pfad>       Zieldatei
-                             (Vorgabe: aus der Rechnungsnummer gebildet)
+                             (ohne Angabe neben der Rechnung, mit .pdf)
   --ueberschreiben           Eine vorhandene Zieldatei ersetzen
   --arbeitsdateien-behalten  Das .tex und die LaTeX-Hilfsdateien nicht löschen
   --oeffnen                  Die fertige Rechnung im PDF-Viewer des Systems öffnen
 ```
+
+Ohne `-o` entsteht das PDF neben der Rechnungsdatei und heißt wie sie, mit
+`.pdf` statt ihrer Endung – aus `2026/R26-009.yaml` wird `2026/R26-009.pdf`,
+egal aus welchem Verzeichnis man aufruft (ADR-0018). Ein Pfad hinter `-o` gilt
+dagegen wie jeder getippte Pfad relativ zum Arbeitsverzeichnis. Die
+Rechnungsdatei selbst ist nie das Ziel, auch nicht mit `--ueberschreiben`.
 
 Eine vorhandene Zieldatei bleibt ohne `--ueberschreiben` unangetastet: Sie
 kann die Rechnung sein, die schon beim Kunden liegt. Der Schalter ist fürs
@@ -77,13 +83,13 @@ Beispiel:
 
 ```
 ./gradlew installDist
-./build/install/rechnungsgenerator/bin/rechnungsgenerator erzeuge rechnung.yaml
+./build/install/rechnungsgenerator/bin/rechnungsgenerator erzeuge Rechnungen/2026/R26-042.yaml
 ```
 
-Ausgabe:
+Ausgabe – der Pfad so, wie die Rechnungsdatei angegeben wurde:
 
 ```
-Rechnung-R26-042.pdf
+Rechnungen/2026/R26-042.pdf
 PDF/A-1b: gültig
 ```
 
@@ -179,11 +185,11 @@ gibt es einen Hinweis nach dem Ergebnis; die Rechnung entsteht trotzdem.
 
 ### Die Rechnungsnummer
 
-Sie darf nicht leer sein und keinen Leerraum am Rand tragen – aus ihr entsteht
-auch der Dateiname des PDF. Welche Nummern darüber hinaus gültig sind, weiß nur
-der Rechnungssteller: UStAE 14.5 Abs. 10 erlaubt Ziffern und Buchstaben und
-verlangt keine lückenlose Abfolge. Die Stammdaten dürfen deshalb ein Muster
-tragen, und ohne Eintrag wird die Form nicht geprüft:
+Sie darf nicht leer sein und keinen Leerraum am Rand tragen. Welche Nummern
+darüber hinaus gültig sind, weiß nur der Rechnungssteller: UStAE 14.5 Abs. 10
+erlaubt Ziffern und Buchstaben und verlangt keine lückenlose Abfolge. Die
+Stammdaten dürfen deshalb ein Muster tragen, und ohne Eintrag wird die Form
+nicht geprüft:
 
 ```yaml
 rechnungsnummer-muster: 'R\d{2}-\d{3}'    # optional
