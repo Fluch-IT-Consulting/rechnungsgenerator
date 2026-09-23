@@ -16,9 +16,6 @@ import java.math.RoundingMode
  *
  * Für Werte, die *nicht* gerundet werden dürfen – allen voran der Einzelpreis
  * (BT-146) – gibt es [Price]. Der Weg von dort hierher heißt [Price.roundToAmount].
- *
- * Übernommen aus dem CreditCalculator2-Projekt und dort inhaltlich unverändert:
- * derselbe Name bedeutet in beiden Projekten dasselbe.
  */
 @Serializable(with = MoneySerializer::class)
 class Money(value: BigDecimal) : Comparable<Money> {
@@ -59,7 +56,6 @@ class Money(value: BigDecimal) : Comparable<Money> {
 
     fun isPositive(): Boolean = signum() > 0
 
-    // Ohne Sonderfall für die Null: BigDecimal kennt kein negatives Vorzeichen der Null,
     override operator fun compareTo(other: Money): Int = value.compareTo(other.value)
 
     // Wertgleichheit statt Identität – bewusst über compareTo, damit die Gleichheit

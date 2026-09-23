@@ -10,9 +10,6 @@ import java.math.RoundingMode
 /**
  * Steuersatz/Prozentwert. Intern als Multiplikator (Prozent / 100) mit Scale 9 abgelegt,
  * d. h. 19 % -> 0.190000000. Damit ist der Rohwert direkt für Money.times() nutzbar.
- *
- * Übernommen aus dem CreditCalculator2-Projekt, um die dortige Kreditrechner-Fachlichkeit
- * (subdivide, of) gekürzt und um Percent × Percent sowie Serialisierung ergänzt.
  */
 @Serializable(with = PercentSerializer::class)
 class Percent(value: BigDecimal) {
