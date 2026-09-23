@@ -1,7 +1,7 @@
 package de.fluchitconsulting.rechnungsgenerator.core.rules
 
 import de.fluchitconsulting.rechnungsgenerator.core.calculation.CalculatedInvoice
-import de.fluchitconsulting.rechnungsgenerator.core.values.InvoiceType
+import de.fluchitconsulting.rechnungsgenerator.core.model.InvoiceType
 
 /**
  * Hinweise, die den Lauf nicht abbrechen: Angaben, die zulässig sind, aber

@@ -1,13 +1,13 @@
 package de.fluchitconsulting.rechnungsgenerator.core.accepted
 
 import de.fluchitconsulting.rechnungsgenerator.core.calculation.CalculatedInvoice
+import de.fluchitconsulting.rechnungsgenerator.core.model.InvoiceType
+import de.fluchitconsulting.rechnungsgenerator.core.model.InvoiceVariable
 import de.fluchitconsulting.rechnungsgenerator.core.model.testCancelled
 import de.fluchitconsulting.rechnungsgenerator.core.model.testInvoice
 import de.fluchitconsulting.rechnungsgenerator.core.model.testItem
 import de.fluchitconsulting.rechnungsgenerator.core.model.testSellerConfig
-import de.fluchitconsulting.rechnungsgenerator.core.values.InvoiceType
-import de.fluchitconsulting.rechnungsgenerator.core.values.InvoiceVariable
-import de.fluchitconsulting.rechnungsgenerator.core.values.TextValue
+import de.fluchitconsulting.rechnungsgenerator.core.text.TextValue
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe

@@ -1,7 +1,7 @@
 package de.fluchitconsulting.rechnungsgenerator.core.model
 
-import de.fluchitconsulting.rechnungsgenerator.core.values.parsedNumber
-import de.fluchitconsulting.rechnungsgenerator.core.values.stringSerializer
+import de.fluchitconsulting.rechnungsgenerator.core.serialization.parsedNumber
+import de.fluchitconsulting.rechnungsgenerator.core.serialization.stringSerializer
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.Serializable
 import java.math.BigDecimal

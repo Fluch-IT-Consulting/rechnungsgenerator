@@ -2,7 +2,7 @@ package de.fluchitconsulting.rechnungsgenerator.core.rules
 
 import de.fluchitconsulting.rechnungsgenerator.core.calculation.CalculatedInvoice
 import de.fluchitconsulting.rechnungsgenerator.core.model.Invoice
-import de.fluchitconsulting.rechnungsgenerator.core.values.InvoiceType
+import de.fluchitconsulting.rechnungsgenerator.core.model.InvoiceType
 
 /**
  * Die Schlussrechnung und die Absetzung ihrer Abschläge.

@@ -4,13 +4,13 @@ import de.fluchitconsulting.rechnungsgenerator.core.calculation.CalculatedInvoic
 import de.fluchitconsulting.rechnungsgenerator.core.model.Address
 import de.fluchitconsulting.rechnungsgenerator.core.model.CheckMethod
 import de.fluchitconsulting.rechnungsgenerator.core.model.Customer
+import de.fluchitconsulting.rechnungsgenerator.core.model.TaxCategory
 import de.fluchitconsulting.rechnungsgenerator.core.model.VatIdCheck
 import de.fluchitconsulting.rechnungsgenerator.core.model.testInvoice
 import de.fluchitconsulting.rechnungsgenerator.core.model.testItem
 import de.fluchitconsulting.rechnungsgenerator.core.model.testSellerConfig
 import de.fluchitconsulting.rechnungsgenerator.core.values.CountryCode
 import de.fluchitconsulting.rechnungsgenerator.core.values.EuMemberStates
-import de.fluchitconsulting.rechnungsgenerator.core.values.TaxCategory
 import de.fluchitconsulting.rechnungsgenerator.core.values.VatId
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.collections.shouldBeEmpty

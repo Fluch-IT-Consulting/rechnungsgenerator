@@ -1,4 +1,4 @@
-package de.fluchitconsulting.rechnungsgenerator.core.values
+package de.fluchitconsulting.rechnungsgenerator.core.serialization
 
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.SerializationException

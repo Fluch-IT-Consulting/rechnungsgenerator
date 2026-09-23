@@ -1,4 +1,4 @@
-package de.fluchitconsulting.rechnungsgenerator.core.values
+package de.fluchitconsulting.rechnungsgenerator.core.text
 
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.FunSpec

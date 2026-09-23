@@ -2,7 +2,7 @@ package de.fluchitconsulting.rechnungsgenerator.core.rules
 
 import de.fluchitconsulting.rechnungsgenerator.core.calculation.CalculatedInvoice
 import de.fluchitconsulting.rechnungsgenerator.core.model.Invoice
-import de.fluchitconsulting.rechnungsgenerator.core.values.InvoiceType
+import de.fluchitconsulting.rechnungsgenerator.core.model.InvoiceType
 
 /**
  * Das Storno: sein Bezug auf die Ursprungsrechnung und das Vorzeichen des

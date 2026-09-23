@@ -1,7 +1,7 @@
 package de.fluchitconsulting.rechnungsgenerator.core.rules
 
 import de.fluchitconsulting.rechnungsgenerator.core.calculation.CalculatedInvoice
-import de.fluchitconsulting.rechnungsgenerator.core.values.InvoiceType
+import de.fluchitconsulting.rechnungsgenerator.core.model.InvoiceType
 
 /**
  * Die Abschlagsrechnung selbst: der Zeitpunkt der Vereinnahmung (BT-7).

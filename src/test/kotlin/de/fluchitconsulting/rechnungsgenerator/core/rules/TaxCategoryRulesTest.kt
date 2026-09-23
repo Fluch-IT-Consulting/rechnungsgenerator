@@ -1,13 +1,13 @@
 package de.fluchitconsulting.rechnungsgenerator.core.rules
 
 import de.fluchitconsulting.rechnungsgenerator.core.calculation.CalculatedInvoice
+import de.fluchitconsulting.rechnungsgenerator.core.model.TaxCategory
+import de.fluchitconsulting.rechnungsgenerator.core.model.VatIdConfirmation
 import de.fluchitconsulting.rechnungsgenerator.core.model.testInvoice
 import de.fluchitconsulting.rechnungsgenerator.core.model.testItem
 import de.fluchitconsulting.rechnungsgenerator.core.model.testSellerConfig
 import de.fluchitconsulting.rechnungsgenerator.core.values.Money
-import de.fluchitconsulting.rechnungsgenerator.core.values.TaxCategory
 import de.fluchitconsulting.rechnungsgenerator.core.values.VatId
-import de.fluchitconsulting.rechnungsgenerator.core.values.VatIdConfirmation
 import io.kotest.assertions.withClue
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe

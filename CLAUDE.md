@@ -441,7 +441,15 @@ CV/Web-Auftritt des Autors), PDF/A-Prüfung über veraPDF.
   `accepted` (`AcceptedInvoice` samt `check`, `Verdict`,
   `InvoiceVariableResolver`) → `rules` (Befunde, Regelgruppen, `InvoiceKind`,
   `Deduction`) → `calculation` (`CalculatedInvoice`) → `model` (samt
-  `YamlLoader`) → `values`. In der Wurzel steht nur `Main.kt`: Wäre sie Kern
+  `YamlLoader` und den Fachkatalogen `InvoiceType` und `TaxCategory`) →
+  `values`. In `values` liegen nur Werte (#312): Ein Fachkatalog ist technisch
+  ein Enum, aber jeder Eintrag trägt Rechtsfolgen und Wortlaut und weiß, was
+  aus ihm für die Rechnung folgt – das gehört neben `CheckMethod` nach
+  `model`. Zwei Blätter importieren nichts aus dem Projekt: `text`
+  (`TextTemplate`, `VariableResolver`, `TextValue`) liegt neben `values`, weil
+  es keinen Wert kennt, und `serialization` darunter, das Gerüst, über das
+  jeder Werttyp seinen Serializer baut. Die `@Serializable`-Annotationen
+  bleiben an den Typen. In der Wurzel steht nur `Main.kt`: Wäre sie Kern
   und CLI zugleich, entstünden dort Zyklen (#107). Der Kern trägt ein eigenes
   Paket, damit schon der Quellbaum ein Kommando von einer Schicht unterscheidet
   (#310) – `core` und nicht `domain`, weil `model` mit `YamlLoader` und `Root`

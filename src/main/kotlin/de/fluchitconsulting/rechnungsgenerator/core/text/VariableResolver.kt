@@ -1,4 +1,4 @@
-package de.fluchitconsulting.rechnungsgenerator.core.values
+package de.fluchitconsulting.rechnungsgenerator.core.text
 
 /**
  * Liefert zu jeder Variablen eines Vokabulars [V] ihren Wert – woher er kommt,

@@ -28,7 +28,7 @@ class PackageStructureTest : FunSpec({
     val root = "de.fluchitconsulting.rechnungsgenerator"
 
     // Der Kern selbst hat keine Zeile: `core` enthält keine Datei, nur seine
-    // fünf Schichten (#310).
+    // fünf Schichten (#310) und die zwei Blätter text und serialization (#312).
     val core = "$root.core"
 
     // Wer darf woher importieren – die Zeichnung aus #107, Zeile für Zeile.
@@ -65,6 +65,7 @@ class PackageStructureTest : FunSpec({
                     "$core.calculation",
                     "$core.model",
                     "$core.values",
+                    "$core.text",
                 ),
             "$root.generate.toolchain" to emptySet(),
             "$root.prepayments" to setOf("$core.accepted", "$core.rules", "$core.calculation", "$core.model", "$core.values"),
@@ -74,11 +75,17 @@ class PackageStructureTest : FunSpec({
             // Über rules, weil AcceptedInvoice.check die Regeln aufruft. Was
             // die Regeln bauen – InvoiceKind, Deduction –, bleibt dort: Ein
             // Typ wohnt, wo er gebaut wird, sonst zeigte rules nach oben (#304).
-            "$core.accepted" to setOf("$core.rules", "$core.calculation", "$core.model", "$core.values"),
+            "$core.accepted" to setOf("$core.rules", "$core.calculation", "$core.model", "$core.values", "$core.text"),
             "$core.rules" to setOf("$core.calculation", "$core.model", "$core.values"),
             "$core.calculation" to setOf("$core.model", "$core.values"),
-            "$core.model" to setOf("$core.values"),
-            "$core.values" to emptySet(),
+            "$core.model" to setOf("$core.values", "$core.text", "$core.serialization"),
+            "$core.values" to setOf("$core.serialization"),
+            // Die Platzhalter-Texte liegen neben values und nicht darunter:
+            // Sie kennen weder Werte noch Vokabular, und seit die Fachkataloge
+            // in model liegen, braucht values sie nicht mehr (#312).
+            "$core.text" to emptySet(),
+            // Das Gerüst, über das jeder Werttyp seinen Serializer baut.
+            "$core.serialization" to emptySet(),
         )
 
     // Nur die Quellen unter src/main: Ein Test darf jedes Paket sehen. Und nur

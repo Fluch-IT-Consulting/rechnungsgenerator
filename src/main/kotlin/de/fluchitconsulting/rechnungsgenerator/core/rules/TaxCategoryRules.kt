@@ -1,7 +1,7 @@
 package de.fluchitconsulting.rechnungsgenerator.core.rules
 
 import de.fluchitconsulting.rechnungsgenerator.core.calculation.CalculatedInvoice
-import de.fluchitconsulting.rechnungsgenerator.core.values.TaxCategory
+import de.fluchitconsulting.rechnungsgenerator.core.model.TaxCategory
 
 /**
  * Die Regeln, die EN 16931 an die Steuerkategorie knüpft. Sie hier zu prüfen

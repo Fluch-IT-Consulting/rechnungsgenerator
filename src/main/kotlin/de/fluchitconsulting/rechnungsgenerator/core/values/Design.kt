@@ -1,12 +1,13 @@
 package de.fluchitconsulting.rechnungsgenerator.core.values
 
+import de.fluchitconsulting.rechnungsgenerator.core.serialization.enumSerializer
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.Serializable
 
 /**
  * Das Design der Rechnung, gewählt in den Stammdaten (#189, ADR-0011).
  *
- * Eine geschlossene Menge wie [InvoiceType]: Jedes Design ist eine Vorlage im
+ * Eine geschlossene Menge wie `InvoiceType`: Jedes Design ist eine Vorlage im
  * Programm, die der Renderer mit denselben Werten füllt. Mitbringen lässt sich
  * keines – eine fremde Vorlage bestünde zwar die Prüfungen beim Setzen, aber
  * niemand hätte gesehen, ob sie jede Rechnungsart vollständig setzt.
