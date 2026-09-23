@@ -323,6 +323,10 @@ class ToolchainIntegrationTest : FunSpec({
      * Unterschied zeigen könnte. Woher `nicht-konform.pdf` kommt und welche
      * Regeln es verletzt, steht seit #238 bei `BuiltInPdfAValidatorTest`: Der
      * läuft in jedem Build, dieser hier nur mit installiertem veraPDF.
+     *
+     * Dazu ein drittes, über das keiner urteilen kann: `kein-pdf.pdf`. Dort
+     * gibt es kein Urteil zu vergleichen, verglichen wird der Vertrag der Naht
+     * – beide werfen [ToolchainException] (#294).
      */
     test("beide Prüfer urteilen über dasselbe PDF gleich")
         .config(enabledOrReasonIf = { mitVerapdf }) {
@@ -344,6 +348,11 @@ class ToolchainIntegrationTest : FunSpec({
                 withClue("$pdf: Urteil") { eingebaut.valid shouldBe extern.valid }
                 withClue("$pdf: Regeln") { regeln(eingebaut) shouldBe regeln(extern) }
             }
+
+            val keinPdf =
+                Path.of("src/test/resources/kein-pdf.pdf").copyTo(workDir.resolve("kein-pdf.pdf"), overwrite = true)
+            withClue("eingebaut") { shouldThrow<ToolchainException> { BuiltInPdfAValidator.validate(keinPdf) } }
+            withClue("extern") { shouldThrow<ToolchainException> { ExternalPdfAValidator(ExternalTool).validate(keinPdf) } }
         }
 
     /**

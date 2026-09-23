@@ -1,5 +1,6 @@
 package de.fluchitconsulting.rechnungsgenerator.generate.toolchain
 
+import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.assertions.withClue
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
@@ -72,5 +73,23 @@ class BuiltInPdfAValidatorTest : FunSpec({
                 verstoss.errorMessage.isNotBlank() shouldBe true
             }
         }
+    }
+
+    /**
+     * Über `kein-pdf.pdf` kann veraPDF gar nicht urteilen: eine Textdatei mit
+     * falscher Endung. Das ist kein Urteil "ungültig", sondern ein Werkzeug,
+     * das nicht klarkam – derselbe Vertrag, den der externe Prüfer über seinen
+     * Exitcode hält (#294). Zugesagt wird, dass die Meldung die Datei nennt
+     * und den innersten Grund, den veraPDF in die Ursache legt – nicht der
+     * Wortlaut von veraPDF: Verglichen wird mit dem, was die Ursache selbst
+     * sagt.
+     */
+    test("über ein unlesbares PDF urteilt er nicht, sondern wirft ToolchainException") {
+        val keinPdf = Path.of("src/test/resources/kein-pdf.pdf")
+
+        val fehler = shouldThrow<ToolchainException> { BuiltInPdfAValidator.validate(keinPdf) }
+
+        fehler.message!! shouldContain "kein-pdf.pdf"
+        fehler.message!! shouldContain generateSequence(fehler.cause) { it.cause }.last().message!!
     }
 })
