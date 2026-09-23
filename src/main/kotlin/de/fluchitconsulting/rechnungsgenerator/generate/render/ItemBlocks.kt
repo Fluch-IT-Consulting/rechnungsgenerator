@@ -211,10 +211,11 @@ internal object ItemBlocks {
      */
     fun taxNotes(calculatedInvoice: CalculatedInvoice): Latex =
         calculatedInvoice.vatGroups
-            .filter { it.exemptionReason != null }
-            .map { group ->
-                "Auf ".escapeLatex() + GermanFormat.amountWithCurrency(group.base) +
-                    " entfällt keine Umsatzsteuer: ".escapeLatex() + group.exemptionReason!!.escapeLatex() +
-                    ".".escapeLatex()
+            .mapNotNull { group ->
+                group.exemptionReason?.let { reason ->
+                    "Auf ".escapeLatex() + GermanFormat.amountWithCurrency(group.base) +
+                        " entfällt keine Umsatzsteuer: ".escapeLatex() + reason.escapeLatex() +
+                        ".".escapeLatex()
+                }
             }.joinToLatex(Latex.macro(TemplateMacro.ZEILENWECHSEL))
 }
