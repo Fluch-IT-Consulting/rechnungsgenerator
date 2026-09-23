@@ -120,8 +120,10 @@ class GenerateCommand(
                 is Verdict.Rejected -> throw RejectedException(verdict.aborts)
             }
 
-        // Ob die Nummer einen Dateinamen ergibt, hat die Prüfung schon gesagt
-        // (#150); eine angenommene Rechnung hat immer einen.
+        // Ob die Nummer einen Jobnamen ergibt, hat die Prüfung schon gesagt
+        // (#150); eine angenommene Rechnung hat immer einen. Mit der Zieldatei
+        // hat er nichts zu tun, beliebig ist er trotzdem nicht: Aus ihm bildet
+        // pdfx die DocumentID des PDF (#297).
         val jobName = acceptedInvoice.fileBaseName
         // Neben der Rechnungsdatei und nach ihr benannt, nicht nach der Nummer
         // (ADR-0018): Wer die Datei benannt hat, hat den Namen schon

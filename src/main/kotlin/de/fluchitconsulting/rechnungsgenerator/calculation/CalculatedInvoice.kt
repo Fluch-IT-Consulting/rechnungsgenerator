@@ -273,15 +273,20 @@ data class CalculatedInvoice(
         }
 
     /**
-     * Rechnungsart und -nummer als Dateiname ohne Endung –
+     * Rechnungsart und -nummer als Jobname für LuaLaTeX –
      * "Abschlagsrechnung-R26-009". Oder `null`, wenn von der Nummer nichts
      * übrig bleibt; das meldet `RECHNUNGSNUMMER_OHNE_DATEINAMEN`.
      *
-     * Im Ordner liegen die Dokumente zu einem Vorgang nebeneinander; welches
-     * davon der Abschlag ist, soll man am Namen sehen und nicht erst nach dem
-     * Öffnen. Von der Nummer bleibt nur der portable Zeichensatz für Dateinamen
-     * aus POSIX stehen, alles andere wird zum Bindestrich. Das ist kein Wissen
-     * über LuaLaTeX, auch wenn es dort über Leerzeichen im Jobnamen stolpert.
+     * Das PDF heißt wie die Rechnungsdatei (ADR-0018), nicht so. Der Name ist
+     * trotzdem nicht beliebig: pdfx bildet aus ihm die DocumentID im XMP, als
+     * MD5-Summe über "<Jobname>.pdf" (#297). Mit Art und Nummer ist sie je
+     * Rechnung verschieden; ein fester Name gäbe allen dieselbe, und jeder
+     * andere änderte jedes schon erzeugte PDF.
+     *
+     * Von der Nummer bleibt nur der portable Zeichensatz für Dateinamen aus
+     * POSIX stehen, alles andere wird zum Bindestrich – der Jobname ist der
+     * Name der .tex im Arbeitsverzeichnis. Das ist kein Wissen über LuaLaTeX,
+     * auch wenn es dort über Leerzeichen im Jobnamen stolpert.
      *
      * Hier und nicht im Kommando (#150): Dort fiel eine Nummer ohne Dateinamen
      * erst auf, nachdem die Rechnung angenommen war – mit weiteren Abbrüchen in

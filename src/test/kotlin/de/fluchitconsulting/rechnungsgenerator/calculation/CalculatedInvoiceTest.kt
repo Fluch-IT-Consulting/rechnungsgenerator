@@ -18,10 +18,10 @@ class CalculatedInvoiceTest : FunSpec({
 
     val config = testSellerConfig()
 
-    context("Dateiname") {
+    context("Jobname") {
         test("setzt sich aus Rechnungsart und -nummer zusammen") {
-            // Im Ordner liegen die Dokumente eines Vorgangs nebeneinander; welches
-            // der Abschlag ist, soll man am Namen sehen.
+            // Aus ihm bildet pdfx die DocumentID; so ist sie je Rechnung
+            // verschieden (#297).
             CalculatedInvoice(testInvoice(number = "R26-009", type = InvoiceType.PREPAYMENT), config)
                 .fileBaseName shouldBe "Abschlagsrechnung-R26-009"
         }

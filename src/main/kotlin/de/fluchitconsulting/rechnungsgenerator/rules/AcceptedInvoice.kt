@@ -22,7 +22,7 @@ class AcceptedInvoice private constructor(
     val calculated: CalculatedInvoice,
     val kind: InvoiceKind,
     /**
-     * Der Dateiname ohne Endung. Auf der [CalculatedInvoice] kann er fehlen,
+     * Der Jobname für LuaLaTeX. Auf der [CalculatedInvoice] kann er fehlen,
      * hier nicht mehr: Wer setzt, braucht keinen eigenen Abbruch dafür (#150).
      */
     val fileBaseName: String,
