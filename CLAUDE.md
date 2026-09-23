@@ -520,7 +520,7 @@ CV/Web-Auftritt des Autors), PDF/A-Prüfung über veraPDF.
 
 ## Umgebung
 
-- macOS, TeX Live lokal (`lualatex` in /Library/TeX/texbin), JDK 25 lokal;
+- macOS, TeX Live lokal (`lualatex` in /Library/TeX/texbin), JDK 26 lokal;
   Build zielt per Toolchain auf JDK 21.
 - veraPDF via Homebrew (`verapdf`) ist seit ADR-0014 **optional**: Es braucht
   nur, wer `--externe-pdfa-pruefung` benutzt, und ohne es überspringen sich die
