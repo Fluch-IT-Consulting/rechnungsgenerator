@@ -161,6 +161,16 @@ class LatexCompilerTest : FunSpec({
         dir.resolve("rechnung.xmpdata").readText() shouldContain "Title"
     }
 
+    // Steht für ein Temp-Verzeichnis, das voll oder schreibgeschützt ist: Der
+    // Satz kommt nicht zustande, und die Meldung sagt, wo (#300).
+    test("lassen sich die Quellen nicht schreiben, kommt eine ToolchainException mit dem Verzeichnis") {
+        val gibtEsNicht = arbeitsverzeichnis().resolve("gibt-es-nicht")
+
+        val fehler = shouldThrow<ToolchainException> { setzen(FakeProcessRunner(erfolgreicherLauf()), gibtEsNicht) }
+
+        fehler.message!! shouldContain gibtEsNicht.toString()
+    }
+
     test("ein Lauf genügt, wenn das Protokoll keinen zweiten verlangt") {
         val runner = FakeProcessRunner(erfolgreicherLauf())
 

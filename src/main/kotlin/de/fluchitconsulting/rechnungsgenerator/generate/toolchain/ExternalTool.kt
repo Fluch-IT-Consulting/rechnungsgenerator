@@ -1,5 +1,6 @@
 package de.fluchitconsulting.rechnungsgenerator.generate.toolchain
 
+import java.io.IOException
 import java.nio.file.Files
 import java.nio.file.Path
 import java.util.concurrent.TimeUnit
@@ -90,6 +91,26 @@ object ExternalTool : ProcessRunner {
     ): ToolResult {
         val program = command.first()
         val executable = locate(program) ?: throw ToolchainException("Programm nicht gefunden: $program")
+        // Eine IOException hier – Temp-Dateien, Start, Ausgabe lesen – heißt,
+        // der Lauf kam nicht zustande. Das ist ein Werkzeugfehler, auch wenn
+        // das Betriebssystem ihn als IOException meldet; sonst müsste jeder
+        // Aufrufer sie selbst deuten und riete, was geschrieben werden sollte
+        // (#300).
+        return try {
+            runLocated(executable, command, workingDir, timeout, environment)
+        } catch (e: IOException) {
+            throw ToolchainException("$program ließ sich nicht ausführen: ${e.message}", e)
+        }
+    }
+
+    private fun runLocated(
+        executable: Path,
+        command: List<String>,
+        workingDir: Path,
+        timeout: Duration,
+        environment: Map<String, String>,
+    ): ToolResult {
+        val program = command.first()
         val outFile = Files.createTempFile(workingDir, "tool-", ".out")
         val errFile = Files.createTempFile(workingDir, "tool-", ".err")
         return try {

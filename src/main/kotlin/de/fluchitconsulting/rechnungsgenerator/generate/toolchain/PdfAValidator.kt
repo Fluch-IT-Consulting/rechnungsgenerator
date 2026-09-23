@@ -7,6 +7,7 @@ import org.verapdf.pdfa.flavours.PDFAFlavour
 import org.verapdf.pdfa.results.TestAssertion
 import org.verapdf.pdfa.validation.profiles.Profiles
 import org.w3c.dom.Element
+import java.io.IOException
 import java.nio.file.Path
 import javax.xml.XMLConstants
 import javax.xml.parsers.DocumentBuilderFactory
@@ -96,15 +97,19 @@ object BuiltInPdfAValidator : PdfAValidator {
         val validator = Foundries.defaultInstance().createValidator(flavour, false)
         // Gefangen wird VeraPDFException und nicht mehr: Sie ist die gemeinsame
         // Oberklasse dessen, was beide Aufrufe deklarieren, also genau "konnte
-        // nicht urteilen". Eine RuntimeException aus der Bibliothek ist ein
-        // Programmfehler, und den soll ein Stacktrace zeigen, keine Meldung.
+        // nicht urteilen". Dazu die IOException, die `use` beim Schließen des
+        // Parsers werfen kann (#300). Eine RuntimeException aus der Bibliothek
+        // ist ein Programmfehler, und den soll ein Stacktrace zeigen, keine
+        // Meldung.
         val result =
             try {
                 Foundries.defaultInstance().createParser(pdf.toFile(), flavour).use { parser ->
                     validator.validate(parser)
                 }
             } catch (e: VeraPDFException) {
-                throw ToolchainException("veraPDF konnte $pdf nicht prüfen: ${reasons(e)}", e)
+                throw cannotJudge(pdf, e)
+            } catch (e: IOException) {
+                throw cannotJudge(pdf, e)
             }
         return ValidationResult(
             valid = result.isCompliant,
@@ -132,6 +137,11 @@ object BuiltInPdfAValidator : PdfAValidator {
      * *Warum* in die Ursache ("End of file is reached"). `execute()` gibt die
      * Ursache nicht aus, also muss sie in die Meldung.
      */
+    private fun cannotJudge(
+        pdf: Path,
+        e: Exception,
+    ) = ToolchainException("veraPDF konnte $pdf nicht prüfen: ${reasons(e)}", e)
+
     private fun reasons(e: Throwable): String =
         generateSequence(e) { it.cause }
             .mapNotNull { it.message }

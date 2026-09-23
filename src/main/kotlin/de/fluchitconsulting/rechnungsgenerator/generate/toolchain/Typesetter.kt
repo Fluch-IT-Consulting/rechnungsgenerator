@@ -51,6 +51,12 @@ interface Typesetter {
      * neuer Wert – etwa die XML-Datei für ZUGFeRD – kommt dort an, ohne dass
      * jeder Durchreicher davon erfährt. [workingDir] und [jobName] bleiben
      * daneben: Sie sagen, wohin gesetzt wird, nicht woraus.
+     *
+     * Scheitert Satz oder Prüfung, wirft er [ToolchainException] – auch dort,
+     * wo das Betriebssystem eine IOException meldet, etwa bei einem vollen
+     * Temp-Verzeichnis. Nur so kann das Kommando eine IOException als das
+     * lesen, was sie bei ihm heißt: Die Zieldatei ließ sich nicht schreiben
+     * (#300).
      */
     fun typeset(
         workingDir: Path,

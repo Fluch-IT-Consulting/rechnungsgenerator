@@ -82,22 +82,12 @@ class GenerateCommand(
         help = "Das installierte Programm verapdf prüfen lassen statt der eingebauten Bibliothek",
     ).flag()
 
+    // Fehler beim Lesen, der Werkzeuge und die Ablehnung gehen durch: Zur
+    // Meldung ohne Stacktrace macht sie execute(), für alle Kommandos an einer
+    // Stelle (#119). Eine IOException fängt nur, wer weiß, was dabei
+    // geschrieben werden sollte – ein catch um alles hieße jede
+    // "nicht geschrieben", auch den Start eines Werkzeugs (#300).
     override fun run() {
-        // Fehler beim Lesen, der Werkzeuge und die Ablehnung gehen durch: Zur
-        // Meldung ohne Stacktrace macht sie execute(), für alle Kommandos an
-        // einer Stelle (#119).
-        try {
-            erzeuge()
-        } catch (e: IOException) {
-            // Etwa ein Zielpfad, der nicht beschreibbar ist. Dieser Zweig
-            // bleibt hier, weil nur dieses Kommando schreibt. Das Lesen der
-            // Eingabedateien ist nicht dabei: YamlLoader wirft dafür
-            // InputFileException, mit Datei und Grund (#52).
-            throw CliktError("Die Datei konnte nicht geschrieben werden: ${e.message}")
-        }
-    }
-
-    private fun erzeuge() {
         // Der Prüfer steht mit dem Schalter fest; eingebaut ist die Vorgabe
         // (ADR-0014). Extern heißt: ein getrennt installiertes, getrennt
         // versioniertes Programm urteilt – fehlt es, bricht checkAvailable ab.
@@ -161,7 +151,12 @@ class GenerateCommand(
                 ?.let { "\n\nDie Stammdaten nennen ein Logo (${it.source}); ein Fehler darin bricht den Satz ebenfalls ab." }
                 .orEmpty()
 
-        val workDir = createTempDirectory("rechnungsgenerator")
+        val workDir =
+            try {
+                createTempDirectory("rechnungsgenerator")
+            } catch (e: IOException) {
+                throw CliktError("Das Arbeitsverzeichnis für den Satz ließ sich nicht anlegen: ${e.message}")
+            }
         try {
             val typesetPdf =
                 try {
@@ -187,7 +182,13 @@ class GenerateCommand(
                         "${typesetPdf.validation.describe()}\n$inspectionNote$logoNote",
                 )
             }
-            typesetPdf.pdf.copyTo(target, overwrite = overwrite)
+            // Derselbe Wortlaut wie bei einrichten: Beide sagen dasselbe über
+            // dieselbe Art Fehler.
+            try {
+                typesetPdf.pdf.copyTo(target, overwrite = overwrite)
+            } catch (e: IOException) {
+                throw CliktError("Die Datei $target konnte nicht geschrieben werden: ${e.message}")
+            }
 
             echo("$target")
             echo(typesetPdf.validation.describe())
