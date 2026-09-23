@@ -3,11 +3,14 @@ package de.fluchitconsulting.rechnungsgenerator.generate.render
 import de.fluchitconsulting.rechnungsgenerator.core.accepted.accepted
 import de.fluchitconsulting.rechnungsgenerator.core.calculation.CalculatedInvoice
 import de.fluchitconsulting.rechnungsgenerator.core.model.Invoice
+import de.fluchitconsulting.rechnungsgenerator.core.model.InvoiceType
 import de.fluchitconsulting.rechnungsgenerator.core.model.LineItem
+import de.fluchitconsulting.rechnungsgenerator.core.model.Logo
 import de.fluchitconsulting.rechnungsgenerator.core.model.Prepayment
 import de.fluchitconsulting.rechnungsgenerator.core.model.SellerConfig
 import de.fluchitconsulting.rechnungsgenerator.core.model.ServicePeriod
 import de.fluchitconsulting.rechnungsgenerator.core.model.SkontoTier
+import de.fluchitconsulting.rechnungsgenerator.core.model.TaxCategory
 import de.fluchitconsulting.rechnungsgenerator.core.model.YamlLoader
 import de.fluchitconsulting.rechnungsgenerator.core.model.exampleInvoices
 import de.fluchitconsulting.rechnungsgenerator.core.model.testInvoice
@@ -16,10 +19,7 @@ import de.fluchitconsulting.rechnungsgenerator.core.model.testPrepayment
 import de.fluchitconsulting.rechnungsgenerator.core.model.testSellerConfig
 import de.fluchitconsulting.rechnungsgenerator.core.values.CountryCode
 import de.fluchitconsulting.rechnungsgenerator.core.values.Design
-import de.fluchitconsulting.rechnungsgenerator.core.values.InvoiceType
-import de.fluchitconsulting.rechnungsgenerator.core.values.Logo
 import de.fluchitconsulting.rechnungsgenerator.core.values.Percent
-import de.fluchitconsulting.rechnungsgenerator.core.values.TaxCategory
 import de.fluchitconsulting.rechnungsgenerator.core.values.VatId
 import io.kotest.assertions.withClue
 import io.kotest.core.spec.style.FunSpec

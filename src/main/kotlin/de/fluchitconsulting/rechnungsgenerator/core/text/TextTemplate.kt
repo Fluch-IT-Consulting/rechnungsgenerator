@@ -1,4 +1,4 @@
-package de.fluchitconsulting.rechnungsgenerator.core.values
+package de.fluchitconsulting.rechnungsgenerator.core.text
 
 /**
  * Ein Wortlaut mit Platzhaltern `<<NAME>>`, zerlegt in festen Text und

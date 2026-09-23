@@ -1,7 +1,7 @@
 package de.fluchitconsulting.rechnungsgenerator.generate.render
 
 import de.fluchitconsulting.rechnungsgenerator.core.accepted.AcceptedInvoice
-import de.fluchitconsulting.rechnungsgenerator.core.values.Logo
+import de.fluchitconsulting.rechnungsgenerator.core.model.Logo
 import de.fluchitconsulting.rechnungsgenerator.generate.toolchain.PdfSources
 
 /**

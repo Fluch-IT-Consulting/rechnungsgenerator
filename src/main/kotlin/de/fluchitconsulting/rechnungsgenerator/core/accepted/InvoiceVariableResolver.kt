@@ -1,10 +1,10 @@
 package de.fluchitconsulting.rechnungsgenerator.core.accepted
 
 import de.fluchitconsulting.rechnungsgenerator.core.model.CancelledInvoice
+import de.fluchitconsulting.rechnungsgenerator.core.model.InvoiceVariable
 import de.fluchitconsulting.rechnungsgenerator.core.rules.InvoiceKind
-import de.fluchitconsulting.rechnungsgenerator.core.values.InvoiceVariable
-import de.fluchitconsulting.rechnungsgenerator.core.values.TextValue
-import de.fluchitconsulting.rechnungsgenerator.core.values.VariableResolver
+import de.fluchitconsulting.rechnungsgenerator.core.text.TextValue
+import de.fluchitconsulting.rechnungsgenerator.core.text.VariableResolver
 
 /**
  * Die Werte einer angenommenen Rechnung, die ein Text mit Platzhaltern

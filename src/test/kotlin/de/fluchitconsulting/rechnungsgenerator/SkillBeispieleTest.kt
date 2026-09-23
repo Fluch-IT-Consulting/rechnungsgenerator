@@ -1,9 +1,9 @@
 package de.fluchitconsulting.rechnungsgenerator
 
 import de.fluchitconsulting.rechnungsgenerator.core.calculation.CalculatedInvoice
+import de.fluchitconsulting.rechnungsgenerator.core.model.InvoiceType
 import de.fluchitconsulting.rechnungsgenerator.core.model.YamlLoader
 import de.fluchitconsulting.rechnungsgenerator.core.rules.aborts
-import de.fluchitconsulting.rechnungsgenerator.core.values.InvoiceType
 import de.fluchitconsulting.rechnungsgenerator.core.values.Money
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.collections.shouldBeEmpty

@@ -6,6 +6,7 @@ import de.fluchitconsulting.rechnungsgenerator.core.accepted.accepted
 import de.fluchitconsulting.rechnungsgenerator.core.calculation.CalculatedInvoice
 import de.fluchitconsulting.rechnungsgenerator.core.model.CancelledInvoice
 import de.fluchitconsulting.rechnungsgenerator.core.model.Invoice
+import de.fluchitconsulting.rechnungsgenerator.core.model.InvoiceType
 import de.fluchitconsulting.rechnungsgenerator.core.model.LineItem
 import de.fluchitconsulting.rechnungsgenerator.core.model.Prepayment
 import de.fluchitconsulting.rechnungsgenerator.core.model.testCancelled
@@ -13,7 +14,6 @@ import de.fluchitconsulting.rechnungsgenerator.core.model.testInvoice
 import de.fluchitconsulting.rechnungsgenerator.core.model.testItem
 import de.fluchitconsulting.rechnungsgenerator.core.model.testPrepayment
 import de.fluchitconsulting.rechnungsgenerator.core.model.testSellerConfig
-import de.fluchitconsulting.rechnungsgenerator.core.values.InvoiceType
 import de.fluchitconsulting.rechnungsgenerator.core.values.Money
 import io.kotest.assertions.withClue
 import io.kotest.core.spec.style.FunSpec

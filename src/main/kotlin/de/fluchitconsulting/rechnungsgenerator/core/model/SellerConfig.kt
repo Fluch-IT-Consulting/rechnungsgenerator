@@ -5,7 +5,6 @@ import de.fluchitconsulting.rechnungsgenerator.core.values.CountryCode
 import de.fluchitconsulting.rechnungsgenerator.core.values.Design
 import de.fluchitconsulting.rechnungsgenerator.core.values.Iban
 import de.fluchitconsulting.rechnungsgenerator.core.values.InvoiceNumberPattern
-import de.fluchitconsulting.rechnungsgenerator.core.values.Logo
 import de.fluchitconsulting.rechnungsgenerator.core.values.TaxNumber
 import de.fluchitconsulting.rechnungsgenerator.core.values.VatId
 import kotlinx.serialization.SerialName

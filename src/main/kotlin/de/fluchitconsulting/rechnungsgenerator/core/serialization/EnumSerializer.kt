@@ -1,4 +1,4 @@
-package de.fluchitconsulting.rechnungsgenerator.core.values
+package de.fluchitconsulting.rechnungsgenerator.core.serialization
 
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.SerializationException
@@ -15,8 +15,8 @@ import kotlinx.serialization.SerializationException
  * hier, auf beiden Seiten.
  *
  * Was die drei **unterschiedlich** machen, bleibt sichtbar und wird nicht
- * eingeebnet: [TaxCategory] schlägt über den Code in Großschreibung nach, weil
- * die Codeliste so geschrieben ist; [Unit] und [InvoiceType] über die
+ * eingeebnet: `TaxCategory` schlägt über den Code in Großschreibung nach, weil
+ * die Codeliste so geschrieben ist; `Unit` und `InvoiceType` über die
  * Schreibweise in Kleinbuchstaben, weil man sie so in die YAML tippt.
  *
  * @param unknown wie der Satz beginnt: "Unbekannte Einheit". Der Artikel steht
@@ -60,8 +60,8 @@ class CodeLookup<T>(
  * ```
  *
  * Was die Enums **unterschiedlich** machen, bleibt dabei sichtbar und wird
- * nicht eingeebnet: [TaxCategory] normalisiert in Großbuchstaben, weil die
- * Codeliste UNCL 5305 so geschrieben ist; [Unit] und [InvoiceType] in
+ * nicht eingeebnet: `TaxCategory` normalisiert in Großbuchstaben, weil die
+ * Codeliste UNCL 5305 so geschrieben ist; `Unit` und `InvoiceType` in
  * Kleinbuchstaben, weil man sie so in die YAML tippt.
  *
  * Gebaut auf [stringSerializer], das die 9 Werttypen ohne Codeliste weiter

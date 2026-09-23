@@ -1,4 +1,7 @@
-package de.fluchitconsulting.rechnungsgenerator.core.values
+package de.fluchitconsulting.rechnungsgenerator.core.model
+
+import de.fluchitconsulting.rechnungsgenerator.core.text.TextTemplate
+import de.fluchitconsulting.rechnungsgenerator.core.text.VariableResolver
 
 /**
  * Die Werte einer Rechnung, die ein [TextTemplate] nennen kann, als

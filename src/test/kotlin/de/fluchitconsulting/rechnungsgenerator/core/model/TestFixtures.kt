@@ -3,11 +3,9 @@ package de.fluchitconsulting.rechnungsgenerator.core.model
 import de.fluchitconsulting.rechnungsgenerator.core.values.Bic
 import de.fluchitconsulting.rechnungsgenerator.core.values.Iban
 import de.fluchitconsulting.rechnungsgenerator.core.values.InvoiceNumberPattern
-import de.fluchitconsulting.rechnungsgenerator.core.values.InvoiceType
 import de.fluchitconsulting.rechnungsgenerator.core.values.Money
 import de.fluchitconsulting.rechnungsgenerator.core.values.Percent
 import de.fluchitconsulting.rechnungsgenerator.core.values.Price
-import de.fluchitconsulting.rechnungsgenerator.core.values.TaxCategory
 import de.fluchitconsulting.rechnungsgenerator.core.values.VatId
 import java.math.BigDecimal
 import java.time.LocalDate

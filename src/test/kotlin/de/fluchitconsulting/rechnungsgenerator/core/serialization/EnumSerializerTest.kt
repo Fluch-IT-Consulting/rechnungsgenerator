@@ -1,4 +1,4 @@
-package de.fluchitconsulting.rechnungsgenerator.core.values
+package de.fluchitconsulting.rechnungsgenerator.core.serialization
 
 import com.charleskorn.kaml.Yaml
 import io.kotest.assertions.throwables.shouldThrow

@@ -1,7 +1,6 @@
 package de.fluchitconsulting.rechnungsgenerator.core.model
 
 import com.charleskorn.kaml.Yaml
-import de.fluchitconsulting.rechnungsgenerator.core.values.Logo
 import kotlinx.serialization.SerializationException
 import java.io.IOException
 import java.nio.file.Path

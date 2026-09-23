@@ -1,4 +1,4 @@
-package de.fluchitconsulting.rechnungsgenerator.core.values
+package de.fluchitconsulting.rechnungsgenerator.core.model
 
 import java.nio.file.Path
 import kotlin.io.path.extension

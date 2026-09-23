@@ -5,11 +5,11 @@ import de.fluchitconsulting.rechnungsgenerator.core.model.LineItem
 import de.fluchitconsulting.rechnungsgenerator.core.model.Prepayment
 import de.fluchitconsulting.rechnungsgenerator.core.model.SellerConfig
 import de.fluchitconsulting.rechnungsgenerator.core.model.SkontoTier
+import de.fluchitconsulting.rechnungsgenerator.core.model.TaxCategory
 import de.fluchitconsulting.rechnungsgenerator.core.values.Discount
 import de.fluchitconsulting.rechnungsgenerator.core.values.EuMemberStates
 import de.fluchitconsulting.rechnungsgenerator.core.values.Money
 import de.fluchitconsulting.rechnungsgenerator.core.values.Percent
-import de.fluchitconsulting.rechnungsgenerator.core.values.TaxCategory
 import de.fluchitconsulting.rechnungsgenerator.core.values.sumOf
 import java.time.LocalDate
 

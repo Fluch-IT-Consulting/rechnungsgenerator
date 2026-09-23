@@ -1,15 +1,15 @@
 package de.fluchitconsulting.rechnungsgenerator.generate.toolchain
 
 import de.fluchitconsulting.rechnungsgenerator.core.calculation.CalculatedInvoice
+import de.fluchitconsulting.rechnungsgenerator.core.model.InvoiceVariable
 import de.fluchitconsulting.rechnungsgenerator.core.model.YamlLoader
 import de.fluchitconsulting.rechnungsgenerator.core.model.exampleInvoices
+import de.fluchitconsulting.rechnungsgenerator.core.text.TextTemplate
+import de.fluchitconsulting.rechnungsgenerator.core.text.TextValue
+import de.fluchitconsulting.rechnungsgenerator.core.text.VariableResolver
 import de.fluchitconsulting.rechnungsgenerator.core.values.Discount
-import de.fluchitconsulting.rechnungsgenerator.core.values.InvoiceVariable
 import de.fluchitconsulting.rechnungsgenerator.core.values.Money
 import de.fluchitconsulting.rechnungsgenerator.core.values.Percent
-import de.fluchitconsulting.rechnungsgenerator.core.values.TextTemplate
-import de.fluchitconsulting.rechnungsgenerator.core.values.TextValue
-import de.fluchitconsulting.rechnungsgenerator.core.values.VariableResolver
 import io.kotest.assertions.assertSoftly
 import io.kotest.assertions.withClue
 import io.kotest.core.spec.style.FunSpec

@@ -3,11 +3,11 @@ package de.fluchitconsulting.rechnungsgenerator.generate.render
 import de.fluchitconsulting.rechnungsgenerator.core.accepted.AcceptedInvoice
 import de.fluchitconsulting.rechnungsgenerator.core.accepted.InvoiceVariableResolver
 import de.fluchitconsulting.rechnungsgenerator.core.calculation.CalculatedInvoice
+import de.fluchitconsulting.rechnungsgenerator.core.model.InvoiceType
+import de.fluchitconsulting.rechnungsgenerator.core.model.InvoiceVariable
 import de.fluchitconsulting.rechnungsgenerator.core.model.LineItem
 import de.fluchitconsulting.rechnungsgenerator.core.model.SkontoTier
 import de.fluchitconsulting.rechnungsgenerator.core.values.Discount
-import de.fluchitconsulting.rechnungsgenerator.core.values.InvoiceType
-import de.fluchitconsulting.rechnungsgenerator.core.values.InvoiceVariable
 
 /**
  * Positionstabelle, Summenblock und die Hinweise darunter: Steuerbefreiungen,

@@ -1,7 +1,7 @@
 package de.fluchitconsulting.rechnungsgenerator.generate.render
 
+import de.fluchitconsulting.rechnungsgenerator.core.model.InvoiceType
 import de.fluchitconsulting.rechnungsgenerator.core.model.ServicePeriod
-import de.fluchitconsulting.rechnungsgenerator.core.values.InvoiceType
 import de.fluchitconsulting.rechnungsgenerator.core.values.Money
 
 // Kleine Satzbausteine, die mehrere Blöcke teilen – Positionen und Summen

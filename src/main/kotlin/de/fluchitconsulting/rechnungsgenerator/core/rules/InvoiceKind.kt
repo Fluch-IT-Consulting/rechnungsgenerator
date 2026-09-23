@@ -2,7 +2,7 @@ package de.fluchitconsulting.rechnungsgenerator.core.rules
 
 import de.fluchitconsulting.rechnungsgenerator.core.calculation.DeductedPrepayment
 import de.fluchitconsulting.rechnungsgenerator.core.model.CancelledInvoice
-import de.fluchitconsulting.rechnungsgenerator.core.values.InvoiceType
+import de.fluchitconsulting.rechnungsgenerator.core.model.InvoiceType
 import java.time.LocalDate
 
 /**

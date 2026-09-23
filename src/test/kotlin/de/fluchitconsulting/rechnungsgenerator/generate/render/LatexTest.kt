@@ -1,7 +1,7 @@
 package de.fluchitconsulting.rechnungsgenerator.generate.render
 
-import de.fluchitconsulting.rechnungsgenerator.core.values.TextTemplate
-import de.fluchitconsulting.rechnungsgenerator.core.values.TextValue
+import de.fluchitconsulting.rechnungsgenerator.core.text.TextTemplate
+import de.fluchitconsulting.rechnungsgenerator.core.text.TextValue
 import io.kotest.assertions.assertSoftly
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.FunSpec

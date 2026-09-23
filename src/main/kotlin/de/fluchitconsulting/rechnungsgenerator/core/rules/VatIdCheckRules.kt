@@ -2,9 +2,9 @@ package de.fluchitconsulting.rechnungsgenerator.core.rules
 
 import de.fluchitconsulting.rechnungsgenerator.core.calculation.CalculatedInvoice
 import de.fluchitconsulting.rechnungsgenerator.core.model.CheckMethod
+import de.fluchitconsulting.rechnungsgenerator.core.model.TaxCategory
+import de.fluchitconsulting.rechnungsgenerator.core.model.VatIdConfirmation
 import de.fluchitconsulting.rechnungsgenerator.core.values.EuMemberStates
-import de.fluchitconsulting.rechnungsgenerator.core.values.TaxCategory
-import de.fluchitconsulting.rechnungsgenerator.core.values.VatIdConfirmation
 import java.time.temporal.ChronoUnit
 
 /**

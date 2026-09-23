@@ -1,5 +1,7 @@
-package de.fluchitconsulting.rechnungsgenerator.core.values
+package de.fluchitconsulting.rechnungsgenerator.core.model
 
+import de.fluchitconsulting.rechnungsgenerator.core.serialization.enumSerializer
+import de.fluchitconsulting.rechnungsgenerator.core.text.TextTemplate
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.Serializable
 
