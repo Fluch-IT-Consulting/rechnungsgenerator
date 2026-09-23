@@ -421,6 +421,12 @@ CV/Web-Auftritt des Autors), PDF/A-Prüfung über veraPDF.
 
   Die Kennungen sind deutsch benannt wie die Regeln und **nicht** nummeriert.
   Tests prüfen die Kennung statt des Wortlauts (`aborts().shouldBeEmpty()`).
+  Alle stehen in `Rule` im Kern, auch die drei, die allein `abschlaege`
+  vergibt – die eine bewusste Ausnahme vom Schnitt der Paketstruktur (#314).
+  Was das Programm ablehnt, steht so an einer Stelle, und `abschlaege` meldet
+  die Abbrüche der gelesenen Abschlagsrechnungen in derselben Liste wie seine
+  eigenen. `PackageStructureTest` sieht die Ausnahme nicht: Kein Import verrät
+  sie, der Kern kennt hier Wissen des Rands und keinen Typ.
 
 - **Die PDF/A-Prüfung ist Teil der Tests**: erzeugte PDFs werden geprüft; ohne
   gültiges PDF/A kein grüner Build. Das gilt seit ADR-0014 mit dem eingebauten
