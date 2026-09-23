@@ -1,15 +1,15 @@
 package de.fluchitconsulting.rechnungsgenerator.generate.toolchain
 
-import de.fluchitconsulting.rechnungsgenerator.calculation.CalculatedInvoice
-import de.fluchitconsulting.rechnungsgenerator.model.YamlLoader
-import de.fluchitconsulting.rechnungsgenerator.model.exampleInvoices
-import de.fluchitconsulting.rechnungsgenerator.values.Discount
-import de.fluchitconsulting.rechnungsgenerator.values.InvoiceVariable
-import de.fluchitconsulting.rechnungsgenerator.values.Money
-import de.fluchitconsulting.rechnungsgenerator.values.Percent
-import de.fluchitconsulting.rechnungsgenerator.values.TextTemplate
-import de.fluchitconsulting.rechnungsgenerator.values.TextValue
-import de.fluchitconsulting.rechnungsgenerator.values.VariableResolver
+import de.fluchitconsulting.rechnungsgenerator.core.calculation.CalculatedInvoice
+import de.fluchitconsulting.rechnungsgenerator.core.model.YamlLoader
+import de.fluchitconsulting.rechnungsgenerator.core.model.exampleInvoices
+import de.fluchitconsulting.rechnungsgenerator.core.values.Discount
+import de.fluchitconsulting.rechnungsgenerator.core.values.InvoiceVariable
+import de.fluchitconsulting.rechnungsgenerator.core.values.Money
+import de.fluchitconsulting.rechnungsgenerator.core.values.Percent
+import de.fluchitconsulting.rechnungsgenerator.core.values.TextTemplate
+import de.fluchitconsulting.rechnungsgenerator.core.values.TextValue
+import de.fluchitconsulting.rechnungsgenerator.core.values.VariableResolver
 import io.kotest.assertions.assertSoftly
 import io.kotest.assertions.withClue
 import io.kotest.core.spec.style.FunSpec
@@ -127,7 +127,7 @@ class PflichtangabenTest : FunSpec({
 
     test("jedes Design steht im Netz") {
         designs.map { it.name } shouldBe
-            de.fluchitconsulting.rechnungsgenerator.values.Design.entries
+            de.fluchitconsulting.rechnungsgenerator.core.values.Design.entries
                 .map { it.label }
     }
 

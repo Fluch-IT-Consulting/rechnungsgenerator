@@ -1,9 +1,9 @@
 package de.fluchitconsulting.rechnungsgenerator.generate.render
 
-import de.fluchitconsulting.rechnungsgenerator.accepted.AcceptedInvoice
-import de.fluchitconsulting.rechnungsgenerator.calculation.CalculatedInvoice
-import de.fluchitconsulting.rechnungsgenerator.model.Address
-import de.fluchitconsulting.rechnungsgenerator.rules.InvoiceKind
+import de.fluchitconsulting.rechnungsgenerator.core.accepted.AcceptedInvoice
+import de.fluchitconsulting.rechnungsgenerator.core.calculation.CalculatedInvoice
+import de.fluchitconsulting.rechnungsgenerator.core.model.Address
+import de.fluchitconsulting.rechnungsgenerator.core.rules.InvoiceKind
 
 /**
  * Die Angaben um den Empfänger, die mehr sind als der Pfad zu einem Wert: die

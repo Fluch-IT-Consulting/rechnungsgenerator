@@ -1,17 +1,17 @@
 package de.fluchitconsulting.rechnungsgenerator.prepayments
 
-import de.fluchitconsulting.rechnungsgenerator.accepted.AcceptedInvoice
-import de.fluchitconsulting.rechnungsgenerator.accepted.Verdict
-import de.fluchitconsulting.rechnungsgenerator.calculation.CalculatedInvoice
-import de.fluchitconsulting.rechnungsgenerator.model.Invoice
-import de.fluchitconsulting.rechnungsgenerator.model.Prepayment
-import de.fluchitconsulting.rechnungsgenerator.model.SellerConfig
-import de.fluchitconsulting.rechnungsgenerator.model.TaxShare
-import de.fluchitconsulting.rechnungsgenerator.rules.Finding
-import de.fluchitconsulting.rechnungsgenerator.rules.InvoiceKind
-import de.fluchitconsulting.rechnungsgenerator.rules.Rule
-import de.fluchitconsulting.rechnungsgenerator.rules.Subject
-import de.fluchitconsulting.rechnungsgenerator.values.InvoiceType
+import de.fluchitconsulting.rechnungsgenerator.core.accepted.AcceptedInvoice
+import de.fluchitconsulting.rechnungsgenerator.core.accepted.Verdict
+import de.fluchitconsulting.rechnungsgenerator.core.calculation.CalculatedInvoice
+import de.fluchitconsulting.rechnungsgenerator.core.model.Invoice
+import de.fluchitconsulting.rechnungsgenerator.core.model.Prepayment
+import de.fluchitconsulting.rechnungsgenerator.core.model.SellerConfig
+import de.fluchitconsulting.rechnungsgenerator.core.model.TaxShare
+import de.fluchitconsulting.rechnungsgenerator.core.rules.Finding
+import de.fluchitconsulting.rechnungsgenerator.core.rules.InvoiceKind
+import de.fluchitconsulting.rechnungsgenerator.core.rules.Rule
+import de.fluchitconsulting.rechnungsgenerator.core.rules.Subject
+import de.fluchitconsulting.rechnungsgenerator.core.values.InvoiceType
 
 // Der fachliche Teil von `rechnungsgenerator abschlaege` (ADR-0003): Aus
 // Abschlagsrechnungen werden die Abschläge einer Schlussrechnung. Ohne Dateien

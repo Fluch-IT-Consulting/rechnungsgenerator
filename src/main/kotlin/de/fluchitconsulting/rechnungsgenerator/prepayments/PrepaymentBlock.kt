@@ -1,6 +1,6 @@
 package de.fluchitconsulting.rechnungsgenerator.prepayments
 
-import de.fluchitconsulting.rechnungsgenerator.model.TaxShare
+import de.fluchitconsulting.rechnungsgenerator.core.model.TaxShare
 
 /**
  * Der `abschlaege`-Block einer Schlussrechnung als YAML-Text – das, was

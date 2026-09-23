@@ -6,9 +6,9 @@ import com.github.ajalt.clikt.parameters.arguments.argument
 import com.github.ajalt.clikt.parameters.arguments.multiple
 import com.github.ajalt.clikt.parameters.options.option
 import com.github.ajalt.clikt.parameters.types.path
-import de.fluchitconsulting.rechnungsgenerator.model.Root
-import de.fluchitconsulting.rechnungsgenerator.model.YamlLoader
-import de.fluchitconsulting.rechnungsgenerator.rules.RejectedException
+import de.fluchitconsulting.rechnungsgenerator.core.model.Root
+import de.fluchitconsulting.rechnungsgenerator.core.model.YamlLoader
+import de.fluchitconsulting.rechnungsgenerator.core.rules.RejectedException
 import kotlin.io.path.name
 
 /**

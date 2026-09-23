@@ -1,8 +1,8 @@
 package de.fluchitconsulting.rechnungsgenerator.generate.render
 
-import de.fluchitconsulting.rechnungsgenerator.values.Money
-import de.fluchitconsulting.rechnungsgenerator.values.Percent
-import de.fluchitconsulting.rechnungsgenerator.values.Price
+import de.fluchitconsulting.rechnungsgenerator.core.values.Money
+import de.fluchitconsulting.rechnungsgenerator.core.values.Percent
+import de.fluchitconsulting.rechnungsgenerator.core.values.Price
 import io.kotest.assertions.assertSoftly
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe

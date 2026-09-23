@@ -2,11 +2,11 @@ package de.fluchitconsulting.rechnungsgenerator.setup
 
 import com.charleskorn.kaml.Yaml
 import com.charleskorn.kaml.YamlMap
-import de.fluchitconsulting.rechnungsgenerator.model.Address
-import de.fluchitconsulting.rechnungsgenerator.model.BankDetails
-import de.fluchitconsulting.rechnungsgenerator.model.InputFileException
-import de.fluchitconsulting.rechnungsgenerator.model.SellerConfig
-import de.fluchitconsulting.rechnungsgenerator.model.YamlLoader
+import de.fluchitconsulting.rechnungsgenerator.core.model.Address
+import de.fluchitconsulting.rechnungsgenerator.core.model.BankDetails
+import de.fluchitconsulting.rechnungsgenerator.core.model.InputFileException
+import de.fluchitconsulting.rechnungsgenerator.core.model.SellerConfig
+import de.fluchitconsulting.rechnungsgenerator.core.model.YamlLoader
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.collections.shouldNotBeEmpty

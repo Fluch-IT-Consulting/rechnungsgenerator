@@ -3,7 +3,7 @@ package de.fluchitconsulting.rechnungsgenerator.setup
 import com.github.ajalt.clikt.core.CliktError
 import com.github.ajalt.clikt.core.context
 import com.github.ajalt.clikt.core.parse
-import de.fluchitconsulting.rechnungsgenerator.model.Root
+import de.fluchitconsulting.rechnungsgenerator.core.model.Root
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.collections.shouldBeEmpty

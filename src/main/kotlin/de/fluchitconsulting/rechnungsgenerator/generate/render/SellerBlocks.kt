@@ -1,6 +1,6 @@
 package de.fluchitconsulting.rechnungsgenerator.generate.render
 
-import de.fluchitconsulting.rechnungsgenerator.calculation.CalculatedInvoice
+import de.fluchitconsulting.rechnungsgenerator.core.calculation.CalculatedInvoice
 
 /**
  * Die Bankverbindung, der einzige Block aus den Stammdaten, über dessen

@@ -27,6 +27,10 @@ class PackageStructureTest : FunSpec({
 
     val root = "de.fluchitconsulting.rechnungsgenerator"
 
+    // Der Kern selbst hat keine Zeile: `core` enthält keine Datei, nur seine
+    // fünf Schichten (#310).
+    val core = "$root.core"
+
     // Wer darf woher importieren – die Zeichnung aus #107, Zeile für Zeile.
     val allowedImports =
         mapOf(
@@ -37,17 +41,17 @@ class PackageStructureTest : FunSpec({
                     "$root.generate.toolchain",
                     "$root.prepayments",
                     "$root.setup",
-                    "$root.rules",
-                    "$root.model",
+                    "$core.rules",
+                    "$core.model",
                 ),
             "$root.generate" to
                 setOf(
                     "$root.generate.render",
                     "$root.generate.toolchain",
-                    "$root.accepted",
-                    "$root.rules",
-                    "$root.calculation",
-                    "$root.model",
+                    "$core.accepted",
+                    "$core.rules",
+                    "$core.calculation",
+                    "$core.model",
                 ),
             // generate.toolchain für PdfSources: Der Renderer liefert die
             // Quellen des PDF im Eingabetyp der Werkzeuge (#202). Die Kante
@@ -56,25 +60,25 @@ class PackageStructureTest : FunSpec({
             "$root.generate.render" to
                 setOf(
                     "$root.generate.toolchain",
-                    "$root.accepted",
-                    "$root.rules",
-                    "$root.calculation",
-                    "$root.model",
-                    "$root.values",
+                    "$core.accepted",
+                    "$core.rules",
+                    "$core.calculation",
+                    "$core.model",
+                    "$core.values",
                 ),
             "$root.generate.toolchain" to emptySet(),
-            "$root.prepayments" to setOf("$root.accepted", "$root.rules", "$root.calculation", "$root.model", "$root.values"),
+            "$root.prepayments" to setOf("$core.accepted", "$core.rules", "$core.calculation", "$core.model", "$core.values"),
             // setup kennt aus dem Kern nur die Wurzel: den Namen ihres
             // Ordners und die Frage, ob oberhalb schon eine liegt (#275).
-            "$root.setup" to setOf("$root.model"),
+            "$root.setup" to setOf("$core.model"),
             // Über rules, weil AcceptedInvoice.check die Regeln aufruft. Was
             // die Regeln bauen – InvoiceKind, Deduction –, bleibt dort: Ein
             // Typ wohnt, wo er gebaut wird, sonst zeigte rules nach oben (#304).
-            "$root.accepted" to setOf("$root.rules", "$root.calculation", "$root.model", "$root.values"),
-            "$root.rules" to setOf("$root.calculation", "$root.model", "$root.values"),
-            "$root.calculation" to setOf("$root.model", "$root.values"),
-            "$root.model" to setOf("$root.values"),
-            "$root.values" to emptySet(),
+            "$core.accepted" to setOf("$core.rules", "$core.calculation", "$core.model", "$core.values"),
+            "$core.rules" to setOf("$core.calculation", "$core.model", "$core.values"),
+            "$core.calculation" to setOf("$core.model", "$core.values"),
+            "$core.model" to setOf("$core.values"),
+            "$core.values" to emptySet(),
         )
 
     // Nur die Quellen unter src/main: Ein Test darf jedes Paket sehen. Und nur
@@ -93,8 +97,8 @@ class PackageStructureTest : FunSpec({
     /**
      * Das Paket, aus dem ein Import stammt: der längste Eintrag der Tabelle,
      * der ihm vorangeht. `substringBeforeLast('.')` reichte nicht, weil
-     * `rules.InvoiceKindRules.Result` einen verschachtelten Typ nennt und dann
-     * die Klasse herauskäme, nicht das Paket.
+     * `core.rules.InvoiceKindRules.Result` einen verschachtelten Typ nennt und
+     * dann die Klasse herauskäme, nicht das Paket.
      */
     fun packageOf(importName: String): String? = allowedImports.keys.filter { importName.startsWith("$it.") }.maxByOrNull { it.length }
 

@@ -321,7 +321,7 @@ CV/Web-Auftritt des Autors), PDF/A-Prüfung über veraPDF.
   denn eine geänderte Leerzeile der Vorlage ändert die Trailer-ID, aber nicht
   das Satzbild. Einen Schalter zum Neu-Erzeugen gibt es nicht. Welche
   Beispieldatei zu welcher Art gehört, steht in `exampleInvoices`
-  (`model/TestFixtures.kt`).
+  (`core/model/TestFixtures.kt`).
 
 - **Storno** (ADR-0006): Eine falsche Rechnung wird nicht überschrieben,
   sondern aufgehoben – `art: stornorechnung` mit eigener Nummer, dem Bezug auf
@@ -436,14 +436,19 @@ CV/Web-Auftritt des Autors), PDF/A-Prüfung über veraPDF.
   `setup` mit der Vorlage der Stammdaten (#276) – es kennt aus dem Kern nur
   `model`, weil `einrichten` den Namen des Wurzelordners braucht und die Frage,
   ob oberhalb schon eine Wurzel liegt.
-  Darunter der gemeinsame Kern, in dem jede Kante nach unten zeigt:
+  Darunter der gemeinsame Kern im Paket `core`, in dem jede Kante nach unten
+  zeigt:
   `accepted` (`AcceptedInvoice` samt `check`, `Verdict`,
   `InvoiceVariableResolver`) → `rules` (Befunde, Regelgruppen, `InvoiceKind`,
   `Deduction`) → `calculation` (`CalculatedInvoice`) → `model` (samt
   `YamlLoader`) → `values`. In der Wurzel steht nur `Main.kt`: Wäre sie Kern
-  und CLI zugleich, entstünden dort Zyklen (#107). Der
-  Schnitt trennt den Rand, nicht die Mitte – was beide Kommandos brauchen, ist
-  der größere Teil. Die Grenze zwischen `rules` und `calculation` ist die aus
+  und CLI zugleich, entstünden dort Zyklen (#107). Der Kern trägt ein eigenes
+  Paket, damit schon der Quellbaum ein Kommando von einer Schicht unterscheidet
+  (#310) – `core` und nicht `domain`, weil `model` mit `YamlLoader` und `Root`
+  das Dateisystem liest. Ein späteres Gradle-Modul `:core` folgt dieser Linie
+  und zieht keine neue. Der Schnitt trennt den Rand, nicht die Mitte – was
+  beide Kommandos brauchen, ist der größere Teil. Die Grenze zwischen `rules`
+  und `calculation` ist die aus
   ADR-0004: `CalculatedInvoice` rechnet nur, `check` prüft und urteilt.
   `accepted` liegt **über** den Regeln, weil `check` sie aufruft, und enthält,
   was eine angenommene Rechnung ist und wie man sie liest – nichts davon ist
@@ -459,9 +464,9 @@ CV/Web-Auftritt des Autors), PDF/A-Prüfung über veraPDF.
   `assertArchitecture`: Dessen Schichten schließen Unterpakete immer ein, und
   dann fällt ein Import von `generate.render` nach `generate` nicht auf.
   Die Testpakete spiegeln die Hauptpakete, geteilte Helfer liegen im Testpaket
-  dessen, was sie bauen oder prüfen (`model/TestFixtures.kt`,
-  `rules/CheckHelpers.kt`, `accepted/AcceptedHelpers.kt`); ein Test darf aber
-  jedes Paket sehen. Kein ADR:
+  dessen, was sie bauen oder prüfen (`core/model/TestFixtures.kt`,
+  `core/rules/CheckHelpers.kt`, `core/accepted/AcceptedHelpers.kt`); ein Test
+  darf aber jedes Paket sehen. Kein ADR:
   Die Alternative war "so lassen", der Grund sind die Zyklen. Kommt ZUGFeRD als
   weiterer Ausgabemodus, ist das der Moment für eines.
 
