@@ -77,9 +77,12 @@ class PackageStructureTest : FunSpec({
             "$root.values" to emptySet(),
         )
 
-    // Nur die Quellen unter src/main: Ein Test darf jedes Paket sehen.
+    // Nur die Quellen unter src/main: Ein Test darf jedes Paket sehen. Und nur
+    // die dieses Checkouts – scopeFromProduction() liest alles unterhalb der
+    // Projektwurzel, auch die Worktrees in .claude/worktrees mit ihrem
+    // eigenen, womöglich alten Stand.
     val sourceFiles =
-        Konsist.scopeFromProduction().files.map { file ->
+        Konsist.scopeFromDirectory("src/main/kotlin").files.map { file ->
             SourceFile(
                 name = file.name,
                 packageName = checkNotNull(file.packagee?.name) { "${file.name} hat keine package-Zeile" },
