@@ -142,6 +142,16 @@ CV/Web-Auftritt des Autors), PDF/A-Prüfung über veraPDF.
   beiden Aufzählungen nicht haben, liest ADR-0017 und baut nicht am Renderer
   vorbei.
 
+- **Texte mit Platzhaltern** (ADR-0010, ADR-0019): Der Pflichtsatz ist ein
+  `TextTemplate<InvoiceVariable>`, beim Bau zerlegt – ein vertippter Name wirft,
+  sobald `InvoiceType` geladen wird. Das `TextTemplate` kennt weder Format noch
+  Vokabular. Den Wert holt ein `VariableResolver` als `TextValue` ohne Format
+  (`InvoiceVariableResolver`, bei der `AcceptedInvoice`), wie er aussieht,
+  entscheidet das Format (`toLatex` in `generate.render`). `<<NAME>>` gibt es
+  damit zweimal:
+  die Platzhalter der Design-Vorlage (`TemplateValue`) und die Variablen eines
+  Textes (`InvoiceVariable`) – dieselbe Schreibweise, verschiedene Mengen.
+
 - **Designs** (ADR-0011): Die Stammdaten wählen das Design, `design: balken`
   oder `design: raster`, ohne Eintrag `balken`. Jedes ist eine eingebaute
   Vorlage, die derselbe Renderer füllt – kein zweiter Renderer, kein Schalter,
@@ -320,7 +330,7 @@ CV/Web-Auftritt des Autors), PDF/A-Prüfung über veraPDF.
   (BR-27 verbietet ihn). Code 384 und nicht 381: Die KoSIT führt 381 für die
   kaufmännische Gutschrift ohne Bezug. Zahlungsziel und Bankverbindung
   entfallen, weil ein Storno kein Geld fordert; die Ursprungsrechnung nennt der
-  Pflichtsatz über `<<URSPRUNGSNUMMER>>` und `<<URSPRUNGSDATUM>>` (ADR-0010),
+  Pflichtsatz über `<<URSPRUNGSNUMMER>>` und `<<URSPRUNGSDATUM>>` (ADR-0010, ADR-0019),
   eine eigene Zeile im Kopf gibt es nicht. Das Wort **Gutschrift** fällt nicht:
   Umsatzsteuerlich ist das eine Rechnung des Leistungsempfängers. Nur ganz,
   nicht teilweise – eine Teilberichtigung kennt das Projekt nicht, erwogen und
