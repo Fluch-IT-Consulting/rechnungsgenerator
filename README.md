@@ -185,7 +185,9 @@ gibt es einen Hinweis nach dem Ergebnis; die Rechnung entsteht trotzdem.
 
 ### Die Rechnungsnummer
 
-Sie darf nicht leer sein und keinen Leerraum am Rand tragen. Welche Nummern
+Sie darf nicht leer sein und keinen Leerraum am Rand tragen: Schlussrechnung
+und Storno verweisen später auf sie, und verglichen wird Zeichen für Zeichen –
+ein unsichtbares Leerzeichen ließe den Verweis ins Leere gehen. Welche Nummern
 darüber hinaus gültig sind, weiß nur der Rechnungssteller: UStAE 14.5 Abs. 10
 erlaubt Ziffern und Buchstaben und verlangt keine lückenlose Abfolge. Die
 Stammdaten dürfen deshalb ein Muster tragen, und ohne Eintrag wird die Form

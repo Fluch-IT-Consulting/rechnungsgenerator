@@ -115,6 +115,10 @@ CV/Web-Auftritt des Autors), PDF/A-Prüfung über veraPDF.
   was darin steht, bestimmt die Bytes, was nicht darin steht, nicht. Deshalb
   gehört das Datum dazu (`SOURCE_DATE_EPOCH`) und das Arbeitsverzeichnis nicht:
   Es sagt, *wohin* gesetzt wird, und bleibt mit dem Jobnamen beim Kommando.
+  Von der Zusage gibt es eine Ausnahme, eben den Jobnamen: pdfx bildet aus ihm
+  die DocumentID im XMP (ADR-0005, #297). Gleich ist das PDF also bei
+  denselben Quellen unter demselben Jobnamen, und das Kommando nimmt immer
+  `fileBaseName`.
   Gebaut wird der Wert im Renderer und nicht im Kommando, das sonst sechs
   Argumente aus vier Quellen zusammensetzte. Der Preis ist die Kante `generate.render →
   generate.toolchain` in `PackageStructureTest`: Der Renderer kennt den
@@ -232,10 +236,12 @@ CV/Web-Auftritt des Autors), PDF/A-Prüfung über veraPDF.
   im Serialisierer – ob eine Nummer gültig ist, hängt an zwei Dateien. Leere
   Nummer, Leerraum am Rand und eine Nummer, von der kein Dateiname übrig
   bleibt, brechen unabhängig vom Muster ab (`RECHNUNGSNUMMER_FEHLT`,
-  `RECHNUNGSNUMMER_MIT_LEERRAUM`, `RECHNUNGSNUMMER_OHNE_DATEINAMEN`), weil aus
-  der Nummer der Jobname für LuaLaTeX entsteht – ob das die Regeln noch trägt,
-  klärt #297; abgeleitet wird er in `CalculatedInvoice.fileBaseName`. Die
-  Nummern der abgesetzten Abschläge bleiben ungeprüft.
+  `RECHNUNGSNUMMER_MIT_LEERRAUM`, `RECHNUNGSNUMMER_OHNE_DATEINAMEN`):
+  Schlussrechnung und Storno verweisen später auf die Nummer und vergleichen
+  Zeichen für Zeichen (#53), und aus ihr entsteht der Jobname, aus dem pdfx die
+  DocumentID bildet (Nachtrag zu ADR-0005). Abgeleitet wird er in
+  `CalculatedInvoice.fileBaseName`. Die Nummern der abgesetzten Abschläge
+  bleiben ungeprüft.
 
 - **Steuerkategorie**: `TaxCategory` (BT-151, Codeliste UNCL 5305) pro Position,
   Vorgabe S. Der Satz allein genügt nicht – ohne Kategorie lässt sich "0 %"
