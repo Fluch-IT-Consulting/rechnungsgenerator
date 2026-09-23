@@ -10,6 +10,7 @@ import de.fluchitconsulting.rechnungsgenerator.values.CountryCode
 import de.fluchitconsulting.rechnungsgenerator.values.InvoiceType
 import de.fluchitconsulting.rechnungsgenerator.values.Money
 import de.fluchitconsulting.rechnungsgenerator.values.Percent
+import de.fluchitconsulting.rechnungsgenerator.values.TaxCategory
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
 import java.time.LocalDate
@@ -175,7 +176,7 @@ class CalculatedInvoiceTest : FunSpec({
     }
 
     context("USt.-Gruppen") {
-        test("je Satz auf die summierte Bemessungsgrundlage, absteigend sortiert") {
+        test("je Satz auf die summierte Bemessungsgrundlage") {
             val invoice =
                 testInvoice(
                     items =
@@ -196,6 +197,31 @@ class CalculatedInvoiceTest : FunSpec({
             vat7.amount shouldBe Money("5.60")
             totals.netTotal shouldBe Money("1180.00")
             totals.grossTotal shouldBe Money("1394.60")
+        }
+
+        // Die Positionen stehen jeweils verkehrt herum in der Datei: Ohne die
+        // Sortierung blieben die Gruppen in der Reihenfolge ihres ersten
+        // Auftretens, und der Test wäre grün, ohne etwas zu prüfen.
+        context("Reihenfolge") {
+            test("innerhalb einer Kategorie der höhere Satz zuerst") {
+                val invoice = testInvoice(items = listOf(testItem(vatRate = "7"), testItem(vatRate = "19")))
+
+                CalculatedInvoice(invoice, config).vatGroups.map { it.rate } shouldBe listOf(Percent("19"), Percent("7"))
+            }
+
+            test("die Kategorien in der Reihenfolge von TaxCategory, nicht in der der Datei") {
+                val invoice =
+                    testInvoice(
+                        items =
+                            listOf(
+                                testItem(vatRate = "0", taxCategory = TaxCategory.OUT_OF_SCOPE),
+                                testItem(vatRate = "0", taxCategory = TaxCategory.EXEMPT),
+                            ),
+                    )
+
+                CalculatedInvoice(invoice, config).vatGroups.map { it.category } shouldBe
+                    listOf(TaxCategory.EXEMPT, TaxCategory.OUT_OF_SCOPE)
+            }
         }
     }
 
