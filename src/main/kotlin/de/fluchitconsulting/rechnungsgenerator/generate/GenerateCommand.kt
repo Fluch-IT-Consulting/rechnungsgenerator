@@ -7,9 +7,12 @@ import com.github.ajalt.clikt.parameters.arguments.argument
 import com.github.ajalt.clikt.parameters.options.flag
 import com.github.ajalt.clikt.parameters.options.option
 import com.github.ajalt.clikt.parameters.types.path
-import de.fluchitconsulting.rechnungsgenerator.accepted.AcceptedInvoice
-import de.fluchitconsulting.rechnungsgenerator.accepted.Verdict
-import de.fluchitconsulting.rechnungsgenerator.calculation.CalculatedInvoice
+import de.fluchitconsulting.rechnungsgenerator.core.accepted.AcceptedInvoice
+import de.fluchitconsulting.rechnungsgenerator.core.accepted.Verdict
+import de.fluchitconsulting.rechnungsgenerator.core.calculation.CalculatedInvoice
+import de.fluchitconsulting.rechnungsgenerator.core.model.Root
+import de.fluchitconsulting.rechnungsgenerator.core.model.YamlLoader
+import de.fluchitconsulting.rechnungsgenerator.core.rules.RejectedException
 import de.fluchitconsulting.rechnungsgenerator.generate.render.InvoiceRenderer
 import de.fluchitconsulting.rechnungsgenerator.generate.toolchain.BuiltInPdfAValidator
 import de.fluchitconsulting.rechnungsgenerator.generate.toolchain.ExternalPdfAValidator
@@ -17,9 +20,6 @@ import de.fluchitconsulting.rechnungsgenerator.generate.toolchain.ExternalTool
 import de.fluchitconsulting.rechnungsgenerator.generate.toolchain.LuaLatexTypesetter
 import de.fluchitconsulting.rechnungsgenerator.generate.toolchain.ToolchainException
 import de.fluchitconsulting.rechnungsgenerator.generate.toolchain.TypesetterFactory
-import de.fluchitconsulting.rechnungsgenerator.model.Root
-import de.fluchitconsulting.rechnungsgenerator.model.YamlLoader
-import de.fluchitconsulting.rechnungsgenerator.rules.RejectedException
 import java.io.IOException
 import kotlin.io.path.copyTo
 import kotlin.io.path.createTempDirectory

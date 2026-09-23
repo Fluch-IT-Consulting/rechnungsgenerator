@@ -1,26 +1,26 @@
 package de.fluchitconsulting.rechnungsgenerator.generate.render
 
-import de.fluchitconsulting.rechnungsgenerator.accepted.accepted
-import de.fluchitconsulting.rechnungsgenerator.calculation.CalculatedInvoice
-import de.fluchitconsulting.rechnungsgenerator.model.Invoice
-import de.fluchitconsulting.rechnungsgenerator.model.LineItem
-import de.fluchitconsulting.rechnungsgenerator.model.Prepayment
-import de.fluchitconsulting.rechnungsgenerator.model.SellerConfig
-import de.fluchitconsulting.rechnungsgenerator.model.ServicePeriod
-import de.fluchitconsulting.rechnungsgenerator.model.SkontoTier
-import de.fluchitconsulting.rechnungsgenerator.model.YamlLoader
-import de.fluchitconsulting.rechnungsgenerator.model.exampleInvoices
-import de.fluchitconsulting.rechnungsgenerator.model.testInvoice
-import de.fluchitconsulting.rechnungsgenerator.model.testItem
-import de.fluchitconsulting.rechnungsgenerator.model.testPrepayment
-import de.fluchitconsulting.rechnungsgenerator.model.testSellerConfig
-import de.fluchitconsulting.rechnungsgenerator.values.CountryCode
-import de.fluchitconsulting.rechnungsgenerator.values.Design
-import de.fluchitconsulting.rechnungsgenerator.values.InvoiceType
-import de.fluchitconsulting.rechnungsgenerator.values.Logo
-import de.fluchitconsulting.rechnungsgenerator.values.Percent
-import de.fluchitconsulting.rechnungsgenerator.values.TaxCategory
-import de.fluchitconsulting.rechnungsgenerator.values.VatId
+import de.fluchitconsulting.rechnungsgenerator.core.accepted.accepted
+import de.fluchitconsulting.rechnungsgenerator.core.calculation.CalculatedInvoice
+import de.fluchitconsulting.rechnungsgenerator.core.model.Invoice
+import de.fluchitconsulting.rechnungsgenerator.core.model.LineItem
+import de.fluchitconsulting.rechnungsgenerator.core.model.Prepayment
+import de.fluchitconsulting.rechnungsgenerator.core.model.SellerConfig
+import de.fluchitconsulting.rechnungsgenerator.core.model.ServicePeriod
+import de.fluchitconsulting.rechnungsgenerator.core.model.SkontoTier
+import de.fluchitconsulting.rechnungsgenerator.core.model.YamlLoader
+import de.fluchitconsulting.rechnungsgenerator.core.model.exampleInvoices
+import de.fluchitconsulting.rechnungsgenerator.core.model.testInvoice
+import de.fluchitconsulting.rechnungsgenerator.core.model.testItem
+import de.fluchitconsulting.rechnungsgenerator.core.model.testPrepayment
+import de.fluchitconsulting.rechnungsgenerator.core.model.testSellerConfig
+import de.fluchitconsulting.rechnungsgenerator.core.values.CountryCode
+import de.fluchitconsulting.rechnungsgenerator.core.values.Design
+import de.fluchitconsulting.rechnungsgenerator.core.values.InvoiceType
+import de.fluchitconsulting.rechnungsgenerator.core.values.Logo
+import de.fluchitconsulting.rechnungsgenerator.core.values.Percent
+import de.fluchitconsulting.rechnungsgenerator.core.values.TaxCategory
+import de.fluchitconsulting.rechnungsgenerator.core.values.VatId
 import io.kotest.assertions.withClue
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.collections.shouldBeEmpty
@@ -61,7 +61,7 @@ class InvoiceRendererTest : FunSpec({
     // gelesen hat der Test die Datei selbst, wie sonst YamlLoader.
     val beispielLogo = Logo(Path.of("logo.tex"), resource("logo.tex").toByteArray())
 
-    fun renderMit(vararg items: de.fluchitconsulting.rechnungsgenerator.model.LineItem): String {
+    fun renderMit(vararg items: de.fluchitconsulting.rechnungsgenerator.core.model.LineItem): String {
         val invoice = testInvoice(items = items.toList())
         return InvoiceRenderer.render(CalculatedInvoice(invoice, config).accepted()).sources.tex
     }

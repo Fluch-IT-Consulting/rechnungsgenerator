@@ -1,6 +1,6 @@
 package de.fluchitconsulting.rechnungsgenerator.generate.render
 
-import de.fluchitconsulting.rechnungsgenerator.values.Design
+import de.fluchitconsulting.rechnungsgenerator.core.values.Design
 
 // Ein Platzhalter der Vorlage: <<GROSSGESCHRIEBEN>>.
 // Die Klammer um den Namen ist eine Gruppe: groupValues[1] liefert den

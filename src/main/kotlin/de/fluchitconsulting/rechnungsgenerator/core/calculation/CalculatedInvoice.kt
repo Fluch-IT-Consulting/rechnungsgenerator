@@ -1,0 +1,311 @@
+package de.fluchitconsulting.rechnungsgenerator.core.calculation
+
+import de.fluchitconsulting.rechnungsgenerator.core.model.Invoice
+import de.fluchitconsulting.rechnungsgenerator.core.model.LineItem
+import de.fluchitconsulting.rechnungsgenerator.core.model.Prepayment
+import de.fluchitconsulting.rechnungsgenerator.core.model.SellerConfig
+import de.fluchitconsulting.rechnungsgenerator.core.model.SkontoTier
+import de.fluchitconsulting.rechnungsgenerator.core.values.Discount
+import de.fluchitconsulting.rechnungsgenerator.core.values.EuMemberStates
+import de.fluchitconsulting.rechnungsgenerator.core.values.Money
+import de.fluchitconsulting.rechnungsgenerator.core.values.Percent
+import de.fluchitconsulting.rechnungsgenerator.core.values.TaxCategory
+import de.fluchitconsulting.rechnungsgenerator.core.values.sumOf
+import java.time.LocalDate
+
+// Eine Rechnung samt allem, was sich aus ihr und den Stammdaten ausrechnet.
+// Unveränderlich. Gesetzt wird sie erst als `AcceptedInvoice` (ADR-0007).
+
+data class CalculatedLine(
+    val item: LineItem,
+) {
+    // Wie bei CalculatedInvoice steht im Konstruktor nur die Eingabe, die
+    // Beträge rechnet der Rumpf: Eine Zeile mit dem Netto einer anderen
+    // Position ist so nicht baubar.
+
+    // Menge × Einzelpreis (BT-137, Basis des Rabatts). roundToAmount() ist die
+    // einzige Rundung vom Price zum Money, und der Compiler erzwingt sie:
+    // unitPrice ist ein Price (exakt), base ein Money (zwei Stellen).
+    val base: Money = (item.unitPrice * item.quantity).roundToAmount()
+
+    // BT-136, ohne Rabatt null.
+    //
+    // Der Satz bringt das Vorzeichen von selbst mit: Money × Percent rundet
+    // HALF_UP, also weg von der Null, und bei negativer Menge im Storno ist
+    // damit auch der Rabatt spiegelbildlich. Der Betrag steht positiv in der
+    // YAML und bekommt es hier – sonst forderte ein Storno mehr zurück, als
+    // die Ursprungsrechnung verlangt hat.
+    val discountAmount: Money? =
+        when (val discount = item.discount) {
+            null -> null
+            is Discount.Rate -> base * discount.rate
+            is Discount.Amount -> if (base.isNegative()) -discount.amount else discount.amount
+        }
+
+    // BT-131. Die Differenz und nicht Basis × (1 − Satz): Sonst würden
+    // Rabattbetrag und Netto je für sich gerundet und ergäben zusammen
+    // nicht immer die Basis.
+    val net: Money = discountAmount?.let { base - it } ?: base
+}
+
+/**
+ * Eine Zeile der Steueraufschlüsselung – EN 16931 BG-23.
+ *
+ * Gruppiert wird nach Kategorie *und* Satz, nicht nur nach Satz: Zwei
+ * Positionen mit 0 % können steuerlich völlig Verschiedenes bedeuten
+ * (steuerbefreit, Reverse Charge, nicht steuerbar) und gehören dann in
+ * getrennte Zeilen.
+ */
+data class VatGroup(
+    val category: TaxCategory,
+    val rate: Percent,
+    // Bemessungsgrundlage: Summe aller Positionsnetto-Beträge dieser Gruppe.
+    val base: Money,
+    val amount: Money,
+    /**
+     * Die Befreiungsgründe, die die Positionen dieser Gruppe ausdrücklich
+     * nennen – ohne den Vorgabegrund der Kategorie.
+     *
+     * Die Gruppe trägt alle und nicht nur den einen, der auf das PDF kommt:
+     * Sonst gäbe [exemptionReason] `null` für "kein Grund" ebenso wie für
+     * "uneinig", und die Regel BEFREIUNGSGRUENDE_UNEINHEITLICH müsste den
+     * Gruppenschlüssel nachbauen, um das eine vom anderen zu unterscheiden.
+     * Änderte sich dann die Gruppierung, prüfte sie still andere Gruppen (#148).
+     */
+    val reasons: Set<String> = emptySet(),
+) {
+    /**
+     * BT-120, nur bei Kategorien, die einen Grund verlangen. Alle Positionen
+     * einer Gruppe müssen sich einig sein: BG-23 trägt genau einen Grund je
+     * Kategorie und Satz.
+     *
+     * Ohne Einigkeit gibt es keinen Grund: Einen der beiden zu wählen hieße
+     * raten, welcher gemeint war. Gemeldet wird das als
+     * BEFREIUNGSGRUENDE_UNEINHEITLICH.
+     */
+    val exemptionReason: String? get() =
+        when {
+            !category.requiresReason -> null
+            reasons.size > 1 -> null
+            else -> reasons.singleOrNull() ?: category.defaultReason
+        }
+}
+
+/**
+ * Ein abgesetzter Abschlag mit seinen Summen.
+ *
+ * Netto und Steuer bleiben getrennt (ADR-0002): §14 Abs. 5 Satz 2 UStG setzt
+ * das Entgelt *und* die darauf entfallende Steuer ab, und aus einem
+ * Bruttobetrag ließe sich beides nicht zurückgewinnen.
+ */
+data class DeductedPrepayment(
+    val prepayment: Prepayment,
+    val net: Money,
+    val vat: Money,
+    val gross: Money,
+)
+
+/**
+ * Eine Rechnung, wie sie sich mit ihren Stammdaten ausrechnet – und nicht
+ * geprüft: Das tun die Regelgruppen unter `rules`, jede gegen dieses Ergebnis
+ * (#71, ADR-0004).
+ *
+ * Im Konstruktor stehen nur die Eingaben, alles Weitere rechnet der Rumpf aus.
+ * Ein Paar aus einer Rechnung und den Summen einer anderen ist damit nicht
+ * baubar – auch nicht über `copy()`, denn das baut neu und rechnet neu (#172).
+ *
+ * Verworfen: ein privater Konstruktor wie bei `AcceptedInvoice`. `copy()`
+ * einer Data Class bleibt in Kotlin 2.4 trotzdem öffentlich, erst
+ * `@ConsistentCopyVisibility` schließt es. Und die Summen blieben gespeichert
+ * statt abgeleitet.
+ */
+data class CalculatedInvoice(
+    val invoice: Invoice,
+    val config: SellerConfig,
+) {
+    // Die Eigenschaften im Rumpf initialisiert Kotlin von oben nach unten, beim
+    // Bau und nur einmal. Liest eine davon direkt eine weiter unten stehende,
+    // ist das ein Compilerfehler; geht der Zugriff über eine Funktion, kommt
+    // zur Laufzeit `null` heraus.
+
+    // Erst pro Position runden, dann summieren – so stimmt die Summe mit dem
+    // überein, was der Leser auf der Rechnung nachrechnen kann. Gerundet wird in
+    // CalculatedLine.
+    val lines: List<CalculatedLine> = invoice.items.map(::CalculatedLine)
+
+    val netTotal: Money = lines.sumOf { it.net }
+
+    // USt. je Gruppe auf die summierte Bemessungsgrundlage berechnen
+    // (nicht je Position!), so verlangt es EN 16931 (BG-23).
+    //
+    // Die Reihenfolge ist fest und hängt nicht an der Datei: nach Kategorie,
+    // wie TaxCategory sie aufzählt, darin der höhere Satz zuerst. Sie steht
+    // auf dem Blatt – Steuerzeilen und Hinweise zu den Befreiungen – und in
+    // den steueranteilen, die `abschlaege` ausgibt; tauschen Positionen die
+    // Plätze, soll sich keins davon ändern. Welche der beiden Stufen vorn
+    // steht, sieht man auf einer angenommenen Rechnung nicht: S hat immer
+    // einen Satz über 0, jede andere Kategorie 0 (REGELSATZ_MIT_NULL,
+    // SATZ_MUSS_NULL_SEIN).
+    val vatGroups: List<VatGroup> =
+        lines
+            .groupBy { it.item.taxCategory to it.item.vatRate }
+            .map { (schluessel, group) ->
+                val (category, rate) = schluessel
+                val base = group.sumOf { it.net }
+                VatGroup(
+                    category = category,
+                    rate = rate,
+                    base = base,
+                    amount = base * rate,
+                    reasons = group.mapNotNull { it.item.taxExemptionReason }.toSet(),
+                )
+            }.sortedWith(compareBy<VatGroup> { it.category }.thenByDescending { it.rate.valueAsPercentage })
+
+    val grossTotal: Money = netTotal + vatGroups.sumOf { it.amount }
+
+    /** Die abgesetzten Abschläge, in der Reihenfolge der Rechnungsdatei. */
+    val prepayments: List<DeductedPrepayment> =
+        invoice.prepayments.map { abschlag ->
+            val net = abschlag.taxShares.sumOf { it.net }
+            val vat = abschlag.taxShares.sumOf { it.vat }
+            DeductedPrepayment(abschlag, net = net, vat = vat, gross = net + vat)
+        }
+
+    /**
+     * Die vereinbarte Zahlungsfrist in Tagen: die der Rechnung, sonst die der
+     * Stammdaten. Abgeleitet und nicht kopiert – als eigenes Feld wäre es
+     * dieselbe Angabe ein zweites Mal, und die zweite kann abweichen.
+     */
+    val paymentTermDays: Int get() = invoice.paymentTermDaysOverride ?: config.paymentTermDays
+
+    /**
+     * Die Skontostufen, nach der Skontofrist sortiert. Die Datei darf sie in
+     * beliebiger Reihenfolge nennen; sortiert wird hier einmal, damit Regeln
+     * und Satz dieselbe Liste lesen.
+     */
+    val skonto: List<SkontoTier> get() = invoice.skonto.sortedBy { it.days }
+
+    /** Der letzte Tag, an dem eine Zahlung den Skontosatz dieser Stufe abziehen darf. */
+    fun skontoUntil(stufe: SkontoTier): LocalDate = invoice.issueDate.plusDays(stufe.days.toLong())
+
+    // Abgeleitet statt gespeichert: Zwei Felder, die dasselbe sagen wie die
+    // Liste, könnten von ihr abweichen.
+    val prepaymentTotal: Money get() = prepayments.sumOf { it.gross }
+
+    /** Was nach der Absetzung noch zu zahlen ist. Null ist zulässig, negativ nicht. */
+    val remainingAmount: Money get() = grossTotal - prepaymentTotal
+
+    /**
+     * Decken die vereinnahmten Abschläge den Rechnungsbetrag genau? Dann steht
+     * statt eines Restbetrags von null ein Satz auf dem Blatt.
+     *
+     * Hier und nicht im Renderer (#148). Von [requestsPayment] bleibt es
+     * getrennt: "ausgeglichen" heißt genau null, "fordert kein Geld" heißt
+     * nicht positiv. Ausgeglichen *und* Konto ist damit nicht baubar, weil null
+     * nicht positiv ist.
+     *
+     * Ohne Abschläge ist nichts ausgeglichen, auch nicht bei Gesamtbetrag null.
+     */
+    val settledByPrepayments: Boolean get() = prepayments.isNotEmpty() && remainingAmount.isZero()
+
+    /**
+     * Fordert dieses Dokument zur Zahlung auf?
+     *
+     * Nicht dasselbe wie [InvoiceType.chargesForService]: Eine Schlussrechnung,
+     * deren Abschläge den Betrag decken, rechnet die Leistung ab – sie *ist* die
+     * Rechnung darüber –, fordert aber kein Geld mehr. Die Stornorechnung tut
+     * beides nicht (ADR-0006).
+     *
+     * Aus dieser einen Aussage folgen Zahlungsziel und Bankverbindung (#94).
+     * Die Entscheidung fällt hier und nicht im Renderer – der setzt, was
+     * dasteht, und entscheidet nicht, was dastehen soll.
+     *
+     * Positiv und nicht bloß "nicht null": Ein negativer Betrag fordert kein
+     * Geld, gleich was die Art abrechnet. Auf ein PDF kommt er heute ohnehin
+     * nicht, GESAMTBETRAG_NEGATIV und RESTBETRAG_NEGATIV lehnen ihn ab. Die
+     * Aussage soll aber am Wert selbst hängen und nicht daran, dass Regeln in
+     * anderen Gruppen zu ihr passen (#130).
+     */
+    val requestsPayment: Boolean get() = invoice.type.chargesForService && remainingAmount.isPositive()
+
+    /**
+     * Ist das eine Inlandsrechnung? Glossar *Inland*: Der Kunde sitzt im Land
+     * des Rechnungsstellers – nicht "in Deutschland". Beides fällt nur
+     * zusammen, solange der Rechnungssteller in Deutschland sitzt.
+     *
+     * Die Verwechslung ist schon passiert: Im Renderer stand ein fester
+     * Vergleich mit "DE". Ein kleingeschriebenes `land: de` bekam dort eine
+     * Landzeile, während die Regeln dieselbe Rechnung als Inlandsrechnung
+     * behandelten, und ein Rechnungssteller in Österreich hätte "AT" unter jede
+     * seiner Inlandsanschriften gesetzt. Danach rechneten Renderer und Regeln
+     * den Vergleich je für sich – ein Umzug musste an zwei Stellen richtig
+     * sein. Jetzt steht er hier einmal (#120). Ein schlichtes `==` genügt, weil
+     * `CountryCode` die Schreibweise vereinheitlicht.
+     */
+    val isDomestic: Boolean get() = invoice.customer.address.countryCode == config.address.countryCode
+
+    /**
+     * Sitzt der Kunde in einem EU-Mitgliedstaat? Glossar *Ausland*: Ausland
+     * und EU sind zwei Fragen, nicht eine – ein Kunde in Deutschland ist für
+     * einen Rechnungssteller in der Schweiz Ausland *und* EU.
+     *
+     * Davon hängt ab, ob die USt-IdNr. über VIES oder das BZSt überhaupt
+     * geprüft werden kann.
+     */
+    val customerInEu: Boolean get() = EuMemberStates.contains(invoice.customer.address.countryCode)
+
+    /**
+     * Die Steuerkategorien, die auf dieser Rechnung vorkommen – aus derselben
+     * Gruppierung wie die Steueraufschlüsselung, in deren Reihenfolge.
+     *
+     * Welche davon etwas verlangen, fragt jede Regel selbst: Die USt-IdNr. auf
+     * dem Papier und der Nachweis der Abfrage sind zwei Eigenschaften der
+     * Kategorie, keine gemeinsame Menge (#148).
+     */
+    val taxCategories: Set<TaxCategory> get() = vatGroups.map { it.category }.toSet()
+
+    /**
+     * Bis wann zu zahlen ist – oder `null`, wenn das Dokument nicht zur Zahlung
+     * auffordert ([requestsPayment]). Bei einer Schlussrechnung ohne Restbetrag
+     * wäre ein Zahlungsziel neben "es verbleibt kein Restbetrag" die zweite,
+     * andere Aussage desselben Blattes.
+     *
+     * Abgeleitet und nicht gesetzt, aus demselben Grund wie [remainingAmount]:
+     * Ein Ergebnis mit Zahlungsziel *und* Restbetrag null ist damit nicht
+     * baubar – nicht bloß ungebaut.
+     */
+    val dueDate: LocalDate? get() =
+        if (!requestsPayment) {
+            null
+        } else {
+            invoice.issueDate.plusDays(paymentTermDays.toLong())
+        }
+
+    /**
+     * Rechnungsart und -nummer als Jobname für LuaLaTeX –
+     * "Abschlagsrechnung-R26-009". Oder `null`, wenn von der Nummer nichts
+     * übrig bleibt; das meldet `RECHNUNGSNUMMER_OHNE_DATEINAMEN`.
+     *
+     * Das PDF heißt wie die Rechnungsdatei (ADR-0018), nicht so. Der Name ist
+     * trotzdem nicht beliebig: pdfx bildet aus ihm die DocumentID im XMP, als
+     * MD5-Summe über "<Jobname>.pdf" (#297). Mit Art und Nummer ist sie je
+     * Rechnung verschieden; ein fester Name gäbe allen dieselbe, und jeder
+     * andere änderte jedes schon erzeugte PDF.
+     *
+     * Von der Nummer bleibt nur der portable Zeichensatz für Dateinamen aus
+     * POSIX stehen, alles andere wird zum Bindestrich – der Jobname ist der
+     * Name der .tex im Arbeitsverzeichnis. Das ist kein Wissen über LuaLaTeX,
+     * auch wenn es dort über Leerzeichen im Jobnamen stolpert.
+     *
+     * Hier und nicht im Kommando (#150): Dort fiel eine Nummer ohne Dateinamen
+     * erst auf, nachdem die Rechnung angenommen war – mit weiteren Abbrüchen in
+     * der Datei also erst im zweiten Lauf.
+     */
+    val fileBaseName: String? get() =
+        invoice.number
+            .replace(Regex("[^A-Za-z0-9._-]"), "-")
+            .trim('-')
+            // takeIf gibt den Wert zurück, wenn die Bedingung gilt, sonst null.
+            .takeIf { it.isNotEmpty() }
+            ?.let { "${invoice.type.documentName}-$it" }
+}

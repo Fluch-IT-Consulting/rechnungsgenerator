@@ -1,6 +1,6 @@
 package de.fluchitconsulting.rechnungsgenerator
 
-import de.fluchitconsulting.rechnungsgenerator.model.Root
+import de.fluchitconsulting.rechnungsgenerator.core.model.Root
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.string.shouldContain

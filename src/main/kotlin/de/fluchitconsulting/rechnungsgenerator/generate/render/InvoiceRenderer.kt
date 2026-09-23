@@ -1,14 +1,14 @@
 package de.fluchitconsulting.rechnungsgenerator.generate.render
 
-import de.fluchitconsulting.rechnungsgenerator.accepted.AcceptedInvoice
+import de.fluchitconsulting.rechnungsgenerator.core.accepted.AcceptedInvoice
+import de.fluchitconsulting.rechnungsgenerator.core.values.Logo
 import de.fluchitconsulting.rechnungsgenerator.generate.toolchain.PdfSources
-import de.fluchitconsulting.rechnungsgenerator.values.Logo
 
 /**
  * Setzt die LaTeX-Vorlage mit den Werten einer Rechnung zusammen.
  *
  * Der Renderer rechnet nichts – er bekommt die fertige
- * [de.fluchitconsulting.rechnungsgenerator.calculation.CalculatedInvoice] und
+ * [de.fluchitconsulting.rechnungsgenerator.core.calculation.CalculatedInvoice] und
  * formatiert nur. Umgekehrt kennt der Calculator kein LaTeX. Diese Trennung ist
  * der Grund, warum die Steuerlogik ohne einen einzigen LaTeX-Lauf testbar ist.
  *

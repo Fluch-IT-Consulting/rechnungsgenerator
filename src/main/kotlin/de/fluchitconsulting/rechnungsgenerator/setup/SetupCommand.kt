@@ -3,7 +3,7 @@ package de.fluchitconsulting.rechnungsgenerator.setup
 import com.github.ajalt.clikt.core.CliktError
 import com.github.ajalt.clikt.core.Context
 import com.github.ajalt.clikt.core.CoreCliktCommand
-import de.fluchitconsulting.rechnungsgenerator.model.Root
+import de.fluchitconsulting.rechnungsgenerator.core.model.Root
 import java.io.IOException
 import java.nio.file.Path
 import kotlin.io.path.createDirectories

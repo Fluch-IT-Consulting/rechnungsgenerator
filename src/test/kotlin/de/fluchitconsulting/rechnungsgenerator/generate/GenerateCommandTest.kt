@@ -4,13 +4,13 @@ import com.github.ajalt.clikt.core.CliktError
 import com.github.ajalt.clikt.core.context
 import com.github.ajalt.clikt.core.parse
 import de.fluchitconsulting.rechnungsgenerator.RechnungsgeneratorCommand
+import de.fluchitconsulting.rechnungsgenerator.core.model.Root
 import de.fluchitconsulting.rechnungsgenerator.generate.toolchain.BuiltInPdfAValidator
 import de.fluchitconsulting.rechnungsgenerator.generate.toolchain.ExternalPdfAValidator
 import de.fluchitconsulting.rechnungsgenerator.generate.toolchain.FakeTypesetter
 import de.fluchitconsulting.rechnungsgenerator.generate.toolchain.PdfAValidator
 import de.fluchitconsulting.rechnungsgenerator.generate.toolchain.ToolchainException
 import de.fluchitconsulting.rechnungsgenerator.generate.toolchain.Typesetter
-import de.fluchitconsulting.rechnungsgenerator.model.Root
 import de.fluchitconsulting.rechnungsgenerator.runCli
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.FunSpec

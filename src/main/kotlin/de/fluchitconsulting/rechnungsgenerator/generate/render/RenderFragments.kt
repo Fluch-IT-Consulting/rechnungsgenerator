@@ -1,8 +1,8 @@
 package de.fluchitconsulting.rechnungsgenerator.generate.render
 
-import de.fluchitconsulting.rechnungsgenerator.model.ServicePeriod
-import de.fluchitconsulting.rechnungsgenerator.values.InvoiceType
-import de.fluchitconsulting.rechnungsgenerator.values.Money
+import de.fluchitconsulting.rechnungsgenerator.core.model.ServicePeriod
+import de.fluchitconsulting.rechnungsgenerator.core.values.InvoiceType
+import de.fluchitconsulting.rechnungsgenerator.core.values.Money
 
 // Kleine Satzbausteine, die mehrere Blöcke teilen – Positionen und Summen
 // brauchen dieselben Trenner, Summen und Absetzung dieselbe Abschlusszeile.

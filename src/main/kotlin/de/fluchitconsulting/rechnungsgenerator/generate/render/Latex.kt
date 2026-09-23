@@ -1,8 +1,8 @@
 package de.fluchitconsulting.rechnungsgenerator.generate.render
 
-import de.fluchitconsulting.rechnungsgenerator.values.TextTemplate
-import de.fluchitconsulting.rechnungsgenerator.values.TextValue
-import de.fluchitconsulting.rechnungsgenerator.values.VariableResolver
+import de.fluchitconsulting.rechnungsgenerator.core.values.TextTemplate
+import de.fluchitconsulting.rechnungsgenerator.core.values.TextValue
+import de.fluchitconsulting.rechnungsgenerator.core.values.VariableResolver
 
 /**
  * Ein fertiges Stück LaTeX – gesetzt aus Text, der maskiert wurde, oder aus
