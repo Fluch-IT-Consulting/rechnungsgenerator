@@ -1,5 +1,8 @@
 package de.fluchitconsulting.rechnungsgenerator.rules
 
+import de.fluchitconsulting.rechnungsgenerator.accepted.AcceptedInvoice
+import de.fluchitconsulting.rechnungsgenerator.accepted.Verdict
+import de.fluchitconsulting.rechnungsgenerator.accepted.accepted
 import de.fluchitconsulting.rechnungsgenerator.calculation.CalculatedInvoice
 import de.fluchitconsulting.rechnungsgenerator.model.CancelledInvoice
 import de.fluchitconsulting.rechnungsgenerator.model.Invoice

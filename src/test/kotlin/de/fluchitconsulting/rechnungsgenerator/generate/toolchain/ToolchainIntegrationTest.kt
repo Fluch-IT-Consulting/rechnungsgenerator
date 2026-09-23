@@ -1,9 +1,9 @@
 package de.fluchitconsulting.rechnungsgenerator.generate.toolchain
 
+import de.fluchitconsulting.rechnungsgenerator.accepted.accepted
 import de.fluchitconsulting.rechnungsgenerator.calculation.CalculatedInvoice
 import de.fluchitconsulting.rechnungsgenerator.generate.render.InvoiceRenderer
 import de.fluchitconsulting.rechnungsgenerator.model.YamlLoader
-import de.fluchitconsulting.rechnungsgenerator.rules.accepted
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.assertions.withClue
 import io.kotest.core.Tag

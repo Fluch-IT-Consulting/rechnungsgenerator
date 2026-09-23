@@ -1,9 +1,11 @@
-package de.fluchitconsulting.rechnungsgenerator.rules
+package de.fluchitconsulting.rechnungsgenerator.accepted
 
 import de.fluchitconsulting.rechnungsgenerator.calculation.CalculatedInvoice
 import de.fluchitconsulting.rechnungsgenerator.model.testInvoice
 import de.fluchitconsulting.rechnungsgenerator.model.testItem
 import de.fluchitconsulting.rechnungsgenerator.model.testSellerConfig
+import de.fluchitconsulting.rechnungsgenerator.rules.Rule
+import de.fluchitconsulting.rechnungsgenerator.rules.rules
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.inspectors.forAll
 import io.kotest.matchers.collections.shouldNotBeEmpty
