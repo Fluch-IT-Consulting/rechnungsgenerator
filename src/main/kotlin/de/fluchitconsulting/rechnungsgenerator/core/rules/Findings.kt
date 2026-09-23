@@ -90,6 +90,12 @@ sealed interface Subject {
  *
  * Die Kennungen sind nicht nummeriert. Die zehn Nummern der Absetzung standen
  * nur in Kommentaren und Testnamen und liefen dort schon auseinander.
+ *
+ * Auch die Kennungen, die allein `abschlaege` vergibt, stehen hier und nicht
+ * in `prepayments` (#314): Was das Programm ablehnt, steht so an einer Stelle,
+ * und `abschlaege` meldet die Abbrüche der gelesenen Abschlagsrechnungen in
+ * derselben Liste wie seine eigenen. Getrennt bräuchte [Finding] statt dieses
+ * Enums ein offenes Interface.
  */
 enum class Rule(val severity: Severity) {
     // Die Form der Rechnungsnummer (ADR-0005)
