@@ -311,11 +311,12 @@ private class Blatt(
     }
 
     companion object {
-        // \s kennt weder das geschützte (U+00A0) noch die schmalen Leerzeichen;
-        // das Minuszeichen U+2212 gilt wie "-".
+        // \s kennt weder das geschützte (U+00A0) noch die schmalen Leerzeichen.
+        // Das Minuszeichen bleibt, wie es ist: Gleichgesetzt mit "-" ließe das
+        // Netz einen Bindestrich vor einer Zahl durch (#320).
         private val LEERRAUM = Regex("[\\s\\u00A0\\u2009\\u202F]+")
 
-        fun normalize(s: String): String = s.replace(LEERRAUM, " ").replace('−', '-').trim()
+        fun normalize(s: String): String = s.replace(LEERRAUM, " ").trim()
     }
 }
 
@@ -485,7 +486,10 @@ private fun Blatt.pruefe(
 // Bewusst unabhängig von GermanFormat, siehe oben. Jede Funktion liefert alle
 // Schreibweisen, die ein Design wählen darf.
 
-private val SYMBOLE = DecimalFormatSymbols(Locale.GERMANY)
+// Eine negative Zahl trägt das Minuszeichen U+2212, in jedem Design (#320).
+// Hier eigens gesetzt und nicht aus GermanFormat übernommen: Es ist die
+// Erwartung an das Blatt, und Locale.GERMANY brächte den Bindestrich mit.
+private val SYMBOLE = DecimalFormatSymbols(Locale.GERMANY).apply { minusSign = '\u2212' }
 
 private fun zahl(
     value: BigDecimal,
