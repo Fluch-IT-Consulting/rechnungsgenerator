@@ -53,6 +53,14 @@ import kotlin.io.path.writeText
  * (ADR-0020): der Satz am Ende jeder Seite, auf die eine weitere folgt, und
  * die Seitenzahl im Kopf jeder Folgeseite. Beides fehlt auf einer Rechnung
  * mit einer Seite.
+ *
+ * [grussformel] steht zwischen Schlusssatz und Name; null, wenn das Design
+ * keine setzt – raster schließt mit dem Schlusssatz.
+ *
+ * [schlusssatzBeiZahlungsfrist]: Das Design nennt die Zahlungsfrist als Satz
+ * unter den Summen und hält den Schlusssatz daran fest, damit er nicht allein
+ * auf der letzten Seite steht. In balken steht die Frist im Kopf, und den
+ * Schlusssatz hält der Gruß.
  */
 private data class Design(
     val name: String,
@@ -62,6 +70,8 @@ private data class Design(
     val rabattBeschriftung: String,
     val fortsetzungshinweis: String,
     val seitenzahl: (seite: Int, von: Int) -> String,
+    val grussformel: String?,
+    val schlusssatzBeiZahlungsfrist: Boolean,
 )
 
 /**
@@ -124,6 +134,8 @@ class PflichtangabenTest : FunSpec({
                 rabattBeschriftung = "R A B AT T",
                 fortsetzungshinweis = "Fortsetzung auf der nächsten Seite",
                 seitenzahl = { seite, von -> "Seite $seite von $von" },
+                grussformel = "Mit freundlichen Grüßen",
+                schlusssatzBeiZahlungsfrist = false,
             ),
             Design(
                 name = "raster",
@@ -134,6 +146,8 @@ class PflichtangabenTest : FunSpec({
                 rabattBeschriftung = "Rabatt",
                 fortsetzungshinweis = "Fortsetzung auf der nächsten Seite",
                 seitenzahl = { seite, von -> "Seite $seite von $von" },
+                grussformel = null,
+                schlusssatzBeiZahlungsfrist = true,
             ),
         )
 
@@ -200,6 +214,21 @@ class PflichtangabenTest : FunSpec({
         }
     }
 
+    // Der Schluss an der Seitengrenze (ADR-0020): Die Positionen füllen die
+    // zweite Seite so weit, dass sie ohne Zusammenhalt in balken zwischen
+    // Schlusssatz und Grußformel bräche und in raster zwischen Zahlungsfrist
+    // und Schlusssatz. Was dann beisammenstehen muss, prüft
+    // `pruefe` an jeder mehrseitigen Rechnung; diese Datei ist die, bei der
+    // es darauf ankommt.
+    for (design in designs) {
+        test("Schluss an der Seitengrenze im Design ${design.name}: der Schluss bricht nicht auseinander") {
+            val (_, blatt) =
+                setzeUndPruefe("schluss-an-der-seitengrenze", design, design.stammdaten, zielname = "${design.name}-grenze")
+
+            blatt.seiten shouldBeGreaterThan 1
+        }
+    }
+
     // Die Stammdaten oben führen eine Geschäftsführung, und raster läuft dort
     // mit Logo. Zwei Zweige der Vorlagen erreichten so nie ein echtes PDF: der
     // Name des Inhabers, der nur ohne Geschäftsführung dasteht, und raster
@@ -251,6 +280,9 @@ private class Blatt(
         angabe: String,
         vararg schreibweisen: String,
     ) = steht(seitenText[seite - 1], "$angabe auf Seite $seite", schreibweisen)
+
+    /** Die erste Seite, auf der die Angabe vollständig steht, oder null. */
+    fun seiteMit(angabe: String): Int? = seitenText.indexOfFirst { normalize(angabe) in it }.takeIf { it >= 0 }?.plus(1)
 
     fun fehltAufSeite(
         seite: Int,
@@ -430,6 +462,21 @@ private fun Blatt.pruefe(
             stehtAufSeite(seite, "Seitenzahl", design.seitenzahl(seite, seiten))
             stehtAufSeite(seite, "Rechnungsnummer", invoice.number)
             stehtAufSeite(seite, "Rechnungsdatum", *datum(invoice.issueDate))
+        }
+
+        // Schlusssatz, Grußformel und Name brechen nicht auseinander: Der Satz
+        // steht ganz auf einer Seite, und Gruß und Name stehen auf derselben.
+        val schlusssatz = invoice.note ?: config.closingLine
+        val seite = seiteMit(schlusssatz)
+        withClue("Schlusssatz steht auf keiner Seite vollständig: $schlusssatz") { (seite != null) shouldBe true }
+        val grussformel = design.grussformel
+        if (seite != null && grussformel != null) {
+            stehtAufSeite(seite, "Grußformel beim Schlusssatz", grussformel)
+            stehtAufSeite(seite, "Name beim Schlusssatz", config.ownerName)
+        }
+        // Ohne Skonto ist die Zahlungsfrist der Satz direkt vor dem Schlusssatz.
+        if (seite != null && design.schlusssatzBeiZahlungsfrist && dueDate != null && invoice.skonto.isEmpty()) {
+            stehtAufSeite(seite, "Zahlungsfrist beim Schlusssatz", design.zahlungszielBeschriftung)
         }
     }
 }

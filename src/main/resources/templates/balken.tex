@@ -193,8 +193,13 @@
 %% Eingabedaten gehören deshalb nicht hier hinein: Eine Abkürzung wie "Dr."
 %% bekäme sonst wieder den breiten Abstand. Das % hinter \noindent verhindert
 %% einen Leerraum am Absatzanfang.
+%%
+%% Ein solcher Satz bricht nicht über zwei Seiten (ADR-0020): Eine Seite, die
+%% mit "gezahlter Betrag wird erstattet." beginnt, hat den Anfang verloren.
+%% Deshalb endet der Absatz im Makro, und dort gilt \interlinepenalty – die
+%% Strafe zählt, wenn der Absatz gebrochen wird, nicht wenn er beginnt.
 \newcommand{\hinweisabsatz}[1]{\par\vspace{6mm}\noindent%
-  {\nonfrenchspacing\sfcode`\:=1000 \sfcode`\;=1000 \sfcode`\,=1000 #1}}
+  {\interlinepenalty=10000 \nonfrenchspacing\sfcode`\:=1000 \sfcode`\;=1000 \sfcode`\,=1000 #1\par}}
 
 %% Der Kopf des Absetzungsblocks: wie ein Hinweisabsatz, aber mit Luft zur
 %% Tabelle darunter – sonst klebt die erste Rechnung an der Ankündigung.
@@ -437,11 +442,17 @@ USt-IdNr. <<USTID>> · <<INSTITUT>> · BIC <<BIC>> · IBAN <<IBAN>>}}
 %% Ohne Zahlungsaufforderung: Das Zahlungsziel steht oben rechts, ein Satz
 %% darüber wäre die zweite Nennung desselben Datums. Auf welches Konto zu
 %% zahlen ist, sagt die Bankverbindung darunter.
-<<SCHLUSSSATZ>>
-
+%%
+%% Schlusssatz, Gruß und Name brechen nicht auseinander: Sonst stünde auf der
+%% letzten Seite ein "Mit freundlichen Grüßen" ohne den Satz, den es beschließt.
+%% Gehalten wird mit Strafen und nicht mit einer Box, denn Strafen nehmen keinen
+%% Raum ein, und eine Rechnung mit einer Seite bleibt, wie sie ist:
+%% \interlinepenalty im Satz, \nopagebreak danach, \\* im Gruß.
+{\interlinepenalty=10000 <<SCHLUSSSATZ>>\par}
+\nopagebreak
 \vspace{5mm}
 
-Mit freundlichen Grüßen\\[7mm]
+Mit freundlichen Grüßen\\*[7mm]
 <<INHABER>>
 
 %% ---------------------------------------------------------- Bankverbindung

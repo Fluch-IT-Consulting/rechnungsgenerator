@@ -55,7 +55,7 @@
 \newcommand{\kopfangabe}[2]{\ifblank{#2}{}{#1 & #2\\}}
 
 \newcommand{\hinweisabsatz}[1]{\par\vspace{5mm}\noindent%
-  {\nonfrenchspacing\sfcode`\:=1000 \sfcode`\;=1000 \sfcode`\,=1000 #1}}
+  {\interlinepenalty=10000 \nonfrenchspacing\sfcode`\:=1000 \sfcode`\;=1000 \sfcode`\,=1000 #1\par}}
 
 \newcommand{\absetzungskopf}[1]{\par\vspace{6mm}\noindent #1\par\vspace{1.5mm}}
 
@@ -168,8 +168,9 @@
 
 \bankblock{}
 
+\nopagebreak
 \vspace{8mm}
 
-Ich bedanke mich für das Vertrauen und die angenehme Zusammenarbeit.
+{\interlinepenalty=10000 Ich bedanke mich für das Vertrauen und die angenehme Zusammenarbeit.\par}
 
 \end{document}

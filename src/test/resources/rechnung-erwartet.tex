@@ -78,7 +78,7 @@
 \newcommand{\rubrik}[1]{{\footnotesize\color{gedaempft}\addfontfeature{LetterSpace=14}\MakeUppercase{#1}}}
 
 \newcommand{\hinweisabsatz}[1]{\par\vspace{6mm}\noindent%
-  {\nonfrenchspacing\sfcode`\:=1000 \sfcode`\;=1000 \sfcode`\,=1000 #1}}
+  {\interlinepenalty=10000 \nonfrenchspacing\sfcode`\:=1000 \sfcode`\;=1000 \sfcode`\,=1000 #1\par}}
 
 \newcommand{\absetzungskopf}[1]{\par\vspace{6mm}\noindent #1\par\vspace{1.5mm}}
 
@@ -185,11 +185,11 @@ USt-IdNr. DE 123 456 788 · Musterbank Würzburg · BIC MUSTDEFFXXX · IBAN DE89
 
 \vspace{5mm}
 
-Ich bedanke mich für das Vertrauen und die angenehme Zusammenarbeit.
-
+{\interlinepenalty=10000 Ich bedanke mich für das Vertrauen und die angenehme Zusammenarbeit.\par}
+\nopagebreak
 \vspace{5mm}
 
-Mit freundlichen Grüßen\\[7mm]
+Mit freundlichen Grüßen\\*[7mm]
 Dr. Erika Musterfrau
 
 \bankblock{}

@@ -1,0 +1,200 @@
+# Fiktive Rechnung, deren Positionen die zweite Seite so weit füllen, dass
+# die Seite ohne Zusammenhalt bräche: in balken zwischen Schlusssatz und
+# Grußformel, in raster zwischen Zahlungsfrist und Schlusssatz (ADR-0020,
+# #318). Nachgemessen mit den Vorlagen von #318: Ohne \nopagebreak stand
+# "Mit freundlichen Grüßen" in balken allein auf Seite 3, in raster der
+# Schlusssatz. Ändert sich das Satzbild, kann die Grenze woanders liegen; die
+# Prüfung im Netz bleibt dann richtig, trifft aber diesen Fall nicht mehr.
+nummer: R26-045
+datum: 2026-08-14
+leistungszeitraum:
+  von: 2026-07-01
+  bis: 2026-07-31
+kunde:
+  name: Beispiel Software GmbH
+  anschrift:
+    strasse: Industriestraße 1
+    plz: "90402"
+    ort: Nürnberg
+  referenz: BST-2026-0815
+positionen:
+  - bezeichnung: IT-Beratungsleistungen, Teil 01
+    beschreibung: Rahmenvertrag vom 01.02.2026
+    menge: 86.5
+    einheit: Std.
+    einzelpreis: 95.00
+  - bezeichnung: Fahrtkostenpauschale, Teil 02
+    hinweis: Juli 2026
+    menge: 1
+    einheit: pauschal
+    einzelpreis: 120.00
+  - bezeichnung: IT-Beratungsleistungen, Teil 03
+    beschreibung: Rahmenvertrag vom 01.02.2026
+    menge: 86.5
+    einheit: Std.
+    einzelpreis: 95.00
+  - bezeichnung: Fahrtkostenpauschale, Teil 04
+    hinweis: Juli 2026
+    menge: 1
+    einheit: pauschal
+    einzelpreis: 120.00
+  - bezeichnung: IT-Beratungsleistungen, Teil 05
+    beschreibung: Rahmenvertrag vom 01.02.2026
+    menge: 86.5
+    einheit: Std.
+    einzelpreis: 95.00
+  - bezeichnung: Fahrtkostenpauschale, Teil 06
+    hinweis: Juli 2026
+    menge: 1
+    einheit: pauschal
+    einzelpreis: 120.00
+  - bezeichnung: IT-Beratungsleistungen, Teil 07
+    beschreibung: Rahmenvertrag vom 01.02.2026
+    menge: 86.5
+    einheit: Std.
+    einzelpreis: 95.00
+  - bezeichnung: Fahrtkostenpauschale, Teil 08
+    hinweis: Juli 2026
+    menge: 1
+    einheit: pauschal
+    einzelpreis: 120.00
+  - bezeichnung: IT-Beratungsleistungen, Teil 09
+    beschreibung: Rahmenvertrag vom 01.02.2026
+    menge: 86.5
+    einheit: Std.
+    einzelpreis: 95.00
+  - bezeichnung: Fahrtkostenpauschale, Teil 10
+    hinweis: Juli 2026
+    menge: 1
+    einheit: pauschal
+    einzelpreis: 120.00
+  - bezeichnung: IT-Beratungsleistungen, Teil 11
+    beschreibung: Rahmenvertrag vom 01.02.2026
+    menge: 86.5
+    einheit: Std.
+    einzelpreis: 95.00
+  - bezeichnung: Fahrtkostenpauschale, Teil 12
+    hinweis: Juli 2026
+    menge: 1
+    einheit: pauschal
+    einzelpreis: 120.00
+  - bezeichnung: IT-Beratungsleistungen, Teil 13
+    beschreibung: Rahmenvertrag vom 01.02.2026
+    menge: 86.5
+    einheit: Std.
+    einzelpreis: 95.00
+  - bezeichnung: Fahrtkostenpauschale, Teil 14
+    hinweis: Juli 2026
+    menge: 1
+    einheit: pauschal
+    einzelpreis: 120.00
+  - bezeichnung: IT-Beratungsleistungen, Teil 15
+    beschreibung: Rahmenvertrag vom 01.02.2026
+    menge: 86.5
+    einheit: Std.
+    einzelpreis: 95.00
+  - bezeichnung: Fahrtkostenpauschale, Teil 16
+    hinweis: Juli 2026
+    menge: 1
+    einheit: pauschal
+    einzelpreis: 120.00
+  - bezeichnung: IT-Beratungsleistungen, Teil 17
+    beschreibung: Rahmenvertrag vom 01.02.2026
+    menge: 86.5
+    einheit: Std.
+    einzelpreis: 95.00
+  - bezeichnung: Fahrtkostenpauschale, Teil 18
+    hinweis: Juli 2026
+    menge: 1
+    einheit: pauschal
+    einzelpreis: 120.00
+  - bezeichnung: IT-Beratungsleistungen, Teil 19
+    beschreibung: Rahmenvertrag vom 01.02.2026
+    menge: 86.5
+    einheit: Std.
+    einzelpreis: 95.00
+  - bezeichnung: Fahrtkostenpauschale, Teil 20
+    hinweis: Juli 2026
+    menge: 1
+    einheit: pauschal
+    einzelpreis: 120.00
+  - bezeichnung: IT-Beratungsleistungen, Teil 21
+    beschreibung: Rahmenvertrag vom 01.02.2026
+    menge: 86.5
+    einheit: Std.
+    einzelpreis: 95.00
+  - bezeichnung: Fahrtkostenpauschale, Teil 22
+    hinweis: Juli 2026
+    menge: 1
+    einheit: pauschal
+    einzelpreis: 120.00
+  - bezeichnung: IT-Beratungsleistungen, Teil 23
+    beschreibung: Rahmenvertrag vom 01.02.2026
+    menge: 86.5
+    einheit: Std.
+    einzelpreis: 95.00
+  - bezeichnung: Fahrtkostenpauschale, Teil 24
+    hinweis: Juli 2026
+    menge: 1
+    einheit: pauschal
+    einzelpreis: 120.00
+  - bezeichnung: IT-Beratungsleistungen, Teil 25
+    beschreibung: Rahmenvertrag vom 01.02.2026
+    menge: 86.5
+    einheit: Std.
+    einzelpreis: 95.00
+  - bezeichnung: Fahrtkostenpauschale, Teil 26
+    hinweis: Juli 2026
+    menge: 1
+    einheit: pauschal
+    einzelpreis: 120.00
+  - bezeichnung: IT-Beratungsleistungen, Teil 27
+    beschreibung: Rahmenvertrag vom 01.02.2026
+    menge: 86.5
+    einheit: Std.
+    einzelpreis: 95.00
+  - bezeichnung: Fahrtkostenpauschale, Teil 28
+    hinweis: Juli 2026
+    menge: 1
+    einheit: pauschal
+    einzelpreis: 120.00
+  - bezeichnung: IT-Beratungsleistungen, Teil 29
+    beschreibung: Rahmenvertrag vom 01.02.2026
+    menge: 86.5
+    einheit: Std.
+    einzelpreis: 95.00
+  - bezeichnung: Fahrtkostenpauschale, Teil 30
+    hinweis: Juli 2026
+    menge: 1
+    einheit: pauschal
+    einzelpreis: 120.00
+  - bezeichnung: IT-Beratungsleistungen, Teil 31
+    beschreibung: Rahmenvertrag vom 01.02.2026
+    menge: 86.5
+    einheit: Std.
+    einzelpreis: 95.00
+  - bezeichnung: Fahrtkostenpauschale, Teil 32
+    hinweis: Juli 2026
+    menge: 1
+    einheit: pauschal
+    einzelpreis: 120.00
+  - bezeichnung: IT-Beratungsleistungen, Teil 33
+    beschreibung: Rahmenvertrag vom 01.02.2026
+    menge: 86.5
+    einheit: Std.
+    einzelpreis: 95.00
+  - bezeichnung: Fahrtkostenpauschale, Teil 34
+    hinweis: Juli 2026
+    menge: 1
+    einheit: pauschal
+    einzelpreis: 120.00
+  - bezeichnung: IT-Beratungsleistungen, Teil 35
+    beschreibung: Rahmenvertrag vom 01.02.2026
+    menge: 86.5
+    einheit: Std.
+    einzelpreis: 95.00
+  - bezeichnung: Fahrtkostenpauschale, Teil 36
+    hinweis: Juli 2026
+    menge: 1
+    einheit: pauschal
+    einzelpreis: 120.00
