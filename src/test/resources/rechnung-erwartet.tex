@@ -6,7 +6,9 @@
 \usepackage{geometry}
 \usepackage{colortbl}
 \usepackage{booktabs}  %% \midrule bringt die vertikalen Abstände selbst mit
-\usepackage{tabularx}
+\usepackage{xltabular}
+\usepackage{fancyhdr}
+\usepackage{lastpage}  %% die Zahl der Seiten für den Kopf der Folgeseiten
 \usepackage{array}
 \usepackage{etoolbox}  %% \ifblank für die Angaben, die leer sein dürfen
 
@@ -28,11 +30,17 @@
 
 \arrayrulecolor{linie}
 
-\geometry{a4paper, left=25mm, right=20mm, top=18mm, bottom=16mm}
+\geometry{a4paper, left=25mm, right=20mm, top=18mm, bottom=16mm,
+  includefoot, footskip=12mm, headheight=14pt, headsep=6mm}
 
 \color{haupttext}
 \setlength{\parindent}{0pt}
-\pagestyle{empty}
+\fancypagestyle{erste}{\fancyhf{}\renewcommand{\headrulewidth}{0pt}\fancyfoot[C]{\fuss}}
+\fancypagestyle{folge}{\fancyhf{}\renewcommand{\headrulewidth}{0pt}%
+  \fancyhead[L]{\small\color{gedaempft}Rechnung R26-042 · 14.~August 2026}%
+  \fancyhead[R]{\small\color{gedaempft}Seite \thepage\ von \pageref*{LastPage}}%
+  \fancyfoot[C]{\fuss}}
+\pagestyle{folge}
 
 \raggedright
 
@@ -87,6 +95,11 @@
 \ifblank{}{\newcolumntype{R}{}}{\newcolumntype{R}{r}}
 \newcommand{\positionszeile}[7]{#2 & #3 & #4 & #5\mitrabatt{ & #6} & #7}
 
+\newcommand{\positionskopf}{\mbox{\rubrik{Beschreibung}} & \mbox{\rubrik{Menge}} & & \mbox{\rubrik{Einzelpreis}}\mitrabatt{ & \mbox{\rubrik{Rabatt}}} & \mbox{\rubrik{Betrag}} \\[1.5mm]
+  \midrule}
+
+\newcommand{\spaltenzahl}{\ifblank{}{5}{6}}
+
 \newcommand{\summenzeile}[2]{#1 & #2}
 
 \newcommand{\abschlusszeile}[2]{\\\midrule\textbf{#1} & \textbf{#2}}
@@ -95,7 +108,12 @@
 \newcommand{\steuerzeile}[3]{\summenzeile{zzgl. #1 USt.\ifblank{#2}{}{ auf #2}}{#3}}
 \newcommand{\gesamtzeile}[1]{\abschlusszeile{Gesamtbetrag}{#1}}
 
+\newcommand{\fuss}{\parbox[b]{\textwidth}{\centering\scriptsize\color{gedaempft}
+Muster IT-Consulting UG (haftungsbeschränkt) · Beispielweg 42, 97070 Würzburg\ifblank{Würzburg}{}{ · Registergericht Würzburg\ifblank{HRB 12345}{}{, HRB 12345}}\\
+USt-IdNr. DE 123 456 788 · Musterbank Würzburg · BIC MUSTDEFFXXX · IBAN DE89 3704 0044 0532 0130 00}}
+
 \begin{document}
+\thispagestyle{erste}
 
 {\raggedleft\small\color{gedaempft}
   {\bfseries\color{haupttext}Muster IT-Consulting UG (haftungsbeschränkt)}\ifblank{Dr. Erika Musterfrau}{\kopfperson{Dr. Erika Musterfrau}}{}\zeilenwechsel{}%
@@ -131,23 +149,30 @@
 
 \ifblank{}{}{\noindent \par\vspace{6mm}}
 
-\begin{tabularx}{\linewidth}{@{}>{\raggedright\arraybackslash}X r@{\hspace{1.5mm}}l r R r@{}}
-  \mbox{\rubrik{Beschreibung}} & \mbox{\rubrik{Menge}} & & \mbox{\rubrik{Einzelpreis}}\mitrabatt{ & \mbox{\rubrik{Rabatt}}} & \mbox{\rubrik{Betrag}} \\[1.5mm]
-  \midrule
+\setlength{\LTpre}{\lineskip}\setlength{\LTpost}{0pt}%
+\setlength{\LTleft}{0pt}\setlength{\LTright}{0pt}%
+\setcounter{LTchunksize}{10000}%
+\newlength{\summenluft}\setlength{\summenluft}{\dimexpr 5mm+\lineskip\relax}%
+\begin{xltabular}{\linewidth}{@{}>{\raggedright\arraybackslash}X r@{\hspace{1.5mm}}l r R r@{}}
+  \positionskopf
+  \endfirsthead
+  \positionskopf
+  \endhead
+  \multicolumn{\spaltenzahl}{@{}r@{}}{\rule{0pt}{6mm}\footnotesize\color{gedaempft}Fortsetzung auf der nächsten Seite}
+  \endfoot
+  \endlastfoot
 \positionszeile{1}{IT-Beratungsleistungen\positionsdetail{Rahmenvertrag vom 01.02.2026}}{86,5}{Std.}{95,00~€}{}{8.217,50~€} \positionstrenner{}
-\positionszeile{2}{Fahrtkostenpauschale\positionsdetail{Juli 2026}}{1}{pauschal}{120,00~€}{}{120,00~€}
-\end{tabularx}
-
-\vspace{5mm}
-
-\hfill
-\begin{minipage}{0.55\linewidth}
-  \begin{tabularx}{\linewidth}{@{}>{\raggedright\arraybackslash}X r@{}}
+\positionszeile{2}{Fahrtkostenpauschale\positionsdetail{Juli 2026}}{1}{pauschal}{120,00~€}{}{120,00~€}\\*
+  \noalign{\vskip\summenluft}
+  \multicolumn{\spaltenzahl}{@{}r@{}}{\begin{minipage}[t]{0.55\linewidth}
+    \begin{tabularx}{\linewidth}{@{}>{\raggedright\arraybackslash}X r@{}}
   \nettozeile{8.337,50~€} \summentrenner{}
   \steuerzeile{19~\%}{}{1.584,13~€}
   \gesamtzeile{9.921,63~€}
-  \end{tabularx}
-\end{minipage}
+    \end{tabularx}
+  \end{minipage}}
+\end{xltabular}
+\nointerlineskip\vspace{\lineskip}
 
 
 
@@ -167,11 +192,5 @@ Mit freundlichen Grüßen\\[7mm]
 Dr. Erika Musterfrau
 
 \bankblock{}
-
-\vfill
-
-{\centering\scriptsize\color{gedaempft}
-Muster IT-Consulting UG (haftungsbeschränkt) · Beispielweg 42, 97070 Würzburg\ifblank{Würzburg}{}{ · Registergericht Würzburg\ifblank{HRB 12345}{}{, HRB 12345}}\\
-USt-IdNr. DE 123 456 788 · Musterbank Würzburg · BIC MUSTDEFFXXX · IBAN DE89 3704 0044 0532 0130 00\par}
 
 \end{document}

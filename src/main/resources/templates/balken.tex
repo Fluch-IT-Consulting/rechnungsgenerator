@@ -26,7 +26,12 @@
 %% gäbe einen "Option clash". colortbl direkt nachladen liefert \arrayrulecolor.
 \usepackage{colortbl}
 \usepackage{booktabs}  %% \midrule bringt die vertikalen Abstände selbst mit
-\usepackage{tabularx}
+%% xltabular ist tabularx, das über Seiten umbricht (ADR-0020): die X-Spalte
+%% von tabularx, der Umbruch von longtable. Es lädt beide selbst; tabularx
+%% bleibt für Summen und Absetzung, die nie umbrechen.
+\usepackage{xltabular}
+\usepackage{fancyhdr}
+\usepackage{lastpage}  %% die Zahl der Seiten für den Kopf der Folgeseiten
 \usepackage{array}
 \usepackage{etoolbox}  %% \ifblank für die Angaben, die leer sein dürfen
 
@@ -64,11 +69,25 @@
 %% von \midrule landet dann an der falschen Stelle.
 \arrayrulecolor{linie}
 
-\geometry{a4paper, left=25mm, right=20mm, top=18mm, bottom=16mm}
+%% Der Fuß ist ein Seitenfuß und steht auf jeder Seite (ADR-0020). includefoot
+%% misst den unteren Rand bis zu seiner letzten Grundlinie – dort, wo er stand,
+%% als er noch das Ende des Textes war. Der Kopf der Folgeseiten steht im
+%% oberen Rand, damit die erste Seite ihn nicht mitbezahlt.
+\geometry{a4paper, left=25mm, right=20mm, top=18mm, bottom=16mm,
+  includefoot, footskip=12mm, headheight=14pt, headsep=6mm}
 
 \color{haupttext}
 \setlength{\parindent}{0pt}
-\pagestyle{empty}
+%% Die erste Seite hat den Briefkopf und nur den Fuß, jede weitere einen
+%% kurzen Kopf mit Nummer, Datum und Seitenzahl, damit eine lose Seite zu
+%% ihrer Rechnung findet. Eine Rechnung mit einer Seite trägt deshalb keine
+%% Seitenzahl, ohne dass jemand danach fragt.
+\fancypagestyle{erste}{\fancyhf{}\renewcommand{\headrulewidth}{0pt}\fancyfoot[C]{\fuss}}
+\fancypagestyle{folge}{\fancyhf{}\renewcommand{\headrulewidth}{0pt}%
+  \fancyhead[L]{\small\color{gedaempft}<<DOKUMENTART>> <<RECHNUNGSNUMMER>> · <<RECHNUNGSDATUM>>}%
+  \fancyhead[R]{\small\color{gedaempft}Seite \thepage\ von \pageref*{LastPage}}%
+  \fancyfoot[C]{\fuss}}
+\pagestyle{folge}
 
 %% Flattersatz statt Blocksatz. In den schmalen Spalten einer Rechnung reißt
 %% Blocksatz sichtbare Löcher zwischen die Wörter; Heros verträgt Flattersatz gut.
@@ -206,6 +225,17 @@
 \ifblank{<<RABATTSPALTE>>}{\newcolumntype{R}{}}{\newcolumntype{R}{r}}
 \newcommand{\positionszeile}[7]{#2 & #3 & #4 & #5\mitrabatt{ & #6} & #7}
 
+%% Der Kopf der Positionstabelle, auf der ersten Seite und auf jeder
+%% Folgeseite. \mbox um jeden Spaltenkopf: In der X-Spalte ist der Inhalt sonst
+%% ein Absatz, dessen erste Zeile tiefer sitzt als die Grundlinie der
+%% r-/l-Spalten.
+\newcommand{\positionskopf}{\mbox{\rubrik{Beschreibung}} & \mbox{\rubrik{Menge}} & & \mbox{\rubrik{Einzelpreis}}\mitrabatt{ & \mbox{\rubrik{Rabatt}}} & \mbox{\rubrik{Betrag}} \\[1.5mm]
+  \midrule}
+
+%% Wie viele Spalten die Positionstabelle hat, für die Zeilen über ihre ganze
+%% Breite: fünf, mit Rabattspalte sechs.
+\newcommand{\spaltenzahl}{\ifblank{<<RABATTSPALTE>>}{5}{6}}
+
 %% Eine Zeile im Summen- oder Absetzungsblock: Bezeichnung links, Betrag rechts.
 \newcommand{\summenzeile}[2]{#1 & #2}
 
@@ -224,7 +254,24 @@
 \newcommand{\steuerzeile}[3]{\summenzeile{zzgl. #1 USt.\ifblank{#2}{}{ auf #2}}{#3}}
 \newcommand{\gesamtzeile}[1]{\abschlusszeile{Gesamtbetrag}{#1}}
 
+%% ------------------------------------------------------------------ Fußzeile
+%% Zwei zentrierte Zeilen ohne Trennlinie darüber, wie auf der bisherigen
+%% Rechnung: erst die gesellschaftsrechtlichen Angaben (§35a GmbHG),
+%% dann die steuerlichen und die Bankverbindung. Der Seitenfuß jeder Seite,
+%% oben in \fancypagestyle gesetzt. [b], damit er von seiner letzten Grundlinie
+%% nach oben wächst und nicht in den Rand.
+%% Beide Zeilen passen in den Satzspiegel (nachgemessen 152 mm bzw. 138 mm bei
+%% 165 mm Breite), deshalb ohne Trick mit negativem \hspace.
+%%
+%% Bewusst OHNE Steuernummer: §14 Abs. 4 Nr. 2 UStG verlangt die Steuernummer
+%% ODER die USt-IdNr., nicht beides. Mit beiden wurde die zweite Zeile 178 mm
+%% breit und passte nicht mehr in die 165 mm Textbreite.
+\newcommand{\fuss}{\parbox[b]{\textwidth}{\centering\scriptsize\color{gedaempft}
+<<FIRMA>> · <<STRASSE>>, <<PLZ>> <<ORT>>\ifblank{<<REGISTERGERICHT>>}{}{ · Registergericht <<REGISTERGERICHT>>\ifblank{<<REGISTERNUMMER>>}{}{, <<REGISTERNUMMER>>}}\\
+USt-IdNr. <<USTID>> · <<INSTITUT>> · BIC <<BIC>> · IBAN <<IBAN>>}}
+
 \begin{document}
+\thispagestyle{erste}
 
 %% ------------------------------------------------------------------ Kopf
 %% Alles rechtsbündig in einem Block, wie auf der bisherigen Rechnung: die
@@ -305,24 +352,53 @@
 %% Einleitung steht hier nichts, und der Abstand zur Tabelle bleibt derselbe.
 \ifblank{<<EINLEITUNG>>}{}{\noindent <<EINLEITUNG>>\par\vspace{6mm}}
 
-%% --------------------------------------------------------------- Positionen
-\begin{tabularx}{\linewidth}{@{}>{\raggedright\arraybackslash}X r@{\hspace{1.5mm}}l r R r@{}}
-  %% \mbox um jeden Spaltenkopf: In der X-Spalte ist der Inhalt sonst ein Absatz,
-  %% dessen erste Zeile tiefer sitzt als die Grundlinie der r-/l-Spalten.
-  \mbox{\rubrik{Beschreibung}} & \mbox{\rubrik{Menge}} & & \mbox{\rubrik{Einzelpreis}}\mitrabatt{ & \mbox{\rubrik{Rabatt}}} & \mbox{\rubrik{Betrag}} \\[1.5mm]
-  \midrule
-<<POSITIONEN>>
-\end{tabularx}
-
-\vspace{5mm}
-
-%% ------------------------------------------------------------------ Summen
-\hfill
-\begin{minipage}{0.55\linewidth}
-  \begin{tabularx}{\linewidth}{@{}>{\raggedright\arraybackslash}X r@{}}
+%% --------------------------------------------------------- Positionen, Summen
+%% Die Tabelle bricht zwischen zwei Positionen um, nie in einer (ADR-0020). Auf
+%% jeder Seite, der eine weitere folgt, steht unten der Fortsetzungshinweis und
+%% oben auf der nächsten wieder der Spaltenkopf; ein Übertrag steht dort nicht,
+%% denn die Vorlage rechnet nicht.
+%%
+%% Die Summen sind die letzte Zeile der Tabelle, angehängt mit \\*: So stehen
+%% sie nie ohne eine Position darüber auf einer Seite. Hinter der Tabelle ginge
+%% das nicht – longtable erlaubt an ihrem Ende einen Umbruch, den kein
+%% \nopagebreak danach zurücknimmt. Der Abstand dazwischen als \noalign und
+%% nicht als \\*[5mm]: Das verlängerte nur die Unterlänge der Zeile, und die
+%% ist mit einer Zusatzzeile der Position schon länger. 5mm und \lineskip
+%% sind der Abstand, den Tabelle und Summen hatten, als sie zwei Absätze
+%% waren; berechnet vor der Tabelle, denn in ihr ist \lineskip null.
+%%
+%% Aus demselben Grund steht hinter der Tabelle \lineskip ohne Zeilenabstand:
+%% longtable hinterlässt eine Unterlänge von null, und TeX setzte vor den
+%% nächsten Absatz den vollen Zeilenabstand, wo zuvor unter den Summen nur
+%% \lineskip stand.
+%%
+%% Davor genau \lineskip und kein \bigskip: So weit stand die tabularx vom
+%% Absatz darüber ab, denn sie war selbst ein Absatz, und ihre Höhe ließ TeX
+%% nur diesen Mindestabstand. Danach nichts und kein Einzug.
+%% LTchunksize so groß, dass jede Rechnung ein Block ist:
+%% Dann misst longtable die Spalten über alle Positionen auf einmal, und sie
+%% sind auf jeder Seite gleich breit, schon im ersten Lauf.
+\setlength{\LTpre}{\lineskip}\setlength{\LTpost}{0pt}%
+\setlength{\LTleft}{0pt}\setlength{\LTright}{0pt}%
+\setcounter{LTchunksize}{10000}%
+\newlength{\summenluft}\setlength{\summenluft}{\dimexpr 5mm+\lineskip\relax}%
+\begin{xltabular}{\linewidth}{@{}>{\raggedright\arraybackslash}X r@{\hspace{1.5mm}}l r R r@{}}
+  \positionskopf
+  \endfirsthead
+  \positionskopf
+  \endhead
+  \multicolumn{\spaltenzahl}{@{}r@{}}{\rule{0pt}{6mm}\footnotesize\color{gedaempft}Fortsetzung auf der nächsten Seite}
+  \endfoot
+  \endlastfoot
+<<POSITIONEN>>\\*
+  \noalign{\vskip\summenluft}
+  \multicolumn{\spaltenzahl}{@{}r@{}}{\begin{minipage}[t]{0.55\linewidth}
+    \begin{tabularx}{\linewidth}{@{}>{\raggedright\arraybackslash}X r@{}}
 <<SUMMEN>>
-  \end{tabularx}
-\end{minipage}
+    \end{tabularx}
+  \end{minipage}}
+\end{xltabular}
+\nointerlineskip\vspace{\lineskip}
 
 %% Der Pflichtsatz der Rechnungsart (siehe \hinweisabsatz oben). Bei jeder
 %% anderen Art bleibt der Platzhalter leer und nimmt dann auch keinen Raum ein.
@@ -363,21 +439,5 @@ Mit freundlichen Grüßen\\[7mm]
 %% bisherigen Rechnung. Kein Kasten, keine Linie, keine Versalien. Ob sie
 %% dasteht, entscheidet der Renderer (siehe \bankblock oben).
 <<BANKVERBINDUNG>>
-
-\vfill
-
-%% ------------------------------------------------------------------ Fußzeile
-%% Zwei zentrierte Zeilen ohne Trennlinie darüber, wie auf der bisherigen
-%% Rechnung: erst die gesellschaftsrechtlichen Angaben (§35a GmbHG),
-%% dann die steuerlichen und die Bankverbindung.
-%% Beide Zeilen passen in den Satzspiegel (nachgemessen 152 mm bzw. 138 mm bei
-%% 165 mm Breite), deshalb ohne Trick mit negativem \hspace.
-%%
-%% Bewusst OHNE Steuernummer: §14 Abs. 4 Nr. 2 UStG verlangt die Steuernummer
-%% ODER die USt-IdNr., nicht beides. Mit beiden wurde die zweite Zeile 178 mm
-%% breit und passte nicht mehr in die 165 mm Textbreite.
-{\centering\scriptsize\color{gedaempft}
-<<FIRMA>> · <<STRASSE>>, <<PLZ>> <<ORT>>\ifblank{<<REGISTERGERICHT>>}{}{ · Registergericht <<REGISTERGERICHT>>\ifblank{<<REGISTERNUMMER>>}{}{, <<REGISTERNUMMER>>}}\\
-USt-IdNr. <<USTID>> · <<INSTITUT>> · BIC <<BIC>> · IBAN <<IBAN>>\par}
 
 \end{document}
