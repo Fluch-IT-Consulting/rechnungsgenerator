@@ -11,7 +11,8 @@
 \documentclass[10pt,a4paper]{article}
 
 %% pdfx erzeugt das PDF/A-1b, siehe balken.tex. Früh laden, es zieht hyperref
-%% und xcolor mit.
+%% und xcolor mit. Ohne Lesezeichen, siehe dort.
+\PassOptionsToPackage{bookmarks=false}{hyperref}
 \usepackage[a-1b]{pdfx}
 
 \usepackage{fontspec}

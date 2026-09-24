@@ -200,9 +200,16 @@ CV/Web-Auftritt des Autors), PDF/A-Prüfung über veraPDF.
   LuaLaTeX läuft, solange die Log-Datei einen
   weiteren Lauf verlangt, höchstens dreimal – wer nach drei Läufen immer noch
   einen vierten fordert, konvergiert nicht. Bei den Rechnungen dieses Projekts
-  ist es einer: Sie haben weder Querverweise noch Lesezeichen, und nachgemessen
-  mit TeX Live 2026 sind die PDFs nach einem und nach zwei Läufen im Satzbild
-  gleich. Dieselben Quellen ergeben dasselbe PDF, Byte für Byte: Das
+  sind es zwei, und beide sind nötig (#321): longtable kennt die
+  Spaltenbreiten der Positionen erst aus dem ersten Lauf, lastpage die Zahl
+  der Seiten. Nicht jedes Paket verlangt den Lauf mit denselben Worten –
+  longtable schreibt "Rerun LaTeX", nicht "Rerun to get" –, und
+  `needsAnotherPass` muss jede Wendung kennen: Sonst löst ein anderes Paket
+  den Lauf nur zufällig mit aus, und fällt es weg, entsteht das PDF aus dem
+  ersten. Lesezeichen schreiben die
+  Vorlagen keine (`bookmarks=false`); die leere `.out` von hyperref
+  verlangte sonst ebenfalls einen zweiten Lauf, ohne einen Grund zu haben.
+  Dieselben Quellen ergeben dasselbe PDF, Byte für Byte: Das
   Erstellungsdatum ist das Rechnungsdatum (`SOURCE_DATE_EPOCH`, geschrieben in
   UTC), und die Trailer-ID bildet `LatexCompiler` aus der Prüfsumme von `.tex`
   und `.xmpdata`. Von sich aus nähme LuaTeX dafür Uhr und Pfad, und jeder Lauf
