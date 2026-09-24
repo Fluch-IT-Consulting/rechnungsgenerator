@@ -14,6 +14,7 @@ import io.kotest.matchers.collections.shouldNotBeEmpty
 import io.kotest.matchers.doubles.plusOrMinus
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.string.shouldContain
+import io.kotest.matchers.string.shouldNotContain
 import java.nio.file.Path
 import java.security.MessageDigest
 import java.time.LocalDate
@@ -149,7 +150,31 @@ class ToolchainIntegrationTest : FunSpec({
     }
 
     /**
-     * Der Faktor der Logodatei kommt an (#199): Derselbe Kreis, einmal mit
+     * Eine Rechnung hat keine Lesezeichen, und das PDF sagt das auch (#321):
+     * Mit Lesezeichen verlangte hyperref ohne Not einen weiteren Lauf, und
+     * `/UseOutlines` öffnete im Viewer eine leere Seitenleiste. Beide Designs,
+     * weil jede Vorlage pdfx selbst lädt.
+     */
+    test("das PDF hat keine Lesezeichen und öffnet keine Lesezeichenleiste") {
+        val raster =
+            workDir.resolve("stammdaten-raster.yaml").also {
+                it.writeText(Path.of("src/test/resources/stammdaten.yaml").readText() + "design: raster\n")
+            }
+        val pdfs =
+            listOf(
+                run.erzeuge("rechnung", "lesezeichen-balken").first,
+                run.erzeuge("rechnung", "lesezeichen-raster", stammdaten = raster).first,
+            )
+
+        pdfs.forEach { pdf ->
+            val text = String(pdf.readBytes(), Charsets.ISO_8859_1)
+            text shouldContain "/PageMode/UseNone"
+            text shouldNotContain "/Outlines"
+        }
+    }
+
+    /**
+     * Der Faktor der Logodatei kommt an (#199):Derselbe Kreis, einmal mit
      * `\logoskalierung` 1.2 und einmal ohne, steht im Bild 20 % höher.
      * Gemessen an den Zeilen mit blauen Pixeln im oberen Drittel der Seite –
      * dort steht sonst nur schwarzer Text.

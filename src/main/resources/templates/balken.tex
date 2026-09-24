@@ -18,6 +18,13 @@
 %% pdfx erzeugt das PDF/A-1b: XMP-Metadaten, OutputIntent mit sRGB-Profil und
 %% eingebettete Schriften. Muss früh geladen werden, es zieht hyperref mit.
 %% Die Metadaten kommen aus der gleichnamigen .xmpdata-Datei daneben.
+%%
+%% Ohne Lesezeichen, denn eine Rechnung hat keine. hyperref schriebe sonst
+%% eine leere .out-Datei, die im ersten Lauf als geändert gilt, weil es sie
+%% vorher nicht gab – ein Grund für einen zweiten Lauf, der keiner ist –, und
+%% das PDF wiese den Viewer an, eine leere Lesezeichenleiste zu öffnen (#321).
+%% Als Ladeoption: Ein \hypersetup nach pdfx kommt für bookmarks zu spät.
+\PassOptionsToPackage{bookmarks=false}{hyperref}
 \usepackage[a-1b]{pdfx}
 
 \usepackage{fontspec}
