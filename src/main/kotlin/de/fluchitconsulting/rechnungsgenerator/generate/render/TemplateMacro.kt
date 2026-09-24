@@ -31,6 +31,11 @@ enum class TemplateMacro(val macroName: String, val arity: Int) {
     // Satzende den breiten Abstand, und in Eingabedaten bekäme ihn auch eine
     // Abkürzung wie "Dr." (#143).
     HINWEISABSATZ("hinweisabsatz", 1),
+
+    // Der Hinweis auf eine Steuerbefreiung, einer je Satz: So entscheidet die
+    // Vorlage für jeden, dass er nicht über zwei Seiten bricht (ADR-0020).
+    // Nicht HINWEISABSATZ, weil der Befreiungsgrund aus den Eingabedaten kommt.
+    STEUERHINWEIS("steuerhinweis", 1),
     ABSETZUNGSKOPF("absetzungskopf", 1),
     ABSETZUNGSTABELLE("absetzungstabelle", 1),
     ABSETZUNGSDETAIL("absetzungsdetail", 1),

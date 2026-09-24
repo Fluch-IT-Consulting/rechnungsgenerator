@@ -167,10 +167,13 @@ CV/Web-Auftritt des Autors), PDF/A-Prüfung über veraPDF.
   Übertrag: Die Vorlage rechnet nicht, und der Renderer weiß nicht, wo die
   Seite bricht. Die Summen sind die letzte Zeile der Positionstabelle und
   stehen so nie ohne eine Position darüber; Schlusssatz, Gruß und Name
-  bleiben beisammen, und kein fachlicher Satz bricht über zwei Seiten. Eine
+  bleiben beisammen, und kein fachlicher Satz bricht über zwei Seiten – auch
+  kein Hinweis auf eine Steuerbefreiung, deshalb trennt jede Vorlage den
+  Zusammenhalt (`\ungeteilt`) vom Satzabstand (`\hinweisabsatz`). Eine
   einseitige Rechnung sieht aus wie zuvor, bei 300 dpi pixelgleich; ein
   neues Design muss die Folgeseiten selbst setzen, und das Netz prüft sie an
-  `viele-positionen.yaml` und `schluss-an-der-seitengrenze.yaml`.
+  `viele-positionen.yaml`, `schluss-an-der-seitengrenze.yaml` und
+  `befreiungsgrund-an-der-seitengrenze.yaml`.
   Unabhängig davon bricht `LatexCompiler` ab, wenn
   das Protokoll `Overfull \vbox` meldet: Dann ist Inhalt vom Blatt gefallen,
   und ein gültiges PDF/A ohne ihn darf nicht entstehen.

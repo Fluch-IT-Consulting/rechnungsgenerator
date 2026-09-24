@@ -229,6 +229,25 @@ class PflichtangabenTest : FunSpec({
         }
     }
 
+    // Ein langer Befreiungsgrund an der Seitengrenze (ADR-0020, #335): Ohne
+    // Zusammenhalt endete die zweite Seite nach der ersten Zeile des Hinweises.
+    // Dass er ganz auf einer Seite steht, prüft `pruefe` an jeder mehrseitigen
+    // Rechnung; diese Datei ist die, bei der es darauf ankommt.
+    for (design in designs) {
+        test("Befreiungsgrund an der Seitengrenze im Design ${design.name}: der Hinweis bricht nicht auseinander") {
+            val (calculated, blatt) =
+                setzeUndPruefe(
+                    "befreiungsgrund-an-der-seitengrenze",
+                    design,
+                    design.stammdaten,
+                    zielname = "${design.name}-befreiung",
+                )
+
+            calculated.vatGroups.count { it.exemptionReason != null } shouldBe 1
+            blatt.seiten shouldBeGreaterThan 1
+        }
+    }
+
     // Die Stammdaten oben führen eine Geschäftsführung, und prag läuft dort
     // mit Logo. Zwei Zweige der Vorlagen erreichten so nie ein echtes PDF: der
     // Name des Inhabers, der nur ohne Geschäftsführung dasteht, und prag
@@ -479,6 +498,16 @@ private fun Blatt.pruefe(
         // Ohne Skonto ist die Zahlungsfrist der Satz direkt vor dem Schlusssatz.
         if (seite != null && design.schlusssatzBeiZahlungsfrist && dueDate != null && invoice.skonto.isEmpty()) {
             stehtAufSeite(seite, "Zahlungsfrist beim Schlusssatz", design.zahlungszielBeschriftung)
+        }
+
+        // Kein Hinweis auf eine Steuerbefreiung bricht über zwei Seiten: Der
+        // Grund steht ganz auf einer Seite, und das Entgelt, mit dem der Satz
+        // beginnt, auf derselben.
+        calculated.vatGroups.forEach { gruppe ->
+            val grund = gruppe.exemptionReason ?: return@forEach
+            val grundSeite = seiteMit(grund)
+            withClue("Befreiungsgrund steht auf keiner Seite vollständig: $grund") { (grundSeite != null) shouldBe true }
+            if (grundSeite != null) stehtAufSeite(grundSeite, "Entgelt beim Befreiungsgrund", betrag(gruppe.base))
         }
     }
 }

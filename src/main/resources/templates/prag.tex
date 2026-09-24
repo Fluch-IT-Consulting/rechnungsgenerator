@@ -105,11 +105,19 @@
 %% gewöhnlichen Rechnung "Vereinnahmt am" ohne Datum.
 \newcommand{\kopfangabe}[2]{\ifblank{#2}{}{#1 & #2\\}}
 
+%% Ein Absatz, der nicht über zwei Seiten bricht, und der Zusammenhalt allein,
+%% ohne Satzabstand – wie in helsinki.tex, siehe dort.
+\newcommand{\ungeteilt}[1]{{\interlinepenalty=10000 #1\par}}
+
 %% Die eigenen Sätze des Programms unter den Summen, wie in helsinki.tex: nur hier
 %% der breite Abstand nach einem Satzende (#143), deshalb keine Eingabedaten.
-%% Keiner bricht über zwei Seiten, siehe dort.
 \newcommand{\hinweisabsatz}[1]{\par\vspace{5mm}\noindent%
-  {\interlinepenalty=10000 \nonfrenchspacing\sfcode`\:=1000 \sfcode`\;=1000 \sfcode`\,=1000 #1\par}}
+  \ungeteilt{\nonfrenchspacing\sfcode`\:=1000 \sfcode`\;=1000 \sfcode`\,=1000 #1}}
+
+%% Der Hinweis auf eine Steuerbefreiung, ein Satz je befreiter Steuergruppe:
+%% zusammenhaltend, aber ohne den Satzabstand von \hinweisabsatz, wie in
+%% helsinki.tex.
+\newcommand{\steuerhinweis}[1]{\noindent\ungeteilt{#1}}
 
 \newcommand{\absetzungskopf}[1]{\par\vspace{6mm}\noindent #1\par\vspace{1.5mm}}
 
@@ -309,7 +317,7 @@
 %% \hinweisabsatz (#143). Den Abstand setzt deshalb die Vorlage, und nur, wenn
 %% etwas dasteht – unbedingt wie in helsinki schöbe er auch jede Rechnung ohne
 %% steuerfreie Position um dieselben 5 mm nach unten (#220).
-\ifblank{<<STEUERHINWEISE>>}{}{\par\vspace{5mm}\noindent <<STEUERHINWEISE>>}
+\ifblank{<<STEUERHINWEISE>>}{}{\par\vspace{5mm}<<STEUERHINWEISE>>}
 
 <<ABSETZUNG>><<ZAHLUNGSFRIST>><<SKONTO>>
 
@@ -324,6 +332,6 @@
 \nopagebreak
 \vspace{8mm}
 
-{\interlinepenalty=10000 <<SCHLUSSSATZ>>\par}
+\ungeteilt{<<SCHLUSSSATZ>>}
 
 \end{document}
