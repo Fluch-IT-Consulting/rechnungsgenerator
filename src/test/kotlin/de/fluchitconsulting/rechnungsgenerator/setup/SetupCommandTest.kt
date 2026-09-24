@@ -73,6 +73,18 @@ class SetupCommandTest : FunSpec({
         vorhanden.readText() shouldBe "firma: Schon da\n"
     }
 
+    test("ein nicht beschreibbarer Ort nennt die Zieldatei und den Grund") {
+        // Unter einer Datei lässt sich kein Ordner anlegen – eine Ursache
+        // ohne Dateirechte, die ein Testlauf als root überginge. Dass die
+        // Meldung wie bei erzeuge lautet, prüft GenerateCommandTest.
+        val blockiert = createTempDirectory("einrichten-test").resolve("blockiert").also { it.writeText("") }
+        val ziel = blockiert.resolve(Root.FOLDER).resolve(Root.SELLER_CONFIG)
+
+        val failure = shouldThrow<CliktError> { lauf(blockiert) }
+
+        failure.message shouldBe "Die Datei $ziel konnte nicht geschrieben werden: Not a directory"
+    }
+
     test("gibt es den Ordner ohne die Datei, entsteht die Datei und sonst nichts") {
         // Der Ausweg aus dem Abbruch "Ordner ohne stammdaten.yaml" (#275).
         val verzeichnis = createTempDirectory("einrichten-test")

@@ -12,6 +12,7 @@ import de.fluchitconsulting.rechnungsgenerator.generate.toolchain.PdfAValidator
 import de.fluchitconsulting.rechnungsgenerator.generate.toolchain.ToolchainException
 import de.fluchitconsulting.rechnungsgenerator.generate.toolchain.Typesetter
 import de.fluchitconsulting.rechnungsgenerator.runCli
+import de.fluchitconsulting.rechnungsgenerator.setup.SetupCommand
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.collections.shouldContain
@@ -19,6 +20,7 @@ import io.kotest.matchers.collections.shouldContainInOrder
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.string.shouldContain
 import io.kotest.matchers.string.shouldNotContain
+import io.kotest.matchers.string.shouldStartWith
 import io.kotest.matchers.types.shouldBeInstanceOf
 import java.io.IOException
 import java.nio.file.Path
@@ -139,12 +141,37 @@ class GenerateCommandTest : FunSpec({
         ausgabe.last() shouldContain "Arbeitsdateien:"
     }
 
-    test("ein nicht beschreibbares Ziel nennt die Zieldatei") {
+    test("ein nicht beschreibbares Ziel nennt die Zieldatei, und nur einmal") {
+        // NoSuchFileException trägt in message nur den Pfad, und der stünde
+        // sonst ein zweites Mal hinter dem Doppelpunkt.
         val ziel = eingaben.resolve("gibt-es-nicht").resolve("ergebnis.pdf")
 
         val fehler = shouldThrow<CliktError> { lauf(FakeTypesetter(), "-o", ziel.toString()) }
 
-        fehler.message!! shouldContain "Die Datei $ziel konnte nicht geschrieben werden"
+        fehler.message shouldBe "Die Datei $ziel konnte nicht geschrieben werden."
+    }
+
+    /**
+     * erzeuge und einrichten schreiben den Satz ab, statt ihn zu teilen – die
+     * Begründung steht in GenerateCommand. Dieser Test hält die Abschriften
+     * gleich: Beide scheitern an derselben Ursache, und bis auf den Pfad muss
+     * dieselbe Meldung herauskommen (#327).
+     *
+     * Die Ursache ist ein Ort unter einer Datei statt unter einem Ordner. Das
+     * braucht keine Dateirechte, die ein Testlauf als root überginge, und es
+     * liefert einen Grund, also auch den Teil hinter dem Doppelpunkt.
+     */
+    test("ein nicht beschreibbares Ziel meldet sich wie bei einrichten") {
+        val blockiert = eingaben.resolve("blockiert").also { it.writeText("") }
+        val zielErzeuge = blockiert.resolve("ergebnis.pdf")
+        val zielEinrichten = blockiert.resolve(Root.FOLDER).resolve(Root.SELLER_CONFIG)
+
+        val erzeuge = shouldThrow<CliktError> { lauf(FakeTypesetter(), "-o", zielErzeuge.toString()) }
+        val einrichten = shouldThrow<CliktError> { SetupCommand(blockiert).parse(emptyArray()) }
+
+        val meldung = erzeuge.message!!.replace(zielErzeuge.toString(), "<ziel>")
+        meldung shouldStartWith "Die Datei <ziel> konnte nicht geschrieben werden: "
+        einrichten.message!!.replace(zielEinrichten.toString(), "<ziel>") shouldBe meldung
     }
 
     /**

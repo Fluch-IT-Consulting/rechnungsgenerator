@@ -21,6 +21,7 @@ import de.fluchitconsulting.rechnungsgenerator.generate.toolchain.LuaLatexTypese
 import de.fluchitconsulting.rechnungsgenerator.generate.toolchain.ToolchainException
 import de.fluchitconsulting.rechnungsgenerator.generate.toolchain.TypesetterFactory
 import java.io.IOException
+import java.nio.file.FileSystemException
 import kotlin.io.path.copyTo
 import kotlin.io.path.createTempDirectory
 import kotlin.io.path.exists
@@ -182,12 +183,21 @@ class GenerateCommand(
                         "${typesetPdf.validation.describe()}\n$inspectionNote$logoNote",
                 )
             }
-            // Derselbe Wortlaut wie bei einrichten: Beide sagen dasselbe über
-            // dieselbe Art Fehler.
+            // Derselbe Wortlaut wie bei einrichten, gehalten von einem Test, der
+            // beide vergleicht (#327). Ein gemeinsamer Typ wie
+            // InputFileException fände keinen Ort: generate und setup kennen
+            // einander nicht, und im Kern wird nichts geschrieben. Für zwei
+            // Zeilen ist die Abschrift billiger als eine Kante, die nur für
+            // sie da wäre.
+            //
+            // Eine FileSystemException nennt in message nur den Pfad, was sie
+            // darüber hinaus weiß, steht in reason – der Pfad stünde sonst
+            // zweimal da.
             try {
                 typesetPdf.pdf.copyTo(target, overwrite = overwrite)
             } catch (e: IOException) {
-                throw CliktError("Die Datei $target konnte nicht geschrieben werden: ${e.message}")
+                val reason = if (e is FileSystemException) e.reason else e.message
+                throw CliktError("Die Datei $target konnte nicht geschrieben werden" + (reason?.let { ": $it" } ?: "."))
             }
 
             echo("$target")
