@@ -25,7 +25,8 @@ import kotlin.time.Duration.Companion.minutes
  */
 interface ProcessRunner {
     fun run(
-        command: List<String>,
+        program: String,
+        params: List<String>,
         workingDir: Path,
         timeout: Duration = 2.minutes,
         environment: Map<String, String> = emptyMap(),

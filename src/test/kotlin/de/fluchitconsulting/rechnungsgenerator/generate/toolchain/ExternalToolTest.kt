@@ -35,7 +35,7 @@ class ExternalToolTest : FunSpec({
     test("ein Programm, das es nicht gibt, wird beim Namen genannt") {
         val fehler =
             shouldThrow<ToolchainException> {
-                ExternalTool.run(listOf("gibt-es-nicht-lualatex"), arbeitsverzeichnis)
+                ExternalTool.run("gibt-es-nicht-lualatex", emptyList(), arbeitsverzeichnis)
             }
 
         fehler.message!! shouldContain "Programm nicht gefunden: gibt-es-nicht-lualatex"
@@ -50,7 +50,7 @@ class ExternalToolTest : FunSpec({
     test("scheitert der Lauf an einer IOException, wird sie zur ToolchainException mit dem Programm") {
         val gibtEsNicht = arbeitsverzeichnis.resolve("gibt-es-nicht")
 
-        val fehler = shouldThrow<ToolchainException> { ExternalTool.run(listOf("true"), gibtEsNicht) }
+        val fehler = shouldThrow<ToolchainException> { ExternalTool.run("true", emptyList(), gibtEsNicht) }
 
         fehler.message!! shouldContain "true"
         fehler.message!! shouldContain gibtEsNicht.toString()
@@ -63,10 +63,11 @@ class ExternalToolTest : FunSpec({
             measureTime {
                 fehler =
                     shouldThrow<ToolchainException> {
-                        ExternalTool.run(listOf("sleep", "10"), arbeitsverzeichnis, timeout = 1.seconds)
+                        ExternalTool.run("sleep", listOf("10"), arbeitsverzeichnis, timeout = 1.seconds)
                     }
             }
 
+        fehler.message!! shouldContain "sleep hat nach"
         fehler.message!! shouldContain "nicht geantwortet und wurde abgebrochen"
         // Der eigentliche Beweis: Es wurde nicht auf das Ende von sleep
         // gewartet. Ohne diese Zusicherung wäre der Test auch dann grün, wenn
@@ -79,7 +80,8 @@ class ExternalToolTest : FunSpec({
     test("die Umgebung kommt beim Programm an") {
         val result =
             ExternalTool.run(
-                listOf("printenv", "RECHNUNGSGENERATOR_TEST"),
+                "printenv",
+                listOf("RECHNUNGSGENERATOR_TEST"),
                 arbeitsverzeichnis,
                 environment = mapOf("RECHNUNGSGENERATOR_TEST" to "angekommen"),
             )
@@ -98,7 +100,8 @@ class ExternalToolTest : FunSpec({
     test("stdout und stderr kommen getrennt zurück") {
         val result =
             ExternalTool.run(
-                listOf("sh", "-c", "echo nach-stdout; echo nach-stderr >&2"),
+                "sh",
+                listOf("-c", "echo nach-stdout; echo nach-stderr >&2"),
                 arbeitsverzeichnis,
             )
 

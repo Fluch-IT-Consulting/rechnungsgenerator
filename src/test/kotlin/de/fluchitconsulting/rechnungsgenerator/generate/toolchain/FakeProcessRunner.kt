@@ -50,7 +50,8 @@ class FakeProcessRunner(
     override fun canRun(program: String) = program !in missing
 
     override fun run(
-        command: List<String>,
+        program: String,
+        params: List<String>,
         workingDir: Path,
         timeout: Duration,
         environment: Map<String, String>,
@@ -58,7 +59,7 @@ class FakeProcessRunner(
         val run =
             runs.getOrNull(commands.size)
                 ?: error("Es war ${runs.size} Lauf/Läufe vorbereitet, das Modul ruft den ${commands.size + 1}.")
-        commands += command
+        commands += listOf(program) + params
         environments += environment
         run.files.forEach { (name, content) -> workingDir.resolve(name).writeText(content) }
         return ToolResult(run.exitCode, run.output, run.errorOutput)

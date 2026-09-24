@@ -173,7 +173,8 @@ class ExternalPdfAValidator(private val runner: ProcessRunner) : PdfAValidator {
     override fun validate(pdf: Path): ValidationResult {
         val result =
             runner.run(
-                listOf(PROGRAM, "--format", "xml", "-f", "1b", pdf.absolutePathString()),
+                PROGRAM,
+                listOf("--format", "xml", "-f", "1b", pdf.absolutePathString()),
                 pdf.parent,
             )
         if (result.exitCode !in listOf(EXIT_COMPLIANT, EXIT_NOT_COMPLIANT)) {
