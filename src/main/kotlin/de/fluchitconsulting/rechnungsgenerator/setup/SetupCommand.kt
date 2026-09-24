@@ -5,6 +5,7 @@ import com.github.ajalt.clikt.core.Context
 import com.github.ajalt.clikt.core.CoreCliktCommand
 import de.fluchitconsulting.rechnungsgenerator.core.model.Root
 import java.io.IOException
+import java.nio.file.FileSystemException
 import java.nio.file.Path
 import kotlin.io.path.createDirectories
 import kotlin.io.path.exists
@@ -48,11 +49,14 @@ class SetupCommand(
             throw CliktError("$folder ist eine Datei und kein Ordner; die Wurzel lässt sich hier nicht einrichten.")
         }
 
+        // Derselbe Wortlaut wie bei erzeuge, gehalten von einem Test, der beide
+        // vergleicht; warum abgeschrieben und nicht geteilt, steht dort (#327).
         try {
             folder.createDirectories()
             target.writeText(SellerConfigTemplate.text)
         } catch (e: IOException) {
-            throw CliktError("Die Datei $target konnte nicht geschrieben werden: ${e.message}")
+            val reason = if (e is FileSystemException) e.reason else e.message
+            throw CliktError("Die Datei $target konnte nicht geschrieben werden" + (reason?.let { ": $it" } ?: "."))
         }
 
         // Auf stdout allein der Pfad, damit $(rechnungsgenerator einrichten)
