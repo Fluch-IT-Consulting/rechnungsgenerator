@@ -35,11 +35,6 @@ object GermanFormat {
     // Mathematikschrift und nicht aus der des Designs.
     private val SYMBOLS = DecimalFormatSymbols(Locale.GERMANY).apply { minusSign = '\u2212' }
 
-    // DecimalFormat ist nicht thread-safe, deshalb pro Aufruf eine neue Instanz
-    // statt einer geteilten val. Das Rendern läuft ein paar Dutzend Mal pro
-    // Rechnung – der Aufwand ist gegenüber dem LaTeX-Lauf nicht messbar.
-    private fun format(pattern: String, value: BigDecimal): String = DecimalFormat(pattern, SYMBOLS).format(value)
-
     /**
      * Zahl mit so vielen Nachkommastellen, wie der Wert hat – mindestens
      * [minFraction], höchstens so viele, wie tatsächlich da sind.
@@ -54,17 +49,23 @@ object GermanFormat {
      * die Breite die Wahrheit ist.
      *
      * Gerundet wird hier nicht: Die Nachkommastellen reichen bis zur letzten,
-     * die der Wert trägt. Die Rundungsart steht trotzdem auf HALF_UP wie
-     * überall sonst im Programm – die Vorgabe von DecimalFormat ist HALF_EVEN,
-     * und fiele hier doch einmal eine Stelle, gäbe es zwei Rundungsarten.
+     * die der Wert trägt. UNNECESSARY hält das fest – müsste doch eine Stelle
+     * fallen, wirft DecimalFormat eine ArithmeticException. Eine Rundungsart
+     * wie HALF_UP legte nur fest, in welche Richtung still gerundet wird, und
+     * eine still gerundete Zahl ist genau die, die sich nicht nachrechnen
+     * lässt (#330).
      */
     private fun exact(value: BigDecimal, minFraction: Int): String {
         // stripTrailingZeros macht aus 19,0000000 die 19 und aus 1000 ein
         // 1E+3 mit negativem scale – deshalb der Boden bei minFraction.
         val stellen = maxOf(value.stripTrailingZeros().scale(), minFraction)
+        // DecimalFormat ist nicht thread-safe, deshalb pro Aufruf eine neue
+        // Instanz statt einer geteilten val. Das Rendern läuft ein paar Dutzend
+        // Mal pro Rechnung – der Aufwand ist gegenüber dem LaTeX-Lauf nicht
+        // messbar.
         return DecimalFormat("#,##0", SYMBOLS)
             .apply {
-                roundingMode = RoundingMode.HALF_UP
+                roundingMode = RoundingMode.UNNECESSARY
                 minimumFractionDigits = minFraction
                 maximumFractionDigits = stellen
             }.format(value)
