@@ -132,17 +132,17 @@ class InvoiceRendererTest : FunSpec({
     }
 
     /**
-     * Der negative Test der Rechnungsart: Eine bestehende Rechnungsdatei kennt
-     * den Schlüssel `art` nicht und muss unverändert dasselbe Ergebnis liefern.
+     * Eine Rechnungsdatei ohne den Schlüssel `art` ist eine gewöhnliche
+     * Rechnung, und ihr Satz steht zeichengleich in `rechnung-erwartet.tex`.
      *
      * Verglichen wird das LaTeX, nicht das PDF – zwei PDF-Läufe unterscheiden
      * sich schon im Zeitstempel, und alles, was am PDF anders werden könnte,
      * steht vorher hier drin. Wird die Vorlage absichtlich geändert, muss
      * `rechnung-erwartet.tex` bewusst neu erzeugt werden; genau das ist der
      * Zweck: Der Satz einer gewöhnlichen Rechnung soll sich nicht nebenbei
-     * ändern, während die anderen Rechnungsarten dazukommen.
+     * ändern, wenn an einer anderen Rechnungsart gebaut wird.
      */
-    test("eine Rechnungsdatei ohne art wird gesetzt wie bisher") {
+    test("eine Rechnungsdatei ohne art wird gesetzt wie erwartet") {
         val seller = YamlLoader.parseSellerConfig(resource("stammdaten.yaml"))
         val invoice = YamlLoader.parseInvoice(resource("rechnung.yaml"))
 

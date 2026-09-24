@@ -50,9 +50,10 @@ class YamlLoaderTest : FunSpec({
         fehler.message!! shouldContain "helsinki, prag"
     }
 
-    test("die Namen vor #324 sind unbekannte Designs wie jeder andere Wert") {
-        // Nachtrag zu ADR-0011: keine Zuordnung zu den neuen Namen, auch keine
-        // Warnung – wer sie noch stehen hat, ändert die Zeile in den Stammdaten.
+    test("balken und raster sind unbekannte Designs wie jeder andere Wert") {
+        // Nachtrag zu ADR-0011: keine Zuordnung zu helsinki und prag, auch
+        // keine Warnung – wer einen davon stehen hat, ändert die Zeile in den
+        // Stammdaten.
         listOf("balken", "raster").forEach { alt ->
             withClue(alt) {
                 val fehler =
@@ -138,8 +139,8 @@ class YamlLoaderTest : FunSpec({
     }
 
     test("eine Rechnungsdatei ohne art ist eine gewöhnliche Rechnung") {
-        // Der negative Test dieses Schritts: Bestehende Dateien kennen den
-        // Schlüssel nicht und sollen sich trotzdem verhalten wie bisher.
+        // Die Vorgabe hält jede Rechnungsdatei gültig, die den Schlüssel nicht
+        // kennt.
         YamlLoader.parseInvoice(resource("rechnung.yaml")).type shouldBe InvoiceType.INVOICE
     }
 

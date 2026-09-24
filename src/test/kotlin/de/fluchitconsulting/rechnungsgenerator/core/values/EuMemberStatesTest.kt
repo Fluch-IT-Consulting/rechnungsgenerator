@@ -14,8 +14,8 @@ class EuMemberStatesTest : FunSpec({
         assertSoftly {
             EuMemberStates.contains(CountryCode("DE")) shouldBe true
             EuMemberStates.contains(CountryCode("AT")) shouldBe true
-            // "at" klein: Die Vereinheitlichung passiert jetzt in CountryCode,
-            // nicht mehr hier – geprüft wird, dass sie ankommt.
+            // "at" klein: Vereinheitlicht wird in CountryCode, nicht hier –
+            // geprüft wird, dass es ankommt.
             EuMemberStates.contains(CountryCode("at")) shouldBe true
             EuMemberStates.contains(CountryCode("CH")) shouldBe false
             EuMemberStates.contains(CountryCode("GB")) shouldBe false

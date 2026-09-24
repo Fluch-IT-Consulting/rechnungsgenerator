@@ -58,7 +58,7 @@ internal object ItemBlocks {
     /**
      * Die Beschreibungsspalte einer Position: Bezeichnung, darunter – falls
      * vorhanden – die Zusatzangaben klein und gedämpft. Das ergibt die
-     * zweizeilige Position, die die bisherigen Rechnungen hatten, nur dass die
+     * zweizeilige Position der Rechnungen vor dem Generator, nur dass die
      * zweite Zeile hier aus benannten Feldern entsteht statt aus einem
      * Textzusatz.
      *

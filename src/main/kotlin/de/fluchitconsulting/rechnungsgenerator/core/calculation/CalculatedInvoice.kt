@@ -305,7 +305,6 @@ data class CalculatedInvoice(
         invoice.number
             .replace(Regex("[^A-Za-z0-9._-]"), "-")
             .trim('-')
-            // takeIf gibt den Wert zurück, wenn die Bedingung gilt, sonst null.
             .takeIf { it.isNotEmpty() }
             ?.let { "${invoice.type.documentName}-$it" }
 }

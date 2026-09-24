@@ -63,7 +63,8 @@
 
 %% Farben von fluch-it-consulting.de
 %% Mittelweg zwischen dem Rot der Webseite (#8B1A2B) und dem gedämpften Ton
-%% der bisherigen Rechnung (#8E4848): kanalweise das arithmetische Mittel.
+%% der Rechnung vor dem Generator (#8E4848): kanalweise das arithmetische
+%% Mittel.
 %% Beide Ausgangsfarben stehen daneben, das Umschalten ist eine Zeile.
 \definecolor{akzent}{HTML}{8D313A}
 \definecolor{akzentweb}{HTML}{8B1A2B}
@@ -280,8 +281,8 @@
 \newcommand{\gesamtzeile}[1]{\abschlusszeile{Gesamtbetrag}{#1}}
 
 %% ------------------------------------------------------------------ Fußzeile
-%% Zwei zentrierte Zeilen ohne Trennlinie darüber, wie auf der bisherigen
-%% Rechnung: erst die gesellschaftsrechtlichen Angaben (§35a GmbHG),
+%% Zwei zentrierte Zeilen ohne Trennlinie darüber, wie auf der Rechnung vor
+%% dem Generator: erst die gesellschaftsrechtlichen Angaben (§35a GmbHG),
 %% dann die steuerlichen und die Bankverbindung. Der Seitenfuß jeder Seite,
 %% oben in \fancypagestyle gesetzt. [b], damit er von seiner letzten Grundlinie
 %% nach oben wächst und nicht in den Rand.
@@ -299,8 +300,9 @@ USt-IdNr. <<USTID>> · <<INSTITUT>> · BIC <<BIC>> · IBAN <<IBAN>>}}
 \thispagestyle{erste}
 
 %% ------------------------------------------------------------------ Kopf
-%% Alles rechtsbündig in einem Block, wie auf der bisherigen Rechnung: die
-%% Firmierung fett, darunter Anschrift und Kontakt in derselben Schriftgröße.
+%% Alles rechtsbündig in einem Block, wie auf der Rechnung vor dem Generator:
+%% die Firmierung fett, darunter Anschrift und Kontakt in derselben
+%% Schriftgröße.
 %% Links bleibt frei – der Balken weiter unten ist der einzige Blickfang.
 %%
 %% Die Person steht unter der Firmierung nur, wenn es keine Geschäftsführung
@@ -354,9 +356,10 @@ USt-IdNr. <<USTID>> · <<INSTITUT>> · BIC <<BIC>> · IBAN <<IBAN>>}}
 
 %% ---------------------------------------------------------- Titel (Blickfang)
 %% Das einzige Flächenelement der Seite. Nummer links, Datum rechts – wie auf
-%% der bisherigen Rechnung, damit beide Angaben zusammen gelesen werden.
+%% der Rechnung vor dem Generator, damit beide Angaben zusammen gelesen
+%% werden.
 %% \fboxsep steuert den Innenabstand des \colorbox – waagerecht wie senkrecht.
-%% Nachgemessen: Der Balken der bisherigen Rechnung ist 6,0 mm hoch.
+%% Nachgemessen: Der Balken der Rechnung vor dem Generator ist 6,0 mm hoch.
 %%
 %% \raisebox erzwingt Höhe = Ziffernhöhe und Tiefe = 0. Ohne das richtet sich
 %% die Boxhöhe nach dem tatsächlichen Text: Die Unterlänge des "g" in "August"
@@ -464,7 +467,7 @@ Mit freundlichen Grüßen\\*[7mm]
 
 %% ---------------------------------------------------------- Bankverbindung
 %% Im Textfluss, linksbündig, mit schlichter Beschriftung – wie auf der
-%% bisherigen Rechnung. Kein Kasten, keine Linie, keine Versalien. Ob sie
+%% Rechnung vor dem Generator. Kein Kasten, keine Linie, keine Versalien. Ob sie
 %% dasteht, entscheidet der Renderer (siehe \bankblock oben).
 <<BANKVERBINDUNG>>
 

@@ -23,8 +23,8 @@ data class TypesetPdf(val pdf: Path, val validation: ValidationResult)
  * veraPDF: zwei Programme, ein Temp-Verzeichnis, ein Exitcode und ein paar
  * Sekunden Laufzeit. Genau an der Stelle, an der beides zusammenkommt – wo
  * Dateien kopiert, Hinweise ausgegeben und Arbeitsverzeichnisse gelöscht
- * werden –, gab es bisher keinen Test, weil jeder Lauf die Werkzeuge
- * vorausgesetzt hätte.
+ * werden –, ließe sich ohne diese Naht kein Test schreiben, der nicht die
+ * Werkzeuge voraussetzte.
  *
  * Zwei Adapter erfüllen dieses Interface, und deshalb ist die Naht eine echte
  * und keine gedachte: [LuaLatexTypesetter] im Betrieb, im Test einer, der ein
