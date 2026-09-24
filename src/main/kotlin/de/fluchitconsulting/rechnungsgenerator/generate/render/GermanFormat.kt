@@ -53,9 +53,10 @@ object GermanFormat {
      * Der Preis dafür ist eine breitere Spalte in genau den Fällen, in denen
      * die Breite die Wahrheit ist.
      *
-     * Gerundet wird hier also nicht mehr. Sollte es doch je dazu kommen, dann
-     * HALF_UP wie überall sonst – die Vorgabe von DecimalFormat wäre HALF_EVEN
-     * und damit die zweite Rundungsart im Programm.
+     * Gerundet wird hier nicht: Die Nachkommastellen reichen bis zur letzten,
+     * die der Wert trägt. Die Rundungsart steht trotzdem auf HALF_UP wie
+     * überall sonst im Programm – die Vorgabe von DecimalFormat ist HALF_EVEN,
+     * und fiele hier doch einmal eine Stelle, gäbe es zwei Rundungsarten.
      */
     private fun exact(value: BigDecimal, minFraction: Int): String {
         // stripTrailingZeros macht aus 19,0000000 die 19 und aus 1000 ein
