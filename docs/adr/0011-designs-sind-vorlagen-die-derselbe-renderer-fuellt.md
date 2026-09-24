@@ -1,8 +1,8 @@
 # Designs sind Vorlagen, die derselbe Renderer füllt
 
-Die Stammdaten wählen das Design der Rechnung: `design: balken` oder
-`design: raster`, ohne Eintrag `balken`. Jedes Design ist eine Vorlage im
-Programm, `templates/balken.tex` und `templates/raster.tex`. Beide füllt
+Die Stammdaten wählen das Design der Rechnung: `design: helsinki` oder
+`design: prag`, ohne Eintrag `helsinki`. Jedes Design ist eine Vorlage im
+Programm, `templates/helsinki.tex` und `templates/prag.tex`. Beide füllt
 derselbe Renderer mit denselben Werten und Makroaufrufen.
 
 Wer was entscheidet:
@@ -26,9 +26,9 @@ die geschlossene Menge, die jedes Design vollständig beantwortet (Notiz vom
 14.09.2026): Was an der Art hängt, entscheidet einmal Kotlin, in den `when`
 ohne `else`, und nicht jedes Design für sich ohne Compiler.
 
-Die Treppe aus der Notiz hat auf der ersten Stufe gehalten. `raster` kommt mit
-dem Vokabular aus, das #188 für `balken` geschnitten hat – kein neuer Eintrag
-in `TemplateMacro` oder `TemplateValue`, kein zweiter Renderer.
+Die Treppe aus der Notiz hat auf der ersten Stufe gehalten. `prag` kommt mit
+dem Vokabular aus, das #188 für `helsinki` geschnitten hat – kein neuer
+Eintrag in `TemplateMacro` oder `TemplateValue`, kein zweiter Renderer.
 
 **Feste Texte gehören zum Design.** Ob es "Rechnungsnr." heißt oder
 "Rechnungsnummer", "Zahlbar ohne Abzug bis" oder "Zahlbar bis", entscheidet die
@@ -39,9 +39,9 @@ Vorlage, die fest "Leistungszeitraum" schriebe, wäre dort falsch. Dasselbe gilt
 für die Wörter im Summenblock und in der Absetzung: Sie stehen in jedem Design
 gleich da.
 
-**Die Bankverbindung in `raster`** steht nur im Fuß, auf jedem Dokument, als
-Angabe des Briefbogens und nicht als Zahlungsaufforderung. So hält es `balken`
-schon mit der IBAN in seiner Fußzeile. `\bankblock` ist in `raster` definiert
+**Die Bankverbindung in `prag`** steht nur im Fuß, auf jedem Dokument, als
+Angabe des Briefbogens und nicht als Zahlungsaufforderung. So hält es
+`helsinki` schon mit der IBAN in seiner Fußzeile. `\bankblock` ist in `prag` definiert
 und leer, der Renderer ruft ihn weiter nur bei `requestsPayment` auf. Ob ein
 Dokument zur Zahlung auffordert, zeigt dort allein das Zahlungsziel. Entschieden
 am fertigen Satzbild.
@@ -62,29 +62,29 @@ am fertigen Satzbild.
 - Aus #188, am selben Maßstab:
   - **Werte als `\newcommand` statt Platzhalter.** Namensregeln, Kollisionen
     und Expansionsfallen; die Prüfungen aus `fillIn` wären neu zu bauen.
-  - **Fertige Fußblöcke** (Anschrift, Steuer, Bank). `balken` verteilt dieselben
-    Angaben anders auf zwei Zeilen als `raster` auf drei Spalten; der Renderer
-    müsste das Design kennen.
+  - **Fertige Fußblöcke** (Anschrift, Steuer, Bank). `helsinki` verteilt
+    dieselben Angaben anders auf zwei Zeilen als `prag` auf drei Spalten; der
+    Renderer müsste das Design kennen.
   - **Kopfangaben als Folge aus dem Renderer.** Reihenfolge und Beschriftung
     lägen in Kotlin.
   - **Bedingungen in der Vorlage über `\ifblank` hinaus.** Was an der
     Rechnungsart hängt, würde je Design neu entschieden, ohne Compiler.
-- **Die Bank in `raster` als dritte Fußspalte nur bei `requestsPayment`.** Auf
+- **Die Bank in `prag` als dritte Fußspalte nur bei `requestsPayment`.** Auf
   dem Storno hätte der Fuß ein Loch. Ebenso verworfen: ein Bankblock im
   Textfluss zusätzlich zum Fuß – dann stünde die Bank zweimal auf dem Blatt.
 
 ## Konsequenzen
 
-- **Die Vergleichsdateien sind asymmetrisch.** `balken` sichern vier
-  `*-erwartet.tex`, eine je Rechnungsart mit eigenem Markup. `raster` sichert
-  nur `raster-rechnung-erwartet.tex`. Die übrigen Arten in `raster` schützt
+- **Die Vergleichsdateien sind asymmetrisch.** `helsinki` sichern vier
+  `*-erwartet.tex`, eine je Rechnungsart mit eigenem Markup. `prag` sichert
+  nur `prag-rechnung-erwartet.tex`. Die übrigen Arten in `prag` schützt
   bewusst allein das Netz aus #187: Ihre fachlichen Sätze sind dieselben wie in
-  `balken` und dort schon gesichert, und eine Datei je Design und Art änderte
+  `helsinki` und dort schon gesichert, und eine Datei je Design und Art änderte
   sich mit jeder Vorlage. Ein Fehler im Satzbild einer Art, den das Netz nicht
-  sieht, fällt in `raster` erst am PDF auf.
+  sieht, fällt in `prag` erst am PDF auf.
 - **Das Netz aus #187 kennt jedes Design.** Ein Test verlangt, dass jedes
   `Design` darin steht. Zum Design gehören dort die Wörter, deren Abwesenheit
-  geprüft wird; `raster` hat keine Bank-Überschrift.
+  geprüft wird; `prag` hat keine Bank-Überschrift.
 - **Ein drittes Design** ist eine Vorlage, ein Eintrag in `Design` und eine Zeile
   im Netz. Braucht es ein Wort, das das Vokabular nicht hat, ist das die Frage
   aus #188 – nicht ein Makro am Renderer vorbei.
@@ -96,7 +96,7 @@ Umgesetzt in #189, vorbereitet in #187 und #188.
 
 Die Asymmetrie der Vergleichsdateien hatte einen Preis, den diese Entscheidung
 nicht ansah: Jede `*-erwartet.tex` enthielt die ganze Vorlage, und eine
-Änderung am Satzbild von `balken` änderte vier Dateien wortgleich. Von den
+Änderung am Satzbild von `helsinki` änderte vier Dateien wortgleich. Von den
 150 Commits davor änderten 14 drei oder vier davon zugleich (#204).
 
 Seither gilt:
@@ -107,21 +107,21 @@ Seither gilt:
   vorher gar keine. Die Werte hängen nicht am Design, deshalb gilt eine Datei
   für jedes; entstanden sind sie mit den Stammdaten ohne Logo.
 - **Je Design ein Volltext**, an der gewöhnlichen Rechnung:
-  `rechnung-erwartet.tex` für `balken`, `raster-rechnung-erwartet.tex` für
-  `raster` (mit Logo). Die übrigen drei Volltext-Dateien von `balken` sind
+  `rechnung-erwartet.tex` für `helsinki`, `prag-rechnung-erwartet.tex` für
+  `prag` (mit Logo). Die übrigen drei Volltext-Dateien von `helsinki` sind
   entfallen.
 
 Das kippt die Entscheidung nicht, es ergänzt die Konsequenz. Die Asymmetrie
 ist aufgehoben: Beide Designs sichern dasselbe, und ein weiteres Design
 bringt genau eine Vergleichsdatei mit. Die übrigen Arten verlieren dafür in
-`balken` den zeichengleichen Volltext. Ihr Markup – Absetzungstabelle,
+`helsinki` den zeichengleichen Volltext. Ihr Markup – Absetzungstabelle,
 Pflichtsatz, Bezug – steht als Makroaufrufe in den Werten, und wie ein Design
 diese Makros definiert, steht wortgleich in dessen Volltext. Dass sie auf dem
 Blatt richtig erscheinen, prüft weiter allein das Netz aus #187.
 
 ## Nachtrag vom 19.09.2026: Die Vorlage beschriftet die Summen
 
-`raster` sollte den Summenblock anders benennen als `balken`: "Zwischensumme
+`prag` sollte den Summenblock anders benennen als `helsinki`: "Zwischensumme
 (netto)" und "Umsatzsteuer 19 %" statt "Nettobetrag" und "zzgl. 19 % USt.".
 Das Vokabular aus #188 hatte dafür kein Wort, die Beschriftungen kamen fertig
 aus Kotlin. Also stellte sich die Frage aus #188 neu (#217).
@@ -140,11 +140,11 @@ Beschriftung an der Rechnungsart; das bliebe eine Entscheidung je Design.
 
 ## Nachtrag vom 21.09.2026: Jede Vorlage sagt etwas über die Zahlung
 
-`raster` nennt das Zahlungsziel seit #211 nicht mehr im Kopf, sondern als
+`prag` nennt das Zahlungsziel seit #211 nicht mehr im Kopf, sondern als
 Frist unter den Summen. Damit gibt es für dieselbe Angabe zwei Platzhalter,
 und `ZAHLUNGSZIEL` konnte nicht bleiben, was die Pflichtliste aus #188 aus ihm
 gemacht hatte: `TemplateValue.required` verlangt den Platzhalter von *jeder*
-Vorlage, und `raster` setzt ihn bewusst nicht.
+Vorlage, und `prag` setzt ihn bewusst nicht.
 
 Beide schlicht optional zu machen, wie #211 es formuliert hatte, ließe aber
 eine Vorlage durch, die über die Zahlung gar nichts sagt – auffallen würde das
@@ -162,3 +162,18 @@ während die Freiheit eines Designs genau die Frage ist, die dieses ADR und
 schreibt es hin und entscheidet damit sichtbar. Derselbe Zug wie `InvoiceType`
 ohne Vorgabewerte (ADR-0009) und die `when` ohne `else` in den Regelgruppen:
 Der Nächste entscheidet, statt zu erben.
+
+## Nachtrag vom 24.09.2026: Die Designs heißen helsinki und prag
+
+Die beiden Designs sind umbenannt (#324): `balken` heißt `helsinki`, `raster`
+heißt `prag`, in den Stammdaten wie in den Vorlagen (`templates/helsinki.tex`,
+`templates/prag.tex`). Am Satzbild ändert sich nichts, und die Vorgabe ohne
+Eintrag bleibt dasselbe Design.
+
+Die alten Namen nimmt das Programm nicht mehr an, auch nicht mit Warnung: Wer
+seit v0.2.0 `design: balken` oder `design: raster` stehen hat, bekommt
+„Unbekanntes Design“ wie bei jedem anderen Wert. Eine Zuordnung der alten
+Namen müsste der Code sonst dauerhaft mitführen, für eine Zeile, die sich in
+den Stammdaten einmal ändern lässt. Die ADRs nennen seither die neuen Namen;
+die Notizen unter `docs/notizen/` behalten die alten, weil sie ein Gespräch mit
+seinem damaligen Stand festhalten.

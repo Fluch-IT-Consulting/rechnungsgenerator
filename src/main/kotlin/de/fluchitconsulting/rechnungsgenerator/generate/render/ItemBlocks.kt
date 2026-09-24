@@ -135,7 +135,7 @@ internal object ItemBlocks {
     /**
      * Das Zahlungsziel als ein Satz unter den Summen, als Frist und nicht als
      * Datum: "Die Zahlung ist 14 Tage nach Rechnungsdatum fällig." Das Design
-     * `raster` setzt ihn statt der Kopfzeile, `balken` übergeht ihn (#211).
+     * `prag` setzt ihn statt der Kopfzeile, `helsinki` übergeht ihn (#211).
      *
      * Der Bezug ist das Rechnungsdatum und nicht der Erhalt der Rechnung: Von
      * dort rechnen [CalculatedInvoice.dueDate] und das Skonto daneben. "ohne

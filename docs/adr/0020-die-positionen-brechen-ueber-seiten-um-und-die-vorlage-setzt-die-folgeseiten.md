@@ -71,7 +71,7 @@ Block so groß, dass er oft eine halbleere Seite davor erzwänge.
 Seite 3 stand "Mit freundlichen Grüßen" allein über dem Namen – ein Gruß ohne
 den Satz, den er beschließt. Gehalten wird mit Umbruchstrafen und nicht mit
 einer Box: Strafen nehmen keinen Raum ein, und die einseitige Rechnung
-bleibt pixelgleich. In raster, das keinen Gruß setzt, stand an derselben
+bleibt pixelgleich. In prag, das keinen Gruß setzt, stand an derselben
 Stelle der Schlusssatz allein auf Seite 3; er hängt dort deshalb an der
 Zahlungsfrist, beim Storno am Pflichtsatz. Dabei zeigte sich, dass die Seite
 auch mitten im zweizeiligen Pflichtsatz brechen konnte und auf Seite 3 nur
@@ -116,8 +116,8 @@ Rechnung; das Log sieht jede.
   `tabularx`, mit Kopf und Fuß je Seite. Wie – `longtable`, `xltabular`,
   `fancyhdr`, `lastpage` – entscheidet die Vorlage; das Vokabular der Naht
   bleibt gleich.
-- **Der Fuß wird ein Seitenfuß.** In `balken` steht er heute am Ende des
-  Textes hinter einem `\vfill`, in `raster` ebenso. Als Seitenfuß kann er auf
+- **Der Fuß wird ein Seitenfuß.** In `helsinki` steht er heute am Ende des
+  Textes hinter einem `\vfill`, in `prag` ebenso. Als Seitenfuß kann er auf
   der einseitigen Rechnung um Millimeter wandern. Ziel ist das unveränderte
   Satzbild; ob es erreicht ist, entscheidet der Bildvergleich mit `pdftoppm`,
   nicht die Prüfsumme.
@@ -129,8 +129,8 @@ Rechnung; das Log sieht jede.
   die Seitenzahl, dass es mehr als eine ist. Dieselbe Datei hält den
   Fortsetzungshinweis und den kurzen Kopf der Folgeseite fest. Eine zweite,
   `schluss-an-der-seitengrenze.yaml`, füllt die zweite Seite so weit, dass
-  sie ohne Zusammenhalt bräche: in balken zwischen Schlusssatz und Gruß, in
-  raster zwischen Zahlungsfrist und Schlusssatz. Die Grenze ist
+  sie ohne Zusammenhalt bräche: in helsinki zwischen Schlusssatz und Gruß, in
+  prag zwischen Zahlungsfrist und Schlusssatz. Die Grenze ist
   nachgemessen und wandert, wenn sich das Satzbild ändert; die Prüfung bleibt
   dann richtig, trifft den Fall aber nicht mehr.
 - **Ein drittes Design** muss die Folgeseiten selbst setzen; die Liste oben

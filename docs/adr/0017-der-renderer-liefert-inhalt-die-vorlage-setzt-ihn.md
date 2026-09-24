@@ -1,8 +1,8 @@
 # Der Renderer liefert Inhalt, die Vorlage setzt ihn
 
 Abstände, Schriftgrad, Farbe, Linien, Beschriftungen, Trenner, Ort und
-Reihenfolge stehen in der Vorlage des Designs (`templates/balken.tex`,
-`templates/raster.tex`). Der Renderer liefert Werte und Makroaufrufe und
+Reihenfolge stehen in der Vorlage des Designs (`templates/helsinki.tex`,
+`templates/prag.tex`). Der Renderer liefert Werte und Makroaufrufe und
 entscheidet, **ob** etwas dasteht – nicht, wie es aussieht. Er schreibt kein
 LaTeX von sich aus: keinen Längennamen, kein `\\`, kein `\mbox`.
 
@@ -75,7 +75,7 @@ hat sie für diese eine Rechnung hingeschrieben.
 
 **Eine benannte Regel neben der Pflichtliste, und nur eine.**
 `TemplateValue.ZAHLUNGSANGABE`: Jede Vorlage sagt etwas über die Zahlung –
-`balken` das Zahlungsziel als Datum im Kopf, `raster` die Frist als Satz unter
+`helsinki` das Zahlungsziel als Datum im Kopf, `prag` die Frist als Satz unter
 den Summen. Pflicht ist deshalb keiner der beiden Platzhalter, aber einer von
 beiden, und geprüft wird das beim Bau der Vorlage statt am fertigen PDF.
 

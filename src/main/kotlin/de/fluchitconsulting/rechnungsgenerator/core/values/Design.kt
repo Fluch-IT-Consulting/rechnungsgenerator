@@ -20,11 +20,11 @@ enum class Design(
 ) {
     // Das Satzbild des Lebenslaufs und der Webseite des Autors: Titelbalken in
     // der Akzentfarbe, TeX Gyre Heros, ruhiger Textfluss.
-    BALKEN("balken"),
+    HELSINKI("helsinki"),
 
     // Klassisch-tabellarisch: Fira Sans, schwarz-weiß, Positionen und Summen
     // in einem Gitter, Fuß in drei Spalten.
-    RASTER("raster"),
+    PRAG("prag"),
     ;
 
     override fun toString(): String = label

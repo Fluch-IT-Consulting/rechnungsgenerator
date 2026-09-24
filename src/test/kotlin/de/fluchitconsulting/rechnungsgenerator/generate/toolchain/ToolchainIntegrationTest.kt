@@ -139,7 +139,7 @@ class ToolchainIntegrationTest : FunSpec({
         val logo = Path.of("src/test/resources/logo.tex").toAbsolutePath()
         val stammdaten =
             workDir.resolve("stammdaten-logo.yaml").also {
-                it.writeText(Path.of("src/test/resources/stammdaten.yaml").readText() + "design: raster\nlogo: $logo\n")
+                it.writeText(Path.of("src/test/resources/stammdaten.yaml").readText() + "design: prag\nlogo: $logo\n")
             }
 
         val (erster, _) = run.erzeuge("rechnung", "logo-1", stammdaten = stammdaten)
@@ -156,14 +156,14 @@ class ToolchainIntegrationTest : FunSpec({
      * weil jede Vorlage pdfx selbst lädt.
      */
     test("das PDF hat keine Lesezeichen und öffnet keine Lesezeichenleiste") {
-        val raster =
-            workDir.resolve("stammdaten-raster.yaml").also {
-                it.writeText(Path.of("src/test/resources/stammdaten.yaml").readText() + "design: raster\n")
+        val prag =
+            workDir.resolve("stammdaten-prag.yaml").also {
+                it.writeText(Path.of("src/test/resources/stammdaten.yaml").readText() + "design: prag\n")
             }
         val pdfs =
             listOf(
-                run.erzeuge("rechnung", "lesezeichen-balken").first,
-                run.erzeuge("rechnung", "lesezeichen-raster", stammdaten = raster).first,
+                run.erzeuge("rechnung", "lesezeichen-helsinki").first,
+                run.erzeuge("rechnung", "lesezeichen-prag", stammdaten = prag).first,
             )
 
         pdfs.forEach { pdf ->
@@ -196,7 +196,7 @@ class ToolchainIntegrationTest : FunSpec({
                 workDir.resolve("stammdaten-${logo.fileName}.yaml").also {
                     it.writeText(
                         Path.of("src/test/resources/stammdaten.yaml").readText() +
-                            "design: raster\nlogo: ${logo.toAbsolutePath()}\n",
+                            "design: prag\nlogo: ${logo.toAbsolutePath()}\n",
                     )
                 }
             val (pdf, ausgabe) = run.erzeuge("rechnung", "hoehe-${logo.fileName}", stammdaten = stammdaten)

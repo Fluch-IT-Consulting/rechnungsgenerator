@@ -1,6 +1,6 @@
-%% Rechnungsvorlage "raster" – wird vom InvoiceRenderer gefüllt, mit denselben
-%% Werten und Makroaufrufen wie "balken" (ADR-0011). Platzhalter, Makros und die
-%% Regel, wer was entscheidet, beschreibt der Kopf von balken.tex. Kurz: Jede
+%% Rechnungsvorlage "prag" – wird vom InvoiceRenderer gefüllt, mit denselben
+%% Werten und Makroaufrufen wie "helsinki" (ADR-0011). Platzhalter, Makros und die
+%% Regel, wer was entscheidet, beschreibt der Kopf von helsinki.tex. Kurz: Jede
 %% einzelne Angabe darf leer sein, und diese Vorlage fragt dafür nur \ifblank.
 %%
 %% Gestaltungsprinzip: klassisch-tabellarisch und schwarz-weiß. Die Ordnung
@@ -10,7 +10,7 @@
 %% Logo oben links mit, wenn die Stammdaten eines nennen.
 \documentclass[10pt,a4paper]{article}
 
-%% pdfx erzeugt das PDF/A-1b, siehe balken.tex. Früh laden, es zieht hyperref
+%% pdfx erzeugt das PDF/A-1b, siehe helsinki.tex. Früh laden, es zieht hyperref
 %% und xcolor mit. Ohne Lesezeichen, siehe dort.
 \PassOptionsToPackage{bookmarks=false}{hyperref}
 \usepackage[a-1b]{pdfx}
@@ -18,7 +18,7 @@
 \usepackage{fontspec}
 \usepackage{geometry}
 %% xltabular für die Positionen, die über Seiten umbrechen (ADR-0020), wie in
-%% balken.tex. Es lädt tabularx selbst, das für die Absetzung bleibt.
+%% helsinki.tex. Es lädt tabularx selbst, das für die Absetzung bleibt.
 \usepackage{xltabular}
 \usepackage{fancyhdr}
 \usepackage{lastpage}  %% die Zahl der Seiten für den Kopf der Folgeseiten
@@ -28,7 +28,7 @@
 \usepackage{tikz}      %% das Logo
 
 %% Fira Sans, aus TeX Live. Ligatures=TeXOff aus demselben Grund wie in
-%% balken.tex: Text aus den Eingabedaten soll so dastehen, wie er in der
+%% helsinki.tex: Text aus den Eingabedaten soll so dastehen, wie er in der
 %% YAML-Datei steht, auch "--" und "<<" (#81).
 \setmainfont{FiraSans}[
   Ligatures      = TeXOff,
@@ -40,7 +40,7 @@
 ]
 
 %% Der Fuß ist ein Seitenfuß auf jeder Seite (ADR-0020), der Kopf der
-%% Folgeseiten steht im oberen Rand, wie in balken.tex. includefoot misst den
+%% Folgeseiten steht im oberen Rand, wie in helsinki.tex. includefoot misst den
 %% unteren Rand bis zur Grundlinie des Fußes, und die ist seine Unterkante
 %% (siehe \fuss). Sie steht, wo sie stand, als der Fuß noch das Ende des
 %% Textes war: TeX setzte seine Unterkante \maxdepth unter das Ende des
@@ -73,7 +73,7 @@
   \raisebox{\dimexpr\footskip-3mm\relax}[0pt][0pt]{\small Fortsetzung auf der nächsten Seite}\fi}
 \raggedright
 
-%% Keine Silbentrennung, aus demselben Grund wie in balken.tex: Eigennamen,
+%% Keine Silbentrennung, aus demselben Grund wie in helsinki.tex: Eigennamen,
 %% Beträge und Anschriften.
 \hyphenpenalty=10000
 \exhyphenpenalty=10000
@@ -105,7 +105,7 @@
 %% gewöhnlichen Rechnung "Vereinnahmt am" ohne Datum.
 \newcommand{\kopfangabe}[2]{\ifblank{#2}{}{#1 & #2\\}}
 
-%% Die eigenen Sätze des Programms unter den Summen, wie in balken.tex: nur hier
+%% Die eigenen Sätze des Programms unter den Summen, wie in helsinki.tex: nur hier
 %% der breite Abstand nach einem Satzende (#143), deshalb keine Eingabedaten.
 %% Keiner bricht über zwei Seiten, siehe dort.
 \newcommand{\hinweisabsatz}[1]{\par\vspace{5mm}\noindent%
@@ -145,11 +145,11 @@
 \newcommand{\summenzeile}[2]{#1 & #2}
 
 %% Die fette Zeile unter der Linie, mit der ein Betragsblock endet. Sie beendet
-%% die Zeile davor selbst, wie in balken.tex (#147).
+%% die Zeile davor selbst, wie in helsinki.tex (#147).
 \newcommand{\abschlusszeile}[2]{\\\hline\textbf{#1} & \textbf{#2}}
 
 %% Die Zeilen des Summenblocks mit ihren Beschriftungen (#217). Die Wörter
-%% gehören zum Design; Kotlin liefert nur Satz und Beträge. raster nennt die
+%% gehören zum Design; Kotlin liefert nur Satz und Beträge. prag nennt die
 %% Steuer ausgeschrieben und den Satz dahinter, wie auf der bisherigen
 %% Rechnung dieses Designs.
 \newcommand{\nettozeile}[1]{\summenzeile{Zwischensumme (netto)}{#1}}
@@ -157,9 +157,9 @@
 \newcommand{\steuerzeile}[3]{\summenzeile{Umsatzsteuer #1\ifblank{#2}{}{ auf #2}}{#3}}
 \newcommand{\gesamtzeile}[1]{\abschlusszeile{Gesamtbetrag}{#1}}
 
-%% Die Bankverbindung setzt raster nicht als eigenen Block: Sie steht im Fuß,
+%% Die Bankverbindung setzt prag nicht als eigenen Block: Sie steht im Fuß,
 %% auf jedem Dokument, als Angabe des Briefbogens und nicht als
-%% Zahlungsaufforderung – so, wie balken die IBAN in seiner Fußzeile führt.
+%% Zahlungsaufforderung – so, wie helsinki die IBAN in seiner Fußzeile führt.
 %% Ob das Dokument zur Zahlung auffordert, sagt der Satz zur Zahlungsfrist.
 %% Der Renderer ruft \bankblock trotzdem auf, wenn Zahlung gefordert wird, und
 %% es bleibt leer (#189, ADR-0011).
@@ -246,7 +246,7 @@
 %% ------------------------------------------------------ Empfänger und Absender
 %% Links der Empfänger mit seiner USt-IdNr. (BT-48, §14a UStG), rechts der
 %% Absender. Die Person unter der Firmierung nur ohne Geschäftsführung, wie in
-%% balken; die Geschäftsführung steht hier im Fuß.
+%% helsinki; die Geschäftsführung steht hier im Fuß.
 \begin{minipage}[t]{0.5\linewidth}\raggedright
   <<EMPFAENGER>>\ifblank{<<KUNDE_USTID>>}{}{\\[2mm]USt-IdNr.: <<KUNDE_USTID>>}
 \end{minipage}%
@@ -279,7 +279,7 @@
 %% einem Absatz, und TeX ließ zwischen ihr und ihren Nachbarn nur diesen
 %% Mindestabstand. longtable hinterlässt eine Unterlänge von null. LTchunksize
 %% so groß, dass jede Rechnung ein Block ist und die Spalten auf jeder Seite
-%% gleich breit sind, siehe balken.tex.
+%% gleich breit sind, siehe helsinki.tex.
 \setlength{\LTpre}{\lineskip}\setlength{\LTpost}{0pt}%
 \setlength{\LTleft}{0pt}\setlength{\LTright}{0pt}%
 \setcounter{LTchunksize}{10000}%
@@ -299,7 +299,7 @@
 
 %% ------------------------------------------------------ Die fachlichen Sätze
 %% Pflichtsatz, Steuerhinweise, Absetzung und Skonto in derselben Reihenfolge
-%% wie in balken. Dazwischen das Zahlungsziel als Satz, das balken im Kopf
+%% wie in helsinki. Dazwischen das Zahlungsziel als Satz, das helsinki im Kopf
 %% nennt (#211): erst was offen ist, dann wann es fällig ist, dann der
 %% mögliche Abzug.
 <<ARTHINWEIS>>
@@ -307,7 +307,7 @@
 %% Ihren Abstand bringen alle selbst mit – außer den Steuerhinweisen: Der
 %% Befreiungsgrund kommt aus den Eingabedaten und steht deshalb nicht in
 %% \hinweisabsatz (#143). Den Abstand setzt deshalb die Vorlage, und nur, wenn
-%% etwas dasteht – unbedingt wie in balken schöbe er auch jede Rechnung ohne
+%% etwas dasteht – unbedingt wie in helsinki schöbe er auch jede Rechnung ohne
 %% steuerfreie Position um dieselben 5 mm nach unten (#220).
 \ifblank{<<STEUERHINWEISE>>}{}{\par\vspace{5mm}\noindent <<STEUERHINWEISE>>}
 
@@ -316,11 +316,11 @@
 <<BANKVERBINDUNG>>
 
 %% Der Schlusssatz aus Stammdaten oder Rechnung. Keine Grußformel. Er bricht
-%% nicht über zwei Seiten, wie Schlusssatz und Gruß in balken.tex, und er
+%% nicht über zwei Seiten, wie Schlusssatz und Gruß in helsinki.tex, und er
 %% hängt am Absatz davor – der Zahlungsfrist, ohne sie dem Pflichtsatz –,
 %% sonst stünde er allein auf der letzten Seite. \nopagebreak vor dem Abstand
 %% und nicht danach: Hinter einer Strafe ist der Abstand keine Stelle mehr, an
-%% der die Seite brechen darf. <<BANKVERBINDUNG>> davor ist in raster leer.
+%% der die Seite brechen darf. <<BANKVERBINDUNG>> davor ist in prag leer.
 \nopagebreak
 \vspace{8mm}
 

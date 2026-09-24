@@ -115,7 +115,7 @@ enum class TemplateValue(
     STEUERHINWEISE(true),
     ABSETZUNG(true),
 
-    // Das Zahlungsziel als Satz, für raster statt der Kopfzeile (#211). Ein
+    // Das Zahlungsziel als Satz, für prag statt der Kopfzeile (#211). Ein
     // ganzer Satz aus Kotlin, weil "sofort", "1 Tag" und "x Tage" eine
     // Fallunterscheidung über \ifblank hinaus sind.
     ZAHLUNGSFRIST(false),
@@ -132,8 +132,8 @@ enum class TemplateValue(
 
     companion object {
         /**
-         * Jede Vorlage sagt etwas über die Zahlung: `balken` nennt das
-         * Zahlungsziel als Datum im Kopf ([ZAHLUNGSZIEL]), `raster` die Frist
+         * Jede Vorlage sagt etwas über die Zahlung: `helsinki` nennt das
+         * Zahlungsziel als Datum im Kopf ([ZAHLUNGSZIEL]), `prag` die Frist
          * als Satz unter den Summen ([ZAHLUNGSFRIST], #211). Pflicht ist
          * deshalb keiner der beiden, aber einer von beiden – eine Vorlage, die
          * keinen setzt, ließe die Zahlung ganz vom Blatt.

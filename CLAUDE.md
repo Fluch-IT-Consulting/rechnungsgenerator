@@ -127,7 +127,7 @@ CV/Web-Auftritt des Autors), PDF/A-Prüfung über veraPDF.
   Kommando – das verlegt das Durchreichen nur.
 - **Satz nur in der Vorlage** (ADR-0017): Abstände, Schriftgrad, Farbe, Linien,
   Beschriftungen, Trenner, Ort und Reihenfolge stehen in der Vorlage des
-  Designs (`templates/balken.tex`, `templates/raster.tex`). Der Renderer
+  Designs (`templates/helsinki.tex`, `templates/prag.tex`). Der Renderer
   liefert Werte und Makroaufrufe und entscheidet, *ob* etwas dasteht; er
   schreibt kein LaTeX von sich aus – keinen Längennamen, kein `\\`, kein
   `\mbox`. Die Grenze läuft zwischen zwei Arten von Angaben: Eine **einzelne
@@ -152,8 +152,8 @@ CV/Web-Auftritt des Autors), PDF/A-Prüfung über veraPDF.
   die Platzhalter der Design-Vorlage (`TemplateValue`) und die Variablen eines
   Textes (`InvoiceVariable`) – dieselbe Schreibweise, verschiedene Mengen.
 
-- **Designs** (ADR-0011): Die Stammdaten wählen das Design, `design: balken`
-  oder `design: raster`, ohne Eintrag `balken`. Jedes ist eine eingebaute
+- **Designs** (ADR-0011): Die Stammdaten wählen das Design, `design: helsinki`
+  oder `design: prag`, ohne Eintrag `helsinki`. Jedes ist eine eingebaute
   Vorlage, die derselbe Renderer füllt – kein zweiter Renderer, kein Schalter,
   keine mitgebrachte Vorlage. Feste Texte gehören zum Design, ein Wortlaut mit
   fachlicher Aussage kommt aus Kotlin (ADR-0017). Ein neues Design ist eine

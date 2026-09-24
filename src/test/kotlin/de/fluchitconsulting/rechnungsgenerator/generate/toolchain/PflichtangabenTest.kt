@@ -38,15 +38,15 @@ import kotlin.io.path.writeText
  * Dokuments, die Überschrift der Bankverbindung nicht.
  *
  * [bankUeberschrift] ist null, wenn das Design keinen eigenen Bankblock setzt:
- * raster führt die Bank nur im Fuß, als Angabe des Briefbogens (ADR-0011).
+ * prag führt die Bank nur im Fuß, als Angabe des Briefbogens (ADR-0011).
  * Dann gibt es keine Überschrift, deren Abwesenheit zu prüfen wäre; ob das
  * Dokument Zahlung fordert, zeigt dort allein das Zahlungsziel.
  *
- * Die Beschriftung des Zahlungsziels ist in raster der Anfang des Satzes, der
+ * Die Beschriftung des Zahlungsziels ist in prag der Anfang des Satzes, der
  * es als Frist nennt (#211) – eine Kopfzeile gibt es dort nicht mehr.
  *
  * [rabattBeschriftung] ist der Kopf der Rabattspalte, so wie `pdftotext` ihn
- * liest: balken sperrt seine Spaltenköpfe, und dann kommt jeder Buchstabe
+ * liest: helsinki sperrt seine Spaltenköpfe, und dann kommt jeder Buchstabe
  * einzeln zurück (#213).
  *
  * [fortsetzungshinweis] und [seitenzahl] sind die Wörter der Folgeseiten
@@ -55,11 +55,11 @@ import kotlin.io.path.writeText
  * mit einer Seite.
  *
  * [grussformel] steht zwischen Schlusssatz und Name; null, wenn das Design
- * keine setzt – raster schließt mit dem Schlusssatz.
+ * keine setzt – prag schließt mit dem Schlusssatz.
  *
  * [schlusssatzBeiZahlungsfrist]: Das Design nennt die Zahlungsfrist als Satz
  * unter den Summen und hält den Schlusssatz daran fest, damit er nicht allein
- * auf der letzten Seite steht. In balken steht die Frist im Kopf, und den
+ * auf der letzten Seite steht. In helsinki steht die Frist im Kopf, und den
  * Schlusssatz hält der Gruß.
  */
 private data class Design(
@@ -82,7 +82,7 @@ private data class Design(
  * Die Vergleichsdateien im `InvoiceRendererTest` schützen Zeichen, nicht das
  * Blatt: je Rechnungsart die Werte, die in die Vorlage gehen
  * (`<art>-inhalt.tex`), und je Design den ganzen Text der gewöhnlichen
- * Rechnung (`rechnung-erwartet.tex`, `raster-rechnung-erwartet.tex`, #204).
+ * Rechnung (`rechnung-erwartet.tex`, `prag-rechnung-erwartet.tex`, #204).
  * Wie ein Design die übrigen Arten setzt, steht in keiner davon wörtlich.
  * Dieser Test fragt etwas anderes: ob auf dem Blatt steht, was dort stehen
  * muss – §14 Abs. 4 und 5 UStG, §35a GmbHG, der Pflichtsatz der Art. Deshalb
@@ -127,7 +127,7 @@ class PflichtangabenTest : FunSpec({
     val designs =
         listOf(
             Design(
-                name = "balken",
+                name = "helsinki",
                 stammdaten = stammdaten,
                 zahlungszielBeschriftung = "Zahlbar ohne Abzug bis",
                 bankUeberschrift = "Bankverbindung",
@@ -138,9 +138,9 @@ class PflichtangabenTest : FunSpec({
                 schlusssatzBeiZahlungsfrist = false,
             ),
             Design(
-                name = "raster",
-                // raster setzt das Logo; so sieht veraPDF es bei jeder Rechnungsart.
-                stammdaten = stammdatenMit("raster", logo = true),
+                name = "prag",
+                // prag setzt das Logo; so sieht veraPDF es bei jeder Rechnungsart.
+                stammdaten = stammdatenMit("prag", logo = true),
                 zahlungszielBeschriftung = "Die Zahlung ist",
                 bankUeberschrift = null,
                 rabattBeschriftung = "Rabatt",
@@ -215,8 +215,8 @@ class PflichtangabenTest : FunSpec({
     }
 
     // Der Schluss an der Seitengrenze (ADR-0020): Die Positionen füllen die
-    // zweite Seite so weit, dass sie ohne Zusammenhalt in balken zwischen
-    // Schlusssatz und Grußformel bräche und in raster zwischen Zahlungsfrist
+    // zweite Seite so weit, dass sie ohne Zusammenhalt in helsinki zwischen
+    // Schlusssatz und Grußformel bräche und in prag zwischen Zahlungsfrist
     // und Schlusssatz. Was dann beisammenstehen muss, prüft
     // `pruefe` an jeder mehrseitigen Rechnung; diese Datei ist die, bei der
     // es darauf ankommt.
@@ -229,9 +229,9 @@ class PflichtangabenTest : FunSpec({
         }
     }
 
-    // Die Stammdaten oben führen eine Geschäftsführung, und raster läuft dort
+    // Die Stammdaten oben führen eine Geschäftsführung, und prag läuft dort
     // mit Logo. Zwei Zweige der Vorlagen erreichten so nie ein echtes PDF: der
-    // Name des Inhabers, der nur ohne Geschäftsführung dasteht, und raster
+    // Name des Inhabers, der nur ohne Geschäftsführung dasteht, und prag
     // ohne Logo, der Fall ohne Eintrag. Beide hängen an den Stammdaten und
     // nicht an der Rechnungsart, deshalb genügt die gewöhnliche Rechnung.
     for (design in designs) {

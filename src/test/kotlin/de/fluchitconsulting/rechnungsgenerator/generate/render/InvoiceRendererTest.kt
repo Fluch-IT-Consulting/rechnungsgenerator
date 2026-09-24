@@ -91,7 +91,7 @@ class InvoiceRendererTest : FunSpec({
 
     test("jede Position trägt ihre laufende Nummer, beginnend bei 1") {
         // Das erste Argument von \positionszeile. Ob ein Design sie setzt,
-        // entscheidet die Vorlage; balken setzt sie nicht (#188).
+        // entscheidet die Vorlage; helsinki setzt sie nicht (#188).
         val tex = renderMit(testItem().copy(name = "Erste"), testItem().copy(name = "Zweite"))
 
         tex shouldContain "\\positionszeile{1}{Erste}"
@@ -161,7 +161,7 @@ class InvoiceRendererTest : FunSpec({
      * Inhalt geändert hat oder nur das Satzbild.
      *
      * Ohne Logo: Es ist ein Schalter und keine Angabe der Rechnungsart; das
-     * Logo sichert die Volltext-Datei von raster.
+     * Logo sichert die Volltext-Datei von prag.
      */
     test("jede Rechnungsart hat eine Beispieldatei") {
         exampleInvoices.keys shouldBe InvoiceType.entries.toSet()
@@ -181,20 +181,20 @@ class InvoiceRendererTest : FunSpec({
     }
 
     /**
-     * Das Satzbild von raster, gesichert an der Rechnung (ADR-0011). Die
-     * übrigen Arten sichern hier wie in balken ihre Inhalts-Dateien und das
+     * Das Satzbild von prag, gesichert an der Rechnung (ADR-0011). Die
+     * übrigen Arten sichern hier wie in helsinki ihre Inhalts-Dateien und das
      * Pflichtangaben-Netz; eine Vergleichsdatei je Design und Art änderte sich
      * mit jeder Vorlage.
      */
-    test("eine Rechnung im Design raster wird gesetzt wie festgehalten") {
-        // Mit Logo (#198): Das zeigt raster, und ohne Logo stünde in der
+    test("eine Rechnung im Design prag wird gesetzt wie festgehalten") {
+        // Mit Logo (#198): Das zeigt prag, und ohne Logo stünde in der
         // Vergleichsdatei nur ein leeres \ifblank.
         val seller =
-            YamlLoader.parseSellerConfig(resource("stammdaten.yaml")).copy(design = Design.RASTER, logo = beispielLogo)
+            YamlLoader.parseSellerConfig(resource("stammdaten.yaml")).copy(design = Design.PRAG, logo = beispielLogo)
         val invoice = YamlLoader.parseInvoice(resource("rechnung.yaml"))
 
         InvoiceRenderer.render(CalculatedInvoice(invoice, seller).accepted()).sources.tex shouldBe
-            resource("raster-rechnung-erwartet.tex")
+            resource("prag-rechnung-erwartet.tex")
     }
 
     context("logo (#198)") {
@@ -206,21 +206,21 @@ class InvoiceRendererTest : FunSpec({
             wert(TemplateValue.LOGO) shouldBe ""
         }
 
-        test("raster bindet das Logo ein und bekommt es als logo.tex mit") {
-            val rendered = gesetzt(Design.RASTER, beispielLogo)
+        test("prag bindet das Logo ein und bekommt es als logo.tex mit") {
+            val rendered = gesetzt(Design.PRAG, beispielLogo)
 
             rendered.sources.tex shouldContain "\\input{logo}"
             rendered.sources.files.keys shouldBe setOf("logo.tex")
             rendered.sources.files.getValue("logo.tex") shouldBe beispielLogo.content
         }
 
-        test("balken übergeht das Logo und bekommt keine Datei") {
+        test("helsinki übergeht das Logo und bekommt keine Datei") {
             // Sonst ginge die Datei in die Trailer-ID ein, und dieselbe
             // Rechnung ergäbe mit und ohne Eintrag verschiedene PDFs.
-            val mitLogo = gesetzt(Design.BALKEN, beispielLogo)
+            val mitLogo = gesetzt(Design.HELSINKI, beispielLogo)
 
             mitLogo.sources.files shouldBe emptyMap()
-            mitLogo.sources.tex shouldBe gesetzt(Design.BALKEN, null).sources.tex
+            mitLogo.sources.tex shouldBe gesetzt(Design.HELSINKI, null).sources.tex
         }
 
         test("ohne Logo gibt es in keinem Design eine Datei") {
@@ -231,12 +231,12 @@ class InvoiceRendererTest : FunSpec({
 
         // Ob das Blatt das Logo zeigt, sagt der Renderer ausdrücklich – das
         // Kommando nennt es danach in einer Fehlermeldung (#203).
-        test("raster mit Logo zeigt es") {
-            gesetzt(Design.RASTER, beispielLogo).includesLogo shouldBe true
+        test("prag mit Logo zeigt es") {
+            gesetzt(Design.PRAG, beispielLogo).includesLogo shouldBe true
         }
 
-        test("balken mit Logo zeigt es nicht") {
-            gesetzt(Design.BALKEN, beispielLogo).includesLogo shouldBe false
+        test("helsinki mit Logo zeigt es nicht") {
+            gesetzt(Design.HELSINKI, beispielLogo).includesLogo shouldBe false
         }
 
         test("ohne Logo in den Stammdaten zeigt es kein Design, auch wenn die Vorlage den Platzhalter trägt") {
@@ -483,7 +483,7 @@ class InvoiceRendererTest : FunSpec({
     }
 
     context("Zahlungsfrist") {
-        // Der Satz, den raster statt der Kopfzeile "Zahlbar bis" setzt (#211).
+        // Der Satz, den prag statt der Kopfzeile "Zahlbar bis" setzt (#211).
         // Die Stammdaten des Tests haben 14 Tage.
         fun frist(invoice: Invoice): String = wert(TemplateValue.ZAHLUNGSFRIST, invoice)
 
@@ -573,14 +573,14 @@ class InvoiceRendererTest : FunSpec({
         }
 
         test("die Kundennummer kommt maskiert, und ohne sie ist der Wert leer") {
-            // BT-46 (#190). Leer heißt: balken lässt die Zeile samt "Kundennr."
+            // BT-46 (#190). Leer heißt: helsinki lässt die Zeile samt "Kundennr."
             // weg. Das & zeigt, dass sie wie jeder Freitext maskiert wird.
             wert(TemplateValue.KUNDENNUMMER, testInvoice(buyerIdentifier = "K-17 & Co")) shouldBe "K-17 \\& Co"
             wert(TemplateValue.KUNDENNUMMER) shouldBe ""
         }
 
         test("die Auftragsnummer kommt maskiert, und ohne sie ist der Wert leer") {
-            // BT-14 (#191). Leer heißt: balken lässt die Zeile samt
+            // BT-14 (#191). Leer heißt: helsinki lässt die Zeile samt
             // "Unsere Auftragsnr." weg.
             wert(TemplateValue.AUFTRAGSNUMMER, testInvoice(salesOrderReference = "A_2026_014")) shouldBe "A\\_2026\\_014"
             wert(TemplateValue.AUFTRAGSNUMMER) shouldBe ""
