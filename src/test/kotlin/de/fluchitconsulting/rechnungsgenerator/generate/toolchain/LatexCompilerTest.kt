@@ -277,6 +277,40 @@ class LatexCompilerTest : FunSpec({
         fehler.message!! shouldContain "can't find file"
     }
 
+    context("Inhalt, der vom Blatt fällt (ADR-0020)") {
+        // Eine Tabelle mit 80 Zeilen auf einer Seite: LuaLaTeX meldet Erfolg,
+        // Exitcode 0, und schreibt nur ins Protokoll, dass die Seite überläuft.
+        val ueberlauf = mitschnitt("lualatex-seite-laeuft-ueber.log")
+
+        test("bricht ab, obwohl LuaLaTeX Erfolg meldet, und nennt die Zeile aus dem Protokoll") {
+            val runner = FakeProcessRunner(erfolgreicherLauf(ueberlauf))
+
+            val fehler = shouldThrow<ToolchainException> { setzen(runner) }
+
+            fehler.message!! shouldContain "mehr, als das Blatt fasst"
+            fehler.message!! shouldContain "Overfull \\vbox (405.0pt too high)"
+            fehler.message!! shouldNotContain "luaotfload"
+        }
+
+        test("eine zu breite Zeile bricht nicht ab: Sie ragt in den Rand, sie fehlt nicht") {
+            val runner = FakeProcessRunner(erfolgreicherLauf(mitschnitt("lualatex-zeile-zu-breit.log")))
+
+            setzen(runner).exists() shouldBe true
+        }
+
+        test("es zählt der letzte Lauf, denn aus ihm stammt das PDF") {
+            // Zwei Mitschnitte hintereinander stehen für einen ersten Lauf, der
+            // überläuft und einen zweiten verlangt. Der zweite läuft nicht über.
+            val zuerst = ueberlauf + mitschnitt("lualatex-verlangt-zweiten-lauf.log")
+
+            setzen(FakeProcessRunner(erfolgreicherLauf(zuerst), erfolgreicherLauf())).exists() shouldBe true
+
+            shouldThrow<ToolchainException> {
+                setzen(FakeProcessRunner(erfolgreicherLauf(mitschnitt("lualatex-verlangt-zweiten-lauf.log")), erfolgreicherLauf(ueberlauf)))
+            }
+        }
+    }
+
     test("meldet der Lauf Erfolg, ohne ein PDF zu hinterlassen, ist das ein Fehler") {
         val runner = FakeProcessRunner(FakeProcessRunner.Run(files = mapOf("rechnung.log" to fertig)))
 
