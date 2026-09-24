@@ -48,9 +48,8 @@ class LatexCompiler(private val runner: ProcessRunner) {
         }
 
         val id = trailerId(sources)
-        val command =
+        val params =
             listOf(
-                PROGRAM,
                 "-interaction=nonstopmode",
                 "-halt-on-error",
                 "-jobname=$jobName",
@@ -69,7 +68,7 @@ class LatexCompiler(private val runner: ProcessRunner) {
         var log: String
         var passes = 0
         do {
-            val result = runner.run(command, workingDir, environment = environment)
+            val result = runner.run(PROGRAM, params, workingDir, environment = environment)
             log = workingDir.resolve("$jobName.log").let { if (it.exists()) it.readText() else result.output }
             if (result.failed) throw ToolchainException(errorReport(jobName, log))
             passes++

@@ -84,12 +84,12 @@ object ExternalTool : ProcessRunner {
     override fun canRun(program: String) = locate(program) != null
 
     override fun run(
-        command: List<String>,
+        program: String,
+        params: List<String>,
         workingDir: Path,
         timeout: Duration,
         environment: Map<String, String>,
     ): ToolResult {
-        val program = command.first()
         val executable = locate(program) ?: throw ToolchainException("Programm nicht gefunden: $program")
         // Eine IOException hier – Temp-Dateien, Start, Ausgabe lesen – heißt,
         // der Lauf kam nicht zustande. Das ist ein Werkzeugfehler, auch wenn
@@ -97,7 +97,7 @@ object ExternalTool : ProcessRunner {
         // Aufrufer sie selbst deuten und riete, was geschrieben werden sollte
         // (#300).
         return try {
-            runLocated(executable, command, workingDir, timeout, environment)
+            runLocated(executable, params, workingDir, timeout, environment)
         } catch (e: IOException) {
             throw ToolchainException("$program ließ sich nicht ausführen: ${e.message}", e)
         }
@@ -105,17 +105,16 @@ object ExternalTool : ProcessRunner {
 
     private fun runLocated(
         executable: Path,
-        command: List<String>,
+        params: List<String>,
         workingDir: Path,
         timeout: Duration,
         environment: Map<String, String>,
     ): ToolResult {
-        val program = command.first()
         val outFile = Files.createTempFile(workingDir, "tool-", ".out")
         val errFile = Files.createTempFile(workingDir, "tool-", ".err")
         return try {
             val process =
-                ProcessBuilder(listOf(executable.toString()) + command.drop(1))
+                ProcessBuilder(listOf(executable.toString()) + params)
                     .directory(workingDir.toFile())
                     .redirectOutput(outFile.toFile())
                     .redirectError(errFile.toFile())
@@ -125,7 +124,7 @@ object ExternalTool : ProcessRunner {
                     .start()
             if (!process.waitFor(timeout.inWholeSeconds, TimeUnit.SECONDS)) {
                 process.destroyForcibly()
-                throw ToolchainException("$program hat nach $timeout nicht geantwortet und wurde abgebrochen.")
+                throw ToolchainException("${executable.fileName} hat nach $timeout nicht geantwortet und wurde abgebrochen.")
             }
             ToolResult(process.exitValue(), outFile.readText(), errFile.readText())
         } finally {
