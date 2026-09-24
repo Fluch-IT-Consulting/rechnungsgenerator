@@ -44,7 +44,8 @@ interface PdfAValidator {
     /**
      * Prüft, ob der Prüfer einsatzbereit ist. Gehört zum Adapter und nicht
      * daneben: Der eingebaute braucht nichts, der externe ein installiertes
-     * Programm. Deshalb verlangt der Generator veraPDF nicht mehr beim Start.
+     * Programm. Deshalb verlangt der Generator veraPDF beim Start nur, wenn
+     * der externe Prüfer gewählt ist.
      */
     fun checkAvailable()
 

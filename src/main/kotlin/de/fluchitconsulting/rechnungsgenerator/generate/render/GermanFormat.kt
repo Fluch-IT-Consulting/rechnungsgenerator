@@ -101,7 +101,7 @@ object GermanFormat {
      * macht: ein fester Wortzwischenraum. Der Punkt nach dem Tag ist kein
      * Satzende, und ohne `~` bekäme er dort, wo die Vorlage den breiten
      * Satzabstand setzt, eine Lücke wie nach einem Satz (#143). Nebenbei bricht
-     * das Datum nicht mehr zwischen Tag und Monat um.
+     * das Datum nicht zwischen Tag und Monat um.
      *
      * Nicht für die XMP-Metadaten, dort gilt [dateInMetadata].
      */

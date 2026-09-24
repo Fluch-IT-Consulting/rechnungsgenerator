@@ -7,7 +7,7 @@ import kotlin.io.path.extension
  * Das Logo des Rechnungsstellers: die Datei, aus der es stammt, und ihr Inhalt.
  *
  * Die Endung bestimmt die Art, ohne Rücksicht auf Groß- und Kleinschreibung;
- * [extension] liefert sie klein. Zulässig ist bisher nur `tex`, ein
+ * [extension] liefert sie klein. Zulässig ist nur `tex`, ein
  * LaTeX-Fragment.
  *
  * Keine `data class`: Deren `equals` verglich ein [ByteArray] nach Identität,

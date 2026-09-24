@@ -43,7 +43,7 @@ import kotlin.io.path.writeText
  * Dokument Zahlung fordert, zeigt dort allein das Zahlungsziel.
  *
  * Die Beschriftung des Zahlungsziels ist in prag der Anfang des Satzes, der
- * es als Frist nennt (#211) – eine Kopfzeile gibt es dort nicht mehr.
+ * es als Frist nennt (#211), und keine eigene Kopfzeile.
  *
  * [rabattBeschriftung] ist der Kopf der Rabattspalte, so wie `pdftotext` ihn
  * liest: helsinki sperrt seine Spaltenköpfe, und dann kommt jeder Buchstabe
@@ -446,7 +446,8 @@ private fun Blatt.pruefe(
     // Die Folgeseiten (ADR-0020): Jede trägt Rechnungsnummer, Datum und
     // Seitenzahl, damit eine lose Seite zu ihrer Rechnung findet, und den Fuß
     // des Briefbogens. Jede Seite, auf die eine folgt, sagt das am Ende. Eine
-    // Rechnung mit einer Seite sagt nichts davon – sie sieht aus wie bisher.
+    // Rechnung mit einer Seite trägt nichts davon – „Seite 1 von 1“ sagte
+    // nichts.
     if (seiten == 1) {
         fehlt("Seitenzahl", design.seitenzahl(1, 1))
         fehlt("Fortsetzungshinweis", design.fortsetzungshinweis)

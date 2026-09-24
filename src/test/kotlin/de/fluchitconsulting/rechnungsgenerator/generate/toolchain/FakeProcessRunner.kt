@@ -45,7 +45,7 @@ class FakeProcessRunner(
     /**
      * Da ist, was nicht in [missing] steht – vorgegeben ist also der Rechner,
      * auf dem alles installiert ist. Der andere Fall wird ausdrücklich genannt
-     * und hängt damit nicht mehr daran, was auf der Testmaschine liegt (#245).
+     * und hängt damit nicht daran, was auf der Testmaschine liegt (#245).
      */
     override fun canRun(program: String) = program !in missing
 

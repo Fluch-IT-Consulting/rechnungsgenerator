@@ -263,7 +263,7 @@ class GenerateCommandTest : FunSpec({
     }
 
     /**
-     * Die Vorgabe hängt nicht mehr am Standort des Aufrufs – deshalb wechselt
+     * Die Vorgabe hängt nicht am Standort des Aufrufs – deshalb wechselt
      * hier kein Test das Arbeitsverzeichnis. Jeder bekommt ein eigenes
      * Verzeichnis, denn ohne -o entscheidet der Name der Rechnungsdatei, wo
      * das PDF entsteht.

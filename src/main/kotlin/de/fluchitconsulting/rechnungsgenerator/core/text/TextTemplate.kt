@@ -50,10 +50,6 @@ class TextTemplate<out V> private constructor(
         /**
          * Zerlegt [text] und schlägt jeden Namen unter den Einträgen von [V]
          * nach. Ein Name, den [V] nicht kennt, wirft.
-         *
-         * `inline` mit `reified`, damit [V] zur Laufzeit bekannt ist und
-         * `enumValues` die Einträge liefern kann – sonst müsste jeder Aufrufer
-         * sie selbst übergeben.
          */
         inline fun <reified V : Enum<V>> parse(text: String): TextTemplate<V> =
             parse(text, enumValues<V>().associateBy { it.name })

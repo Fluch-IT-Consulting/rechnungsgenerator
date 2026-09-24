@@ -16,8 +16,8 @@ import kotlinx.serialization.Serializable
 data class Invoice(
     @SerialName("nummer") val number: String,
     @SerialName("datum") val issueDate: IsoDate,
-    // BT-3. Ohne Angabe die gewöhnliche Rechnung – bestehende Rechnungsdateien
-    // kennen den Schlüssel nicht und sollen sich weiter verhalten wie bisher.
+    // BT-3. Ohne Angabe die gewöhnliche Rechnung – so bleibt jede
+    // Rechnungsdatei gültig, die den Schlüssel nicht kennt.
     @SerialName("art") val type: InvoiceType = InvoiceType.INVOICE,
     // Leistungszeitraum: Pflichtangabe nach §14 UStG, EN 16931 BT-73/BT-74.
     @SerialName("leistungszeitraum") val servicePeriod: ServicePeriod,

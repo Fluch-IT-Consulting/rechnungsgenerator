@@ -53,8 +53,8 @@ class GenerateCommand(
     private val invoiceFile by argument("rechnung.yaml", help = "Die Rechnungsdatei").path(mustExist = true, canBeDir = false)
 
     // Ohne Angabe wird gesucht, und zwar von der Rechnungsdatei aus (ADR-0015).
-    // Eine Vorgabe gibt es nicht mehr: `stammdaten.yaml` im Arbeitsverzeichnis
-    // trug nur, solange man dort stand, wo sie liegt.
+    // Eine Vorgabe wie `stammdaten.yaml` im Arbeitsverzeichnis gibt es nicht:
+    // Sie trüge nur, solange man dort steht, wo die Datei liegt.
     private val configFile by option(
         "-s",
         "--stammdaten",
@@ -161,9 +161,9 @@ class GenerateCommand(
         try {
             val typesetPdf =
                 try {
-                    // Die Quellen kommen vollständig vom Renderer (#202): Das
-                    // Kommando setzt sie nicht mehr aus vier Stellen zusammen,
-                    // es sagt nur, wohin gesetzt wird.
+                    // Die Quellen kommen vollständig vom Renderer (#202),
+                    // statt dass das Kommando sie aus vier Stellen
+                    // zusammensetzt; es sagt nur, wohin gesetzt wird.
                     typesetter.typeset(workingDir = workDir, jobName = jobName, sources = rendered.sources)
                 } catch (e: ToolchainException) {
                     throw ToolchainException(e.message + logoNote, e)

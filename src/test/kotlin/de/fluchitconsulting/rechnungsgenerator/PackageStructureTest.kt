@@ -81,8 +81,8 @@ class PackageStructureTest : FunSpec({
             "$core.model" to setOf("$core.values", "$core.text", "$core.serialization"),
             "$core.values" to setOf("$core.serialization"),
             // Die Platzhalter-Texte liegen neben values und nicht darunter:
-            // Sie kennen weder Werte noch Vokabular, und seit die Fachkataloge
-            // in model liegen, braucht values sie nicht mehr (#312).
+            // Sie kennen weder Werte noch Vokabular, und gebraucht werden sie
+            // erst in model, bei den Fachkatalogen (#312).
             "$core.text" to emptySet(),
             // Das Gerüst, über das jeder Werttyp seinen Serializer baut.
             "$core.serialization" to emptySet(),
