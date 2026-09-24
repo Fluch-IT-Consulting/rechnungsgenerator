@@ -23,7 +23,7 @@ Was auf jeder Seite steht, gilt für jedes Design:
   steht.
 - **Kein fachlicher Satz unter den Summen bricht über zwei Seiten** –
   Pflichtsatz, Zahlungsfrist, Skonto, der Satz zum ausgeglichenen
-  Restbetrag.
+  Restbetrag und jeder Hinweis auf eine Steuerbefreiung (Nachtrag unten).
 - **Eine einseitige Rechnung sieht aus wie bisher**: keine Seitenzahl, kein
   Fortsetzungshinweis. Ob es Folgeseiten gibt, weiß nur die Vorlage, aus der
   Seitenzahl des Satzes.
@@ -137,3 +137,36 @@ Rechnung; das Log sieht jede.
   ist dafür die Checkliste, und das Netz prüft sie an der Beispieldatei.
 
 Umgesetzt in #318.
+
+## Nachtrag vom 24.09.2026: auch die Hinweise auf eine Steuerbefreiung
+
+Die Zusage oben galt „keinem fachlichen Satz“, gehalten war sie aber nur für
+die Sätze in `\hinweisabsatz`. Die Hinweise auf eine Steuerbefreiung – „Auf
+… entfällt keine Umsatzsteuer: <Befreiungsgrund>.“ (BT-120, §14 Abs. 4 Nr. 8
+UStG) – standen ohne Strafe in der Vorlage, als ein Absatz, die Sätze
+getrennt durch `\zeilenwechsel`. Nachgemessen an einer Rechnung mit einem
+dreizeiligen Befreiungsgrund: In beiden Designs stand nur die erste Zeile auf
+Seite 2, der Rest auf Seite 3 – derselbe Satz ohne Anfang wie beim
+Pflichtsatz (#335).
+
+In `\hinweisabsatz` gehören sie nicht: Das Makro setzt auch den breiten
+Abstand nach einem Satzende, und den bekommen nur die eigenen Sätze des
+Programms, der Befreiungsgrund aber kommt aus den Eingabedaten (#143).
+Deshalb sind **Zusammenhalt und Satzabstand getrennt**. Den Zusammenhalt
+trägt in jeder Vorlage ein Makro für sich, `\ungeteilt`; es benutzen
+`\hinweisabsatz`, der Schlusssatz und der neue `\steuerhinweis`, der
+Satzabstand bleibt bei `\hinweisabsatz`.
+
+**Jeder Hinweis ist ein Makroaufruf** (`TemplateMacro.STEUERHINWEIS`), wie
+ADR-0017 es für fachliche Sätze vorsieht, und keine Zeile in einem
+gemeinsamen Absatz. So entscheidet die Vorlage je Satz, wie er zusammenhält:
+Zwischen zwei Hinweisen darf die Seite brechen, in einem nicht. Das Satzbild
+ist unverändert, bei 300 dpi pixelgleich an allen Beispielen und an einer
+Rechnung mit zwei Hinweisen.
+
+Das Netz bekommt eine dritte Datei, `befreiungsgrund-an-der-seitengrenze.yaml`,
+gebaut wie `schluss-an-der-seitengrenze.yaml`: Ihre Positionen füllen die
+zweite Seite so weit, dass sie ohne Zusammenhalt nach der ersten Zeile des
+Hinweises endete. Geprüft wird an jeder mehrseitigen Rechnung, dass jeder
+Befreiungsgrund ganz auf einer Seite steht und das Entgelt, mit dem sein
+Satz beginnt, auf derselben.

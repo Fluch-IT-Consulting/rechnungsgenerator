@@ -555,6 +555,34 @@ class InvoiceRendererTest : FunSpec({
             tex shouldNotContain "\\steuerzeile{0"
         }
 
+        test("jeder Hinweis auf eine Steuerbefreiung ist ein eigener Satz") {
+            // Zwischen zwei Hinweisen darf die Seite brechen, in einem nicht
+            // (ADR-0020) – das entscheidet die Vorlage je Makroaufruf.
+            val tex =
+                render(
+                    testInvoice(
+                        items =
+                            listOf(
+                                testItem(
+                                    vatRate = "0",
+                                    taxCategory = TaxCategory.EXEMPT,
+                                    taxExemptionReason = "Steuerfrei nach §4 Nr. 21 UStG",
+                                ),
+                                testItem(
+                                    unitPrice = "300.00",
+                                    vatRate = "0",
+                                    taxCategory = TaxCategory.OUT_OF_SCOPE,
+                                    taxExemptionReason = "Nicht im Inland steuerbar",
+                                ),
+                            ),
+                    ),
+                )
+
+            tex shouldContain
+                "\\steuerhinweis{Auf 100,00~€ entfällt keine Umsatzsteuer: Steuerfrei nach §4 Nr. 21 UStG.}\n" +
+                "\\steuerhinweis{Auf 300,00~€ entfällt keine Umsatzsteuer: Nicht im Inland steuerbar.}"
+        }
+
         test("die USt-IdNr. des Kunden steht unter seiner Anschrift, wenn er eine hat") {
             // §14a UStG. Wo sie steht, entscheidet die Vorlage; hier nur, ob.
             val kundenId = VatId("ATU12345678")

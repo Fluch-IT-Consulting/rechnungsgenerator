@@ -158,8 +158,8 @@
 \newcommand{\blocktrenner}{\\[\blockabstand]}
 \newcommand{\ustidtrenner}{\\[\ustidabstand]}
 
-%% Der schlichte Zeilenwechsel ohne Abstand: zwischen den Zeilen der Anschrift,
-%% der Steuerhinweise und im Briefkopf (#147).
+%% Der schlichte Zeilenwechsel ohne Abstand: zwischen den Zeilen der Anschrift
+%% und im Briefkopf (#147).
 %% Eines für alle Blöcke. prag kommt damit ebenso aus (ADR-0011); braucht ein
 %% Design für verschiedene Blöcke verschiedene Zeilenwechsel, kostet das einen
 %% Eintrag in TemplateMacro.
@@ -190,6 +190,14 @@
 
 \newcommand{\rubrik}[1]{{\footnotesize\color{gedaempft}\addfontfeature{LetterSpace=14}\MakeUppercase{#1}}}
 
+%% Ein Absatz, der nicht über zwei Seiten bricht (ADR-0020): Eine Seite, die
+%% mit "gezahlter Betrag wird erstattet." beginnt, hat den Anfang verloren.
+%% Deshalb endet der Absatz im Makro, und dort gilt \interlinepenalty – die
+%% Strafe zählt, wenn der Absatz gebrochen wird, nicht wenn er beginnt.
+%% Allein der Zusammenhalt und kein Satzabstand, damit auch ein Satz aus den
+%% Eingabedaten ihn bekommt, ohne den breiten Abstand von \hinweisabsatz.
+\newcommand{\ungeteilt}[1]{{\interlinepenalty=10000 #1\par}}
+
 %% Ein Hinweisabsatz unter den Summen – der Pflichtsatz der Rechnungsart oder
 %% der Satz zum ausgeglichenen Restbetrag. Er bringt seinen Abstand selbst mit,
 %% weil er nur bei einzelnen Rechnungsarten gesetzt wird: Stünde der \vspace in
@@ -202,12 +210,16 @@
 %% bekäme sonst wieder den breiten Abstand. Das % hinter \noindent verhindert
 %% einen Leerraum am Absatzanfang.
 %%
-%% Ein solcher Satz bricht nicht über zwei Seiten (ADR-0020): Eine Seite, die
-%% mit "gezahlter Betrag wird erstattet." beginnt, hat den Anfang verloren.
-%% Deshalb endet der Absatz im Makro, und dort gilt \interlinepenalty – die
-%% Strafe zählt, wenn der Absatz gebrochen wird, nicht wenn er beginnt.
+%% Ein solcher Satz bricht nicht über zwei Seiten, siehe \ungeteilt.
 \newcommand{\hinweisabsatz}[1]{\par\vspace{6mm}\noindent%
-  {\interlinepenalty=10000 \nonfrenchspacing\sfcode`\:=1000 \sfcode`\;=1000 \sfcode`\,=1000 #1\par}}
+  \ungeteilt{\nonfrenchspacing\sfcode`\:=1000 \sfcode`\;=1000 \sfcode`\,=1000 #1}}
+
+%% Der Hinweis auf eine Steuerbefreiung (BT-120), ein Satz je befreiter
+%% Steuergruppe. Er hält zusammen wie ein \hinweisabsatz, aber ohne dessen
+%% Satzabstand: Der Befreiungsgrund kommt aus den Eingabedaten (#143). Den
+%% Abstand darüber setzt die Vorlage einmal für alle, zwischen zwei
+%% Hinweisen steht keiner.
+\newcommand{\steuerhinweis}[1]{\noindent\ungeteilt{#1}}
 
 %% Der Kopf des Absetzungsblocks: wie ein Hinweisabsatz, aber mit Luft zur
 %% Tabelle darunter – sonst klebt die erste Rechnung an der Ankündigung.
@@ -429,8 +441,9 @@ USt-IdNr. <<USTID>> · <<INSTITUT>> · BIC <<BIC>> · IBAN <<IBAN>>}}
 %% anderen Art bleibt der Platzhalter leer und nimmt dann auch keinen Raum ein.
 <<ARTHINWEIS>>
 
-%% Begründungen für Positionen ohne Umsatzsteuer (BT-120). Bleibt der Platz-
-%% halter leer, entsteht hier nichts – der Abstand darunter trägt beide Fälle.
+%% Begründungen für Positionen ohne Umsatzsteuer (BT-120), je ein
+%% \steuerhinweis. Bleibt der Platzhalter leer, entsteht hier nichts – der
+%% Abstand darunter trägt beide Fälle.
 \vspace{6mm}
 
 <<STEUERHINWEISE>>
@@ -457,8 +470,8 @@ USt-IdNr. <<USTID>> · <<INSTITUT>> · BIC <<BIC>> · IBAN <<IBAN>>}}
 %% letzten Seite ein "Mit freundlichen Grüßen" ohne den Satz, den es beschließt.
 %% Gehalten wird mit Strafen und nicht mit einer Box, denn Strafen nehmen keinen
 %% Raum ein, und eine Rechnung mit einer Seite bleibt, wie sie ist:
-%% \interlinepenalty im Satz, \nopagebreak danach, \\* im Gruß.
-{\interlinepenalty=10000 <<SCHLUSSSATZ>>\par}
+%% \ungeteilt im Satz, \nopagebreak danach, \\* im Gruß.
+\ungeteilt{<<SCHLUSSSATZ>>}
 \nopagebreak
 \vspace{5mm}
 

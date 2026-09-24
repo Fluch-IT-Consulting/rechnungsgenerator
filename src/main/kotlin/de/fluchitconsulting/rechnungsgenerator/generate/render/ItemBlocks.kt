@@ -208,14 +208,20 @@ internal object ItemBlocks {
      * null: Einen Grund tragen nur Kategorien, die auch den Satz 0 verlangen –
      * das hält ein Test am Enum fest. Stünde beides hier, entschiede der
      * Renderer selbst, was die Gruppe schon weiß (#148).
+     *
+     * Jeder Satz ist ein eigener Makroaufruf und nicht eine Zeile in einem
+     * gemeinsamen Absatz: Zwischen zwei Sätzen darf die Seite brechen, in
+     * einem nicht (ADR-0020).
      */
     fun taxNotes(calculatedInvoice: CalculatedInvoice): Latex =
         calculatedInvoice.vatGroups
             .mapNotNull { group ->
                 group.exemptionReason?.let { reason ->
-                    "Auf ".escapeLatex() + GermanFormat.amountWithCurrency(group.base) +
-                        " entfällt keine Umsatzsteuer: ".escapeLatex() + reason.escapeLatex() +
-                        ".".escapeLatex()
+                    val satz =
+                        "Auf ".escapeLatex() + GermanFormat.amountWithCurrency(group.base) +
+                            " entfällt keine Umsatzsteuer: ".escapeLatex() + reason.escapeLatex() +
+                            ".".escapeLatex()
+                    Latex.macro(TemplateMacro.STEUERHINWEIS, listOf(satz))
                 }
-            }.joinToLatex(Latex.macro(TemplateMacro.ZEILENWECHSEL))
+            }.joinToLatex("\n")
 }
