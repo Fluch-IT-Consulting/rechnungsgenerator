@@ -51,12 +51,12 @@ mkdir "$RECHNUNGEN_DIR/.rechnungsgenerator"
 mv "$RECHNUNGEN_DIR/stammdaten.yaml" "$RECHNUNGEN_DIR/.rechnungsgenerator/"
 ```
 
-Wie die Rechnung aussieht, wählen die Stammdaten mit `design: balken` oder
-`design: raster` (ohne Eintrag `balken`, ADR-0011). Das gilt für alle
+Wie die Rechnung aussieht, wählen die Stammdaten mit `design: helsinki` oder
+`design: prag` (ohne Eintrag `helsinki`, ADR-0011). Das gilt für alle
 Rechnungen gleich: In einer Rechnungsdatei gibt es den Schlüssel nicht, und
 ändere ihn nicht in den Stammdaten, nur weil eine einzelne Rechnung anders
 aussehen soll – frag dann nach. Dasselbe gilt für `logo:` (ADR-0012), die
-Datei eines Logos neben den Stammdaten; nur `raster` setzt es.
+Datei eines Logos neben den Stammdaten; nur `prag` setzt es.
 
 ## Ablauf
 

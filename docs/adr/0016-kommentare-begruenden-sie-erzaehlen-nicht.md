@@ -82,7 +82,7 @@ wollte, müsste an die Begründungen, und die stehen mit Absicht dort.
   und Dokumente hinweg stand derselbe Begriff bis dahin dreifach da: „das Netz“
   (12×), „Pflichtangaben-Netz“ (5×), „Netz aus #187“ (4×).
 - **Die Vorlagen sind fast nicht betroffen.** Von 315 Kommentarzeilen in
-  `balken.tex` und `raster.tex` sind 11 Geschichte. Der Rest ist Satzbild-
+  `helsinki.tex` und `prag.tex` sind 11 Geschichte. Der Rest ist Satzbild-
   Begründung, Zuständigkeitsregel oder LaTeX-Fallstrick – und das Nachgemessene
   („nachgemessen braucht die längste Zeile 69,8 mm“) ist dort der einzige Ort,
   an dem das Ergebnis überhaupt stehen kann, weil kein Test Millimeter prüft.

@@ -441,10 +441,10 @@ class GenerateCommandTest : FunSpec({
 
         fun ziel(name: String) = eingaben.resolve("$name.pdf").toString()
 
-        test("raster bekommt das Logo als weitere Datei mit") {
+        test("prag bekommt das Logo als weitere Datei mit") {
             val fake = FakeTypesetter()
 
-            lauf(fake, "-o", ziel("logo-raster"), stammdatenDatei = stammdatenMitLogo("raster"))
+            lauf(fake, "-o", ziel("logo-prag"), stammdatenDatei = stammdatenMitLogo("prag"))
 
             fake.sources!!.files.keys shouldBe setOf("logo.tex")
             fake.sources!!
@@ -453,10 +453,10 @@ class GenerateCommandTest : FunSpec({
                 .decodeToString() shouldBe logo.readText()
         }
 
-        test("balken übergeht das Logo und reicht keine Datei weiter") {
+        test("helsinki übergeht das Logo und reicht keine Datei weiter") {
             val fake = FakeTypesetter()
 
-            lauf(fake, "-o", ziel("logo-balken"), stammdatenDatei = stammdatenMitLogo("balken"))
+            lauf(fake, "-o", ziel("logo-helsinki"), stammdatenDatei = stammdatenMitLogo("helsinki"))
 
             fake.sources!!.files shouldBe emptyMap()
         }
@@ -470,7 +470,7 @@ class GenerateCommandTest : FunSpec({
                         FakeTypesetter(failure = "lualatex konnte Rechnung-R26-042.tex nicht übersetzen"),
                         "-o",
                         ziel("logo-kaputt"),
-                        stammdatenDatei = stammdatenMitLogo("raster"),
+                        stammdatenDatei = stammdatenMitLogo("prag"),
                     )
                 }
 
@@ -482,7 +482,7 @@ class GenerateCommandTest : FunSpec({
             // Etwa eine Deckkraft im Fragment: Transparenz verbietet PDF/A-1.
             val fehler =
                 shouldThrow<ToolchainException> {
-                    lauf(FakeTypesetter(valid = false), "-o", ziel("logo-ungueltig"), stammdatenDatei = stammdatenMitLogo("raster"))
+                    lauf(FakeTypesetter(valid = false), "-o", ziel("logo-ungueltig"), stammdatenDatei = stammdatenMitLogo("prag"))
                 }
 
             fehler.message!! shouldContain "kein gültiges PDF/A-1b"
@@ -495,8 +495,8 @@ class GenerateCommandTest : FunSpec({
                     lauf(
                         FakeTypesetter(failure = "lualatex konnte Rechnung-R26-042.tex nicht übersetzen"),
                         "-o",
-                        ziel("logo-balken-kaputt"),
-                        stammdatenDatei = stammdatenMitLogo("balken"),
+                        ziel("logo-helsinki-kaputt"),
+                        stammdatenDatei = stammdatenMitLogo("helsinki"),
                     )
                 }
 

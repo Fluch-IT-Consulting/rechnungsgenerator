@@ -15,8 +15,8 @@ Der Weg ins PDF:
 - `LatexCompiler` legt die Datei neben die `.tex`, und sie geht mit Namen und
   Inhalt in die Trailer-ID ein.
 - Die Vorlage liest sie mit `\input` in der Präambel, setzt die Zeichnung in
-  eine `tikzpicture` und bestimmt Ort und Höhe. `raster` setzt das Logo,
-  `balken` übergeht es.
+  eine `tikzpicture` und bestimmt Ort und Höhe. `prag` setzt das Logo,
+  `helsinki` übergeht es.
 
 Der Vertrag des Fragments (seit #199):
 
@@ -64,12 +64,12 @@ Prüfsumme nehmen – ist der, den ein Bild später auch braucht.
 setzt, weiß nur seine Vorlage. Der Renderer fragt ihren Platzhalter, nicht das
 Design; dieselbe Richtung wie bei `fillIn` seit #188: Jeder Platzhalter der
 Vorlage bekommt einen Wert, aber keine Vorlage muss jeden Wert setzen. Eine
-Vorlage ohne `<<LOGO>>` bekommt die Datei gar nicht erst. So ergibt `balken`
+Vorlage ohne `<<LOGO>>` bekommt die Datei gar nicht erst. So ergibt `helsinki`
 mit und ohne Logo-Eintrag Byte für Byte dasselbe PDF.
 
 **Der Faktor steht in der Logodatei (#199).** Die Vorlage bringt jedes Logo
 auf dieselbe Höhe, und ein breites wird dabei klein: Eine Wortmarke, dreimal so
-breit wie hoch, behält in `raster` gut 46 mm, und ihre Unterzeile ist kaum
+breit wie hoch, behält in `prag` gut 46 mm, und ihre Unterzeile ist kaum
 lesbar. Wie breit ein Logo ist, kann die Vorlage nicht wissen – das gehört zum
 Logo und nicht zum Design, also auch der Faktor. Er braucht so keinen Schlüssel
 in den Stammdaten, keinen Platzhalter und keine Zahl mit Punkt statt deutschem
@@ -110,7 +110,7 @@ den Umweg.
   Rechnungsstellers sehen gleich aus (ADR-0011).
 - **Eine Begrenzung des Faktors in der Vorlage** mit `\ifdim`: Rechnen in TeX
   für einen Fehler, den man sofort am Blatt sieht. Die Grenze nennt der
-  Kommentar der Vorlage – in `raster` gut 2, dann reicht das Logo bis zur
+  Kommentar der Vorlage – in `prag` gut 2, dann reicht das Logo bis zur
   letzten Kopfangabe.
 - **Eine Probe des Fragments in einem eigenen LuaLaTeX-Lauf.** Ein zweiter
   Satzweg bei jedem Aufruf. Stattdessen nennt die Meldung eines gescheiterten
@@ -130,7 +130,7 @@ den Umweg.
   vermieden, um den Preis eines Umbaus aller Stammdaten-Felder für eines.
 - **Die Vergleichsdateien zeigen das Logo nicht**, nur `\input{logo}` und
   `\logozeichnung`. Ob es richtig gesetzt wird, prüfen `PflichtangabenTest`
-  (raster mit Logo, jede Art) und `ToolchainIntegrationTest`, der auch misst,
+  (prag mit Logo, jede Art) und `ToolchainIntegrationTest`, der auch misst,
   dass der Faktor ankommt.
 
 Umgesetzt in #198, vorbereitet in #197; der Vertrag mit Makro und Faktor

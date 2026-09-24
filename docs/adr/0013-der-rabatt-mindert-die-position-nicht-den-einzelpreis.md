@@ -129,7 +129,7 @@ einen Rabatt, und `PflichtangabenTest` prüft je Design, dass die Spalte genau
 dann dasteht. Ein drittes Design ohne sie fällt dort auf, am fertigen PDF, und
 nicht erst dem Leser der Rechnung.
 
-Für `balken` und `raster` ändert sich nichts: Beide setzen den Platzhalter
+Für `helsinki` und `prag` ändert sich nichts: Beide setzen den Platzhalter
 weiter, die Vergleichsdateien und das Netz bleiben, wie sie waren.
 
 Umgesetzt in #248.

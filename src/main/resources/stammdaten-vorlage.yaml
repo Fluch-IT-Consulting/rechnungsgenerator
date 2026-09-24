@@ -65,11 +65,11 @@ bank:
 # Beispiel: 'R\d{2}-\d{3}'
 #rechnungsnummer-muster:
 
-# Das Satzbild: balken oder raster (ADR-0011).
-#design: balken
+# Das Satzbild: helsinki oder prag (ADR-0011).
+#design: helsinki
 
 # Ein Logo als TikZ-Fragment, sein Pfad relativ zu dieser Datei (ADR-0012).
-# Ohne Eintrag keines; gesetzt wird es nur vom Design raster.
+# Ohne Eintrag keines; gesetzt wird es nur vom Design prag.
 # Beispiel: logo.tex
 #logo:
 

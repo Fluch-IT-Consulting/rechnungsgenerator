@@ -194,7 +194,7 @@ class TemplateTest : FunSpec({
         }
 
         test("ein Wert ohne Platzhalter ist erlaubt") {
-            // Ein Design muss nicht jede Angabe setzen: balken setzt weder
+            // Ein Design muss nicht jede Angabe setzen: helsinki setzt weder
             // Webseite noch Steuernummer (#188).
             gefuellt(
                 "<<FIRMA>>",

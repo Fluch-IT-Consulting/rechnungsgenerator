@@ -6,6 +6,7 @@ import de.fluchitconsulting.rechnungsgenerator.core.values.Money
 import de.fluchitconsulting.rechnungsgenerator.core.values.Percent
 import de.fluchitconsulting.rechnungsgenerator.core.values.Price
 import io.kotest.assertions.throwables.shouldThrow
+import io.kotest.assertions.withClue
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.string.shouldContain
@@ -33,10 +34,10 @@ class YamlLoaderTest : FunSpec({
         checkNotNull(config.invoiceNumberPattern).matches("R26-042") shouldBe true
     }
 
-    test("ohne design gilt balken, mit design das genannte") {
+    test("ohne design gilt helsinki, mit design das genannte") {
         // ADR-0011: Die Wahl steht in den Stammdaten, Vorgabe ist das heutige Design.
-        YamlLoader.parseSellerConfig(resource("stammdaten.yaml")).design shouldBe Design.BALKEN
-        YamlLoader.parseSellerConfig(resource("stammdaten.yaml") + "design: raster\n").design shouldBe Design.RASTER
+        YamlLoader.parseSellerConfig(resource("stammdaten.yaml")).design shouldBe Design.HELSINKI
+        YamlLoader.parseSellerConfig(resource("stammdaten.yaml") + "design: prag\n").design shouldBe Design.PRAG
     }
 
     test("ein unbekanntes design bricht ab und nennt die bekannten") {
@@ -46,7 +47,23 @@ class YamlLoaderTest : FunSpec({
             }
 
         fehler.message!! shouldContain "gitter"
-        fehler.message!! shouldContain "balken, raster"
+        fehler.message!! shouldContain "helsinki, prag"
+    }
+
+    test("die Namen vor #324 sind unbekannte Designs wie jeder andere Wert") {
+        // Nachtrag zu ADR-0011: keine Zuordnung zu den neuen Namen, auch keine
+        // Warnung – wer sie noch stehen hat, ändert die Zeile in den Stammdaten.
+        listOf("balken", "raster").forEach { alt ->
+            withClue(alt) {
+                val fehler =
+                    shouldThrow<Exception> {
+                        YamlLoader.parseSellerConfig(resource("stammdaten.yaml") + "design: $alt\n")
+                    }
+
+                fehler.message!! shouldContain "Unbekanntes Design"
+                fehler.message!! shouldContain alt
+            }
+        }
     }
 
     test("liest die Rechnung und rechnet End-to-End") {

@@ -1,8 +1,8 @@
 # Fiktive Rechnung, deren Positionen die zweite Seite so weit füllen, dass
-# die Seite ohne Zusammenhalt bräche: in balken zwischen Schlusssatz und
-# Grußformel, in raster zwischen Zahlungsfrist und Schlusssatz (ADR-0020,
+# die Seite ohne Zusammenhalt bräche: in helsinki zwischen Schlusssatz und
+# Grußformel, in prag zwischen Zahlungsfrist und Schlusssatz (ADR-0020,
 # #318). Nachgemessen mit den Vorlagen von #318: Ohne \nopagebreak stand
-# "Mit freundlichen Grüßen" in balken allein auf Seite 3, in raster der
+# "Mit freundlichen Grüßen" in helsinki allein auf Seite 3, in prag der
 # Schlusssatz. Ändert sich das Satzbild, kann die Grenze woanders liegen; die
 # Prüfung im Netz bleibt dann richtig, trifft aber diesen Fall nicht mehr.
 nummer: R26-045

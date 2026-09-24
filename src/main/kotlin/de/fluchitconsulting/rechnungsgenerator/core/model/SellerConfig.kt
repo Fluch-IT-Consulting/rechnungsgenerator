@@ -38,7 +38,7 @@ data class SellerConfig(
     @SerialName("geschaeftsfuehrer") val managingDirector: String? = null,
     // Das Design der Rechnung (ADR-0011). In den Stammdaten und nicht je
     // Rechnung: Alle Rechnungen eines Rechnungsstellers sehen gleich aus.
-    @SerialName("design") val design: Design = Design.BALKEN,
+    @SerialName("design") val design: Design = Design.HELSINKI,
     // Das Logo (#198): in der YAML nur der Pfad, wie er dasteht. Gelesen wird
     // die Datei in YamlLoader.loadSellerConfig, das allein weiß, wo die
     // Stammdaten liegen und wogegen ein relativer Pfad gilt. Ohne Eintrag kein Logo.

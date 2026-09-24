@@ -179,7 +179,7 @@ class Template private constructor(
          * Rechnungsart oder Rechnung hängt.
          *
          * Die Gegenrichtung zu [fillIn], aber nur für diese Platzhalter: Ein Design
-         * darf eine Angabe der Stammdaten weglassen, `balken` etwa setzt weder
+         * darf eine Angabe der Stammdaten weglassen, `helsinki` etwa setzt weder
          * Webseite noch Steuernummer. Ließe es den Pflichtsatz der Art weg, fehlte
          * er dagegen genau auf den Rechnungen, die keines der Beispiele zeigt.
          * Diese Prüfung deckt ab, was kein Beispiel enthält (Skonto,
