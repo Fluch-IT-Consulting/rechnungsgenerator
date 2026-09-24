@@ -14,6 +14,7 @@ import io.kotest.assertions.assertSoftly
 import io.kotest.assertions.withClue
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.collections.shouldContain
+import io.kotest.matchers.ints.shouldBeGreaterThan
 import io.kotest.matchers.shouldBe
 import java.math.BigDecimal
 import java.nio.file.Path
@@ -47,6 +48,11 @@ import kotlin.io.path.writeText
  * [rabattBeschriftung] ist der Kopf der Rabattspalte, so wie `pdftotext` ihn
  * liest: balken sperrt seine Spaltenköpfe, und dann kommt jeder Buchstabe
  * einzeln zurück (#213).
+ *
+ * [fortsetzungshinweis] und [seitenzahl] sind die Wörter der Folgeseiten
+ * (ADR-0020): der Satz am Ende jeder Seite, auf die eine weitere folgt, und
+ * die Seitenzahl im Kopf jeder Folgeseite. Beides fehlt auf einer Rechnung
+ * mit einer Seite.
  */
 private data class Design(
     val name: String,
@@ -54,6 +60,8 @@ private data class Design(
     val zahlungszielBeschriftung: String,
     val bankUeberschrift: String?,
     val rabattBeschriftung: String,
+    val fortsetzungshinweis: String,
+    val seitenzahl: (seite: Int, von: Int) -> String,
 )
 
 /**
@@ -114,6 +122,8 @@ class PflichtangabenTest : FunSpec({
                 zahlungszielBeschriftung = "Zahlbar ohne Abzug bis",
                 bankUeberschrift = "Bankverbindung",
                 rabattBeschriftung = "R A B AT T",
+                fortsetzungshinweis = "Fortsetzung auf der nächsten Seite",
+                seitenzahl = { seite, von -> "Seite $seite von $von" },
             ),
             Design(
                 name = "raster",
@@ -122,6 +132,8 @@ class PflichtangabenTest : FunSpec({
                 zahlungszielBeschriftung = "Die Zahlung ist",
                 bankUeberschrift = null,
                 rabattBeschriftung = "Rabatt",
+                fortsetzungshinweis = "Fortsetzung auf der nächsten Seite",
+                seitenzahl = { seite, von -> "Seite $seite von $von" },
             ),
         )
 
@@ -137,7 +149,7 @@ class PflichtangabenTest : FunSpec({
         design: Design,
         stammdaten: Path,
         zielname: String,
-    ): CalculatedInvoice {
+    ): Gesetzt {
         val eingabe = Path.of("src/test/resources/$file.yaml")
         val calculated = CalculatedInvoice(YamlLoader.loadInvoice(eingabe), YamlLoader.loadSellerConfig(stammdaten))
 
@@ -146,13 +158,13 @@ class PflichtangabenTest : FunSpec({
 
         val blatt = Blatt(run.textOf(pdf))
         assertSoftly { blatt.pruefe(calculated, design) }
-        return calculated
+        return Gesetzt(calculated, blatt)
     }
 
     for (design in designs) {
         for ((art, file) in exampleInvoices) {
             test("$file im Design ${design.name}: gültiges PDF/A-1b mit allen Pflichtangaben") {
-                val calculated = setzeUndPruefe(file, design, design.stammdaten, zielname = "${design.name}-$file")
+                val (calculated, _) = setzeUndPruefe(file, design, design.stammdaten, zielname = "${design.name}-$file")
                 calculated.invoice.type shouldBe art
             }
         }
@@ -166,11 +178,26 @@ class PflichtangabenTest : FunSpec({
     // eine mit Nullsatz (Satz und Steuerbetrag, keine Befreiung).
     for (design in designs) {
         test("gemischte Steuersätze im Design ${design.name}: gültig, mit dem Entgelt je Steuersatz") {
-            val calculated =
+            val (calculated, _) =
                 setzeUndPruefe("gemischte-steuersaetze", design, design.stammdaten, zielname = "${design.name}-gemischt")
 
             // 19 %, 7 %, steuerbefreit, Nullsatz – die vier Fälle nebeneinander.
             calculated.vatGroups.size shouldBe 4
+        }
+    }
+
+    // Mehr Positionen, als auf eine Seite passen (#318, ADR-0020): Jede steht
+    // auf dem Blatt, und das Blatt hat mehr als eine Seite. Was die Folgeseiten
+    // tragen, prüft `pruefe` an jeder Rechnung – hier ist die einzige, die
+    // welche hat. Ausgesetzt, bis die Vorlage des Designs umbricht; eine
+    // Vorlage mit `tabularx` verliert die Positionen still, das ist der Befund.
+    for (design in designs) {
+        xtest("viele-positionen im Design ${design.name}: gültig, jede Position auf dem Blatt, über mehr als eine Seite") {
+            val (calculated, blatt) =
+                setzeUndPruefe("viele-positionen", design, design.stammdaten, zielname = "${design.name}-viele")
+
+            calculated.invoice.items.size shouldBe 40
+            blatt.seiten shouldBeGreaterThan 1
         }
     }
 
@@ -183,7 +210,7 @@ class PflichtangabenTest : FunSpec({
         test("rechnung im Design ${design.name} für ein Einzelunternehmen ohne Logo: gültig, mit dem Namen des Inhabers") {
             val einzelunternehmen = stammdatenMit(design.name, logo = false, geschaeftsfuehrung = false)
 
-            val calculated = setzeUndPruefe("rechnung", design, einzelunternehmen, zielname = "${design.name}-einzel")
+            val (calculated, _) = setzeUndPruefe("rechnung", design, einzelunternehmen, zielname = "${design.name}-einzel")
 
             calculated.config.managingDirector shouldBe null
             calculated.config.logo shouldBe null
@@ -191,24 +218,61 @@ class PflichtangabenTest : FunSpec({
     }
 })
 
-/** Der zurückgelesene Text, mit zusammengefasstem Leerraum. */
+/** Eine gesetzte Rechnung: das gerechnete Ergebnis und das zurückgelesene Blatt. */
+private data class Gesetzt(
+    val calculated: CalculatedInvoice,
+    val blatt: Blatt,
+)
+
+/**
+ * Der zurückgelesene Text, mit zusammengefasstem Leerraum – im Ganzen und je
+ * Seite. `pdftotext` schließt jede Seite mit einem Seitenvorschub ab; daran
+ * zählt der Test die Seiten, ohne ein weiteres Werkzeug.
+ */
 private class Blatt(
     text: String,
 ) {
     private val text = normalize(text)
+    private val seitenText = text.split('\u000C').dropLastWhile { it.isBlank() }.map { normalize(it) }
+
+    val seiten: Int get() = seitenText.size
 
     fun steht(
         angabe: String,
         vararg schreibweisen: String,
+    ) = steht(text, angabe, schreibweisen)
+
+    fun fehlt(
+        angabe: String,
+        vararg schreibweisen: String,
+    ) = fehlt(text, angabe, schreibweisen)
+
+    fun stehtAufSeite(
+        seite: Int,
+        angabe: String,
+        vararg schreibweisen: String,
+    ) = steht(seitenText[seite - 1], "$angabe auf Seite $seite", schreibweisen)
+
+    fun fehltAufSeite(
+        seite: Int,
+        angabe: String,
+        vararg schreibweisen: String,
+    ) = fehlt(seitenText[seite - 1], "$angabe auf Seite $seite", schreibweisen)
+
+    private fun steht(
+        text: String,
+        angabe: String,
+        schreibweisen: Array<out String>,
     ) {
         withClue("$angabe: keine der Schreibweisen ${schreibweisen.toList()} im Text\n$text") {
             schreibweisen.any { normalize(it) in text } shouldBe true
         }
     }
 
-    fun fehlt(
+    private fun fehlt(
+        text: String,
         angabe: String,
-        vararg schreibweisen: String,
+        schreibweisen: Array<out String>,
     ) {
         withClue("$angabe: ${schreibweisen.toList()} steht im Text, sollte aber fehlen\n$text") {
             schreibweisen.none { normalize(it) in text } shouldBe true
@@ -345,6 +409,29 @@ private fun Blatt.pruefe(
     } else {
         fehlt("Beschriftung des Zahlungsziels", design.zahlungszielBeschriftung)
         bankUeberschrift?.let { fehlt("Überschrift der Bankverbindung", it) }
+    }
+
+    // Die Folgeseiten (ADR-0020): Jede trägt Rechnungsnummer, Datum und
+    // Seitenzahl, damit eine lose Seite zu ihrer Rechnung findet, und den Fuß
+    // des Briefbogens. Jede Seite, auf die eine folgt, sagt das am Ende. Eine
+    // Rechnung mit einer Seite sagt nichts davon – sie sieht aus wie bisher.
+    if (seiten == 1) {
+        fehlt("Seitenzahl", design.seitenzahl(1, 1))
+        fehlt("Fortsetzungshinweis", design.fortsetzungshinweis)
+    } else {
+        for (seite in 1..seiten) {
+            if (seite < seiten) {
+                stehtAufSeite(seite, "Fortsetzungshinweis", design.fortsetzungshinweis)
+            } else {
+                fehltAufSeite(seite, "Fortsetzungshinweis", design.fortsetzungshinweis)
+            }
+            stehtAufSeite(seite, "Rechnungssteller im Fuß", config.companyName)
+            stehtAufSeite(seite, "USt-IdNr. im Fuß", config.vatId.value, config.vatId.formatted())
+            if (seite == 1) continue
+            stehtAufSeite(seite, "Seitenzahl", design.seitenzahl(seite, seiten))
+            stehtAufSeite(seite, "Rechnungsnummer", invoice.number)
+            stehtAufSeite(seite, "Rechnungsdatum", *datum(invoice.issueDate))
+        }
     }
 }
 
