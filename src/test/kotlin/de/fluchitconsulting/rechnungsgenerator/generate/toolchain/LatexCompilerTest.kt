@@ -199,6 +199,21 @@ class LatexCompilerTest : FunSpec({
         runner.environments.distinct() shouldHaveSize 1
     }
 
+    test("verlangt longtable einen zweiten Lauf, wird ein zweites Mal gesetzt") {
+        // "Table widths have changed. Rerun LaTeX." – longtable sagt es anders
+        // als der Kern, ohne "Rerun to get". Aus einem ersten Lauf über eine
+        // xltabular mit Spaltenkopf, wie die Positionen sie haben (#321).
+        val runner =
+            FakeProcessRunner(
+                erfolgreicherLauf(mitschnitt("lualatex-tabellenbreite-geaendert.log")),
+                erfolgreicherLauf(),
+            )
+
+        setzen(runner)
+
+        runner.commands shouldHaveSize 2
+    }
+
     test("wer immer weiter verlangt, bekommt trotzdem nur drei Läufe") {
         // Ein Dokument, das nach drei Läufen noch einen vierten fordert,
         // konvergiert nicht – der vierte änderte daran nichts. Die Zahl steht

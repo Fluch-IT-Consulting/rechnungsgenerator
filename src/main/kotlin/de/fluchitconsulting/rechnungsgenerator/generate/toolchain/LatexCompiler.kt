@@ -118,19 +118,23 @@ class LatexCompiler(private val runner: ProcessRunner) {
     /**
      * Verlangt LaTeX einen weiteren Lauf?
      *
-     * Es sagt das in Worten und nicht über einen Rückgabewert: "Rerun to get
-     * cross-references right", "Rerun to get outlines right" – je nach Paket
-     * verschieden formuliert, aber immer mit derselben Wendung.
+     * Es sagt das in Worten und nicht über einen Rückgabewert, und nicht jedes
+     * Paket in denselben: Der Kern und lastpage schreiben "Rerun to get …",
+     * longtable schreibt "Table widths have changed. Rerun LaTeX." Gefragt wird
+     * nach jeder dieser Wendungen. Fehlte eine, fiele es nicht auf, solange ein
+     * anderes Paket im selben Lauf ebenfalls einen weiteren verlangt – und
+     * sobald es das nicht mehr tut, entstünde ein PDF aus dem ersten Lauf (#321).
      *
-     * Bei den Rechnungen dieses Projekts kommt das heute nicht vor: Sie haben
-     * weder Querverweise noch Lesezeichen, und der erste Lauf genügt
-     * (nachgemessen mit TeX Live 2026 – die PDFs beider Läufe sind im Satzbild
-     * gleich). Gefragt wird trotzdem, statt eine feste Zahl von Läufen
-     * anzunehmen: Wer der Vorlage ein Inhaltsverzeichnis hinzufügt, bekommt
-     * dann den zweiten Lauf, ohne dass jemand daran denken muss.
+     * Bei den Rechnungen dieses Projekts sind es zwei Läufe (nachgemessen mit
+     * TeX Live 2026): longtable kennt die Spaltenbreiten der Positionen erst aus
+     * dem ersten, und nach ihm stehen die Spalten sichtbar anders als nach dem
+     * zweiten; lastpage kennt die Zahl der Seiten für "Seite n von N" ebenso
+     * erst danach. Gefragt wird trotzdem, statt zwei Läufe fest anzunehmen:
+     * Kommt ein Paket hinzu, das einen dritten braucht, bekommt es ihn, ohne
+     * dass jemand daran denken muss.
      */
     private fun needsAnotherPass(log: String): Boolean =
-        log.lineSequence().any { it.contains("Rerun to get") || it.contains("Please rerun") }
+        log.lineSequence().any { it.contains("Rerun to get") || it.contains("Please rerun") || it.contains("Rerun LaTeX") }
 
     /**
      * Die Meldung, wenn eine Seite mehr trägt, als das Blatt fasst – oder null.
@@ -180,10 +184,8 @@ class LatexCompiler(private val runner: ProcessRunner) {
         private const val PROGRAM = "lualatex"
 
         // Die Obergrenze, nicht die Anzahl: Gelaufen wird, solange LaTeX einen
-        // weiteren Lauf verlangt – siehe needsAnotherPass. Bei den
-        // Rechnungen dieses Projekts ist das heute keiner; sie haben weder
-        // Querverweise noch Lesezeichen, und nachgemessen mit TeX Live 2026 sind
-        // die PDFs nach einem und nach zwei Läufen im Satzbild gleich.
+        // weiteren Lauf verlangt – siehe needsAnotherPass, dort auch, warum es
+        // bei den Rechnungen dieses Projekts zwei sind.
         //
         // Drei als Grenze, weil ein Dokument, das nach dreien immer noch einen
         // weiteren verlangt, nicht konvergiert – ein vierter änderte daran nichts.
