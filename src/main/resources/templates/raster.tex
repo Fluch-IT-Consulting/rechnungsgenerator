@@ -106,8 +106,9 @@
 
 %% Die eigenen Sätze des Programms unter den Summen, wie in balken.tex: nur hier
 %% der breite Abstand nach einem Satzende (#143), deshalb keine Eingabedaten.
+%% Keiner bricht über zwei Seiten, siehe dort.
 \newcommand{\hinweisabsatz}[1]{\par\vspace{5mm}\noindent%
-  {\nonfrenchspacing\sfcode`\:=1000 \sfcode`\;=1000 \sfcode`\,=1000 #1}}
+  {\interlinepenalty=10000 \nonfrenchspacing\sfcode`\:=1000 \sfcode`\;=1000 \sfcode`\,=1000 #1\par}}
 
 \newcommand{\absetzungskopf}[1]{\par\vspace{6mm}\noindent #1\par\vspace{1.5mm}}
 
@@ -313,9 +314,15 @@
 
 <<BANKVERBINDUNG>>
 
+%% Der Schlusssatz aus Stammdaten oder Rechnung. Keine Grußformel. Er bricht
+%% nicht über zwei Seiten, wie Schlusssatz und Gruß in balken.tex, und er
+%% hängt am Absatz davor – der Zahlungsfrist, ohne sie dem Pflichtsatz –,
+%% sonst stünde er allein auf der letzten Seite. \nopagebreak vor dem Abstand
+%% und nicht danach: Hinter einer Strafe ist der Abstand keine Stelle mehr, an
+%% der die Seite brechen darf. <<BANKVERBINDUNG>> davor ist in raster leer.
+\nopagebreak
 \vspace{8mm}
 
-%% Der Schlusssatz aus Stammdaten oder Rechnung. Keine Grußformel.
-<<SCHLUSSSATZ>>
+{\interlinepenalty=10000 <<SCHLUSSSATZ>>\par}
 
 \end{document}

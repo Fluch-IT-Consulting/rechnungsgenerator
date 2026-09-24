@@ -15,8 +15,15 @@ Was auf jeder Seite steht, gilt für jedes Design:
 - **Der Spaltenkopf der Positionen wiederholt sich** auf jeder Seite.
 - **Am Seitenende steht „Fortsetzung auf der nächsten Seite“**, kein Übertrag.
 - **Der Summenblock hängt an den letzten Positionszeilen.** Pflichtsatz,
-  Skonto, Schlusssatz, Gruß und Bankverbindung dürfen auf die nächste Seite
-  rutschen; ein Summenblock ohne eine Position darüber steht nie allein.
+  Skonto und Bankverbindung dürfen auf die nächste Seite rutschen; ein
+  Summenblock ohne eine Position darüber steht nie allein.
+- **Schlusssatz, Gruß und Name bleiben beisammen.** Sie rutschen nur
+  gemeinsam auf die nächste Seite. Ein Design ohne Gruß hängt den
+  Schlusssatz an den Satz davor, damit er nicht allein auf der letzten Seite
+  steht.
+- **Kein fachlicher Satz unter den Summen bricht über zwei Seiten** –
+  Pflichtsatz, Zahlungsfrist, Skonto, der Satz zum ausgeglichenen
+  Restbetrag.
 - **Eine einseitige Rechnung sieht aus wie bisher**: keine Seitenzahl, kein
   Fortsetzungshinweis. Ob es Folgeseiten gibt, weiß nur die Vorlage, aus der
   Seitenzahl des Satzes.
@@ -58,6 +65,18 @@ Zwischensumme je Blatt.
 Befund – Zahlen ohne das, was sie summieren – soll nicht wieder entstehen.
 Mehr zusammenzuhalten (Summen samt Pflichtsatz, Gruß und Bank) machte den
 Block so groß, dass er oft eine halbleere Seite davor erzwänge.
+
+**Der Schluss bricht nicht auseinander.** Nachgemessen an einer Rechnung mit
+36 Positionen: Ohne Zusammenhalt endete Seite 2 mit dem Dankessatz, und auf
+Seite 3 stand "Mit freundlichen Grüßen" allein über dem Namen – ein Gruß ohne
+den Satz, den er beschließt. Gehalten wird mit Umbruchstrafen und nicht mit
+einer Box: Strafen nehmen keinen Raum ein, und die einseitige Rechnung
+bleibt pixelgleich. In raster, das keinen Gruß setzt, stand an derselben
+Stelle der Schlusssatz allein auf Seite 3; er hängt dort deshalb an der
+Zahlungsfrist, beim Storno am Pflichtsatz. Dabei zeigte sich, dass die Seite
+auch mitten im zweizeiligen Pflichtsatz brechen konnte und auf Seite 3 nur
+"gezahlter Betrag wird erstattet." stand – ein Satz ohne Anfang. Seither
+bricht keiner dieser Sätze um, in beiden Designs.
 
 **Die einseitige Rechnung bleibt, wie sie ist.** „Seite 1 von 1“ sagt nichts,
 und jedes Beispiel-PDF änderte sich. Die Vorlage entscheidet an der
@@ -108,7 +127,12 @@ Rechnung; das Log sieht jede.
 - **Das Netz aus #187 bekommt eine Beispieldatei mit vielen Positionen.**
   Geprüft wird über `pdftotext`, dass jede Position im PDF steht, und über
   die Seitenzahl, dass es mehr als eine ist. Dieselbe Datei hält den
-  Fortsetzungshinweis und den kurzen Kopf der Folgeseite fest.
+  Fortsetzungshinweis und den kurzen Kopf der Folgeseite fest. Eine zweite,
+  `schluss-an-der-seitengrenze.yaml`, füllt die zweite Seite so weit, dass
+  sie ohne Zusammenhalt bräche: in balken zwischen Schlusssatz und Gruß, in
+  raster zwischen Zahlungsfrist und Schlusssatz. Die Grenze ist
+  nachgemessen und wandert, wenn sich das Satzbild ändert; die Prüfung bleibt
+  dann richtig, trifft den Fall aber nicht mehr.
 - **Ein drittes Design** muss die Folgeseiten selbst setzen; die Liste oben
   ist dafür die Checkliste, und das Netz prüft sie an der Beispieldatei.
 
