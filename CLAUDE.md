@@ -160,6 +160,19 @@ CV/Web-Auftritt des Autors), PDF/A-Prüfung über veraPDF.
   Vorlage, ein Eintrag in `Design`, eine Vergleichsdatei und eine Zeile im
   Pflichtangaben-Netz.
 
+- **Mehrere Seiten** (ADR-0020): Die Positionen brechen zwischen zwei
+  Positionen um, und die Vorlage setzt die Folgeseiten – ein kurzer Kopf mit
+  Nummer, Datum und „Seite n von N“, der Fuß des Briefbogens auf jeder Seite,
+  der wiederholte Spaltenkopf und ein Fortsetzungshinweis im Seitenfuß. Kein
+  Übertrag: Die Vorlage rechnet nicht, und der Renderer weiß nicht, wo die
+  Seite bricht. Die Summen sind die letzte Zeile der Positionstabelle und
+  stehen so nie ohne eine Position darüber. Eine einseitige Rechnung sieht
+  aus wie zuvor, bei 300 dpi pixelgleich; ein neues Design muss die
+  Folgeseiten selbst setzen, und das Netz prüft sie an
+  `viele-positionen.yaml`. Unabhängig davon bricht `LatexCompiler` ab, wenn
+  das Protokoll `Overfull \vbox` meldet: Dann ist Inhalt vom Blatt gefallen,
+  und ein gültiges PDF/A ohne ihn darf nicht entstehen.
+
 - **Logo** (ADR-0012): Die Stammdaten nennen es als Datei, `logo: logo.tex`,
   relativ zu ihrem Verzeichnis; ohne Eintrag kein Logo. Die Datei definiert
   `\logozeichnung` (Pflicht, der Rumpf einer `tikzpicture`) und
