@@ -1,0 +1,217 @@
+# Fiktive Rechnung mit 40 Positionen, mehr als auf eine Seite passen (#318).
+# Die Namen sind zweistellig nummeriert: "Arbeitspaket 04" steckt nicht in
+# "Arbeitspaket 40", sonst fände das Netz eine fehlende Position im Namen
+# einer anderen wieder.
+nummer: R26-044
+datum: 2026-08-14
+leistungszeitraum:
+  von: 2026-07-01
+  bis: 2026-07-31
+kunde:
+  name: Beispiel Software GmbH
+  anschrift:
+    strasse: Industriestraße 1
+    plz: "90402"
+    ort: Nürnberg
+  referenz: BST-2026-0816
+positionen:
+  - bezeichnung: IT-Beratungsleistungen, Arbeitspaket 01
+    beschreibung: Rahmenvertrag vom 01.02.2026
+    menge: 8
+    einheit: Std.
+    einzelpreis: 95.00
+  - bezeichnung: IT-Beratungsleistungen, Arbeitspaket 02
+    beschreibung: Rahmenvertrag vom 01.02.2026
+    menge: 8
+    einheit: Std.
+    einzelpreis: 95.00
+  - bezeichnung: IT-Beratungsleistungen, Arbeitspaket 03
+    beschreibung: Rahmenvertrag vom 01.02.2026
+    menge: 8
+    einheit: Std.
+    einzelpreis: 95.00
+  - bezeichnung: IT-Beratungsleistungen, Arbeitspaket 04
+    beschreibung: Rahmenvertrag vom 01.02.2026
+    menge: 8
+    einheit: Std.
+    einzelpreis: 95.00
+  - bezeichnung: IT-Beratungsleistungen, Arbeitspaket 05
+    beschreibung: Rahmenvertrag vom 01.02.2026
+    menge: 8
+    einheit: Std.
+    einzelpreis: 95.00
+  - bezeichnung: IT-Beratungsleistungen, Arbeitspaket 06
+    beschreibung: Rahmenvertrag vom 01.02.2026
+    menge: 8
+    einheit: Std.
+    einzelpreis: 95.00
+  - bezeichnung: IT-Beratungsleistungen, Arbeitspaket 07
+    beschreibung: Rahmenvertrag vom 01.02.2026
+    menge: 8
+    einheit: Std.
+    einzelpreis: 95.00
+  - bezeichnung: IT-Beratungsleistungen, Arbeitspaket 08
+    beschreibung: Rahmenvertrag vom 01.02.2026
+    menge: 8
+    einheit: Std.
+    einzelpreis: 95.00
+  - bezeichnung: IT-Beratungsleistungen, Arbeitspaket 09
+    beschreibung: Rahmenvertrag vom 01.02.2026
+    menge: 8
+    einheit: Std.
+    einzelpreis: 95.00
+  - bezeichnung: IT-Beratungsleistungen, Arbeitspaket 10
+    beschreibung: Rahmenvertrag vom 01.02.2026
+    menge: 8
+    einheit: Std.
+    einzelpreis: 95.00
+  - bezeichnung: IT-Beratungsleistungen, Arbeitspaket 11
+    beschreibung: Rahmenvertrag vom 01.02.2026
+    menge: 8
+    einheit: Std.
+    einzelpreis: 95.00
+  - bezeichnung: IT-Beratungsleistungen, Arbeitspaket 12
+    beschreibung: Rahmenvertrag vom 01.02.2026
+    menge: 8
+    einheit: Std.
+    einzelpreis: 95.00
+  - bezeichnung: IT-Beratungsleistungen, Arbeitspaket 13
+    beschreibung: Rahmenvertrag vom 01.02.2026
+    menge: 8
+    einheit: Std.
+    einzelpreis: 95.00
+  - bezeichnung: IT-Beratungsleistungen, Arbeitspaket 14
+    beschreibung: Rahmenvertrag vom 01.02.2026
+    menge: 8
+    einheit: Std.
+    einzelpreis: 95.00
+  - bezeichnung: IT-Beratungsleistungen, Arbeitspaket 15
+    beschreibung: Rahmenvertrag vom 01.02.2026
+    menge: 8
+    einheit: Std.
+    einzelpreis: 95.00
+  - bezeichnung: IT-Beratungsleistungen, Arbeitspaket 16
+    beschreibung: Rahmenvertrag vom 01.02.2026
+    menge: 8
+    einheit: Std.
+    einzelpreis: 95.00
+  - bezeichnung: IT-Beratungsleistungen, Arbeitspaket 17
+    beschreibung: Rahmenvertrag vom 01.02.2026
+    menge: 8
+    einheit: Std.
+    einzelpreis: 95.00
+  - bezeichnung: IT-Beratungsleistungen, Arbeitspaket 18
+    beschreibung: Rahmenvertrag vom 01.02.2026
+    menge: 8
+    einheit: Std.
+    einzelpreis: 95.00
+  - bezeichnung: IT-Beratungsleistungen, Arbeitspaket 19
+    beschreibung: Rahmenvertrag vom 01.02.2026
+    menge: 8
+    einheit: Std.
+    einzelpreis: 95.00
+  - bezeichnung: IT-Beratungsleistungen, Arbeitspaket 20
+    beschreibung: Rahmenvertrag vom 01.02.2026
+    menge: 8
+    einheit: Std.
+    einzelpreis: 95.00
+  - bezeichnung: IT-Beratungsleistungen, Arbeitspaket 21
+    beschreibung: Rahmenvertrag vom 01.02.2026
+    menge: 8
+    einheit: Std.
+    einzelpreis: 95.00
+  - bezeichnung: IT-Beratungsleistungen, Arbeitspaket 22
+    beschreibung: Rahmenvertrag vom 01.02.2026
+    menge: 8
+    einheit: Std.
+    einzelpreis: 95.00
+  - bezeichnung: IT-Beratungsleistungen, Arbeitspaket 23
+    beschreibung: Rahmenvertrag vom 01.02.2026
+    menge: 8
+    einheit: Std.
+    einzelpreis: 95.00
+  - bezeichnung: IT-Beratungsleistungen, Arbeitspaket 24
+    beschreibung: Rahmenvertrag vom 01.02.2026
+    menge: 8
+    einheit: Std.
+    einzelpreis: 95.00
+  - bezeichnung: IT-Beratungsleistungen, Arbeitspaket 25
+    beschreibung: Rahmenvertrag vom 01.02.2026
+    menge: 8
+    einheit: Std.
+    einzelpreis: 95.00
+  - bezeichnung: IT-Beratungsleistungen, Arbeitspaket 26
+    beschreibung: Rahmenvertrag vom 01.02.2026
+    menge: 8
+    einheit: Std.
+    einzelpreis: 95.00
+  - bezeichnung: IT-Beratungsleistungen, Arbeitspaket 27
+    beschreibung: Rahmenvertrag vom 01.02.2026
+    menge: 8
+    einheit: Std.
+    einzelpreis: 95.00
+  - bezeichnung: IT-Beratungsleistungen, Arbeitspaket 28
+    beschreibung: Rahmenvertrag vom 01.02.2026
+    menge: 8
+    einheit: Std.
+    einzelpreis: 95.00
+  - bezeichnung: IT-Beratungsleistungen, Arbeitspaket 29
+    beschreibung: Rahmenvertrag vom 01.02.2026
+    menge: 8
+    einheit: Std.
+    einzelpreis: 95.00
+  - bezeichnung: IT-Beratungsleistungen, Arbeitspaket 30
+    beschreibung: Rahmenvertrag vom 01.02.2026
+    menge: 8
+    einheit: Std.
+    einzelpreis: 95.00
+  - bezeichnung: IT-Beratungsleistungen, Arbeitspaket 31
+    beschreibung: Rahmenvertrag vom 01.02.2026
+    menge: 8
+    einheit: Std.
+    einzelpreis: 95.00
+  - bezeichnung: IT-Beratungsleistungen, Arbeitspaket 32
+    beschreibung: Rahmenvertrag vom 01.02.2026
+    menge: 8
+    einheit: Std.
+    einzelpreis: 95.00
+  - bezeichnung: IT-Beratungsleistungen, Arbeitspaket 33
+    beschreibung: Rahmenvertrag vom 01.02.2026
+    menge: 8
+    einheit: Std.
+    einzelpreis: 95.00
+  - bezeichnung: IT-Beratungsleistungen, Arbeitspaket 34
+    beschreibung: Rahmenvertrag vom 01.02.2026
+    menge: 8
+    einheit: Std.
+    einzelpreis: 95.00
+  - bezeichnung: IT-Beratungsleistungen, Arbeitspaket 35
+    beschreibung: Rahmenvertrag vom 01.02.2026
+    menge: 8
+    einheit: Std.
+    einzelpreis: 95.00
+  - bezeichnung: IT-Beratungsleistungen, Arbeitspaket 36
+    beschreibung: Rahmenvertrag vom 01.02.2026
+    menge: 8
+    einheit: Std.
+    einzelpreis: 95.00
+  - bezeichnung: IT-Beratungsleistungen, Arbeitspaket 37
+    beschreibung: Rahmenvertrag vom 01.02.2026
+    menge: 8
+    einheit: Std.
+    einzelpreis: 95.00
+  - bezeichnung: IT-Beratungsleistungen, Arbeitspaket 38
+    beschreibung: Rahmenvertrag vom 01.02.2026
+    menge: 8
+    einheit: Std.
+    einzelpreis: 95.00
+  - bezeichnung: IT-Beratungsleistungen, Arbeitspaket 39
+    beschreibung: Rahmenvertrag vom 01.02.2026
+    menge: 8
+    einheit: Std.
+    einzelpreis: 95.00
+  - bezeichnung: IT-Beratungsleistungen, Arbeitspaket 40
+    beschreibung: Rahmenvertrag vom 01.02.2026
+    menge: 8
+    einheit: Std.
+    einzelpreis: 95.00
