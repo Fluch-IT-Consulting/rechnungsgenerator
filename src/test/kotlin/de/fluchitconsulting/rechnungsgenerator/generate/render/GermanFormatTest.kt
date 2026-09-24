@@ -21,8 +21,17 @@ class GermanFormatTest : FunSpec({
         assertSoftly {
             GermanFormat.amountWithCurrency(Money("8337.50")).tex shouldBe "8.337,50~€"
             GermanFormat.amountWithCurrency(Money("0.5")).tex shouldBe "0,50~€"
-            GermanFormat.amountWithCurrency(Money("-1234.05")).tex shouldBe "-1.234,05~€"
             GermanFormat.amountWithCurrency(Money("9921.63")).tex shouldBe "9.921,63~€"
+        }
+    }
+
+    // Das Minuszeichen U+2212 und nicht der Bindestrich, den DecimalFormat für
+    // Locale.GERMANY mitbringt: Auf einem Storno ist fast jede Zahl negativ,
+    // und die Absetzung der Schlussrechnung setzt dasselbe Zeichen (#320).
+    test("negative Zahlen tragen das Minuszeichen, nicht den Bindestrich") {
+        assertSoftly {
+            GermanFormat.amountWithCurrency(Money("-1234.05")).tex shouldBe "\u22121.234,05~€"
+            GermanFormat.quantity(BigDecimal("-86.5")).tex shouldBe "\u221286,5"
         }
     }
 

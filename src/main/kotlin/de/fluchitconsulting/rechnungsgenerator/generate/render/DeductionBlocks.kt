@@ -37,9 +37,10 @@ internal object DeductionBlocks {
         // Derselbe Trenner wie bei den Positionen: Jede Zeile hat eine
         // Zusatzzeile, genau wie eine Position mit Beschreibung.
         //
-        // Das Minus davor schreibt der Renderer und nicht die Vorlage: Es ist
-        // das Vorzeichen des abgesetzten Betrags und damit Inhalt, so wie das
-        // €-Zeichen zum Betrag gehört (#76).
+        // Abgesetzt wird, also steht der Betrag negativ da. Das Vorzeichen
+        // kommt aus der Zahl und nicht aus der Vorlage: Es ist Inhalt, so wie
+        // das €-Zeichen zum Betrag gehört (#76). Welches Zeichen es ist,
+        // entscheidet GermanFormat, für jede negative Zahl gleich (#320).
         val rows =
             deductions
                 .map { abgesetzt ->
@@ -48,7 +49,7 @@ internal object DeductionBlocks {
                             TemplateMacro.SUMMENZEILE,
                             listOf(
                                 describePrepayment(abgesetzt),
-                                "\u2212".escapeLatex() + GermanFormat.amountWithCurrency(abgesetzt.deducted.gross),
+                                GermanFormat.amountWithCurrency(-abgesetzt.deducted.gross),
                             ),
                         )
                 }.joinToLatex(rowSeparator(TemplateMacro.POSITIONSTRENNER))

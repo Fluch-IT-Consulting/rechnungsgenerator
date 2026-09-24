@@ -27,7 +27,13 @@ import java.util.Locale
  * eingestellt ist, auf dem sie erzeugt wurde.
  */
 object GermanFormat {
-    private val SYMBOLS = DecimalFormatSymbols(Locale.GERMANY)
+    // Das Minuszeichen U+2212 statt des Bindestrichs, den Locale.GERMANY
+    // mitbringt: Der Bindestrich ist ein Trennzeichen, kein Rechenzeichen.
+    // Hier und nicht bei den Aufrufern, damit jede negative Zahl auf dem Blatt
+    // dasselbe Zeichen trägt (#320). Kein \textminus: Unter fontspec ist das
+    // dasselbe Zeichen, nur als Markup, und kein $-$, das käme aus der
+    // Mathematikschrift und nicht aus der des Designs.
+    private val SYMBOLS = DecimalFormatSymbols(Locale.GERMANY).apply { minusSign = '\u2212' }
 
     // DecimalFormat ist nicht thread-safe, deshalb pro Aufruf eine neue Instanz
     // statt einer geteilten val. Das Rendern läuft ein paar Dutzend Mal pro
