@@ -189,17 +189,15 @@ class PflichtangabenTest : FunSpec({
     // Mehr Positionen, als auf eine Seite passen (#318, ADR-0020): Jede steht
     // auf dem Blatt, und das Blatt hat mehr als eine Seite. Was die Folgeseiten
     // tragen, prüft `pruefe` an jeder Rechnung – hier ist die einzige, die
-    // welche hat. In raster ausgesetzt, bis seine Vorlage umbricht: Dort läuft
-    // die Seite über, und der Satz bricht ab.
+    // welche hat.
     for (design in designs) {
-        test("viele-positionen im Design ${design.name}: gültig, jede Position auf dem Blatt, über mehr als eine Seite")
-            .config(enabled = design.name != "raster") {
-                val (calculated, blatt) =
-                    setzeUndPruefe("viele-positionen", design, design.stammdaten, zielname = "${design.name}-viele")
+        test("viele-positionen im Design ${design.name}: gültig, jede Position auf dem Blatt, über mehr als eine Seite") {
+            val (calculated, blatt) =
+                setzeUndPruefe("viele-positionen", design, design.stammdaten, zielname = "${design.name}-viele")
 
-                calculated.invoice.items.size shouldBe 40
-                blatt.seiten shouldBeGreaterThan 1
-            }
+            calculated.invoice.items.size shouldBe 40
+            blatt.seiten shouldBeGreaterThan 1
+        }
     }
 
     // Die Stammdaten oben führen eine Geschäftsführung, und raster läuft dort

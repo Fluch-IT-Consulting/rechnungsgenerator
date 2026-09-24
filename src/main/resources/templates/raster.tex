@@ -16,7 +16,12 @@
 
 \usepackage{fontspec}
 \usepackage{geometry}
-\usepackage{tabularx}
+%% xltabular für die Positionen, die über Seiten umbrechen (ADR-0020), wie in
+%% balken.tex. Es lädt tabularx selbst, das für die Absetzung bleibt.
+\usepackage{xltabular}
+\usepackage{fancyhdr}
+\usepackage{lastpage}  %% die Zahl der Seiten für den Kopf der Folgeseiten
+\usepackage{refcount}  %% dieselbe Zahl als Zahl, für den Fortsetzungshinweis
 \usepackage{array}
 \usepackage{etoolbox}  %% \ifblank für die Angaben, die leer sein dürfen
 \usepackage{tikz}      %% das Logo
@@ -33,10 +38,38 @@
   BoldItalicFont = *-BoldItalic,
 ]
 
-\geometry{a4paper, left=20mm, right=20mm, top=18mm, bottom=16mm}
+%% Der Fuß ist ein Seitenfuß auf jeder Seite (ADR-0020), der Kopf der
+%% Folgeseiten steht im oberen Rand, wie in balken.tex. includefoot misst den
+%% unteren Rand bis zur Grundlinie des Fußes, und die ist seine Unterkante
+%% (siehe \fuss). Sie steht, wo sie stand, als der Fuß noch das Ende des
+%% Textes war: TeX setzte seine Unterkante \maxdepth unter das Ende des
+%% Textbereichs, der 16 mm über dem Blattrand endete.
+%% Wie hoch der Fuß ist, hängt an den Stammdaten; \footskip setzt deshalb
+%% \fuss selbst, unten nach seiner Definition.
+\geometry{a4paper, left=20mm, right=20mm, top=18mm, bottom=\dimexpr 16mm-\maxdepth\relax,
+  includefoot, headheight=12pt, headsep=6mm}
 
 \setlength{\parindent}{0pt}
-\pagestyle{empty}
+%% Die erste Seite trägt nur den Fuß, jede weitere dazu einen kurzen Kopf mit
+%% Nummer, Datum und Seitenzahl.
+\fancypagestyle{erste}{\fancyhf{}\renewcommand{\headrulewidth}{0pt}\fancyfoot[C]{\fuss}\fancyfoot[R]{\fortsetzung}}
+\fancypagestyle{folge}{\fancyhf{}\renewcommand{\headrulewidth}{0pt}%
+  \fancyhead[L]{\small <<DOKUMENTART>> <<RECHNUNGSNUMMER>> · <<RECHNUNGSDATUM>>}%
+  \fancyhead[R]{\small Seite \thepage\ von \pageref*{LastPage}}%
+  \fancyfoot[C]{\fuss}\fancyfoot[R]{\fortsetzung}}
+\pagestyle{folge}
+
+%% Der Fortsetzungshinweis unten rechts auf jeder Seite, der eine weitere
+%% folgt. Er gehört zur Seite und nicht zur Tabelle: Passen Positionen und
+%% Summen auf eine Seite, der Rest aber nicht, bricht die Tabelle gar nicht
+%% um, und die Seite braucht ihn trotzdem. Er steht im Fuß, damit er an
+%% jeder Seite hängt, und nimmt dort keinen Raum ein ([0pt][0pt]): 3 mm unter
+%% dem Ende des Textbereichs, der \footskip über der Grundlinie des Fußes
+%% endet. Beim ersten Lauf kennt LaTeX die letzte Seite noch nicht, die Zahl
+%% ist 0, und der Hinweis fehlt – den zweiten Lauf verlangt die neue Marke
+%% LastPage ohnehin.
+\newcommand{\fortsetzung}{\ifnum\value{page}<\getpagerefnumber{LastPage}\relax
+  \raisebox{\dimexpr\footskip-3mm\relax}[0pt][0pt]{\small Fortsetzung auf der nächsten Seite}\fi}
 \raggedright
 
 %% Keine Silbentrennung, aus demselben Grund wie in balken.tex: Eigennamen,
@@ -99,6 +132,14 @@
 %% Rabatt, Gesamt.
 \newcommand{\positionszeile}[7]{#1 & \textbf{#2} & #3 & #4 & #5\mitrabatt{ & #6} & #7}
 
+%% Der Kopf der Positionstabelle, auf der ersten Seite und auf jeder Folgeseite.
+\newcommand{\positionskopf}{\hline
+  \textbf{Pos.} & \textbf{Bezeichnung} & \textbf{Menge} & \textbf{Einheit} & \textbf{Einzelpreis}\mitrabatt{ & \textbf{Rabatt}} & \textbf{Gesamt}\\
+  \hline}
+
+%% Wie viele Spalten die Positionstabelle hat: sechs, mit Rabattspalte sieben.
+\newcommand{\spaltenzahl}{\ifblank{<<RABATTSPALTE>>}{6}{7}}
+
 \newcommand{\summenzeile}[2]{#1 & #2}
 
 %% Die fette Zeile unter der Linie, mit der ein Betragsblock endet. Sie beendet
@@ -141,7 +182,38 @@
 \ifblank{<<LOGO>>}{}{\input{<<LOGO>>}}
 \providecommand{\logoskalierung}{1}
 
+%% ------------------------------------------------------------------ Fuß
+%% Drei Spalten: Anschrift und Kontakt, Steuer und Register (§35a GmbHG),
+%% Bank. Beide Steuerkennungen, wo es beide gibt – die Spalte hat Platz. Der
+%% Seitenfuß jeder Seite, oben in \fancypagestyle gesetzt.
+%%
+%% Die Spalten hängen oben bündig, und die längste bestimmt die Unterkante.
+%% \raisebox{\depth} macht die Unterkante zur Grundlinie: So wächst der Fuß
+%% mit jeder weiteren Zeile nach oben und nie in den Rand.
+\newcommand{\fuss}{\raisebox{\depth}{\parbox[t]{\textwidth}{\footnotesize
+\noindent
+\begin{minipage}[t]{0.32\linewidth}\raggedright
+  <<FIRMA>>\zeilenwechsel{}<<STRASSE>>\zeilenwechsel{}<<PLZ>> <<ORT>>\ifblank{<<WEBSEITE>>}{}{\zeilenwechsel{}<<WEBSEITE>>}
+\end{minipage}%
+\hfill
+\begin{minipage}[t]{0.34\linewidth}\raggedright
+  USt-IdNr.: <<USTID>>\ifblank{<<STEUERNUMMER>>}{}{\\Steuernummer: <<STEUERNUMMER>>}\ifblank{<<REGISTERGERICHT>>}{}{\\Registergericht: <<REGISTERGERICHT>>\ifblank{<<REGISTERNUMMER>>}{}{, <<REGISTERNUMMER>>}}\ifblank{<<GESCHAEFTSFUEHRUNG>>}{}{\\Geschäftsführung: <<GESCHAEFTSFUEHRUNG>>}
+\end{minipage}%
+\hfill
+\begin{minipage}[t]{0.28\linewidth}\raggedright
+  <<INSTITUT>>\\IBAN: <<IBAN>>\\BIC: <<BIC>>
+\end{minipage}}}}
+
+%% \footskip aus der Höhe des Fußes, dazu der Abstand, den fancyhdr über ihn
+%% setzt, und 4 mm Luft zum Text. Ein fester Wert wäre bei einem langen
+%% Firmennamen, der in seiner Spalte umbricht, zu klein, und dann vergrößerte
+%% fancyhdr \footskip selbst: Der Fuß rutschte nach unten, der Text bliebe,
+%% wo er ist.
+\newlength{\fusshoehe}\settoheight{\fusshoehe}{\fuss}
+\geometry{footskip=\dimexpr\fusshoehe+\footruleskip+4mm\relax}
+
 \begin{document}
+\thispagestyle{erste}
 
 %% ------------------------------------------------------- Titel und Kopfangaben
 %% Links das Logo, wenn es eines gibt, rechts der Titel mit den Kopfangaben;
@@ -189,24 +261,39 @@
 %% Einleitung steht hier nichts, und der Abstand zur Tabelle bleibt derselbe.
 \ifblank{<<EINLEITUNG>>}{}{\noindent <<EINLEITUNG>>\par\vspace{5mm}}
 
-%% --------------------------------------------------------------- Positionen
-\noindent
-\begin{tabularx}{\linewidth}{|>{\centering\arraybackslash}p{7mm}|>{\raggedright\arraybackslash}X|>{\raggedleft\arraybackslash}p{13mm}|>{\raggedright\arraybackslash}p{15mm}|>{\raggedleft\arraybackslash}p{22mm}|RB|}
-  \hline
-  \textbf{Pos.} & \textbf{Bezeichnung} & \textbf{Menge} & \textbf{Einheit} & \textbf{Einzelpreis}\mitrabatt{ & \textbf{Rabatt}} & \textbf{Gesamt}\\
-  \hline
-<<POSITIONEN>>\\
-  \hline
-\end{tabularx}
-%% ------------------------------------------------------------------ Summen
-%% Direkt unter den Positionen, ohne Abstand: Mit derselben Betragsspalte
-%% setzt sich das Gitter fort. \nointerlineskip nimmt den Zeilenabstand
-%% zwischen den beiden Tabellen weg.
-\par\nointerlineskip\noindent
-\begin{tabularx}{\linewidth}{|>{\raggedright\arraybackslash}X|B|}
+%% --------------------------------------------------------- Positionen, Summen
+%% Die Tabelle bricht zwischen zwei Positionen um (ADR-0020): Jede \hline ist
+%% in longtable eine Stelle, an der die Seite brechen darf, mit ihrer Linie
+%% unten auf der einen Seite und oben auf der nächsten. Oben steht wieder der
+%% Spaltenkopf; den Fortsetzungshinweis setzt der Seitenfuß (\fortsetzung).
+%%
+%% Die Summen setzen das Gitter fort, mit derselben Betragsspalte, und sind
+%% deshalb die letzte Zeile der Tabelle: So stehen sie nie ohne eine Position
+%% darüber. Die Linie zwischen beiden ist darum ein \hrule und keine \hline,
+%% denn an einer \hline dürfte die Seite brechen, und \\* davor änderte daran
+%% nichts. Dieselbe Höhe, dieselbe Breite.
+%%
+%% Davor \lineskip, danach \lineskip ohne Zeilenabstand: Die tabularx stand in
+%% einem Absatz, und TeX ließ zwischen ihr und ihren Nachbarn nur diesen
+%% Mindestabstand. longtable hinterlässt eine Unterlänge von null. LTchunksize
+%% so groß, dass jede Rechnung ein Block ist und die Spalten auf jeder Seite
+%% gleich breit sind, siehe balken.tex.
+\setlength{\LTpre}{\lineskip}\setlength{\LTpost}{0pt}%
+\setlength{\LTleft}{0pt}\setlength{\LTright}{0pt}%
+\setcounter{LTchunksize}{10000}%
+\begin{xltabular}{\linewidth}{|>{\centering\arraybackslash}p{7mm}|>{\raggedright\arraybackslash}X|>{\raggedleft\arraybackslash}p{13mm}|>{\raggedright\arraybackslash}p{15mm}|>{\raggedleft\arraybackslash}p{22mm}|RB|}
+  \positionskopf
+  \endfirsthead
+  \positionskopf
+  \endhead
+<<POSITIONEN>>\\*
+  \noalign{\hrule height\arrayrulewidth}
+  \multicolumn{\spaltenzahl}{@{}l@{}}{\begin{tabularx}{\linewidth}[t]{|>{\raggedright\arraybackslash}X|B|}
 <<SUMMEN>>\\
   \hline
-\end{tabularx}
+  \end{tabularx}}
+\end{xltabular}
+\nointerlineskip\vspace{\lineskip}
 
 %% ------------------------------------------------------ Die fachlichen Sätze
 %% Pflichtsatz, Steuerhinweise, Absetzung und Skonto in derselben Reihenfolge
@@ -230,24 +317,5 @@
 
 %% Der Schlusssatz aus Stammdaten oder Rechnung. Keine Grußformel.
 <<SCHLUSSSATZ>>
-
-\vfill
-
-%% ------------------------------------------------------------------ Fuß
-%% Drei Spalten: Anschrift und Kontakt, Steuer und Register (§35a GmbHG),
-%% Bank. Beide Steuerkennungen, wo es beide gibt – die Spalte hat Platz.
-{\footnotesize
-\noindent
-\begin{minipage}[t]{0.32\linewidth}\raggedright
-  <<FIRMA>>\zeilenwechsel{}<<STRASSE>>\zeilenwechsel{}<<PLZ>> <<ORT>>\ifblank{<<WEBSEITE>>}{}{\zeilenwechsel{}<<WEBSEITE>>}
-\end{minipage}%
-\hfill
-\begin{minipage}[t]{0.34\linewidth}\raggedright
-  USt-IdNr.: <<USTID>>\ifblank{<<STEUERNUMMER>>}{}{\\Steuernummer: <<STEUERNUMMER>>}\ifblank{<<REGISTERGERICHT>>}{}{\\Registergericht: <<REGISTERGERICHT>>\ifblank{<<REGISTERNUMMER>>}{}{, <<REGISTERNUMMER>>}}\ifblank{<<GESCHAEFTSFUEHRUNG>>}{}{\\Geschäftsführung: <<GESCHAEFTSFUEHRUNG>>}
-\end{minipage}%
-\hfill
-\begin{minipage}[t]{0.28\linewidth}\raggedright
-  <<INSTITUT>>\\IBAN: <<IBAN>>\\BIC: <<BIC>>
-\end{minipage}\par}
 
 \end{document}
