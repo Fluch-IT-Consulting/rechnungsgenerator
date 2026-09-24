@@ -66,12 +66,16 @@ class LatexCompiler(private val runner: ProcessRunner) {
                 "TZ" to "UTC",
             )
 
-        repeat(MAX_PASSES) { pass ->
+        var log: String
+        var passes = 0
+        do {
             val result = runner.run(command, workingDir, environment = environment)
-            val log = workingDir.resolve("$jobName.log").let { if (it.exists()) it.readText() else result.output }
+            log = workingDir.resolve("$jobName.log").let { if (it.exists()) it.readText() else result.output }
             if (result.failed) throw ToolchainException(errorReport(jobName, log))
-            if (!needsAnotherPass(log)) return pdfOrFail(workingDir, jobName)
-        }
+            passes++
+        } while (needsAnotherPass(log) && passes < MAX_PASSES)
+        // Gefragt wird das Protokoll des letzten Laufs: Aus ihm stammt das PDF.
+        overflowReport(jobName, log)?.let { throw ToolchainException(it) }
         return pdfOrFail(workingDir, jobName)
     }
 
@@ -127,6 +131,24 @@ class LatexCompiler(private val runner: ProcessRunner) {
      */
     private fun needsAnotherPass(log: String): Boolean =
         log.lineSequence().any { it.contains("Rerun to get") || it.contains("Please rerun") }
+
+    /**
+     * Die Meldung, wenn eine Seite mehr trägt, als das Blatt fasst – oder null.
+     *
+     * LuaLaTeX setzt eine solche Seite trotzdem, mit Exitcode 0, und schneidet
+     * ab, was unten übersteht. Das PDF ist dann gültiges PDF/A, und veraPDF
+     * hat nichts einzuwenden; nur das Protokoll sagt `Overfull \vbox`. Deshalb
+     * entsteht keines (ADR-0020).
+     *
+     * `Overfull \hbox` dagegen bleibt stehen: Eine zu breite Zeile ragt in den
+     * Rand, aber sie steht auf dem Blatt.
+     */
+    private fun overflowReport(jobName: String, log: String): String? {
+        val lines = log.lines().filter { it.startsWith("Overfull \\vbox") }.distinct()
+        if (lines.isEmpty()) return null
+        return "$PROGRAM hat $jobName.tex gesetzt, aber auf einer Seite steht mehr, als das Blatt fasst. " +
+            "Was übersteht, fehlte im PDF:\n\n${lines.joinToString("\n")}"
+    }
 
     /**
      * Zieht die Fehlerzeilen aus dem Protokoll.
