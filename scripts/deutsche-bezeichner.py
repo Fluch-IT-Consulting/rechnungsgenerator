@@ -82,7 +82,7 @@ DECLARATIONS = [
 ]
 DESTRUCTURING = re.compile(r"\b(?:val|var)\s*\(([^)]*)\)")
 LAMBDA_PARAMS = re.compile(r"\{\s*\(?([\w\s,()]+?)\)?\s*->")
-FUN_PARAMS = re.compile(r"\bfun\s[^{=]*?\(([^)]*)\)")
+FUN_START = re.compile(r"\bfun\s+(?:<[^>]*>\s*)?[\w.<>?]+\s*\(")
 
 
 def load_words() -> set[str]:
@@ -98,10 +98,89 @@ def load_words() -> set[str]:
 
 
 def strip_strings_and_comments(source: str) -> str:
-    source = re.sub(r'"""[\s\S]*?"""', '""', source)
-    source = re.sub(r'"(?:\\.|[^"\\])*"', '""', source)
-    source = re.sub(r"/\*[\s\S]*?\*/", "", source)
-    return re.sub(r"//[^\n]*", "", source)
+    """Der Code ohne Kommentare und ohne den Text in Strings.
+
+    Was in einem String als `${...}` steht, ist Code und bleibt; ein
+    regulärer Ausdruck verlöre sich in `"${if (x) "a" else "b"}"` an den
+    inneren Anführungszeichen und hielte "a" für einen Bezeichner.
+    """
+    code, _ = _scan_code(source, 0, inside_template=False)
+    return code
+
+
+def _scan_code(source: str, i: int, inside_template: bool) -> tuple[str, int]:
+    out, depth = [], 0
+    while i < len(source):
+        c = source[i]
+        if inside_template and c == "}" and depth == 0:
+            return "".join(out), i
+        if c == "{":
+            depth += 1
+        elif c == "}":
+            depth -= 1
+        if source.startswith("//", i):
+            end = source.find("\n", i)
+            i = len(source) if end < 0 else end
+        elif source.startswith("/*", i):
+            i = source.find("*/", i) + 2
+        elif source.startswith('"""', i):
+            text, i = _scan_string(source, i + 3, '"""')
+            out.append('""' + text)
+        elif c == '"':
+            text, i = _scan_string(source, i + 1, '"')
+            out.append('""' + text)
+        elif c == "'":
+            match = re.match(r"'(\\.|[^'\\])*'", source[i:])
+            out.append("''")
+            i += len(match.group(0))
+        else:
+            out.append(c)
+            i += 1
+    return "".join(out), i
+
+
+def _scan_string(source: str, i: int, end: str) -> tuple[str, int]:
+    """Liest einen String bis zu seinem Ende und liefert nur seine Vorlagen."""
+    templates = []
+    while i < len(source) and not source.startswith(end, i):
+        if end == '"' and source[i] == "\\":
+            i += 2
+        elif source.startswith("${", i):
+            code, i = _scan_code(source, i + 2, inside_template=True)
+            templates.append(" " + code + " ")
+            i += 1
+        elif source[i] == "$" and re.match(r"[A-Za-z_]", source[i + 1 : i + 2]):
+            match = re.match(r"\w+", source[i + 1 :])
+            templates.append(" " + match.group(0) + " ")
+            i += 1 + len(match.group(0))
+        else:
+            i += 1
+    return "".join(templates), i + len(end)
+
+
+def fun_parameter_lists(source: str) -> list[str]:
+    """Die Parameterlisten aller Funktionen, je auf der obersten Ebene.
+
+    Mit Klammerzählung und nicht mit einem regulären Ausdruck: Ein
+    Vorgabewert wie `viewer: PdfViewer = FakePdfViewer()` schlösse die Liste
+    sonst an seiner Klammer, und jeder Parameter danach fehlte. Was tiefer
+    liegt – Argumente eines Vorgabewerts, Typparameter –, fällt weg, damit
+    `Path.of("x")` keinen Namen beisteuert.
+    """
+    lists = []
+    for match in FUN_START.finditer(source):
+        depth, top, i = 1, [], match.end()
+        while i < len(source) and depth:
+            c = source[i]
+            if c in "([{<":
+                depth += 1
+            elif c in ")]}>":
+                depth -= 1
+            if depth == 1 or (depth == 0 and c != ")"):
+                top.append(c if c not in "([{<" or depth == 1 else "")
+            i += 1
+        lists.append("".join(top))
+    return lists
 
 
 def declared_names(source: str) -> list[str]:
@@ -112,8 +191,8 @@ def declared_names(source: str) -> list[str]:
         names += re.findall(r"\b(\w+)\b", group)
     for group in LAMBDA_PARAMS.findall(source):
         names += re.findall(r"\b([a-z]\w*)\b", group)
-    for signature in FUN_PARAMS.findall(source):
-        names += re.findall(r"\b([a-z]\w*)\s*:", signature)
+    for signature in fun_parameter_lists(source):
+        names += re.findall(r"(?:^|,)\s*(?:vararg\s+|val\s+|var\s+)?([a-z]\w*)\s*:", signature)
     return [n for n in names if n not in ("_", "it", "this")]
 
 
