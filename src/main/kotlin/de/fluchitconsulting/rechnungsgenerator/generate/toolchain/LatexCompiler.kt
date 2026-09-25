@@ -1,6 +1,7 @@
 package de.fluchitconsulting.rechnungsgenerator.generate.toolchain
 
 import java.io.IOException
+import java.nio.file.FileSystemException
 import java.nio.file.Path
 import java.security.MessageDigest
 import java.time.ZoneOffset
@@ -69,7 +70,7 @@ class LatexCompiler(private val runner: ProcessRunner) {
         var passes = 0
         do {
             val result = runner.run(PROGRAM, params, workingDir, environment = environment)
-            log = workingDir.resolve("$jobName.log").let { if (it.exists()) it.readText() else result.output }
+            log = readLog(workingDir.resolve("$jobName.log")) ?: result.output
             if (result.failed) throw ToolchainException(errorReport(jobName, log))
             passes++
         } while (needsAnotherPass(log) && passes < MAX_PASSES)
@@ -112,6 +113,28 @@ class LatexCompiler(private val runner: ProcessRunner) {
             md5.update(content)
         }
         return HexFormat.of().withUpperCase().formatHex(md5.digest())
+    }
+
+    /**
+     * Das Protokoll des Laufs, oder null, wenn LuaLaTeX keines geschrieben hat.
+     *
+     * Fehlt es, bricht der Lauf nicht ab: Dann ist LuaLaTeX abgestürzt, bevor
+     * es eines anlegen konnte, und es bleibt die Prozessausgabe. Liegt es da und
+     * lässt sich nicht lesen, ist das dagegen ein Fehler des Werkzeugs wie beim
+     * Schreiben der Quellen – ohne Protokoll ist weder ein Fehlschlag zu deuten
+     * noch zu entscheiden, ob ein weiterer Lauf nötig ist (#336).
+     *
+     * Eine FileSystemException nennt in message nur den Pfad, was sie darüber
+     * hinaus weiß, steht in reason – der Pfad stünde sonst zweimal da (#327).
+     */
+    private fun readLog(file: Path): String? {
+        if (!file.exists()) return null
+        return try {
+            file.readText()
+        } catch (e: IOException) {
+            val reason = if (e is FileSystemException) e.reason else e.message
+            throw ToolchainException("Das Protokoll $file von $PROGRAM ließ sich nicht lesen" + (reason?.let { ": $it" } ?: "."), e)
+        }
     }
 
     /**
