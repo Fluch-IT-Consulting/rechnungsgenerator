@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Findet deutsche Bezeichner im Kotlin-Code (#338).
+"""Findet deutsche Bezeichner im Kotlin- und Python-Code (#338, #351).
 
 CLAUDE.md: Bezeichner Englisch, Kommentare Deutsch – mit einer engen
 Ausnahme für Fachbegriffe aus CONTEXT.md ohne eingebürgerte englische
@@ -8,7 +8,9 @@ Entsprechung. Dieses Skript misst, wie weit der Code davon abweicht, damit
 
 Gemessen werden deklarierte Namen: Funktionen, val/var samt Destrukturierung,
 Parameter, Lambda-Parameter und Typen. Strings und Kommentare zählen nicht –
-Testnamen sind deutsche Sätze und sollen es bleiben. Jeder Name wird an den
+Testnamen sind deutsche Sätze und sollen es bleiben. Python liest das Skript
+mit ast, also genau; für Kotlin gibt es keinen Parser in der Standardbibliothek,
+dort liest es mit regulären Ausdrücken und Klammerzählung. Jeder Name wird an den
 Wechseln der Groß- und Kleinschreibung zerlegt, und ein Teil, der in keinem
 englischen Wörterbuch steht, macht ihn verdächtig.
 
@@ -19,10 +21,12 @@ durchrutscht, in GERMAN_ALSO_ENGLISH; was die Ausnahme erlaubt, in GLOSSARY –
 nie eine davon aus Bequemlichkeit.
 
 Aufruf:  deutsche-bezeichner.py [<verzeichnis oder datei> ...] [--vorkommen]
-         ohne Verzeichnis: src/main/kotlin und src/test/kotlin
+         ohne Verzeichnis: der Kotlin-Code, scripts/ und die Skripte des
+         rechnung-Skills
 Endet mit 1, solange es etwas meldet.
 """
 import argparse
+import ast
 import collections
 import pathlib
 import re
@@ -56,7 +60,7 @@ TECHNICAL = set(
     padded arity neighbours website subcommand newcommand typesetter toolchain
     acc lua fixture fixtures stdout stderr stdin println runner prepayment
     prepayments setup builtin bytes handwritten newline enum whitespace
-    unbuildable info
+    unbuildable info kotlin destructuring
     rechnungsgenerator helsinki prag
     """.split()
 )
@@ -67,7 +71,7 @@ TECHNICAL = set(
 GERMAN_ALSO_ENGLISH = set(
     """
     alt alter aus datum extern firma fremd frist gedeckt grund hier inland
-    land lang leer listen muster rot steller und wert wurzel
+    land lang leer listen muster rot steller und wert wurzel als art
     """.split()
 )
 
@@ -87,6 +91,8 @@ DECLARATIONS = [
     re.compile(r"\b(?:class|object|interface)\s+(\w+)"),
 ]
 DESTRUCTURING = re.compile(r"\b(?:val|var)\s*\(([^)]*)\)")
+# Schleifenvariablen: for (x in …) und for ((a, b) in …).
+FOR_VARIABLES = re.compile(r"\bfor\s*\(\s*(?:\(([^)]*)\)|(\w+))\s+in\b")
 LAMBDA_PARAMS = re.compile(r"\{\s*\(?([\w\s,()]+?)\)?\s*->")
 FUN_START = re.compile(r"\bfun\s+(?:<[^>]*>\s*)?[\w.<>?]+\s*\(")
 
@@ -200,6 +206,8 @@ def declared_names(source: str) -> list[str]:
         names += pattern.findall(source)
     for group in DESTRUCTURING.findall(source):
         names += re.findall(r"\b(\w+)\b", group)
+    for group, single in FOR_VARIABLES.findall(source):
+        names += re.findall(r"\b(\w+)\b", group) if group else [single]
     for group in LAMBDA_PARAMS.findall(source):
         names += re.findall(r"\b([a-z]\w*)\b", group)
     for signature in fun_parameter_lists(source):
@@ -228,9 +236,39 @@ def is_english(part: str, words: set[str]) -> bool:
     return any(part.endswith(s) and part[: -len(s)] in words for s in ("s", "es", "ed", "ing", "er", "ers", "ly", "d"))
 
 
+def python_names(source: str) -> tuple[list[str], list[str]]:
+    """Deklarierte und überhaupt verwendete Namen eines Python-Skripts."""
+    tree = ast.parse(source)
+    declared, used = [], []
+    for node in ast.walk(tree):
+        if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef)):
+            declared.append(node.name)
+            used.append(node.name)
+        elif isinstance(node, ast.arg):
+            declared.append(node.arg)
+            used.append(node.arg)
+        elif isinstance(node, ast.Name):
+            used.append(node.id)
+            if isinstance(node.ctx, ast.Store):
+                declared.append(node.id)
+        elif isinstance(node, ast.Attribute):
+            # args.verzeichnis: Das Attribut kommt aus argparse und heißt,
+            # wie dest es nennt – ein deutsches fiele sonst durch.
+            used.append(node.attr)
+    return declared, used
+
+
+def kotlin_names(source: str) -> tuple[list[str], list[str]]:
+    code = strip_strings_and_comments(source)
+    return declared_names(code), re.findall(r"\b\w+\b", code)
+
+
+DEFAULT_ROOTS = ["src/main/kotlin", "src/test/kotlin", "scripts", ".claude/skills/rechnung/scripts"]
+
+
 def main() -> int:
-    parser = argparse.ArgumentParser(description="Findet deutsche Bezeichner im Kotlin-Code.")
-    parser.add_argument("roots", nargs="*", default=["src/main/kotlin", "src/test/kotlin"])
+    parser = argparse.ArgumentParser(description="Findet deutsche Bezeichner im Kotlin- und Python-Code.")
+    parser.add_argument("roots", nargs="*", default=DEFAULT_ROOTS)
     parser.add_argument("--vorkommen", action="store_true", help="auch jede Verwendung zählen, nicht nur Deklarationen")
     args = parser.parse_args()
 
@@ -241,13 +279,16 @@ def main() -> int:
     for root in map(pathlib.Path, args.roots):
         if not root.exists():
             sys.exit(f"{root} gibt es nicht.")
-        paths += [root] if root.is_file() else sorted(root.rglob("*.kt"))
-    sources = {path: strip_strings_and_comments(path.read_text(encoding="utf-8")) for path in paths}
+        paths += [root] if root.is_file() else sorted([*root.rglob("*.kt"), *root.rglob("*.py")])
+    names = {
+        path: (python_names if path.suffix == ".py" else kotlin_names)(path.read_text(encoding="utf-8"))
+        for path in paths
+    }
 
     german = {
         name
-        for source in sources.values()
-        for name in declared_names(source)
+        for declared, _ in names.values()
+        for name in declared
         if name not in TEMPLATE_VOCABULARY | FILE_NAMED
         and any(len(p) > 2 and not is_english(p, words) for p in word_parts(name))
     }
@@ -255,8 +296,8 @@ def main() -> int:
     # Je Datei die gefundenen Namen und wie oft sie dort stehen – deklariert
     # oder, mit --vorkommen, überhaupt.
     per_file: dict[pathlib.Path, collections.Counter] = {}
-    for path, source in sources.items():
-        tokens = re.findall(r"\b\w+\b", source) if args.vorkommen else declared_names(source)
+    for path, (declared, used) in names.items():
+        tokens = used if args.vorkommen else declared
         found = collections.Counter(t for t in tokens if t in german)
         if found:
             per_file[path] = found
@@ -267,7 +308,7 @@ def main() -> int:
 
     total = sum(sum(found.values()) for found in per_file.values())
     unit = "Vorkommen" if args.vorkommen else "Deklarationen"
-    print(f"\n{len(german)} deutsche Bezeichner, {total} {unit}, in {len(per_file)} von {len(sources)} Dateien.")
+    print(f"\n{len(german)} deutsche Bezeichner, {total} {unit}, in {len(per_file)} von {len(names)} Dateien.")
     return 1 if german else 0
 
 
