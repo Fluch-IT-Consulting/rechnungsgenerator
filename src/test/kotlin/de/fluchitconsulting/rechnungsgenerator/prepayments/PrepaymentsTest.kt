@@ -33,7 +33,7 @@ class PrepaymentsTest : FunSpec({
     fun named(vararg invoices: Invoice): List<NamedInvoice> = invoices.map { NamedInvoice("${it.number}.yaml", it) }
 
     // testInvoice trägt die Nummer R26-001 und das Datum 14.08.2026.
-    val abschlagsrechnung =
+    val prepaymentInvoice =
         testInvoice(
             type = InvoiceType.PREPAYMENT,
             items = listOf(testItem(unitPrice = "4000.00")),
@@ -42,7 +42,7 @@ class PrepaymentsTest : FunSpec({
 
     test("aus einer Abschlagsrechnung wird ihr Abschlag, mit Netto und Steuer je Satz") {
         val abschlag =
-            prepaymentsOf(named(abschlagsrechnung), config)
+            prepaymentsOf(named(prepaymentInvoice), config)
                 .complete()
                 .entries
                 .single()
@@ -60,7 +60,7 @@ class PrepaymentsTest : FunSpec({
 
     test("ein gemischter Abschlag bekommt je Satz einen Steueranteil") {
         val mixed =
-            abschlagsrechnung.copy(
+            prepaymentInvoice.copy(
                 items = listOf(testItem(unitPrice = "1000.00"), testItem(unitPrice = "500.00", vatRate = "7")),
             )
 
@@ -81,9 +81,9 @@ class PrepaymentsTest : FunSpec({
     test("jeder Eintrag trägt den Namen seiner Rechnung, in der übergebenen Reihenfolge") {
         // Den Namen trägt der Eintrag selbst und nicht eine Paarung per zip
         // im Kommando, die kein Test sähe (#118).
-        val second = abschlagsrechnung.copy(number = "R26-002")
+        val second = prepaymentInvoice.copy(number = "R26-002")
 
-        val entries = prepaymentsOf(named(second, abschlagsrechnung), config).complete().entries
+        val entries = prepaymentsOf(named(second, prepaymentInvoice), config).complete().entries
 
         entries.map { it.name to it.prepayment.invoiceNumber } shouldBe
             listOf("R26-002.yaml" to "R26-002", "R26-001.yaml" to "R26-001")
@@ -92,9 +92,9 @@ class PrepaymentsTest : FunSpec({
     test("aus einer gewöhnlichen Rechnung wird kein Abschlag") {
         // Sonst setzte die Schlussrechnung eine 19-%-Rechnung klaglos ab – keine
         // ihrer Regeln kennt die Art des Dokuments, aus dem ein Abschlag stammt.
-        val rechnung = testInvoice()
+        val invoice = testInvoice()
 
-        val message = prepaymentsOf(named(rechnung), config).rejected().aborts.messageOf(Rule.KEINE_ABSCHLAGSRECHNUNG)
+        val message = prepaymentsOf(named(invoice), config).rejected().aborts.messageOf(Rule.KEINE_ABSCHLAGSRECHNUNG)
 
         message shouldContain "R26-001"
         message shouldContain "keine Abschlagsrechnung"
@@ -104,22 +104,22 @@ class PrepaymentsTest : FunSpec({
         // Es fliegt ohnehin aus dem Aufruf; seine übrigen Befunde gälten einem
         // Dokument, das hier nichts zu suchen hat (#118). Der Regelsatz 0 %
         // würde sonst REGELSATZ_MIT_NULL melden.
-        val rechnung = testInvoice(items = listOf(testItem(vatRate = "0")))
+        val invoice = testInvoice(items = listOf(testItem(vatRate = "0")))
 
-        prepaymentsOf(named(rechnung), config).rejected().aborts.rules() shouldBe listOf(Rule.KEINE_ABSCHLAGSRECHNUNG)
+        prepaymentsOf(named(invoice), config).rejected().aborts.rules() shouldBe listOf(Rule.KEINE_ABSCHLAGSRECHNUNG)
     }
 
     test("Abschlagsrechnungen an verschiedene Kunden werden nicht zusammen abgesetzt") {
         // Die Schlussrechnung kennt die Kunden ihrer Abschläge nicht – prüfen
         // kann das nur, wer die Abschlagsrechnungen noch in der Hand hat.
         val otherCustomer =
-            abschlagsrechnung.copy(
+            prepaymentInvoice.copy(
                 number = "R26-002",
-                customer = abschlagsrechnung.customer.copy(name = "Andere Software AG"),
+                customer = prepaymentInvoice.customer.copy(name = "Andere Software AG"),
             )
 
         val message =
-            prepaymentsOf(named(abschlagsrechnung, otherCustomer), config)
+            prepaymentsOf(named(prepaymentInvoice, otherCustomer), config)
                 .rejected()
                 .aborts
                 .messageOf(Rule.ABSCHLAGSRECHNUNGEN_VERSCHIEDENE_KUNDEN)
@@ -130,7 +130,7 @@ class PrepaymentsTest : FunSpec({
 
     test("dieselbe Nummer zweimal wird abgelehnt") {
         val message =
-            prepaymentsOf(named(abschlagsrechnung, abschlagsrechnung), config)
+            prepaymentsOf(named(prepaymentInvoice, prepaymentInvoice), config)
                 .rejected()
                 .aborts
                 .messageOf(Rule.ABSCHLAGSRECHNUNG_DOPPELT)
@@ -141,21 +141,21 @@ class PrepaymentsTest : FunSpec({
 
     test("zwei verschiedene Nummern je doppelt geben zwei Befunde") {
         // Wie in der Schlussrechnung (#152): firstOrNull nannte nur die erste.
-        val zweite = abschlagsrechnung.copy(number = "R26-009")
+        val second = prepaymentInvoice.copy(number = "R26-009")
 
-        val doppelte =
-            prepaymentsOf(named(abschlagsrechnung, abschlagsrechnung, zweite, zweite), config)
+        val duplicates =
+            prepaymentsOf(named(prepaymentInvoice, prepaymentInvoice, second, second), config)
                 .rejected()
                 .aborts
                 .filter { it.rule == Rule.ABSCHLAGSRECHNUNG_DOPPELT }
 
-        doppelte.size shouldBe 2
-        doppelte.joinToString { it.describe() } shouldContain "R26-001"
-        doppelte.joinToString { it.describe() } shouldContain "R26-009"
+        duplicates.size shouldBe 2
+        duplicates.joinToString { it.describe() } shouldContain "R26-001"
+        duplicates.joinToString { it.describe() } shouldContain "R26-009"
     }
 
     test("dreimal dieselbe Nummer nennt die Anzahl, nicht zweimal") {
-        prepaymentsOf(named(abschlagsrechnung, abschlagsrechnung, abschlagsrechnung), config)
+        prepaymentsOf(named(prepaymentInvoice, prepaymentInvoice, prepaymentInvoice), config)
             .rejected()
             .aborts
             .messageOf(Rule.ABSCHLAGSRECHNUNG_DOPPELT) shouldContain "3-mal"
@@ -164,8 +164,8 @@ class PrepaymentsTest : FunSpec({
     test("anders geschriebene Nummern sind verschiedene Abschlagsrechnungen") {
         // Der Generator nimmt nichts über das Schema einer Nummer an (#53):
         // Anderswo können "a-1" und "A-1" zwei verschiedene Rechnungen sein.
-        val upper = abschlagsrechnung.copy(number = "R26-009")
-        val lower = abschlagsrechnung.copy(number = "r26-009")
+        val upper = prepaymentInvoice.copy(number = "R26-009")
+        val lower = prepaymentInvoice.copy(number = "r26-009")
 
         val entries = prepaymentsOf(named(upper, lower), config).complete().entries
 
@@ -176,8 +176,8 @@ class PrepaymentsTest : FunSpec({
         // Seit ADR-0005 ist Leerraum am Rand ein Abbruch – und aus einer Rechnung mit
         // Abbruch wird kein Abschlag (ADR-0007), also auch kein Block (#118).
         // Exakt verglichen wird trotzdem: Als Duplikat von "R26-009" gilt sie nicht.
-        val upper = abschlagsrechnung.copy(number = "R26-009")
-        val padded = abschlagsrechnung.copy(number = "R26-009 ")
+        val upper = prepaymentInvoice.copy(number = "R26-009")
+        val padded = prepaymentInvoice.copy(number = "R26-009 ")
 
         val aborts = prepaymentsOf(named(upper, padded), config).rejected().aborts
 
@@ -189,10 +189,10 @@ class PrepaymentsTest : FunSpec({
         // Bei mehreren Abschlagsrechnungen sagte "Position 1 (…)" allein nicht,
         // in welcher. Die Nummer ist das, woran man die Rechnung wiedererkennt –
         // sie steht jetzt als Herkunft vor dem Gegenstand des Befunds.
-        val contradictory = abschlagsrechnung.copy(number = "R26-002", items = listOf(testItem(vatRate = "0")))
+        val contradictory = prepaymentInvoice.copy(number = "R26-002", items = listOf(testItem(vatRate = "0")))
 
         val message =
-            prepaymentsOf(named(abschlagsrechnung, contradictory), config)
+            prepaymentsOf(named(prepaymentInvoice, contradictory), config)
                 .rejected()
                 .aborts
                 .messageOf(Rule.REGELSATZ_MIT_NULL)

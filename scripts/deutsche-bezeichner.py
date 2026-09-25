@@ -161,6 +161,11 @@ def _scan_string(source: str, i: int, end: str) -> tuple[str, int]:
             i += 1 + len(match.group(0))
         else:
             i += 1
+    # Ein Raw-String endet an den letzten drei einer Folge von
+    # Anführungszeichen: """a: "1"""" enthält a: "1".
+    if end == '"""':
+        while source.startswith('""""', i):
+            i += 1
     return "".join(templates), i + len(end)
 
 

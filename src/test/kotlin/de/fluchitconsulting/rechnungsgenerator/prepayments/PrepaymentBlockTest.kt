@@ -33,7 +33,7 @@ private fun finalInvoiceWith(block: String): String =
 class PrepaymentBlockTest : FunSpec({
 
     val vereinnahmt = CollectedPrepayment("Rechnung_R26-009-beispiel.yaml", testPrepayment())
-    val nichtVereinnahmt =
+    val notReceived =
         CollectedPrepayment(
             "Rechnung_R26-011-beispiel.yaml",
             testPrepayment(invoiceNumber = "R26-011", issueDate = LocalDate.of(2026, 8, 20), receivedOn = null),
@@ -43,7 +43,7 @@ class PrepaymentBlockTest : FunSpec({
         // Zeichengleich verglichen: Damit ist zugleich gesichert, dass weder ein
         // Datum noch ein Pfad hineinrutscht – sonst ergäbe derselbe Aufruf
         // morgen oder aus einem anderen Ordner einen anderen Text.
-        PrepaymentBlock.render(listOf(vereinnahmt, nichtVereinnahmt)) shouldBe
+        PrepaymentBlock.render(listOf(vereinnahmt, notReceived)) shouldBe
             """
             |# Abschläge für die Schlussrechnung, vorbereitet von `rechnungsgenerator abschlaege`.
             |# Neu berechnet mit dem heutigen Stand des Generators – nicht gegen die
@@ -102,11 +102,11 @@ class PrepaymentBlockTest : FunSpec({
     }
 
     test("ein leeres vereinnahmt-am wird als fehlende Vereinnahmung gemeldet, mit Begründung") {
-        val schlussrechnung =
-            YamlLoader.parseInvoice(finalInvoiceWith(PrepaymentBlock.render(listOf(vereinnahmt, nichtVereinnahmt))))
+        val finalInvoice =
+            YamlLoader.parseInvoice(finalInvoiceWith(PrepaymentBlock.render(listOf(vereinnahmt, notReceived))))
 
         val message =
-            CalculatedInvoice(schlussrechnung, testSellerConfig())
+            CalculatedInvoice(finalInvoice, testSellerConfig())
                 .messageOf(Rule.ABSCHLAG_OHNE_VEREINNAHMUNG)
 
         message shouldContain "Abschlag R26-011: ohne 'vereinnahmt-am' keine Absetzung"
