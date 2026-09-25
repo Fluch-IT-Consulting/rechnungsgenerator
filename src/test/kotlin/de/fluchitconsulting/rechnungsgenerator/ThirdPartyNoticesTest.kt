@@ -15,7 +15,7 @@ private const val SHIPPED_JARS = "/shipped-jars.txt"
  * überspringt sich der Test, statt grün oder rot zu melden. Übersprungen und
  * nicht bestanden, wie beim Altersnachweis der EU-Liste.
  */
-private val mitListeAusDemBuild =
+private val withListFromBuild =
     if (ThirdPartyNoticesTest::class.java.getResource(SHIPPED_JARS) != null) {
         Enabled.enabled
     } else {
@@ -36,21 +36,21 @@ private val mitListeAusDemBuild =
 class ThirdPartyNoticesTest : FunSpec({
 
     test("THIRD-PARTY.md nennt genau die ausgelieferten Bibliotheken")
-        .config(enabledOrReasonIf = { mitListeAusDemBuild }) {
+        .config(enabledOrReasonIf = { withListFromBuild }) {
             // Das eigene JAR gehört in keine Liste fremder Lizenzen – und es
             // steht auf beiden Seiten: ausgeliefert wird es, und die Einleitung
             // der Datei nennt es. Deshalb dieselbe Regel für beide Mengen.
-            fun Sequence<String>.ohneEigenes() = filterNot { it.startsWith("rechnungsgenerator-") }.toSet()
+            fun Sequence<String>.withoutOwn() = filterNot { it.startsWith("rechnungsgenerator-") }.toSet()
 
             val shipped =
                 checkNotNull(ThirdPartyNoticesTest::class.java.getResource(SHIPPED_JARS))
                     .readText()
                     .lineSequence()
                     .filter { it.isNotBlank() }
-                    .ohneEigenes()
+                    .withoutOwn()
 
             val document = File("THIRD-PARTY.md").readText()
-            val listed = Regex("`([^`]+\\.jar)`").findAll(document).map { it.groupValues[1] }.ohneEigenes()
+            val listed = Regex("`([^`]+\\.jar)`").findAll(document).map { it.groupValues[1] }.withoutOwn()
 
             withClue(
                 """

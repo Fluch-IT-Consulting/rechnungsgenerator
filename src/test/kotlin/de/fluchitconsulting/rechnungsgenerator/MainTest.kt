@@ -23,7 +23,7 @@ private const val VERSION_PROPERTY = "projectVersion"
  * Altersnachweis der EU-Liste: Ein Netz, das fehlt, soll nicht aussehen wie
  * eines, das hält.
  */
-private val mitVersionAusDemBuild =
+private val withVersionFromBuild =
     if (System.getProperty(VERSION_PROPERTY) != null) {
         Enabled.enabled
     } else {
@@ -43,50 +43,50 @@ private val mitVersionAusDemBuild =
  */
 class MainTest : FunSpec({
 
-    val eingaben = createTempDirectory("main-test")
-    val rechnung = "src/test/resources/rechnung.yaml"
-    val stammdaten = "src/test/resources/stammdaten.yaml"
+    val inputDir = createTempDirectory("main-test")
+    val invoice = "src/test/resources/rechnung.yaml"
+    val sellerConfig = "src/test/resources/stammdaten.yaml"
 
     test("ein Fehler beim Erzeugen steht auf stderr, stdout bleibt leer") {
-        val kaputt = eingaben.resolve("kaputt.yaml").also { it.writeText("nummer: R26-001\ngibtsnicht: 1\n") }
+        val broken = inputDir.resolve("kaputt.yaml").also { it.writeText("nummer: R26-001\ngibtsnicht: 1\n") }
 
-        val result = runCli("erzeuge", kaputt.toString(), "-s", stammdaten)
+        val result = runCli("erzeuge", broken.toString(), "-s", sellerConfig)
 
         result.exitCode shouldBe 1
         result.out shouldBe ""
-        result.err shouldContain kaputt.toString()
+        result.err shouldContain broken.toString()
         result.err shouldContain "gibtsnicht"
     }
 
     test("bei zwei Eingabedateien nennt die Meldung die schuldige") {
         // erzeuge liest Rechnung und Stammdaten; ein "Die Eingabedateien
         // konnten nicht gelesen werden" ließe raten, welche der beiden es war.
-        val kaputteStammdaten =
-            eingaben.resolve("stammdaten-kaputt.yaml").also { it.writeText("firma: Muster\ngibtsnicht: 1\n") }
+        val brokenSellerConfig =
+            inputDir.resolve("stammdaten-kaputt.yaml").also { it.writeText("firma: Muster\ngibtsnicht: 1\n") }
 
-        val result = runCli("erzeuge", rechnung, "-s", kaputteStammdaten.toString())
+        val result = runCli("erzeuge", invoice, "-s", brokenSellerConfig.toString())
 
         result.exitCode shouldBe 1
         result.out shouldBe ""
-        result.err shouldContain kaputteStammdaten.toString()
-        result.err shouldNotContain rechnung
+        result.err shouldContain brokenSellerConfig.toString()
+        result.err shouldNotContain invoice
     }
 
     test("eine unlesbare Datei spricht vom Lesen, nicht vom Schreiben") {
         // Der IOException-Zweig war für ein nicht beschreibbares Ziel gedacht
         // und fing den Lesefehler gleich mit. (Als root ist auch chmod 000
         // lesbar, dieser Test schlüge dort fehl.)
-        val unlesbar =
-            eingaben.resolve("unlesbar.yaml").also {
+        val unreadable =
+            inputDir.resolve("unlesbar.yaml").also {
                 it.writeText("nummer: R26-001\n")
                 it.toFile().setReadable(false)
             }
 
-        val result = runCli("erzeuge", unlesbar.toString(), "-s", stammdaten)
+        val result = runCli("erzeuge", unreadable.toString(), "-s", sellerConfig)
 
         result.exitCode shouldBe 1
         result.out shouldBe ""
-        result.err shouldContain unlesbar.toString()
+        result.err shouldContain unreadable.toString()
         result.err shouldContain "gelesen"
         result.err shouldNotContain "geschrieben"
     }
@@ -97,18 +97,18 @@ class MainTest : FunSpec({
 
     test("eine abgelehnte Rechnung steht auf stderr, mit allen Abbrüchen") {
         // Zwei Verstöße in einer Datei: Beide sollen dastehen, nicht nur der erste.
-        val abgelehnt =
-            eingaben.resolve("abgelehnt.yaml").also {
+        val rejected =
+            inputDir.resolve("abgelehnt.yaml").also {
                 it.writeText(
                     Path
-                        .of(rechnung)
+                        .of(invoice)
                         .readText()
                         .replace("nummer: R26-042", "nummer: \"///\"")
                         .replace("    einzelpreis: 95.00", "    einzelpreis: -95.00"),
                 )
             }
 
-        val result = runCli("erzeuge", abgelehnt.toString(), "-s", stammdaten)
+        val result = runCli("erzeuge", rejected.toString(), "-s", sellerConfig)
 
         result.exitCode shouldBe 1
         result.out shouldBe ""
@@ -117,9 +117,9 @@ class MainTest : FunSpec({
     }
 
     test("ein ungültiges PDF/A steht auf stderr") {
-        val ziel = eingaben.resolve("ungueltig.pdf")
+        val target = inputDir.resolve("ungueltig.pdf")
 
-        val result = runCli("erzeuge", rechnung, "-s", stammdaten, "-o", ziel.toString(), typesetter = FakeTypesetter(valid = false))
+        val result = runCli("erzeuge", invoice, "-s", sellerConfig, "-o", target.toString(), typesetter = FakeTypesetter(valid = false))
 
         result.exitCode shouldBe 1
         result.out shouldBe ""
@@ -127,9 +127,9 @@ class MainTest : FunSpec({
     }
 
     test("das Ergebnis steht auf stdout, stderr bleibt leer") {
-        val ziel = eingaben.resolve("ergebnis.pdf")
+        val target = inputDir.resolve("ergebnis.pdf")
 
-        val result = runCli("erzeuge", rechnung, "-s", stammdaten, "-o", ziel.toString())
+        val result = runCli("erzeuge", invoice, "-s", sellerConfig, "-o", target.toString())
 
         result.exitCode shouldBe 0
         result.out shouldContain "PDF/A-1b: gültig"
@@ -141,16 +141,16 @@ class MainTest : FunSpec({
         // gescheitert zu erklären: Das PDF liegt am Ziel (#144). Also Exitcode 0
         // – und weil der Kanal dem Exitcode folgt, gehört der Hinweis auf stdout.
         // Gelesen wird beides hier; GenerateCommandTest sieht nur die Reihenfolge.
-        val ziel = eingaben.resolve("viewer-fehlt.pdf")
+        val target = inputDir.resolve("viewer-fehlt.pdf")
 
         val result =
             runCli(
                 "erzeuge",
-                rechnung,
+                invoice,
                 "-s",
-                stammdaten,
+                sellerConfig,
                 "-o",
-                ziel.toString(),
+                target.toString(),
                 "--oeffnen",
                 viewer = FakePdfViewer(result = ViewerResult.Failed("open endete mit Exitcode 1.")),
             )
@@ -200,7 +200,7 @@ class MainTest : FunSpec({
     }
 
     test("die genannte Fassung ist die aus dem Build")
-        .config(enabledOrReasonIf = { mitVersionAusDemBuild }) {
+        .config(enabledOrReasonIf = { withVersionFromBuild }) {
             // Schließt den Kreis: Die Ressource entsteht beim Bauen aus
             // `version` in build.gradle.kts, und hier steht, dass genau die
             // Zahl beim Benutzer ankommt. Ohne diesen Test liefe eine
