@@ -26,12 +26,12 @@ private const val RESOURCES = "src/test/resources"
  */
 class PrepaymentsCommandTest : FunSpec({
 
-    val stammdaten = "$RESOURCES/stammdaten.yaml"
+    val sellerConfig = "$RESOURCES/stammdaten.yaml"
     val june = "$RESOURCES/abschlagsrechnung.yaml"
     val august = "$RESOURCES/abschlagsrechnung-2.yaml"
 
     test("eingetragen und angehängt ergibt der Block die Abschläge der Beispiel-Schlussrechnung") {
-        val result = runCli("abschlaege", june, august, "-s", stammdaten)
+        val result = runCli("abschlaege", june, august, "-s", sellerConfig)
 
         result.exitCode shouldBe 0
         result.err shouldBe ""
@@ -53,19 +53,19 @@ class PrepaymentsCommandTest : FunSpec({
 
         generated.prepayments shouldBe YamlLoader.parseInvoice(handwritten).prepayments
         // Und die Schlussrechnung rechnet damit durch, alle neun Regeln inklusive.
-        CalculatedInvoice(generated, YamlLoader.parseSellerConfig(Path.of(stammdaten).readText()))
+        CalculatedInvoice(generated, YamlLoader.parseSellerConfig(Path.of(sellerConfig).readText()))
     }
 
     test("zweimal derselbe Aufruf ergibt zeichengleich dieselbe Ausgabe") {
-        runCli("abschlaege", june, august, "-s", stammdaten).out shouldBe
-            runCli("abschlaege", june, august, "-s", stammdaten).out
+        runCli("abschlaege", june, august, "-s", sellerConfig).out shouldBe
+            runCli("abschlaege", june, august, "-s", sellerConfig).out
     }
 
     test("ist eine Datei keine Abschlagsrechnung, steht nichts auf stdout") {
         // Alles oder nichts: Der gültige Abschlag aus june käme sonst allein in
         // die Ausgabe, und der fehlende fiele keiner Regel der Schlussrechnung
         // auf – nur dem Kunden, der ihn doppelt zahlt.
-        val result = runCli("abschlaege", june, "$RESOURCES/rechnung.yaml", "-s", stammdaten)
+        val result = runCli("abschlaege", june, "$RESOURCES/rechnung.yaml", "-s", sellerConfig)
 
         result.exitCode shouldBe 1
         result.out shouldBe ""
@@ -73,7 +73,7 @@ class PrepaymentsCommandTest : FunSpec({
     }
 
     test("ohne Datei ist es ein Bedienfehler") {
-        val result = runCli("abschlaege", "-s", stammdaten)
+        val result = runCli("abschlaege", "-s", sellerConfig)
 
         result.exitCode shouldBe 1
         result.out shouldBe ""
@@ -87,7 +87,7 @@ class PrepaymentsCommandTest : FunSpec({
                 .resolve("kaputt.yaml")
                 .also { it.writeText("nummer: R26-099\ngibtsnicht: 1\n") }
 
-        val result = runCli("abschlaege", june, broken.toString(), "-s", stammdaten)
+        val result = runCli("abschlaege", june, broken.toString(), "-s", sellerConfig)
 
         result.exitCode shouldBe 1
         result.out shouldBe ""
@@ -101,47 +101,47 @@ class PrepaymentsCommandTest : FunSpec({
 
     context("ohne -s kommen die Stammdaten aus der Wurzel (ADR-0015)") {
         /** Eine Ablage mit den Beispiel-Stammdaten in ihrem Ordner. */
-        fun ablage(): Path =
+        fun archive(): Path =
             createTempDirectory("wurzel-abschlaege").also {
                 it
                     .resolve(Root.FOLDER)
                     .createDirectories()
                     .resolve(Root.SELLER_CONFIG)
-                    .writeText(Path.of(stammdaten).readText())
+                    .writeText(Path.of(sellerConfig).readText())
             }
 
-        /** Legt [vorlage] unter [name] in die Ablage; die Zwischenordner entstehen mit. */
-        fun kopie(ablage: Path, name: String, vorlage: String): Path =
-            ablage.resolve(name).also {
+        /** Legt [template] unter [name] in die Ablage; die Zwischenordner entstehen mit. */
+        fun copyInto(archive: Path, name: String, template: String): Path =
+            archive.resolve(name).also {
                 it.parent.createDirectories()
-                it.writeText(Path.of(vorlage).readText())
+                it.writeText(Path.of(template).readText())
             }
 
         test("gesucht wird je Datei, und aus einer Wurzel kommt derselbe Block") {
-            val ablage = ablage()
-            val erste = kopie(ablage, "2026/abschlagsrechnung.yaml", june)
-            val zweite = kopie(ablage, "abschlagsrechnung-2.yaml", august)
+            val archive = archive()
+            val first = copyInto(archive, "2026/abschlagsrechnung.yaml", june)
+            val second = copyInto(archive, "abschlagsrechnung-2.yaml", august)
 
-            val result = runCli("abschlaege", erste.toString(), zweite.toString())
+            val result = runCli("abschlaege", first.toString(), second.toString())
 
             result.exitCode shouldBe 0
-            result.out shouldBe runCli("abschlaege", june, august, "-s", stammdaten).out
+            result.out shouldBe runCli("abschlaege", june, august, "-s", sellerConfig).out
         }
 
         test("verschiedene Wurzeln brechen ab und nennen beide") {
             // Abschläge zweier Rechnungssteller in einem Block sind fachlich
             // sinnlos; "die erste gewinnt" verschleierte das nur.
-            val eine = ablage()
-            val andere = ablage()
-            val hier = kopie(eine, "abschlagsrechnung.yaml", june)
-            val dort = kopie(andere, "abschlagsrechnung-2.yaml", august)
+            val one = archive()
+            val other = archive()
+            val here = copyInto(one, "abschlagsrechnung.yaml", june)
+            val there = copyInto(other, "abschlagsrechnung-2.yaml", august)
 
-            val result = runCli("abschlaege", hier.toString(), dort.toString())
+            val result = runCli("abschlaege", here.toString(), there.toString())
 
             result.exitCode shouldBe 1
             result.out shouldBe ""
-            result.err shouldContain eine.toString()
-            result.err shouldContain andere.toString()
+            result.err shouldContain one.toString()
+            result.err shouldContain other.toString()
         }
     }
 })

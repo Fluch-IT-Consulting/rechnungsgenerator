@@ -26,75 +26,75 @@ import kotlin.io.path.writeText
 class SetupCommandTest : FunSpec({
 
     /** Führt das Kommando aus und sammelt, was auf welchen Kanal ginge. */
-    fun lauf(verzeichnis: Path): Pair<List<String>, List<String>> {
+    fun runSetup(dir: Path): Pair<List<String>, List<String>> {
         val out = mutableListOf<String>()
         val err = mutableListOf<String>()
-        val command = SetupCommand(verzeichnis)
+        val command = SetupCommand(dir)
         command.context { echoMessage = { _, message, _, toErr -> (if (toErr) err else out) += message.toString() } }
         command.parse(emptyArray())
         return out to err
     }
 
     test("legt die Vorlage an und nennt allein ihren Pfad") {
-        val verzeichnis = createTempDirectory("einrichten-test")
+        val dir = createTempDirectory("einrichten-test")
 
-        val (out, err) = lauf(verzeichnis)
+        val (out, err) = runSetup(dir)
 
-        val angelegt = verzeichnis.resolve(Root.FOLDER).resolve(Root.SELLER_CONFIG)
-        angelegt.readText() shouldBe SellerConfigTemplate.text
-        out shouldBe listOf(angelegt.toString())
+        val created = dir.resolve(Root.FOLDER).resolve(Root.SELLER_CONFIG)
+        created.readText() shouldBe SellerConfigTemplate.text
+        out shouldBe listOf(created.toString())
         err.shouldBeEmpty()
     }
 
     test("die angelegte Datei wird von der Suche gefunden") {
         // Der eigentliche Zweck: Das Verzeichnis ist danach eine Wurzel im
         // Sinne von ADR-0015, und zwar für jede Rechnung darunter.
-        val verzeichnis = createTempDirectory("einrichten-test")
-        lauf(verzeichnis)
-        val rechnung =
-            verzeichnis
+        val dir = createTempDirectory("einrichten-test")
+        runSetup(dir)
+        val invoice =
+            dir
                 .resolve("2026")
                 .createDirectories()
                 .resolve("R26-009.yaml")
                 .also { it.writeText("") }
 
-        Root.of(rechnung).sellerConfig shouldBe verzeichnis.resolve(Root.FOLDER).resolve(Root.SELLER_CONFIG)
+        Root.of(invoice).sellerConfig shouldBe dir.resolve(Root.FOLDER).resolve(Root.SELLER_CONFIG)
     }
 
     test("eine vorhandene Datei wird nie überschrieben") {
         // Darin steht, was jemand von Hand eingetragen hat. Kein --force.
-        val verzeichnis = createTempDirectory("einrichten-test")
-        val vorhanden = verzeichnis.resolve(Root.FOLDER).createDirectories().resolve(Root.SELLER_CONFIG)
-        vorhanden.writeText("firma: Schon da\n")
+        val dir = createTempDirectory("einrichten-test")
+        val existing = dir.resolve(Root.FOLDER).createDirectories().resolve(Root.SELLER_CONFIG)
+        existing.writeText("firma: Schon da\n")
 
-        val failure = shouldThrow<CliktError> { lauf(verzeichnis) }
+        val failure = shouldThrow<CliktError> { runSetup(dir) }
 
-        failure.message!! shouldContain vorhanden.toString()
-        vorhanden.readText() shouldBe "firma: Schon da\n"
+        failure.message!! shouldContain existing.toString()
+        existing.readText() shouldBe "firma: Schon da\n"
     }
 
     test("ein nicht beschreibbarer Ort nennt die Zieldatei und den Grund") {
         // Unter einer Datei lässt sich kein Ordner anlegen – eine Ursache
         // ohne Dateirechte, die ein Testlauf als root überginge. Dass die
         // Meldung wie bei erzeuge lautet, prüft GenerateCommandTest.
-        val blockiert = createTempDirectory("einrichten-test").resolve("blockiert").also { it.writeText("") }
-        val ziel = blockiert.resolve(Root.FOLDER).resolve(Root.SELLER_CONFIG)
+        val blocked = createTempDirectory("einrichten-test").resolve("blockiert").also { it.writeText("") }
+        val target = blocked.resolve(Root.FOLDER).resolve(Root.SELLER_CONFIG)
 
-        val failure = shouldThrow<CliktError> { lauf(blockiert) }
+        val failure = shouldThrow<CliktError> { runSetup(blocked) }
 
-        failure.message shouldBe "Die Datei $ziel konnte nicht geschrieben werden: Not a directory"
+        failure.message shouldBe "Die Datei $target konnte nicht geschrieben werden: Not a directory"
     }
 
     test("gibt es den Ordner ohne die Datei, entsteht die Datei und sonst nichts") {
         // Der Ausweg aus dem Abbruch "Ordner ohne stammdaten.yaml" (#275).
-        val verzeichnis = createTempDirectory("einrichten-test")
-        val ordner = verzeichnis.resolve(Root.FOLDER).createDirectories()
-        ordner.resolve("logo.tex").writeText("\\fill (0,0) circle (1);")
+        val dir = createTempDirectory("einrichten-test")
+        val folder = dir.resolve(Root.FOLDER).createDirectories()
+        folder.resolve("logo.tex").writeText("\\fill (0,0) circle (1);")
 
-        lauf(verzeichnis)
+        runSetup(dir)
 
-        ordner.resolve(Root.SELLER_CONFIG).exists() shouldBe true
-        ordner.resolve("logo.tex").readText() shouldContain "circle"
+        folder.resolve(Root.SELLER_CONFIG).exists() shouldBe true
+        folder.resolve("logo.tex").readText() shouldContain "circle"
     }
 
     context("eine Wurzel oberhalb") {
@@ -102,25 +102,25 @@ class SetupCommandTest : FunSpec({
             // Verschachteln ist der vorgesehene Weg für einen zweiten
             // Rechnungssteller – aus Versehen aber eine Falle. Also Hinweis,
             // kein Abbruch.
-            val oben = createTempDirectory("einrichten-test")
-            oben
+            val upper = createTempDirectory("einrichten-test")
+            upper
                 .resolve(Root.FOLDER)
                 .createDirectories()
                 .resolve(Root.SELLER_CONFIG)
                 .writeText("firma: Erste\n")
-            val unten = oben.resolve("zweitfirma").createDirectories()
+            val lower = upper.resolve("zweitfirma").createDirectories()
 
-            val (out, err) = lauf(unten)
+            val (out, err) = runSetup(lower)
 
-            out shouldBe listOf(unten.resolve(Root.FOLDER).resolve(Root.SELLER_CONFIG).toString())
-            err.single() shouldContain oben.toString()
+            out shouldBe listOf(lower.resolve(Root.FOLDER).resolve(Root.SELLER_CONFIG).toString())
+            err.single() shouldContain upper.toString()
             // Der Hinweis sagt auch, was jetzt gilt – sonst wüsste man nur,
             // dass etwas ist, nicht was.
             err.single() shouldContain "ab hier"
         }
 
         test("ohne eine darüber bleibt stderr leer") {
-            lauf(createTempDirectory("einrichten-test")).second.shouldBeEmpty()
+            runSetup(createTempDirectory("einrichten-test")).second.shouldBeEmpty()
         }
     }
 })
