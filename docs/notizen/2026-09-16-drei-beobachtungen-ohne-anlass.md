@@ -9,6 +9,22 @@ seinem Erzeuger). Drei bleiben. Keiner davon ist ein Mangel, keiner hat heute
 einen Anlass, und ein Issue verlangte eine Entscheidung. Die Notiz hält fest,
 was gesehen wurde und woran sich erkennen ließe, dass der Zeitpunkt da ist.
 
+> **Nachtrag vom 25.09.2026:** Punkt 1 kam in #359 weiter gefasst wieder:
+> nicht nur die zwei Wege zum `CliktError`, sondern alle Regeln zum Ziel,
+> die `erzeuge` in `run` trifft – Zieldatei, Überschreibschutz, nur ein
+> gültiges PDF/A ans Ziel. Entschieden wurde „noch nicht“, begründet im
+> Kommentar über `run` und an der Stelle, die das Urteil wirft. Zwei Dinge
+> sind dabei genauer geworden als hier. Der Zeitpunkt ist nicht erst das
+> zweite Kommando, das eine Datei schreibt, sondern der zweite Weg zu einer
+> Rechnungsdatei überhaupt: Wird ZUGFeRD ein Modus von `erzeuge` statt eines
+> eigenen Kommandos – das ist offen –, gibt es kein zweites Kommando, aber
+> einen zweiten Zweig in `run`, und die Regeln stünden zwischen beiden. Und
+> was der Umbau nicht ändern darf, sind stdout, stderr und Exitcode von
+> `erzeuge`, nicht die Ausnahmen, die `GenerateCommandTest` heute erwartet:
+> Die `shouldThrow<ToolchainException>` für das ungültige PDF/A beschreiben
+> den heutigen Weg und ändern sich mit ihm. Der Text der Notiz bleibt, wie
+> er war.
+
 ## 1. Zwei Wege zum `CliktError` in `erzeuge`
 
 Seit #119 übersetzt `execute()` die drei Fachfehler – `InputFileException`,
