@@ -10,8 +10,8 @@ import kotlin.time.Duration.Companion.minutes
  * Sie liegt eine Etage unter [Typesetter]: Dort wird entschieden, ob überhaupt
  * gesetzt und geprüft wird, hier, womit. Dazwischen liegt das, was tatsächlich
  * schiefgehen kann – ein Exitcode, der gedeutet werden will, ein Protokoll, das
- * gelesen wird, eine Schleife, die abbricht. Solange diese Naht fehlte, war all
- * das nur mit echtem LuaLaTeX und veraPDF erreichbar.
+ * gelesen wird, eine Schleife, die abbricht. Ohne diese Naht wäre all das nur
+ * mit echtem LuaLaTeX und veraPDF erreichbar.
  *
  * Zwei Adapter erfüllen sie, und deshalb ist sie eine echte und keine gedachte:
  * [ExternalTool] startet den Prozess, `FakeProcessRunner` im Test spielt einen

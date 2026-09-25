@@ -12,18 +12,17 @@ class InvalidCountryCodeException(message: String) : IllegalArgumentException(me
  * Der Ländercode einer Anschrift nach ISO 3166-1 alpha-2 (BT-40 für den Kunden,
  * BT-55 für den Rechnungssteller).
  *
- * Wozu ein eigener Typ für zwei Buchstaben: Solange `land` ein String war,
- * entschied jede Vergleichsstelle selbst, ob Groß- und Kleinschreibung zählt –
- * und sie entschieden verschieden. Der Renderer verglich `!= "DE"`
- * zeichengenau, der Calculator mit `ignoreCase`. Bei `land: de` hielt der
- * Calculator die Rechnung deshalb für eine Inlandsrechnung, während der
- * Renderer eine Landzeile unter die Anschrift druckte. Beide taten, was
- * dastand.
+ * Wozu ein eigener Typ für zwei Buchstaben: Wäre `land` ein String,
+ * entschiede jede Vergleichsstelle selbst, ob Groß- und Kleinschreibung zählt.
+ * Entscheiden zwei verschieden – die eine vergleicht `!= "DE"` zeichengenau,
+ * die andere mit `ignoreCase` –, dann gilt dieselbe Rechnung mit `land: de`
+ * der einen als Inlandsrechnung, und die andere druckt eine Landzeile unter
+ * die Anschrift. Jede tut, was dasteht.
  *
  * Hier ist `de` nicht *wie* `DE`, sondern derselbe Wert – normalisiert wird
- * einmal, im Konstruktor. Damit kann die Frage am Vergleichsort gar nicht mehr
- * auftauchen, und `EuMemberStates` braucht sein eigenes `uppercase()` nicht
- * mehr.
+ * einmal, im Konstruktor. Damit kann die Frage am Vergleichsort gar nicht erst
+ * auftauchen, und auch `EuMemberStates` vergleicht ohne eigenes
+ * `uppercase()`.
  *
  * Geprüft wird nur die **Form**, nicht gegen ein Verzeichnis der Staaten.
  * Eine solche Liste wäre die zweite, die still veraltet (siehe

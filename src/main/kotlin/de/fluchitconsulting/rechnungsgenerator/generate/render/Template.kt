@@ -55,12 +55,12 @@ class Template private constructor(
      * sie klaglos, und veraPDF bestätigt ein einwandfreies PDF/A – es ist ja
      * eines (#30).
      *
-     * Nur diese eine Richtung (#188). Bis dahin wurde auch verlangt, dass jeder
-     * Wert einen Platzhalter hat. Einen vertippten Schlüssel fing das nicht
-     * besser als die erste Richtung, und seit die Schlüssel [TemplateValue]
-     * sind, übersetzt ein vertippter gar nicht mehr. Verboten hätte die zweite
-     * Richtung aber, dass ein Design einen Wert nicht setzt. Welche Platzhalter
-     * jede Vorlage setzen muss, prüft schon der Bau.
+     * Nur diese eine Richtung (#188). Die andere – jeder Wert hat einen
+     * Platzhalter – finge einen vertippten Schlüssel nicht besser als die
+     * erste, und weil die Schlüssel [TemplateValue] sind, übersetzt ein
+     * vertippter gar nicht erst. Verbieten würde sie aber, dass ein Design
+     * einen Wert nicht setzt. Welche Platzhalter jede Vorlage setzen muss,
+     * prüft schon der Bau.
      */
     fun fillIn(values: Map<TemplateValue, Latex>): String {
         checkLineBreaks(values)

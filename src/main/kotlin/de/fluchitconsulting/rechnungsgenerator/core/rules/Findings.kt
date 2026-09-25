@@ -88,8 +88,9 @@ sealed interface Subject {
  * (`abschlag`, `vereinnahmt`, `restbetrag`). Ein englisches Vokabular daneben
  * zwänge beim Lesen zum Übersetzen.
  *
- * Die Kennungen sind nicht nummeriert. Die zehn Nummern der Absetzung standen
- * nur in Kommentaren und Testnamen und liefen dort schon auseinander.
+ * Die Kennungen sind nicht nummeriert (ADR-0004): Eine Nummer, die nur in
+ * Kommentaren und Testnamen steht, hält niemand gegen die Regeln, und sie
+ * läuft dort auseinander.
  *
  * Auch die Kennungen, die allein `abschlaege` vergibt, stehen hier und nicht
  * in `prepayments` (#314): Was das Programm ablehnt, steht so an einer Stelle,

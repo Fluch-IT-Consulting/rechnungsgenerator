@@ -233,13 +233,10 @@ data class CalculatedInvoice(
      * des Rechnungsstellers – nicht "in Deutschland". Beides fällt nur
      * zusammen, solange der Rechnungssteller in Deutschland sitzt.
      *
-     * Die Verwechslung ist schon passiert: Im Renderer stand ein fester
-     * Vergleich mit "DE". Ein kleingeschriebenes `land: de` bekam dort eine
-     * Landzeile, während die Regeln dieselbe Rechnung als Inlandsrechnung
-     * behandelten, und ein Rechnungssteller in Österreich hätte "AT" unter jede
-     * seiner Inlandsanschriften gesetzt. Danach rechneten Renderer und Regeln
-     * den Vergleich je für sich – ein Umzug musste an zwei Stellen richtig
-     * sein. Jetzt steht er hier einmal (#120). Ein schlichtes `==` genügt, weil
+     * Renderer und Regeln fragen beide hier (#120). Ein fester Vergleich mit
+     * "DE" setzte einem Rechnungssteller in Österreich "AT" unter jede seiner
+     * Inlandsanschriften, und rechnete jeder den Vergleich für sich, müsste ein
+     * Umzug an zwei Stellen richtig sein. Ein schlichtes `==` genügt, weil
      * `CountryCode` die Schreibweise vereinheitlicht.
      */
     val isDomestic: Boolean get() = invoice.customer.address.countryCode == config.address.countryCode
@@ -297,8 +294,8 @@ data class CalculatedInvoice(
      * Name der .tex im Arbeitsverzeichnis. Das ist kein Wissen über LuaLaTeX,
      * auch wenn es dort über Leerzeichen im Jobnamen stolpert.
      *
-     * Hier und nicht im Kommando (#150): Dort fiel eine Nummer ohne Dateinamen
-     * erst auf, nachdem die Rechnung angenommen war – mit weiteren Abbrüchen in
+     * Hier und nicht im Kommando (#150): Dort fiele eine Nummer ohne Dateinamen
+     * erst auf, nachdem die Rechnung angenommen ist – mit weiteren Abbrüchen in
      * der Datei also erst im zweiten Lauf.
      */
     val fileBaseName: String? get() =
