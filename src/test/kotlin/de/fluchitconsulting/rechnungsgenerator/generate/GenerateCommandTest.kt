@@ -47,29 +47,29 @@ import kotlin.io.path.writeText
  */
 class GenerateCommandTest : FunSpec({
 
-    val eingaben = createTempDirectory("kommando-test")
-    val rechnung = eingaben.resolve("rechnung.yaml").also { it.writeText(quelle("rechnung.yaml")) }
-    val stammdaten = eingaben.resolve("stammdaten.yaml").also { it.writeText(quelle("stammdaten.yaml")) }
+    val inputDir = createTempDirectory("kommando-test")
+    val invoice = inputDir.resolve("rechnung.yaml").also { it.writeText(resource("rechnung.yaml")) }
+    val sellerConfig = inputDir.resolve("stammdaten.yaml").also { it.writeText(resource("stammdaten.yaml")) }
 
     /**
      * Führt das Kommando aus und sammelt, was es ausgegeben hätte.
      *
      * Der Viewer ist immer ein Fake, auch wo ein Test ihn nicht nennt: Ein
-     * `--oeffnen` soll im Build nie ein Fenster aufmachen. [ausgabe] lässt sich
+     * `--oeffnen` soll im Build nie ein Fenster aufmachen. [output] lässt sich
      * hineinreichen, damit ein Test sie schon während des Laufs sieht.
      */
-    fun lauf(
+    fun generate(
         typesetter: Typesetter,
         vararg args: String,
         viewer: PdfViewer = FakePdfViewer(),
-        ausgabe: MutableList<String> = mutableListOf(),
-        stammdatenDatei: Path = stammdaten,
-        rechnungsDatei: Path = rechnung,
+        output: MutableList<String> = mutableListOf(),
+        sellerConfigFile: Path = sellerConfig,
+        invoiceFile: Path = invoice,
     ): List<String> {
         val command = RechnungsgeneratorCommand({ typesetter }, viewer)
-        command.context { echoMessage = { _, message, _, _ -> ausgabe += message.toString() } }
-        command.parse(arrayOf("erzeuge", rechnungsDatei.toString(), "-s", stammdatenDatei.toString()) + args)
-        return ausgabe
+        command.context { echoMessage = { _, message, _, _ -> output += message.toString() } }
+        command.parse(arrayOf("erzeuge", invoiceFile.toString(), "-s", sellerConfigFile.toString()) + args)
+        return output
     }
 
     /**
@@ -78,53 +78,53 @@ class GenerateCommandTest : FunSpec({
      * die Fabrik weiter, und die gehört dem Test (#226).
      */
     context("die Wahl des PDF/A-Prüfers") {
-        fun gewaehlt(vararg args: String): PdfAValidator {
-            lateinit var gesehen: PdfAValidator
+        fun chosen(vararg args: String): PdfAValidator {
+            lateinit var seen: PdfAValidator
             val command =
                 RechnungsgeneratorCommand({ validator ->
-                    gesehen = validator
+                    seen = validator
                     FakeTypesetter()
                 })
             command.context { echoMessage = { _, _, _, _ -> } }
             command.parse(
                 arrayOf(
                     "erzeuge",
-                    rechnung.toString(),
+                    invoice.toString(),
                     "-s",
-                    stammdaten.toString(),
+                    sellerConfig.toString(),
                     "-o",
-                    eingaben.resolve("pruefer-${args.size}.pdf").toString(),
+                    inputDir.resolve("pruefer-${args.size}.pdf").toString(),
                     "--ueberschreiben",
                 ) + args,
             )
-            return gesehen
+            return seen
         }
 
         test("ohne Schalter prüft die eingebaute Bibliothek") {
-            gewaehlt() shouldBe BuiltInPdfAValidator
+            chosen() shouldBe BuiltInPdfAValidator
         }
 
         // Nicht bloß "ein anderer": Dieser Prüfer ruft das installierte
         // Programm auf, und genau das ist der Sinn des Schalters.
         test("mit --externe-pdfa-pruefung prüft das Programm verapdf") {
-            gewaehlt("--externe-pdfa-pruefung").shouldBeInstanceOf<ExternalPdfAValidator>()
+            chosen("--externe-pdfa-pruefung").shouldBeInstanceOf<ExternalPdfAValidator>()
         }
     }
 
     test("das PDF landet am gewünschten Ort, und das Ergebnis steht in der Ausgabe") {
-        val ziel = eingaben.resolve("ergebnis.pdf")
+        val target = inputDir.resolve("ergebnis.pdf")
 
-        val ausgabe = lauf(FakeTypesetter(), "-o", ziel.toString())
+        val output = generate(FakeTypesetter(), "-o", target.toString())
 
-        ziel.exists() shouldBe true
-        ziel.readText() shouldContain "%PDF"
-        ausgabe shouldContainInOrder listOf(ziel.toString(), "PDF/A-1b: gültig")
+        target.exists() shouldBe true
+        target.readText() shouldContain "%PDF"
+        output shouldContainInOrder listOf(target.toString(), "PDF/A-1b: gültig")
     }
 
     test("das Arbeitsverzeichnis wird aufgeräumt") {
         val fake = FakeTypesetter()
 
-        lauf(fake, "-o", eingaben.resolve("weg.pdf").toString())
+        generate(fake, "-o", inputDir.resolve("weg.pdf").toString())
 
         // Der Adapter hat sich gemerkt, wo gearbeitet wurde – sonst wüsste der
         // Test es nicht, denn das Kommando nennt das Verzeichnis nur mit
@@ -135,20 +135,20 @@ class GenerateCommandTest : FunSpec({
     test("mit --arbeitsdateien-behalten bleibt es stehen und wird genannt") {
         val fake = FakeTypesetter()
 
-        val ausgabe = lauf(fake, "-o", eingaben.resolve("bleibt.pdf").toString(), "--arbeitsdateien-behalten")
+        val output = generate(fake, "-o", inputDir.resolve("bleibt.pdf").toString(), "--arbeitsdateien-behalten")
 
         fake.workingDir!!.exists() shouldBe true
-        ausgabe.last() shouldContain "Arbeitsdateien:"
+        output.last() shouldContain "Arbeitsdateien:"
     }
 
     test("ein nicht beschreibbares Ziel nennt die Zieldatei, und nur einmal") {
         // NoSuchFileException trägt in message nur den Pfad, und der stünde
         // sonst ein zweites Mal hinter dem Doppelpunkt.
-        val ziel = eingaben.resolve("gibt-es-nicht").resolve("ergebnis.pdf")
+        val target = inputDir.resolve("gibt-es-nicht").resolve("ergebnis.pdf")
 
-        val fehler = shouldThrow<CliktError> { lauf(FakeTypesetter(), "-o", ziel.toString()) }
+        val error = shouldThrow<CliktError> { generate(FakeTypesetter(), "-o", target.toString()) }
 
-        fehler.message shouldBe "Die Datei $ziel konnte nicht geschrieben werden."
+        error.message shouldBe "Die Datei $target konnte nicht geschrieben werden."
     }
 
     /**
@@ -162,16 +162,16 @@ class GenerateCommandTest : FunSpec({
      * liefert einen Grund, also auch den Teil hinter dem Doppelpunkt.
      */
     test("ein nicht beschreibbares Ziel meldet sich wie bei einrichten") {
-        val blockiert = eingaben.resolve("blockiert").also { it.writeText("") }
-        val zielErzeuge = blockiert.resolve("ergebnis.pdf")
-        val zielEinrichten = blockiert.resolve(Root.FOLDER).resolve(Root.SELLER_CONFIG)
+        val blocked = inputDir.resolve("blockiert").also { it.writeText("") }
+        val generateTarget = blocked.resolve("ergebnis.pdf")
+        val setupTarget = blocked.resolve(Root.FOLDER).resolve(Root.SELLER_CONFIG)
 
-        val erzeuge = shouldThrow<CliktError> { lauf(FakeTypesetter(), "-o", zielErzeuge.toString()) }
-        val einrichten = shouldThrow<CliktError> { SetupCommand(blockiert).parse(emptyArray()) }
+        val generateError = shouldThrow<CliktError> { generate(FakeTypesetter(), "-o", generateTarget.toString()) }
+        val setupError = shouldThrow<CliktError> { SetupCommand(blocked).parse(emptyArray()) }
 
-        val meldung = erzeuge.message!!.replace(zielErzeuge.toString(), "<ziel>")
-        meldung shouldStartWith "Die Datei <ziel> konnte nicht geschrieben werden: "
-        einrichten.message!!.replace(zielEinrichten.toString(), "<ziel>") shouldBe meldung
+        val message = generateError.message!!.replace(generateTarget.toString(), "<ziel>")
+        message shouldStartWith "Die Datei <ziel> konnte nicht geschrieben werden: "
+        setupError.message!!.replace(setupTarget.toString(), "<ziel>") shouldBe message
     }
 
     /**
@@ -181,83 +181,83 @@ class GenerateCommandTest : FunSpec({
      * statt als Schreibfehler auf die falsche Stelle zu zeigen.
      */
     test("eine IOException aus dem Satz wird nicht zum Schreibfehler") {
-        val fehler =
+        val error =
             shouldThrow<IOException> {
-                lauf(FakeTypesetter(ioFailure = "kein Platz im Temp-Verzeichnis"), "-o", eingaben.resolve("nie.pdf").toString())
+                generate(FakeTypesetter(ioFailure = "kein Platz im Temp-Verzeichnis"), "-o", inputDir.resolve("nie.pdf").toString())
             }
 
-        fehler.message shouldBe "kein Platz im Temp-Verzeichnis"
+        error.message shouldBe "kein Platz im Temp-Verzeichnis"
     }
 
     test("ein ungültiges PDF/A ist ein Fehler der Werkzeuge") {
         // Den Exitcode und den Kanal prüft MainTest: Übersetzt wird die
         // Ausnahme in execute(), einmal für alle Kommandos (#119).
-        val fehler =
+        val error =
             shouldThrow<ToolchainException> {
-                lauf(FakeTypesetter(valid = false), "-o", eingaben.resolve("ungueltig.pdf").toString())
+                generate(FakeTypesetter(valid = false), "-o", inputDir.resolve("ungueltig.pdf").toString())
             }
 
-        fehler.message!! shouldContain "kein gültiges PDF/A-1b"
+        error.message!! shouldContain "kein gültiges PDF/A-1b"
     }
 
     test("auch ein ungültiges PDF/A lässt kein Arbeitsverzeichnis zurück") {
         val fake = FakeTypesetter(valid = false)
 
-        shouldThrow<ToolchainException> { lauf(fake, "-o", eingaben.resolve("ungueltig2.pdf").toString()) }
+        shouldThrow<ToolchainException> { generate(fake, "-o", inputDir.resolve("ungueltig2.pdf").toString()) }
 
         // Das Aufräumen steht in einem finally – hier wird es geprüft.
         fake.workingDir!!.exists() shouldBe false
     }
 
     test("ein ungültiges PDF/A legt keine Datei an und sagt, wie man es ansieht") {
-        val ziel = eingaben.resolve("nie-da.pdf")
+        val target = inputDir.resolve("nie-da.pdf")
 
-        val fehler = shouldThrow<ToolchainException> { lauf(FakeTypesetter(valid = false), "-o", ziel.toString()) }
+        val error = shouldThrow<ToolchainException> { generate(FakeTypesetter(valid = false), "-o", target.toString()) }
 
-        ziel.exists() shouldBe false
-        fehler.message!! shouldContain "--arbeitsdateien-behalten"
+        target.exists() shouldBe false
+        error.message!! shouldContain "--arbeitsdateien-behalten"
     }
 
     test("ein ungültiges PDF/A ersetzt keine vorhandene Datei, auch nicht mit --ueberschreiben") {
-        val ziel = eingaben.resolve("verschickt.pdf").also { it.writeText("das verschickte Original") }
+        val target = inputDir.resolve("verschickt.pdf").also { it.writeText("das verschickte Original") }
 
-        val fehler =
+        val error =
             shouldThrow<ToolchainException> {
-                lauf(FakeTypesetter(valid = false), "-o", ziel.toString(), "--ueberschreiben")
+                generate(FakeTypesetter(valid = false), "-o", target.toString(), "--ueberschreiben")
             }
 
-        ziel.readText() shouldBe "das verschickte Original"
+        target.readText() shouldBe "das verschickte Original"
         // Die Verstöße gehören zum Fehlschlag und stehen deshalb in der
         // Meldung, also auf stderr – der Kanal folgt dem Exitcode.
-        fehler.message!! shouldContain "6.1.2"
+        error.message!! shouldContain "6.1.2"
     }
 
     test("eine vorhandene Zieldatei bleibt ohne --ueberschreiben unangetastet") {
-        val ziel = eingaben.resolve("vorhanden.pdf").also { it.writeText("das verschickte Original") }
+        val target = inputDir.resolve("vorhanden.pdf").also { it.writeText("das verschickte Original") }
         val fake = FakeTypesetter()
 
-        val fehler = shouldThrow<CliktError> { lauf(fake, "-o", ziel.toString()) }
+        val error = shouldThrow<CliktError> { generate(fake, "-o", target.toString()) }
 
-        fehler.statusCode shouldBe 1
-        fehler.message!! shouldContain "--ueberschreiben"
-        ziel.readText() shouldBe "das verschickte Original"
+        error.statusCode shouldBe 1
+        error.message!! shouldContain "--ueberschreiben"
+        target.readText() shouldBe "das verschickte Original"
         // Geprüft wird vor dem Satz: Ein LuaLaTeX-Lauf, dessen Ergebnis
         // nirgends hin darf, wäre vergeudet.
         fake.workingDir shouldBe null
     }
 
     test("mit --ueberschreiben wird eine vorhandene Zieldatei ersetzt") {
-        val ziel = eingaben.resolve("entwurf.pdf").also { it.writeText("der erste Entwurf") }
+        val target = inputDir.resolve("entwurf.pdf").also { it.writeText("der erste Entwurf") }
 
-        lauf(FakeTypesetter(), "-o", ziel.toString(), "--ueberschreiben")
+        generate(FakeTypesetter(), "-o", target.toString(), "--ueberschreiben")
 
-        ziel.readText() shouldContain "%PDF"
+        target.readText() shouldContain "%PDF"
     }
 
     test("der Jobname kommt aus Rechnungsart und -nummer") {
         val fake = FakeTypesetter()
 
-        lauf(fake, "-o", eingaben.resolve("jobname.pdf").toString())
+        generate(fake, "-o", inputDir.resolve("jobname.pdf").toString())
 
         fake.jobName shouldBe "Rechnung-R26-042"
     }
@@ -269,56 +269,56 @@ class GenerateCommandTest : FunSpec({
      * das PDF entsteht.
      */
     context("ohne -o entsteht das PDF neben der Rechnungsdatei (ADR-0018)") {
-        fun rechnungsDatei(name: String) =
-            createTempDirectory("ohne-ausgabe").resolve(name).also { it.writeText(quelle("rechnung.yaml")) }
+        fun invoiceFile(name: String) =
+            createTempDirectory("ohne-ausgabe").resolve(name).also { it.writeText(resource("rechnung.yaml")) }
 
         test("im Verzeichnis der Rechnungsdatei und mit ihrem Namen, nicht mit dem aus der Nummer") {
-            val datei = rechnungsDatei("R.yaml")
+            val file = invoiceFile("R.yaml")
             val fake = FakeTypesetter()
 
-            val ausgabe = lauf(fake, rechnungsDatei = datei)
+            val output = generate(fake, invoiceFile = file)
 
-            val pdf = datei.resolveSibling("R.pdf")
+            val pdf = file.resolveSibling("R.pdf")
             pdf.readText() shouldContain "%PDF"
-            ausgabe.first() shouldBe pdf.toString()
+            output.first() shouldBe pdf.toString()
             // Der Jobname bleibt, was er war; der Name des PDF hängt nicht an ihm.
             fake.jobName shouldBe "Rechnung-R26-042"
         }
 
         test("aus .yml wird .pdf") {
-            val datei = rechnungsDatei("R.yml")
+            val file = invoiceFile("R.yml")
 
-            lauf(FakeTypesetter(), rechnungsDatei = datei)
+            generate(FakeTypesetter(), invoiceFile = file)
 
-            datei.resolveSibling("R.pdf").exists() shouldBe true
+            file.resolveSibling("R.pdf").exists() shouldBe true
         }
 
         test("eine Datei ohne Endung bekommt .pdf angehängt") {
-            val datei = rechnungsDatei("R")
+            val file = invoiceFile("R")
 
-            lauf(FakeTypesetter(), rechnungsDatei = datei)
+            generate(FakeTypesetter(), invoiceFile = file)
 
-            datei.resolveSibling("R.pdf").exists() shouldBe true
+            file.resolveSibling("R.pdf").exists() shouldBe true
         }
 
         test("die Ausgabe nennt das Ziel so, wie die Rechnungsdatei angegeben wurde") {
             // Relativ zum Arbeitsverzeichnis des Testlaufs, also mit ../ bis ins
             // Temp-Verzeichnis – aber relativ, und so bleibt es.
-            val datei = rechnungsDatei("R.yaml")
-            val relativ = Path.of("").toAbsolutePath().relativize(datei)
+            val file = invoiceFile("R.yaml")
+            val relative = Path.of("").toAbsolutePath().relativize(file)
 
-            val ausgabe = lauf(FakeTypesetter(), rechnungsDatei = relativ)
+            val output = generate(FakeTypesetter(), invoiceFile = relative)
 
-            ausgabe.first() shouldBe relativ.resolveSibling("R.pdf").toString()
+            output.first() shouldBe relative.resolveSibling("R.pdf").toString()
         }
 
         test("der Überschreibschutz greift auch hier") {
-            val datei = rechnungsDatei("R.yaml")
-            val pdf = datei.resolveSibling("R.pdf").also { it.writeText("das verschickte Original") }
+            val file = invoiceFile("R.yaml")
+            val pdf = file.resolveSibling("R.pdf").also { it.writeText("das verschickte Original") }
 
-            val fehler = shouldThrow<CliktError> { lauf(FakeTypesetter(), rechnungsDatei = datei) }
+            val error = shouldThrow<CliktError> { generate(FakeTypesetter(), invoiceFile = file) }
 
-            fehler.message!! shouldContain "--ueberschreiben"
+            error.message!! shouldContain "--ueberschreiben"
             pdf.readText() shouldBe "das verschickte Original"
         }
     }
@@ -328,51 +328,51 @@ class GenerateCommandTest : FunSpec({
      * zu zerstören ist kein Nachbessern – deshalb gilt der Schalter hier nicht.
      */
     context("das Ziel ist nie die Rechnungsdatei") {
-        fun rechnungsDatei(name: String) =
-            createTempDirectory("ziel-eingabe").resolve(name).also { it.writeText(quelle("rechnung.yaml")) }
+        fun invoiceFile(name: String) =
+            createTempDirectory("ziel-eingabe").resolve(name).also { it.writeText(resource("rechnung.yaml")) }
 
-        listOf(emptyList(), listOf("--ueberschreiben")).forEach { schalter ->
-            test("-o auf die Rechnungsdatei bricht ab ${if (schalter.isEmpty()) "ohne" else "mit"} --ueberschreiben") {
-                val datei = rechnungsDatei("R.yaml")
+        listOf(emptyList(), listOf("--ueberschreiben")).forEach { flags ->
+            test("-o auf die Rechnungsdatei bricht ab ${if (flags.isEmpty()) "ohne" else "mit"} --ueberschreiben") {
+                val file = invoiceFile("R.yaml")
                 val fake = FakeTypesetter()
 
-                val fehler =
+                val error =
                     shouldThrow<CliktError> {
-                        lauf(fake, "-o", datei.toString(), *schalter.toTypedArray(), rechnungsDatei = datei)
+                        generate(fake, "-o", file.toString(), *flags.toTypedArray(), invoiceFile = file)
                     }
 
-                fehler.statusCode shouldBe 1
-                fehler.message!! shouldContain "Rechnungsdatei selbst"
-                datei.readText() shouldBe quelle("rechnung.yaml")
+                error.statusCode shouldBe 1
+                error.message!! shouldContain "Rechnungsdatei selbst"
+                file.readText() shouldBe resource("rechnung.yaml")
                 fake.workingDir shouldBe null
             }
         }
 
         test("auch unter anderer Schreibweise derselben Datei") {
-            val datei = rechnungsDatei("R.yaml")
+            val file = invoiceFile("R.yaml")
 
             shouldThrow<CliktError> {
-                lauf(FakeTypesetter(), "-o", datei.resolveSibling("./R.yaml").toString(), "--ueberschreiben", rechnungsDatei = datei)
+                generate(FakeTypesetter(), "-o", file.resolveSibling("./R.yaml").toString(), "--ueberschreiben", invoiceFile = file)
             }
 
-            datei.readText() shouldBe quelle("rechnung.yaml")
+            file.readText() shouldBe resource("rechnung.yaml")
         }
 
         test("heißt die Rechnungsdatei selbst .pdf, bricht auch der Lauf ohne -o ab") {
-            val datei = rechnungsDatei("R.pdf")
+            val file = invoiceFile("R.pdf")
 
-            val fehler =
-                shouldThrow<CliktError> { lauf(FakeTypesetter(), "--ueberschreiben", rechnungsDatei = datei) }
+            val error =
+                shouldThrow<CliktError> { generate(FakeTypesetter(), "--ueberschreiben", invoiceFile = file) }
 
-            fehler.message!! shouldContain "Rechnungsdatei selbst"
-            datei.readText() shouldBe quelle("rechnung.yaml")
+            error.message!! shouldContain "Rechnungsdatei selbst"
+            file.readText() shouldBe resource("rechnung.yaml")
         }
     }
 
     test("das PDF trägt das Rechnungsdatum als Erstellungsdatum") {
         val fake = FakeTypesetter()
 
-        lauf(fake, "-o", eingaben.resolve("datum.pdf").toString())
+        generate(fake, "-o", inputDir.resolve("datum.pdf").toString())
 
         fake.sources!!.creationDate shouldBe LocalDate.of(2026, 8, 14)
     }
@@ -386,29 +386,29 @@ class GenerateCommandTest : FunSpec({
     test("die Metadaten kommen beim Typesetter an") {
         val fake = FakeTypesetter()
 
-        lauf(fake, "-o", eingaben.resolve("metadaten.pdf").toString())
+        generate(fake, "-o", inputDir.resolve("metadaten.pdf").toString())
 
         fake.sources!!.xmpMetadata shouldContain "\\Title{Rechnung R26-042}"
     }
 
     context("--oeffnen") {
         test("öffnet genau die Zieldatei, und zwar nach der Ausgabe") {
-            val ziel = eingaben.resolve("oeffnen.pdf")
-            val ausgabe = mutableListOf<String>()
-            var ausgabeBeimOeffnen: List<String>? = null
-            val viewer = FakePdfViewer(onOpen = { ausgabeBeimOeffnen = ausgabe.toList() })
+            val target = inputDir.resolve("oeffnen.pdf")
+            val output = mutableListOf<String>()
+            var outputAtOpen: List<String>? = null
+            val viewer = FakePdfViewer(onOpen = { outputAtOpen = output.toList() })
 
-            lauf(FakeTypesetter(), "-o", ziel.toString(), "--oeffnen", viewer = viewer, ausgabe = ausgabe)
+            generate(FakeTypesetter(), "-o", target.toString(), "--oeffnen", viewer = viewer, output = output)
 
-            viewer.opened shouldBe listOf(ziel)
-            ausgabe shouldContainInOrder listOf(ziel.toString(), "PDF/A-1b: gültig")
-            ausgabeBeimOeffnen shouldBe ausgabe
+            viewer.opened shouldBe listOf(target)
+            output shouldContainInOrder listOf(target.toString(), "PDF/A-1b: gültig")
+            outputAtOpen shouldBe output
         }
 
         test("ohne den Schalter öffnet sich nichts") {
             val viewer = FakePdfViewer()
 
-            lauf(FakeTypesetter(), "-o", eingaben.resolve("nicht-oeffnen.pdf").toString(), viewer = viewer)
+            generate(FakeTypesetter(), "-o", inputDir.resolve("nicht-oeffnen.pdf").toString(), viewer = viewer)
 
             viewer.opened shouldBe emptyList()
         }
@@ -417,10 +417,10 @@ class GenerateCommandTest : FunSpec({
             val viewer = FakePdfViewer()
 
             shouldThrow<ToolchainException> {
-                lauf(
+                generate(
                     FakeTypesetter(valid = false),
                     "-o",
-                    eingaben.resolve("ungueltig-oeffnen.pdf").toString(),
+                    inputDir.resolve("ungueltig-oeffnen.pdf").toString(),
                     "--oeffnen",
                     "--arbeitsdateien-behalten",
                     viewer = viewer,
@@ -433,45 +433,45 @@ class GenerateCommandTest : FunSpec({
         test("bricht erzeuge an einer vorhandenen Zieldatei ab, öffnet sich auch die nicht") {
             // Die vorhandene Datei kann die verschickte Rechnung sein – nicht
             // die, die gerade aus der Rechnungsdatei entstehen sollte.
-            val ziel = eingaben.resolve("vorhanden-oeffnen.pdf").also { it.writeText("das verschickte Original") }
+            val target = inputDir.resolve("vorhanden-oeffnen.pdf").also { it.writeText("das verschickte Original") }
             val viewer = FakePdfViewer()
 
-            shouldThrow<CliktError> { lauf(FakeTypesetter(), "-o", ziel.toString(), "--oeffnen", viewer = viewer) }
+            shouldThrow<CliktError> { generate(FakeTypesetter(), "-o", target.toString(), "--oeffnen", viewer = viewer) }
 
             viewer.opened shouldBe emptyList()
         }
 
         test("scheitert das Öffnen, bleibt es ein Erfolg – mit einem Hinweis als letzter Zeile") {
-            val ziel = eingaben.resolve("viewer-fehlt.pdf")
+            val target = inputDir.resolve("viewer-fehlt.pdf")
             val viewer = FakePdfViewer(result = ViewerResult.Failed("open endete mit Exitcode 1."))
 
             // Hier zählt die Reihenfolge: Der Hinweis steht als letzte Zeile,
             // also nach dem Ergebnis. Dass der Lauf dabei wirklich mit Exitcode 0
             // endet und der Hinweis auf stdout landet, liest MainTest (#153) –
             // von hier aus wäre es nur aus "keine Ausnahme" geraten.
-            val ausgabe = lauf(FakeTypesetter(), "-o", ziel.toString(), "--oeffnen", viewer = viewer)
+            val output = generate(FakeTypesetter(), "-o", target.toString(), "--oeffnen", viewer = viewer)
 
-            ziel.exists() shouldBe true
-            ausgabe.last() shouldBe "Hinweis: Das PDF konnte nicht geöffnet werden: open endete mit Exitcode 1."
+            target.exists() shouldBe true
+            output.last() shouldBe "Hinweis: Das PDF konnte nicht geöffnet werden: open endete mit Exitcode 1."
         }
     }
 
     context("logo (#198)") {
         // Stammdaten mit Logo in einem eigenen Verzeichnis, das Logo daneben.
-        val logoVerzeichnis = createTempDirectory("kommando-logo")
-        val logo = logoVerzeichnis.resolve("logo.tex").also { it.writeText(quelle("logo.tex")) }
+        val logoDir = createTempDirectory("kommando-logo")
+        val logo = logoDir.resolve("logo.tex").also { it.writeText(resource("logo.tex")) }
 
-        fun stammdatenMitLogo(design: String) =
-            logoVerzeichnis.resolve("stammdaten-$design.yaml").also {
-                it.writeText(quelle("stammdaten.yaml") + "design: $design\nlogo: logo.tex\n")
+        fun sellerConfigWithLogo(design: String) =
+            logoDir.resolve("stammdaten-$design.yaml").also {
+                it.writeText(resource("stammdaten.yaml") + "design: $design\nlogo: logo.tex\n")
             }
 
-        fun ziel(name: String) = eingaben.resolve("$name.pdf").toString()
+        fun target(name: String) = inputDir.resolve("$name.pdf").toString()
 
         test("prag bekommt das Logo als weitere Datei mit") {
             val fake = FakeTypesetter()
 
-            lauf(fake, "-o", ziel("logo-prag"), stammdatenDatei = stammdatenMitLogo("prag"))
+            generate(fake, "-o", target("logo-prag"), sellerConfigFile = sellerConfigWithLogo("prag"))
 
             fake.sources!!.files.keys shouldBe setOf("logo.tex")
             fake.sources!!
@@ -483,7 +483,7 @@ class GenerateCommandTest : FunSpec({
         test("helsinki übergeht das Logo und reicht keine Datei weiter") {
             val fake = FakeTypesetter()
 
-            lauf(fake, "-o", ziel("logo-helsinki"), stammdatenDatei = stammdatenMitLogo("helsinki"))
+            generate(fake, "-o", target("logo-helsinki"), sellerConfigFile = sellerConfigWithLogo("helsinki"))
 
             fake.sources!!.files shouldBe emptyMap()
         }
@@ -491,43 +491,43 @@ class GenerateCommandTest : FunSpec({
         test("scheitert der Satz, nennt die Meldung das Logo mit seinem Pfad") {
             // Im Protokoll von LuaLaTeX heißt es nur logo.tex; welche Datei
             // das war, weiß allein das Kommando.
-            val fehler =
+            val error =
                 shouldThrow<ToolchainException> {
-                    lauf(
+                    generate(
                         FakeTypesetter(failure = "lualatex konnte Rechnung-R26-042.tex nicht übersetzen"),
                         "-o",
-                        ziel("logo-kaputt"),
-                        stammdatenDatei = stammdatenMitLogo("prag"),
+                        target("logo-kaputt"),
+                        sellerConfigFile = sellerConfigWithLogo("prag"),
                     )
                 }
 
-            fehler.message!! shouldContain "nicht übersetzen"
-            fehler.message!! shouldContain "Die Stammdaten nennen ein Logo (${logo.toAbsolutePath()})"
+            error.message!! shouldContain "nicht übersetzen"
+            error.message!! shouldContain "Die Stammdaten nennen ein Logo (${logo.toAbsolutePath()})"
         }
 
         test("auch ein ungültiges PDF/A nennt das Logo, denn es kann daran liegen") {
             // Etwa eine Deckkraft im Fragment: Transparenz verbietet PDF/A-1.
-            val fehler =
+            val error =
                 shouldThrow<ToolchainException> {
-                    lauf(FakeTypesetter(valid = false), "-o", ziel("logo-ungueltig"), stammdatenDatei = stammdatenMitLogo("prag"))
+                    generate(FakeTypesetter(valid = false), "-o", target("logo-ungueltig"), sellerConfigFile = sellerConfigWithLogo("prag"))
                 }
 
-            fehler.message!! shouldContain "kein gültiges PDF/A-1b"
-            fehler.message!! shouldContain "Die Stammdaten nennen ein Logo"
+            error.message!! shouldContain "kein gültiges PDF/A-1b"
+            error.message!! shouldContain "Die Stammdaten nennen ein Logo"
         }
 
         test("setzt das Design das Logo nicht, nennt die Meldung es auch nicht") {
-            val fehler =
+            val error =
                 shouldThrow<ToolchainException> {
-                    lauf(
+                    generate(
                         FakeTypesetter(failure = "lualatex konnte Rechnung-R26-042.tex nicht übersetzen"),
                         "-o",
-                        ziel("logo-helsinki-kaputt"),
-                        stammdatenDatei = stammdatenMitLogo("helsinki"),
+                        target("logo-helsinki-kaputt"),
+                        sellerConfigFile = sellerConfigWithLogo("helsinki"),
                     )
                 }
 
-            fehler.message!! shouldNotContain "Logo"
+            error.message!! shouldNotContain "Logo"
         }
     }
 
@@ -536,10 +536,10 @@ class GenerateCommandTest : FunSpec({
         // Bestätigungsabfrage nur einfach war: Der Calculator gibt dazu einen
         // Hinweis aus – er betrifft die eigene Ablage, nicht den Kunden, und
         // soll deshalb nicht wie ein Fehler oben stehen.
-        val oesterreich =
-            eingaben.resolve("oesterreich.yaml").also {
+        val austrianInvoice =
+            inputDir.resolve("oesterreich.yaml").also {
                 it.writeText(
-                    quelle("rechnung.yaml")
+                    resource("rechnung.yaml")
                         .replace("ort: Nürnberg", "ort: Wien\n    land: AT")
                         .replace(
                             "  referenz: BST-2026-0815",
@@ -560,62 +560,62 @@ class GenerateCommandTest : FunSpec({
                 )
             }
 
-        val ausgabe = mutableListOf<String>()
+        val output = mutableListOf<String>()
         val command = RechnungsgeneratorCommand({ FakeTypesetter() })
-        command.context { echoMessage = { _, message, _, _ -> ausgabe += message.toString() } }
+        command.context { echoMessage = { _, message, _, _ -> output += message.toString() } }
         command.parse(
             arrayOf(
                 "erzeuge",
-                oesterreich.toString(),
+                austrianInvoice.toString(),
                 "-s",
-                stammdaten.toString(),
+                sellerConfig.toString(),
                 "-o",
-                eingaben.resolve("at.pdf").toString(),
+                inputDir.resolve("at.pdf").toString(),
             ),
         )
 
-        val result = ausgabe.indexOfFirst { it.contains("PDF/A-1b") }
-        val hinweis = ausgabe.indexOfFirst { it.startsWith("Hinweis:") }
-        (hinweis > result) shouldBe true
-        ausgabe[hinweis] shouldContain "nicht qualifiziert"
+        val result = output.indexOfFirst { it.contains("PDF/A-1b") }
+        val hint = output.indexOfFirst { it.startsWith("Hinweis:") }
+        (hint > result) shouldBe true
+        output[hint] shouldContain "nicht qualifiziert"
     }
 
     context("ohne -s kommen die Stammdaten aus der Wurzel (ADR-0015)") {
         /**
          * Eine Ablage mit einer Rechnung im Jahresordner – mit Wurzel, wenn
-         * [firma] genannt ist. Der Name steht später im Satz und sagt, welche
+         * [company] genannt ist. Der Name steht später im Satz und sagt, welche
          * Stammdaten wirklich gelesen wurden.
          */
-        fun ablage(firma: String? = null): Path {
-            val wurzel = createTempDirectory("wurzel-erzeuge")
-            if (firma != null) {
-                wurzel
+        fun archive(company: String? = null): Path {
+            val root = createTempDirectory("wurzel-erzeuge")
+            if (company != null) {
+                root
                     .resolve(Root.FOLDER)
                     .createDirectories()
                     .resolve(Root.SELLER_CONFIG)
-                    .writeText(quelle("stammdaten.yaml").replace("Muster IT-Consulting UG (haftungsbeschränkt)", firma))
+                    .writeText(resource("stammdaten.yaml").replace("Muster IT-Consulting UG (haftungsbeschränkt)", company))
             }
-            wurzel
+            root
                 .resolve("2026")
                 .createDirectories()
                 .resolve("rechnung.yaml")
-                .writeText(quelle("rechnung.yaml"))
-            return wurzel
+                .writeText(resource("rechnung.yaml"))
+            return root
         }
 
         test("gesucht wird von der Rechnungsdatei aus, nicht im Arbeitsverzeichnis") {
             // Das Arbeitsverzeichnis des Testlaufs ist das Projekt, und dort
             // liegt keine Wurzel: Was hier gefunden wird, kann nur die über
             // der Rechnungsdatei sein.
-            val wurzel = ablage("Wurzelfirma UG")
+            val root = archive("Wurzelfirma UG")
             val fake = FakeTypesetter()
 
             val result =
                 runCli(
                     "erzeuge",
-                    wurzel.resolve("2026/rechnung.yaml").toString(),
+                    root.resolve("2026/rechnung.yaml").toString(),
                     "-o",
-                    wurzel.resolve("ziel.pdf").toString(),
+                    root.resolve("ziel.pdf").toString(),
                     typesetter = fake,
                 )
 
@@ -624,9 +624,9 @@ class GenerateCommandTest : FunSpec({
         }
 
         test("ohne Wurzel bricht der Lauf ab und nennt den Ausweg") {
-            val ohneWurzel = ablage()
+            val withoutRoot = archive()
 
-            val result = runCli("erzeuge", ohneWurzel.resolve("2026/rechnung.yaml").toString())
+            val result = runCli("erzeuge", withoutRoot.resolve("2026/rechnung.yaml").toString())
 
             result.exitCode shouldBe 1
             result.out shouldBe ""
@@ -636,4 +636,4 @@ class GenerateCommandTest : FunSpec({
     }
 })
 
-private fun quelle(name: String) = Path.of("src/test/resources/$name").readText()
+private fun resource(name: String) = Path.of("src/test/resources/$name").readText()
