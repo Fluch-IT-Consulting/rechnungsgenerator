@@ -83,6 +83,16 @@ class GenerateCommand(
         help = "Das installierte Programm verapdf prüfen lassen statt der eingebauten Bibliothek",
     ).flag()
 
+    // Wohin die Rechnung geschrieben wird, dass eine vorhandene nicht still
+    // ersetzt wird und dass nur ein gültiges PDF/A ans Ziel kommt, sind
+    // Regeln der Rechnung und keine Bedienung. Trotzdem stehen sie hier: Es
+    // gibt genau einen Weg zu einer Rechnungsdatei, ein Ablauf ohne Clikt
+    // hätte keinen zweiten Aufrufer, und prüfbar sind sie über den gereichten
+    // Typesetter auch so. Heraus müssen sie mit dem zweiten Weg, etwa für
+    // ZUGFeRD – ob als eigenes Kommando oder als Zweig in diesem –, sonst
+    // stünden sie zweimal da oder zwischen zwei Zweigen (#359). Das Urteil
+    // über das PDF/A zieht dann mit.
+    //
     // Fehler beim Lesen, der Werkzeuge und die Ablehnung gehen durch: Zur
     // Meldung ohne Stacktrace macht sie execute(), für alle Kommandos an einer
     // Stelle (#119). Eine IOException fängt nur, wer weiß, was dabei
@@ -171,6 +181,12 @@ class GenerateCommand(
             // Ein ungültiges PDF/A ist kein Erfolg: Exitcode 1, damit ein Skript
             // ringsherum es merkt. Und es kommt nicht ans Ziel – auch nicht mit
             // --ueberschreiben, das einer gültigen Rechnung gilt.
+            //
+            // Es reist als ToolchainException, obwohl der Prüfer gearbeitet
+            // hat: execute() übersetzt sie schon, und eine eigene Ausnahme
+            // änderte weder Text noch Exitcode. Die passende Form, ein
+            // Ergebnis, über das der Aufrufer mit when entscheidet, entsteht
+            // erst mit dem Ablauf, den der Kommentar über run erwartet.
             if (!typesetPdf.validation.valid) {
                 val inspectionNote =
                     if (keepWorkFiles) {

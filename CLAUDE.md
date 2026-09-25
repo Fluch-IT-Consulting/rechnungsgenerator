@@ -259,6 +259,12 @@ CV/Web-Auftritt des Autors), PDF/A-Prüfung über veraPDF.
   für alle Kommandos; die Kommandos werfen sie nur durch (#119). Zu Text wird
   die Abbruchliste allein in `RejectedException`; täte es jedes Kommando
   selbst, liefen die Fassungen auseinander (#52).
+  Zieldatei, Überschreibschutz und das Urteil über das PDF/A entscheidet
+  `erzeuge` selbst in `run`, samt eigenem `CliktError` und einer geliehenen
+  `ToolchainException`: Ein Ablauf ohne Clikt hätte heute keinen zweiten
+  Aufrufer. Heraus müssen die Regeln mit dem zweiten Weg zu einer
+  Rechnungsdatei, als Kommando oder als Zweig in `erzeuge` – nicht
+  abgeschrieben (#359).
   `erzeuge --oeffnen` öffnet das fertige PDF über `PdfViewer`, eine eigene
   Naht im Paket `generate` und bewusst nicht in `toolchain` (#144): Dort
   liegen die Werkzeuge, ohne die kein PDF entsteht, und `checkAvailable()`
