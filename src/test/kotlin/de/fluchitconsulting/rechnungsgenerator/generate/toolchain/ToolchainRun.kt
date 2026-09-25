@@ -88,4 +88,44 @@ class ToolchainRun(
         process.exitValue() shouldBe 0
         return ImageIO.read(workDir.resolve("${prefix.fileName}.png").toFile())
     }
+
+    /**
+     * Die Wörter der ersten Seite mit ihrer Lage, wie `pdftotext -bbox` sie
+     * liest – für die Frage, wie weit zwei Wörter auseinanderstehen, die weder
+     * der Text noch ein Bild ohne Zuordnung beantwortet.
+     */
+    fun wordsOf(pdf: Path): PlacedPage {
+        val html = workDir.resolve("${pdf.fileName}.html")
+        val process =
+            ProcessBuilder("pdftotext", "-bbox", "-enc", "UTF-8", "-l", "1", pdf.toString(), html.toString())
+                .redirectErrorStream(true)
+                .redirectOutput(workDir.resolve("pdftotext.log").toFile())
+                .start()
+        process.waitFor(30, TimeUnit.SECONDS) shouldBe true
+        process.exitValue() shouldBe 0
+
+        val text = html.readText()
+        val height = Regex("""<page width="[\d.]+" height="([\d.]+)">""").find(text)!!.groupValues[1].toDouble()
+        val words =
+            Regex("""<word xMin="([\d.]+)" yMin="([\d.]+)" xMax="([\d.]+)" yMax="[\d.]+">([^<]*)</word>""")
+                .findAll(text)
+                .map { match ->
+                    val (xMin, yMin, xMax, word) = match.destructured
+                    PlacedWord(word, xMin.toDouble(), xMax.toDouble(), yMin.toDouble())
+                }.toList()
+        return PlacedPage(height, words)
+    }
 }
+
+/** Eine Seite als Wörter in Lesereihenfolge; [height] und alle Lagen in pt, von oben gemessen. */
+class PlacedPage(
+    val height: Double,
+    val words: List<PlacedWord>,
+)
+
+data class PlacedWord(
+    val text: String,
+    val xMin: Double,
+    val xMax: Double,
+    val yMin: Double,
+)
