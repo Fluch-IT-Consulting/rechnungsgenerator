@@ -6,7 +6,7 @@ import io.kotest.matchers.collections.shouldBeEmpty
 import io.kotest.matchers.shouldBe
 
 /**
- * Hält die Paketstruktur aus CLAUDE.md (#107): zwei vertikale Pakete, eines je
+ * Hält die Paketstruktur aus CLAUDE.md (#107): ein vertikales Paket je
  * Kommando, darunter der gemeinsame Kern, und jede Kante zeigt nach unten.
  *
  * Kotlin kennt keine Paketgrenze – `internal` gilt pro Modul –, deshalb steht

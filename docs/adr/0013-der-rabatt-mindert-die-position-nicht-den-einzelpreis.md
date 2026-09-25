@@ -124,10 +124,10 @@ einsetzt; eine Vorlage ohne dieses Mittel braucht ihn nicht.
 
 Die Sorge dahinter – ein Design zeigte einen Betrag, der nicht Menge ×
 Einzelpreis ist, ohne Grund – bleibt berechtigt, aber `TemplateValue.required`
-ist nicht, was sie auffängt. Das tut das Netz aus #187: `teilrechnung` trägt
-einen Rabatt, und `PflichtangabenTest` prüft je Design, dass die Spalte genau
-dann dasteht. Ein drittes Design ohne sie fällt dort auf, am fertigen PDF, und
-nicht erst dem Leser der Rechnung.
+ist nicht, was sie auffängt. Das tut das Pflichtangaben-Netz: `teilrechnung`
+trägt einen Rabatt, und `PflichtangabenTest` prüft je Design, dass die Spalte
+genau dann dasteht. Ein drittes Design ohne sie fällt dort auf, am fertigen
+PDF, und nicht erst dem Leser der Rechnung.
 
 Für `helsinki` und `prag` ändert sich nichts: Beide setzen den Platzhalter
 weiter, die Vergleichsdateien und das Netz bleiben, wie sie waren.

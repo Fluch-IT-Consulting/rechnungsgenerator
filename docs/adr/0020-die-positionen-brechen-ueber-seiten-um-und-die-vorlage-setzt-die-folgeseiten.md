@@ -86,7 +86,7 @@ Seitenzahl, die der Satz kennt, ohne einen Schalter aus Kotlin.
 Fehler aus #318 schon vor dem Umbau, und er bleibt danach, weil der Verlust
 weiter möglich ist: Eine Tabellenzeile bricht nicht innerhalb einer Zelle, und
 eine Position mit einer Beschreibung über eine halbe Seite fiele wieder still
-vom Blatt. Das Netz aus #187 sieht nur die Beispieldateien, nie eine echte
+vom Blatt. Das Pflichtangaben-Netz sieht nur die Beispieldateien, nie eine echte
 Rechnung; das Log sieht jede.
 
 ## Verworfen
@@ -124,7 +124,7 @@ Rechnung; das Log sieht jede.
 - **`LatexCompiler` liest das Log auf `Overfull \vbox`** und wirft dann wie
   bei einem gescheiterten Lauf, mit der Zeile aus dem Log in der Meldung. Das
   Log liest er schon, für „Rerun to get“.
-- **Das Netz aus #187 bekommt eine Beispieldatei mit vielen Positionen.**
+- **Das Pflichtangaben-Netz bekommt eine Beispieldatei mit vielen Positionen.**
   Geprüft wird über `pdftotext`, dass jede Position im PDF steht, und über
   die Seitenzahl, dass es mehr als eine ist. Dieselbe Datei hält den
   Fortsetzungshinweis und den kurzen Kopf der Folgeseite fest. Eine zweite,
