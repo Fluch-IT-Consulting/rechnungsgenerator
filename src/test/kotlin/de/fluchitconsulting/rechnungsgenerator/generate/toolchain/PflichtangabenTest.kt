@@ -10,6 +10,7 @@ import de.fluchitconsulting.rechnungsgenerator.core.text.VariableResolver
 import de.fluchitconsulting.rechnungsgenerator.core.values.Discount
 import de.fluchitconsulting.rechnungsgenerator.core.values.Money
 import de.fluchitconsulting.rechnungsgenerator.core.values.Percent
+import de.fluchitconsulting.rechnungsgenerator.core.values.Price
 import io.kotest.assertions.assertSoftly
 import io.kotest.assertions.withClue
 import io.kotest.core.spec.style.FunSpec
@@ -257,6 +258,22 @@ class PflichtangabenTest : FunSpec({
         }
     }
 
+    // Die Schreibweise der Zahlen (ADR-0021): Die Beispiele je Art tragen
+    // Einzelpreise mit zwei Nachkommastellen und Mengen unter 1.000. Wie ein
+    // Design längere Zahlen gruppiert, zeigte sich an keinem davon.
+    for (design in designs) {
+        test("Schreibweise der Zahlen im Design ${design.name}: jeder Einzelpreis mit allen Nachkommastellen") {
+            val (calculated, _) =
+                typesetAndCheck("schreibweise-der-zahlen", design, design.sellerConfig, targetName = "${design.name}-zahlen")
+
+            calculated.invoice.items.maxOf {
+                it.unitPrice.value
+                    .stripTrailingZeros()
+                    .scale()
+            } shouldBe 5
+        }
+    }
+
     // Mehr Positionen, als auf eine Seite passen (#318, ADR-0020): Jede steht
     // auf dem Blatt, und das Blatt hat so viele Seiten, wie das Design für
     // diese Datei nennt. Was die Folgeseiten tragen, prüft `verify` an jeder
@@ -429,6 +446,14 @@ private fun Sheet.verify(
         shows("Bezeichnung der Position ${i + 1}", item.name)
         shows("Menge der Position ${i + 1}", quantity(item.quantity))
     }
+    // Einzelpreis und Betrag einer Position sind keine Pflichtangaben, aber
+    // ohne sie ließe sich die Position nicht nachrechnen (#14). Und nur der
+    // Einzelpreis trägt mehr als zwei Nachkommastellen: Setzte ein Design ihn
+    // in falscher Schreibweise, sähe das Netz es sonst nirgends (ADR-0021).
+    calculated.lines.forEachIndexed { i, line ->
+        shows("Einzelpreis der Position ${i + 1}", price(line.item.unitPrice))
+        shows("Betrag der Position ${i + 1}", amount(line.net))
+    }
     // Der Rabatt ist keine Pflichtangabe: §14 Abs. 4 Nr. 7 verlangt nur
     // Minderungen, die nicht schon im Entgelt berücksichtigt sind, und der
     // Rabatt ist es. Geprüft wird trotzdem, dass die Spalte genau dann steht,
@@ -439,11 +464,9 @@ private fun Sheet.verify(
             null -> {}
             is Discount.Rate -> {
                 shows("Rabatt der Position ${i + 1}", *rate(discount.rate))
-                shows("Betrag der Position ${i + 1}", amount(line.net))
             }
             is Discount.Amount -> {
                 shows("Rabatt der Position ${i + 1}", amount(discount.amount))
-                shows("Betrag der Position ${i + 1}", amount(line.net))
             }
         }
     }
@@ -676,6 +699,8 @@ private fun number(
         }.format(value)
 
 private fun amount(money: Money): String = number(money.value, minFraction = 2)
+
+private fun price(price: Price): String = number(price.value, minFraction = 2)
 
 private fun quantity(value: BigDecimal): String = number(value, minFraction = 0)
 

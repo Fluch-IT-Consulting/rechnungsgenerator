@@ -1,0 +1,33 @@
+# Fiktive Rechnung mit Zahlen, die die Beispiele je Art nicht tragen
+# (ADR-0021): Einzelpreise mit vier und fünf Nachkommastellen, Mengen mit
+# vier und fünf Stellen vor dem Komma und eine mit drei danach. An ihnen
+# zeigt sich, ob ein Design Tausendertrenner und Dezimalkomma richtig setzt –
+# "42,125 km" und "42.125 km" unterscheidet nur das Zeichen.
+nummer: R26-049
+datum: 2026-08-14
+leistungszeitraum:
+  von: 2026-07-01
+  bis: 2026-07-31
+kunde:
+  name: Beispiel Software GmbH
+  anschrift:
+    strasse: Industriestraße 1
+    plz: "90402"
+    ort: Nürnberg
+positionen:
+  # 12.500 × 0,0335 € = 418,75 €
+  - bezeichnung: Druckseiten
+    menge: 12500
+    einheit: Stück
+    einzelpreis: 0.0335
+  # 8.000 × 0,00001 € = 0,08 €: Mit zwei Nachkommastellen stünde hier
+  # 0,00 € als Einzelpreis, und die Position ließe sich nicht nachrechnen.
+  - bezeichnung: Schnittstellenaufrufe
+    menge: 8000
+    einheit: Stück
+    einzelpreis: 0.00001
+  # 42,125 × 0,30 € = 12,6375 €, gerundet 12,64 €
+  - bezeichnung: Fahrtkosten
+    menge: 42.125
+    einheit: km
+    einzelpreis: 0.30
