@@ -22,9 +22,9 @@ import java.io.File
  * Der Kundenblock steht in den Beispielen als `kunde: …` – er ist dort verkürzt,
  * weil ihn der Abschnitt darüber schon zeigt, und wird hier ergänzt.
  */
-class SkillBeispieleTest : FunSpec({
+class SkillExamplesTest : FunSpec({
 
-    val kunde =
+    val customer =
         """
         kunde:
           name: Beispiel Software GmbH
@@ -48,7 +48,7 @@ class SkillBeispieleTest : FunSpec({
                 .findAll(skill)
                 .map { it.groupValues[1] }
                 .filter { it.startsWith("nummer:") }
-                .map { YamlLoader.parseInvoice(it.replace("kunde: …", kunde)) }
+                .map { YamlLoader.parseInvoice(it.replace("kunde: …", customer)) }
                 .toList()
 
         // Die Anzahl mitprüfen: Sonst wäre der Test auch dann grün, wenn das
@@ -56,8 +56,8 @@ class SkillBeispieleTest : FunSpec({
         invoices.map { it.type } shouldBe
             listOf(InvoiceType.INVOICE, InvoiceType.PREPAYMENT, InvoiceType.CANCELLATION, InvoiceType.FINAL)
 
-        val schlussrechnung = invoices.last()
-        val totals = CalculatedInvoice(schlussrechnung, config)
+        val finalInvoice = invoices.last()
+        val totals = CalculatedInvoice(finalInvoice, config)
         totals.aborts().shouldBeEmpty()
         totals.grossTotal shouldBe Money("23800.00")
         totals.remainingAmount shouldBe Money("19040.00")

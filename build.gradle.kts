@@ -187,7 +187,7 @@ tasks.test {
         systemProperty("kotest.tags", "!Toolchain")
     }
 
-    // Drei Tests lesen unterhalb von .claude/skills: SkillBeispieleTest prüft
+    // Drei Tests lesen unterhalb von .claude/skills: SkillExamplesTest prüft
     // die YAML-Beispiele des Skills gegen den echten Parser, die beiden
     // Skript-Tests rufen die Python-Skripte wirklich auf. Sie tun das über
     // File(…), also am Eingabesatz dieser Task vorbei – und dann galt sie nach
