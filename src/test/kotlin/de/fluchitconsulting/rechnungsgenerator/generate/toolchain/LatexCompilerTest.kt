@@ -11,6 +11,7 @@ import io.kotest.matchers.string.shouldContain
 import io.kotest.matchers.string.shouldNotContain
 import java.io.File
 import java.time.LocalDate
+import kotlin.io.path.createDirectory
 import kotlin.io.path.createTempDirectory
 import kotlin.io.path.exists
 import kotlin.io.path.readBytes
@@ -169,6 +170,18 @@ class LatexCompilerTest : FunSpec({
         val fehler = shouldThrow<ToolchainException> { setzen(FakeProcessRunner(erfolgreicherLauf()), gibtEsNicht) }
 
         fehler.message!! shouldContain gibtEsNicht.toString()
+    }
+
+    // Ein Verzeichnis unter dem Namen des Protokolls besteht exists() und
+    // scheitert am Lesen – der Fall eines unlesbaren Protokolls, ohne dass
+    // Rechte gesetzt werden müssen, die unter root nicht greifen (#336).
+    test("lässt sich das Protokoll nicht lesen, kommt eine ToolchainException mit der Datei") {
+        val dir = arbeitsverzeichnis()
+        val protokoll = dir.resolve("rechnung.log").createDirectory()
+
+        val fehler = shouldThrow<ToolchainException> { setzen(FakeProcessRunner(FakeProcessRunner.Run()), dir) }
+
+        fehler.message!! shouldContain protokoll.toString()
     }
 
     test("ein Lauf genügt, wenn das Protokoll keinen zweiten verlangt") {
