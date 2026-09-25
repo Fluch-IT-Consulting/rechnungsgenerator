@@ -37,9 +37,9 @@ class CountryCodeTest : FunSpec({
         // Nicht die exotischen Fälle, sondern die, die ein Mensch tippt, wenn
         // er das Feld für ein Freitextfeld hält.
         assertSoftly {
-            listOf("Deutschland", "D", "GER", "de-DE", "D1", "", "  ").forEach { falsch ->
-                val fehler = shouldThrow<InvalidCountryCodeException> { CountryCode(falsch) }
-                fehler.message!! shouldContain "'$falsch'"
+            listOf("Deutschland", "D", "GER", "de-DE", "D1", "", "  ").forEach { invalid ->
+                val error = shouldThrow<InvalidCountryCodeException> { CountryCode(invalid) }
+                error.message!! shouldContain "'$invalid'"
             }
         }
     }

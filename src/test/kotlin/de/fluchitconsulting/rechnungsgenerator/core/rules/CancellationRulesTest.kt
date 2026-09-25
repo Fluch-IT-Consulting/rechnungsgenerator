@@ -35,7 +35,7 @@ class CancellationRulesTest : FunSpec({
     val config = testSellerConfig()
 
     // Das Gegenstück zur Ursprungsrechnung: dieselbe Position, negative Menge.
-    fun storno(
+    fun cancellation(
         cancelled: CancelledInvoice? = testCancelled(),
         quantity: String = "-1",
     ) = testInvoice(
@@ -47,7 +47,7 @@ class CancellationRulesTest : FunSpec({
     fun messageFor(invoice: Invoice, rule: Rule): String = CalculatedInvoice(invoice, config).messageOf(rule)
 
     test("ein Storno mit Bezug und negativer Menge geht durch") {
-        val calculated = CalculatedInvoice(storno(), config)
+        val calculated = CalculatedInvoice(cancellation(), config)
 
         calculated.aborts().shouldBeEmpty()
         calculated.grossTotal shouldBe Money("-1190.00")
@@ -57,7 +57,7 @@ class CancellationRulesTest : FunSpec({
 
     test("ein Storno auf die eigene Nummer wird abgelehnt") {
         val message =
-            messageFor(storno(cancelled = testCancelled(invoiceNumber = "R26-001")), Rule.STORNO_AUF_SICH_SELBST)
+            messageFor(cancellation(cancelled = testCancelled(invoiceNumber = "R26-001")), Rule.STORNO_AUF_SICH_SELBST)
 
         message shouldContain "R26-001"
         message shouldContain "eigene Nummer"
@@ -67,7 +67,7 @@ class CancellationRulesTest : FunSpec({
         // Die Rechnung des Bausatzes ist auf den 14.08.2026 datiert.
         val message =
             messageFor(
-                storno(cancelled = testCancelled(issueDate = LocalDate.of(2026, 9, 1))),
+                cancellation(cancelled = testCancelled(issueDate = LocalDate.of(2026, 9, 1))),
                 Rule.URSPRUNGSRECHNUNG_SPAETER_DATIERT,
             )
 
@@ -80,18 +80,18 @@ class CancellationRulesTest : FunSpec({
         // Meldungen über den Bezug sprächen von "der Stornorechnung" und "diesem
         // Storno", auf einem Blatt, das keines ist (#97). Der Bezug hier ist
         // doppelt falsch: eigene Nummer und später datiert.
-        val ohne = CalculatedInvoice(testInvoice(), config)
-        val mit =
+        val absent = CalculatedInvoice(testInvoice(), config)
+        val present =
             CalculatedInvoice(
                 testInvoice(cancelled = testCancelled(invoiceNumber = "R26-001", issueDate = LocalDate.of(2026, 9, 1))),
                 config,
             )
 
-        mit.rules() shouldContainExactlyInAnyOrder ohne.rules() + Rule.BEZUG_OHNE_STORNO
+        present.rules() shouldContainExactlyInAnyOrder absent.rules() + Rule.BEZUG_OHNE_STORNO
     }
 
     test("ein Storno über einen positiven Betrag ist ein Widerspruch") {
-        val message = messageFor(storno(quantity = "1"), Rule.STORNO_NICHT_NEGATIV)
+        val message = messageFor(cancellation(quantity = "1"), Rule.STORNO_NICHT_NEGATIV)
 
         message shouldContain "negativem Vorzeichen"
     }
@@ -99,12 +99,12 @@ class CancellationRulesTest : FunSpec({
     test("ein Storno über null ebenso") {
         // "Nicht negativ" und nicht "positiv": Ein Storno über 0,00 hebt nichts
         // auf und wäre trotzdem durchgegangen, stünde hier isPositive().
-        CalculatedInvoice(storno(quantity = "0"), config)
+        CalculatedInvoice(cancellation(quantity = "0"), config)
             .rules() shouldContain Rule.STORNO_NICHT_NEGATIV
     }
 
     test("die Regel gegen negative Gesamtbeträge gilt im Storno nicht") {
-        CalculatedInvoice(storno(), config).rules() shouldNotContain Rule.GESAMTBETRAG_NEGATIV
+        CalculatedInvoice(cancellation(), config).rules() shouldNotContain Rule.GESAMTBETRAG_NEGATIV
     }
 
     context("ABSCHLAGSRECHNUNG_OHNE_BETRAG (#214)") {
@@ -141,7 +141,7 @@ class CancellationRulesTest : FunSpec({
 
     test("ein Storno hat keine Fälligkeit") {
         // Es fordert nicht zur Zahlung auf, sondern kündigt eine Erstattung an.
-        CalculatedInvoice(storno(), config).dueDate shouldBe null
+        CalculatedInvoice(cancellation(), config).dueDate shouldBe null
     }
 
     context("was ein Storno nicht abrechnet, mahnt es auch nicht an") {
@@ -152,20 +152,20 @@ class CancellationRulesTest : FunSpec({
 
         test("die Sechs-Monats-Frist des §14 Abs. 2 UStG gilt dem Ausstellen, nicht dem Aufheben") {
             // Leistung endete im Januar, der Fehler fällt im September auf.
-            val spaetesStorno =
-                storno().copy(
+            val lateCancellation =
+                cancellation().copy(
                     issueDate = LocalDate.of(2026, 9, 12),
                     servicePeriod = ServicePeriod(LocalDate.of(2026, 1, 1), LocalDate.of(2026, 1, 31)),
                 )
 
-            CalculatedInvoice(spaetesStorno, config).rules() shouldNotContain Rule.RECHNUNG_SPAET
+            CalculatedInvoice(lateCancellation, config).rules() shouldNotContain Rule.RECHNUNG_SPAET
         }
 
         test("eine alternde Bestätigungsabfrage wird im Storno nicht gerügt") {
             // Das Storno wiederholt die Abfrage der Ursprungsrechnung; zu der
             // musste sie passen, nicht zum Storno.
-            val alteAbfrage =
-                storno(quantity = "-10").copy(
+            val oldCheck =
+                cancellation(quantity = "-10").copy(
                     issueDate = LocalDate.of(2026, 9, 12),
                     items = listOf(testItem(quantity = "-10", vatRate = "0", taxCategory = TaxCategory.REVERSE_CHARGE)),
                     customer =
@@ -188,7 +188,7 @@ class CancellationRulesTest : FunSpec({
                         ),
                 )
 
-            CalculatedInvoice(alteAbfrage, config).rules() shouldNotContain Rule.ABFRAGE_ALT
+            CalculatedInvoice(oldCheck, config).rules() shouldNotContain Rule.ABFRAGE_ALT
         }
     }
 })

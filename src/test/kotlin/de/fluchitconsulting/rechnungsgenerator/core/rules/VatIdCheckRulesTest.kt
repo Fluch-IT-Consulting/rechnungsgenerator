@@ -31,22 +31,22 @@ class VatIdCheckRulesTest : FunSpec({
 
     val config = testSellerConfig()
 
-    fun rechnung(
-        land: String,
-        kategorie: TaxCategory,
-        pruefung: VatIdCheck? = null,
+    fun invoice(
+        country: String,
+        category: TaxCategory,
+        vatIdCheck: VatIdCheck? = null,
         vatId: VatId? = VatId("ATU12345678"),
-    ) = testInvoice(items = listOf(testItem(vatRate = "0", taxCategory = kategorie))).copy(
+    ) = testInvoice(items = listOf(testItem(vatRate = "0", taxCategory = category))).copy(
         customer =
             Customer(
                 name = "Beispiel Software GmbH",
-                address = Address(street = "Industriestraße 1", postalCode = "1010", city = "Wien", countryCode = CountryCode(land)),
+                address = Address(street = "Industriestraße 1", postalCode = "1010", city = "Wien", countryCode = CountryCode(country)),
                 vatId = vatId,
-                vatIdCheck = pruefung,
+                vatIdCheck = vatIdCheck,
             ),
     )
 
-    val geprueft =
+    val checked =
         VatIdCheck(
             date = LocalDate.of(2026, 8, 1),
             method = CheckMethod.QUALIFIED,
@@ -54,12 +54,12 @@ class VatIdCheckRulesTest : FunSpec({
         )
 
     test("Reverse Charge in die EU ohne Nachweis wird abgelehnt") {
-        CalculatedInvoice(rechnung("AT", TaxCategory.REVERSE_CHARGE), config)
+        CalculatedInvoice(invoice("AT", TaxCategory.REVERSE_CHARGE), config)
             .messageOf(Rule.BESTAETIGUNGSABFRAGE_FEHLT) shouldContain "Bestätigungsabfrage"
     }
 
     test("Reverse Charge in die EU mit Nachweis geht durch") {
-        val totals = CalculatedInvoice(rechnung("AT", TaxCategory.REVERSE_CHARGE, geprueft), config)
+        val totals = CalculatedInvoice(invoice("AT", TaxCategory.REVERSE_CHARGE, checked), config)
 
         totals.hints().shouldBeEmpty()
     }
@@ -69,7 +69,7 @@ class VatIdCheckRulesTest : FunSpec({
         // verlangen, den es nicht geben kann, wäre keine Strenge, sondern falsch.
         val totals =
             CalculatedInvoice(
-                rechnung("CH", TaxCategory.REVERSE_CHARGE, vatId = VatId("CHE123456789")),
+                invoice("CH", TaxCategory.REVERSE_CHARGE, vatId = VatId("CHE123456789")),
                 config,
             )
 
@@ -78,44 +78,44 @@ class VatIdCheckRulesTest : FunSpec({
 
     test("innergemeinschaftliche Lieferung verlangt den Nachweis auch im Drittland-Fall") {
         // §6a UStG kennt hier keinen Spielraum.
-        CalculatedInvoice(rechnung("AT", TaxCategory.INTRA_COMMUNITY), config).rules() shouldContain
+        CalculatedInvoice(invoice("AT", TaxCategory.INTRA_COMMUNITY), config).rules() shouldContain
             Rule.BESTAETIGUNGSABFRAGE_FEHLT
     }
 
     test("eine Abfrage nach dem Rechnungsdatum belegt nichts") {
-        val spaeter = geprueft.copy(date = LocalDate.of(2026, 12, 1))
+        val later = checked.copy(date = LocalDate.of(2026, 12, 1))
 
-        CalculatedInvoice(rechnung("AT", TaxCategory.REVERSE_CHARGE, spaeter), config)
+        CalculatedInvoice(invoice("AT", TaxCategory.REVERSE_CHARGE, later), config)
             .messageOf(Rule.BESTAETIGUNGSABFRAGE_NACH_RECHNUNGSDATUM) shouldContain "nach dem Rechnungsdatum"
     }
 
     test("die einfache Abfrage wird angenommen, aber angemerkt") {
-        val einfach = geprueft.copy(method = CheckMethod.SIMPLE)
+        val simple = checked.copy(method = CheckMethod.SIMPLE)
 
-        val totals = CalculatedInvoice(rechnung("AT", TaxCategory.REVERSE_CHARGE, einfach), config)
+        val totals = CalculatedInvoice(invoice("AT", TaxCategory.REVERSE_CHARGE, simple), config)
 
         totals.messageOf(Rule.ABFRAGE_EINFACH) shouldContain "Vertrauensschutz"
     }
 
     test("eine Abfrage ohne Protokoll wird angemerkt") {
-        val ohneNachweis = geprueft.copy(reference = null)
+        val withoutReference = checked.copy(reference = null)
 
-        CalculatedInvoice(rechnung("AT", TaxCategory.REVERSE_CHARGE, ohneNachweis), config)
+        CalculatedInvoice(invoice("AT", TaxCategory.REVERSE_CHARGE, withoutReference), config)
             .messageOf(Rule.ABFRAGE_OHNE_NACHWEIS) shouldContain "kein Nachweis"
     }
 
     test("eine alte Abfrage wird angemerkt, aber nicht abgelehnt") {
-        val alt = geprueft.copy(date = LocalDate.of(2025, 1, 1))
+        val old = checked.copy(date = LocalDate.of(2025, 1, 1))
 
-        val totals = CalculatedInvoice(rechnung("AT", TaxCategory.REVERSE_CHARGE, alt), config)
+        val totals = CalculatedInvoice(invoice("AT", TaxCategory.REVERSE_CHARGE, old), config)
 
         totals.messageOf(Rule.ABFRAGE_ALT) shouldContain "Monate alt"
     }
 
     test("Griechenland zählt unter beiden Ländercodes zur EU") {
         // ISO 3166 kennt GR, die Umsatzsteuer-Systeme verwenden EL.
-        listOf("GR", "EL").forEach { land ->
-            CalculatedInvoice(rechnung(land, TaxCategory.REVERSE_CHARGE), config).rules() shouldContain
+        listOf("GR", "EL").forEach { country ->
+            CalculatedInvoice(invoice(country, TaxCategory.REVERSE_CHARGE), config).rules() shouldContain
                 Rule.BESTAETIGUNGSABFRAGE_FEHLT
         }
     }
@@ -126,7 +126,7 @@ class VatIdCheckRulesTest : FunSpec({
         // es diese Abfrage gar nicht. Sie zu verlangen wäre unerfüllbar.
         val totals =
             CalculatedInvoice(
-                rechnung("DE", TaxCategory.REVERSE_CHARGE, vatId = VatId("DE123456788")),
+                invoice("DE", TaxCategory.REVERSE_CHARGE, vatId = VatId("DE123456788")),
                 config,
             )
 
@@ -141,17 +141,17 @@ class VatIdCheckRulesTest : FunSpec({
         // Die Liste ist heute richtig und wird irgendwann still falsch. Ohne
         // Prüfung merkt das niemand, weil nichts kaputtgeht – es wird nur leise
         // die falsche Regel angewandt.
-        fun rechnungAm(datum: LocalDate) =
-            rechnung("CH", TaxCategory.REVERSE_CHARGE, vatId = VatId("CHE123456789")).copy(issueDate = datum)
+        fun invoiceOn(date: LocalDate) =
+            invoice("CH", TaxCategory.REVERSE_CHARGE, vatId = VatId("CHE123456789")).copy(issueDate = date)
 
         test("frische Liste erzeugt keinen Hinweis auf ihr Alter") {
-            val totals = CalculatedInvoice(rechnungAm(EuMemberStates.AS_OF.plusMonths(6)), config)
+            val totals = CalculatedInvoice(invoiceOn(EuMemberStates.AS_OF.plusMonths(6)), config)
 
             totals.rules() shouldNotContain Rule.EU_LISTE_ALT
         }
 
         test("ab zwölf Monaten wird zum Abgleich aufgefordert") {
-            val totals = CalculatedInvoice(rechnungAm(EuMemberStates.AS_OF.plusMonths(13)), config)
+            val totals = CalculatedInvoice(invoiceOn(EuMemberStates.AS_OF.plusMonths(13)), config)
 
             totals.messageOf(Rule.EU_LISTE_ALT) shouldContain "13 Monate alt"
         }
@@ -162,16 +162,16 @@ class VatIdCheckRulesTest : FunSpec({
             // Der Leistungszeitraum rückt mit dem Datum mit: Sonst meldete sich
             // der Hinweis auf eine späte Rechnung (§14 Abs. 2 UStG, #47), und
             // um den geht es hier nicht.
-            val datum = EuMemberStates.AS_OF.plusYears(5)
-            val inland =
+            val date = EuMemberStates.AS_OF.plusYears(5)
+            val domestic =
                 testInvoice().let {
                     it.copy(
-                        issueDate = datum,
-                        servicePeriod = it.servicePeriod.copy(start = datum.minusMonths(1), end = datum.minusDays(1)),
+                        issueDate = date,
+                        servicePeriod = it.servicePeriod.copy(start = date.minusMonths(1), end = date.minusDays(1)),
                     )
                 }
 
-            CalculatedInvoice(inland, config).hints().shouldBeEmpty()
+            CalculatedInvoice(domestic, config).hints().shouldBeEmpty()
         }
     }
 })

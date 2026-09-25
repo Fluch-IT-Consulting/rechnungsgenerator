@@ -29,7 +29,7 @@ class TaxCategoryRulesTest : FunSpec({
         // Kategorie nicht durchrutschen zu lassen: Wer eine ergänzt, ohne hier
         // eine Zeile hinzuzufügen, bekommt einen roten Test statt einer stillen
         // Vorgabe.
-        val erwartet =
+        val expected =
             mapOf(
                 TaxCategory.STANDARD to (false to VatIdConfirmation.NEVER),
                 TaxCategory.ZERO_RATED to (false to VatIdConfirmation.NEVER),
@@ -40,10 +40,10 @@ class TaxCategoryRulesTest : FunSpec({
                 TaxCategory.OUT_OF_SCOPE to (false to VatIdConfirmation.NEVER),
             )
 
-        erwartet.keys shouldBe TaxCategory.entries.toSet()
-        TaxCategory.entries.forEach { kategorie ->
-            withClue("${kategorie.code} (${kategorie.label})") {
-                (kategorie.requiresCustomerVatId to kategorie.vatIdConfirmation) shouldBe erwartet[kategorie]
+        expected.keys shouldBe TaxCategory.entries.toSet()
+        TaxCategory.entries.forEach { category ->
+            withClue("${category.code} (${category.label})") {
+                (category.requiresCustomerVatId to category.vatIdConfirmation) shouldBe expected[category]
             }
         }
     }
@@ -142,8 +142,8 @@ class TaxCategoryRulesTest : FunSpec({
         // und nicht zusätzlich, ob der Steuerbetrag null ist. Eine Kategorie
         // mit Grund und Steuer bräche diese Annahme – dann hier entscheiden,
         // nicht im Renderer.
-        TaxCategory.entries.filter { it.requiresReason }.forEach { kategorie ->
-            withClue("${kategorie.code} (${kategorie.label})") { kategorie.requiresZeroRate shouldBe true }
+        TaxCategory.entries.filter { it.requiresReason }.forEach { category ->
+            withClue("${category.code} (${category.label})") { category.requiresZeroRate shouldBe true }
         }
     }
 

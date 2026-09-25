@@ -90,11 +90,11 @@ class PriceTest : FunSpec({
             }
         }
         test("unlesbarer Preis nennt den Wert") {
-            val fehler =
+            val error =
                 shouldThrow<SerializationException> {
                     Yaml.default.decodeFromString(PriceSerializer, "neunzig")
                 }
-            fehler.message shouldContain "neunzig"
+            error.message shouldContain "neunzig"
         }
     }
 })

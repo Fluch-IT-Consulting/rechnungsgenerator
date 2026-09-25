@@ -22,26 +22,26 @@ import io.kotest.matchers.string.shouldContain
  */
 class InvoiceNumberRulesTest : FunSpec({
 
-    val ohneMuster = testSellerConfig()
-    val mitMuster = testSellerConfig(invoiceNumberPattern = InvoiceNumberPattern("R\\d{2}-\\d{3}"))
+    val withoutPattern = testSellerConfig()
+    val withPattern = testSellerConfig(invoiceNumberPattern = InvoiceNumberPattern("R\\d{2}-\\d{3}"))
 
     context("ohne Muster in den Stammdaten") {
         test("geht jede Nummer durch") {
             // Wer den Generator mit Nummern aus seiner Buchhaltung füttert, hat
             // ein anderes Format als R26-009.
-            CalculatedInvoice(testInvoice(number = "2026/Beratung/7"), ohneMuster).aborts().shouldBeEmpty()
+            CalculatedInvoice(testInvoice(number = "2026/Beratung/7"), withoutPattern).aborts().shouldBeEmpty()
         }
 
         test("eine leere Nummer wird trotzdem abgelehnt") {
             // Unabhängig vom Muster: Ohne Nummer gibt es keinen Jobnamen und
             // nichts, worauf eine Schlussrechnung oder ein Storno verweisen kann.
-            val message = CalculatedInvoice(testInvoice(number = ""), ohneMuster).messageOf(Rule.RECHNUNGSNUMMER_FEHLT)
+            val message = CalculatedInvoice(testInvoice(number = ""), withoutPattern).messageOf(Rule.RECHNUNGSNUMMER_FEHLT)
 
             message shouldContain "fehlt"
         }
 
         test("eine Nummer aus lauter Leerzeichen fehlt, sie trägt nicht bloß Leerraum") {
-            CalculatedInvoice(testInvoice(number = "   "), ohneMuster)
+            CalculatedInvoice(testInvoice(number = "   "), withoutPattern)
                 .rules()
                 .shouldContainOnlyRule(Rule.RECHNUNGSNUMMER_FEHLT)
         }
@@ -50,7 +50,7 @@ class InvoiceNumberRulesTest : FunSpec({
             // Nur ein gequoteter YAML-Wert kann ihn überhaupt tragen;
             // ungequotet schneidet YAML ihn selbst ab.
             val message =
-                CalculatedInvoice(testInvoice(number = " R26-001"), ohneMuster)
+                CalculatedInvoice(testInvoice(number = " R26-001"), withoutPattern)
                     .messageOf(Rule.RECHNUNGSNUMMER_MIT_LEERRAUM)
 
             message shouldContain "Leerraum"
@@ -62,7 +62,7 @@ class InvoiceNumberRulesTest : FunSpec({
             // Rechnung angenommen ist – mit weiteren Abbrüchen in der Datei
             // also erst im zweiten Lauf (ADR-0004, #150).
             val message =
-                CalculatedInvoice(testInvoice(number = "///"), ohneMuster)
+                CalculatedInvoice(testInvoice(number = "///"), withoutPattern)
                     .messageOf(Rule.RECHNUNGSNUMMER_OHNE_DATEINAMEN)
 
             message shouldContain "'///'"
@@ -72,12 +72,12 @@ class InvoiceNumberRulesTest : FunSpec({
 
     context("mit Muster in den Stammdaten") {
         test("eine passende Nummer geht durch") {
-            CalculatedInvoice(testInvoice(number = "R26-001"), mitMuster).aborts().shouldBeEmpty()
+            CalculatedInvoice(testInvoice(number = "R26-001"), withPattern).aborts().shouldBeEmpty()
         }
 
         test("eine unpassende Nummer wird abgelehnt, und die Meldung zeigt beides") {
             val message =
-                CalculatedInvoice(testInvoice(number = "2026-1"), mitMuster)
+                CalculatedInvoice(testInvoice(number = "2026-1"), withPattern)
                     .messageOf(Rule.RECHNUNGSNUMMER_PASST_NICHT)
 
             message shouldContain "'2026-1'"
@@ -89,7 +89,7 @@ class InvoiceNumberRulesTest : FunSpec({
         test("das Muster gilt für die ganze Nummer, auch ohne Anker") {
             // Regex.matches, nicht containsMatchIn: Sonst ließe ein Muster ohne
             // ^ und $ jede Nummer durch, die irgendwo eine passende Stelle hat.
-            CalculatedInvoice(testInvoice(number = "XR26-001Y"), mitMuster)
+            CalculatedInvoice(testInvoice(number = "XR26-001Y"), withPattern)
                 .rules()
                 .shouldContainOnlyRule(Rule.RECHNUNGSNUMMER_PASST_NICHT)
         }
@@ -97,7 +97,7 @@ class InvoiceNumberRulesTest : FunSpec({
         test("eine fehlende Nummer meldet nicht zusätzlich, dass sie nicht passt") {
             // Sie passt zu keinem Muster – das zu melden hieße, denselben
             // Fehler zweimal zu nennen.
-            CalculatedInvoice(testInvoice(number = ""), mitMuster)
+            CalculatedInvoice(testInvoice(number = ""), withPattern)
                 .rules()
                 .shouldContainOnlyRule(Rule.RECHNUNGSNUMMER_FEHLT)
         }
@@ -105,7 +105,7 @@ class InvoiceNumberRulesTest : FunSpec({
         test("eine Nummer ohne Dateinamen meldet nicht zusätzlich, dass sie nicht passt") {
             // Wie leer und Leerraum gilt das unabhängig vom Muster und wird
             // vorher geprüft: Es nennt die Ursache.
-            CalculatedInvoice(testInvoice(number = "///"), mitMuster)
+            CalculatedInvoice(testInvoice(number = "///"), withPattern)
                 .rules()
                 .shouldContainOnlyRule(Rule.RECHNUNGSNUMMER_OHNE_DATEINAMEN)
         }
@@ -114,7 +114,7 @@ class InvoiceNumberRulesTest : FunSpec({
             // Sie stammen aus früheren Rechnungen, womöglich aus der Zeit vor
             // einem Wechsel des Musters. Gegen das heutige geprüft, hielte eine
             // korrekte alte Nummer die Schlussrechnung auf.
-            val schlussrechnung =
+            val finalInvoice =
                 testInvoice(
                     number = "R26-001",
                     type = InvoiceType.FINAL,
@@ -122,7 +122,7 @@ class InvoiceNumberRulesTest : FunSpec({
                     prepayments = listOf(testPrepayment(invoiceNumber = "2024/Beratung/7")),
                 )
 
-            CalculatedInvoice(schlussrechnung, mitMuster).aborts().shouldBeEmpty()
+            CalculatedInvoice(finalInvoice, withPattern).aborts().shouldBeEmpty()
         }
     }
 })

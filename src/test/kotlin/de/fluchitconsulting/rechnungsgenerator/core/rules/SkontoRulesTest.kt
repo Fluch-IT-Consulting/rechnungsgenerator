@@ -25,9 +25,9 @@ class SkontoRulesTest : FunSpec({
     val config = testSellerConfig(paymentTermDays = 14)
 
     fun stufe(
-        satz: String,
-        tage: Int,
-    ) = SkontoTier(rate = Percent(satz), days = tage)
+        rate: String,
+        days: Int,
+    ) = SkontoTier(rate = Percent(rate), days = days)
 
     fun calculated(invoice: Invoice) = CalculatedInvoice(invoice, config)
 
@@ -52,49 +52,49 @@ class SkontoRulesTest : FunSpec({
     context("SKONTO_AUF_DIESER_ART_NICHT_MOEGLICH") {
         // Jede Stufe ist zusätzlich falsch: Auf der falschen Art bleibt es beim
         // einen Befund, wie bei den Angaben anderer Rechnungsarten (#97).
-        val falsch = listOf(stufe("2", 30))
+        val invalid = listOf(stufe("2", 30))
 
         test("auf der Abschlagsrechnung") {
-            skontoRules(testInvoice(type = InvoiceType.PREPAYMENT, skonto = falsch)) shouldBe
+            skontoRules(testInvoice(type = InvoiceType.PREPAYMENT, skonto = invalid)) shouldBe
                 listOf(Rule.SKONTO_AUF_DIESER_ART_NICHT_MOEGLICH)
         }
 
         test("auf der Schlussrechnung") {
-            val schlussrechnung =
+            val finalInvoice =
                 testInvoice(
                     type = InvoiceType.FINAL,
                     items = listOf(testItem(unitPrice = "20000.00")),
                     prepayments = listOf(testPrepayment()),
-                    skonto = falsch,
+                    skonto = invalid,
                 )
 
-            skontoRules(schlussrechnung) shouldBe listOf(Rule.SKONTO_AUF_DIESER_ART_NICHT_MOEGLICH)
+            skontoRules(finalInvoice) shouldBe listOf(Rule.SKONTO_AUF_DIESER_ART_NICHT_MOEGLICH)
         }
 
         test("auf der Stornorechnung") {
-            val storno =
+            val cancellation =
                 testInvoice(
                     type = InvoiceType.CANCELLATION,
                     items = listOf(testItem(quantity = "-1")),
                     cancelled = testCancelled(),
-                    skonto = falsch,
+                    skonto = invalid,
                 )
 
-            skontoRules(storno) shouldBe listOf(Rule.SKONTO_AUF_DIESER_ART_NICHT_MOEGLICH)
+            skontoRules(cancellation) shouldBe listOf(Rule.SKONTO_AUF_DIESER_ART_NICHT_MOEGLICH)
         }
 
         test("die Meldung nennt die Art") {
-            calculated(testInvoice(type = InvoiceType.PREPAYMENT, skonto = falsch))
+            calculated(testInvoice(type = InvoiceType.PREPAYMENT, skonto = invalid))
                 .messageOf(Rule.SKONTO_AUF_DIESER_ART_NICHT_MOEGLICH) shouldContain "Abschlagsrechnung"
         }
     }
 
     test("SKONTO_OHNE_ZAHLUNGSAUFFORDERUNG: bei Gesamtbetrag null, und nur dieser Befund") {
         // Ohne Zahlungsziel sagt "Frist nicht vor dem Zahlungsziel" nichts.
-        val nichtsZuZahlen =
+        val nothingToPay =
             testInvoice(items = listOf(testItem(quantity = "0")), skonto = listOf(stufe("2", 30)))
 
-        skontoRules(nichtsZuZahlen) shouldBe listOf(Rule.SKONTO_OHNE_ZAHLUNGSAUFFORDERUNG)
+        skontoRules(nothingToPay) shouldBe listOf(Rule.SKONTO_OHNE_ZAHLUNGSAUFFORDERUNG)
     }
 
     context("SKONTOFRIST_NICHT_VOR_ZAHLUNGSZIEL") {
@@ -144,9 +144,9 @@ class SkontoRulesTest : FunSpec({
     }
 
     context("SKONTOSATZ_UNGUELTIG") {
-        listOf("0", "-2", "100", "120", "2.125").forEach { satz ->
-            test("Satz $satz") {
-                skontoRules(testInvoice(skonto = listOf(stufe(satz, 7)))) shouldBe listOf(Rule.SKONTOSATZ_UNGUELTIG)
+        listOf("0", "-2", "100", "120", "2.125").forEach { rate ->
+            test("Satz $rate") {
+                skontoRules(testInvoice(skonto = listOf(stufe(rate, 7)))) shouldBe listOf(Rule.SKONTOSATZ_UNGUELTIG)
             }
         }
 

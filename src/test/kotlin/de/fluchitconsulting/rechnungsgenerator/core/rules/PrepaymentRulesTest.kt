@@ -57,9 +57,9 @@ class PrepaymentRulesTest : FunSpec({
         // Eine Meldung über das Datum spräche von einer Vereinnahmung, die es
         // auf diesem Dokument nicht geben kann (#97). Verglichen wird mit
         // derselben Rechnung ohne das Feld: Hinzukommen darf nur der eine Befund.
-        val ohne = CalculatedInvoice(testInvoice(), config)
-        val mit = CalculatedInvoice(testInvoice(receivedOn = LocalDate.of(2026, 8, 15)), config)
+        val absent = CalculatedInvoice(testInvoice(), config)
+        val present = CalculatedInvoice(testInvoice(receivedOn = LocalDate.of(2026, 8, 15)), config)
 
-        mit.rules() shouldContainExactlyInAnyOrder ohne.rules() + Rule.VEREINNAHMUNG_FALSCHE_ART
+        present.rules() shouldContainExactlyInAnyOrder absent.rules() + Rule.VEREINNAHMUNG_FALSCHE_ART
     }
 })

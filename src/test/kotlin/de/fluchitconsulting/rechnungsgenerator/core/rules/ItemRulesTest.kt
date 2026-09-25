@@ -42,19 +42,19 @@ class ItemRulesTest : FunSpec({
     }
 
     context("RABATT_AUSSERHALB_BEREICH") {
-        listOf("0", "-10", "100.01", "150").forEach { rabatt ->
-            test("ein Rabatt von $rabatt % wird abgelehnt") {
+        listOf("0", "-10", "100.01", "150").forEach { discount ->
+            test("ein Rabatt von $discount % wird abgelehnt") {
                 val message =
-                    messageFor(testInvoice(items = listOf(testItem(discount = rabatt))), Rule.RABATT_AUSSERHALB_BEREICH)
+                    messageFor(testInvoice(items = listOf(testItem(discount = discount))), Rule.RABATT_AUSSERHALB_BEREICH)
 
                 message shouldContain "Position 1"
                 message shouldContain "über 0% bis einschließlich 100%"
             }
         }
 
-        listOf("0.5", "30", "100").forEach { rabatt ->
-            test("ein Rabatt von $rabatt % bleibt zulässig") {
-                CalculatedInvoice(testInvoice(items = listOf(testItem(discount = rabatt))), config)
+        listOf("0.5", "30", "100").forEach { discount ->
+            test("ein Rabatt von $discount % bleibt zulässig") {
+                CalculatedInvoice(testInvoice(items = listOf(testItem(discount = discount))), config)
                     .aborts()
                     .shouldBeEmpty()
             }
@@ -66,9 +66,9 @@ class ItemRulesTest : FunSpec({
     // 100 %.
     context("RABATT_BETRAG_AUSSERHALB_BEREICH") {
         // Basis der Testposition: Menge 1 × 100,00.
-        listOf("0.00", "-10.00", "100.01", "150.00").forEach { rabatt ->
-            test("ein Rabattbetrag von $rabatt wird abgelehnt") {
-                val invoice = testInvoice(items = listOf(testItem(discountAmount = rabatt)))
+        listOf("0.00", "-10.00", "100.01", "150.00").forEach { discount ->
+            test("ein Rabattbetrag von $discount wird abgelehnt") {
+                val invoice = testInvoice(items = listOf(testItem(discountAmount = discount)))
 
                 val message = messageFor(invoice, Rule.RABATT_BETRAG_AUSSERHALB_BEREICH)
 
@@ -77,9 +77,9 @@ class ItemRulesTest : FunSpec({
             }
         }
 
-        listOf("0.01", "30.00", "100.00").forEach { rabatt ->
-            test("ein Rabattbetrag von $rabatt bleibt zulässig") {
-                CalculatedInvoice(testInvoice(items = listOf(testItem(discountAmount = rabatt))), config)
+        listOf("0.01", "30.00", "100.00").forEach { discount ->
+            test("ein Rabattbetrag von $discount bleibt zulässig") {
+                CalculatedInvoice(testInvoice(items = listOf(testItem(discountAmount = discount))), config)
                     .aborts()
                     .shouldBeEmpty()
             }

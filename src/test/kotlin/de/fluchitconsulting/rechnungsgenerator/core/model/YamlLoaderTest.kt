@@ -41,28 +41,28 @@ class YamlLoaderTest : FunSpec({
     }
 
     test("ein unbekanntes design bricht ab und nennt die bekannten") {
-        val fehler =
+        val error =
             shouldThrow<Exception> {
                 YamlLoader.parseSellerConfig(resource("stammdaten.yaml") + "design: gitter\n")
             }
 
-        fehler.message!! shouldContain "gitter"
-        fehler.message!! shouldContain "helsinki, prag"
+        error.message!! shouldContain "gitter"
+        error.message!! shouldContain "helsinki, prag"
     }
 
     test("balken und raster sind unbekannte Designs wie jeder andere Wert") {
         // Nachtrag zu ADR-0011: keine Zuordnung zu helsinki und prag, auch
         // keine Warnung – wer einen davon stehen hat, ändert die Zeile in den
         // Stammdaten.
-        listOf("balken", "raster").forEach { alt ->
-            withClue(alt) {
-                val fehler =
+        listOf("balken", "raster").forEach { old ->
+            withClue(old) {
+                val error =
                     shouldThrow<Exception> {
-                        YamlLoader.parseSellerConfig(resource("stammdaten.yaml") + "design: $alt\n")
+                        YamlLoader.parseSellerConfig(resource("stammdaten.yaml") + "design: $old\n")
                     }
 
-                fehler.message!! shouldContain "Unbekanntes Design"
-                fehler.message!! shouldContain alt
+                error.message!! shouldContain "Unbekanntes Design"
+                error.message!! shouldContain old
             }
         }
     }
@@ -200,13 +200,13 @@ class YamlLoaderTest : FunSpec({
         // Clikt prüft mit mustExist nur, dass es die Datei gibt. Ob sie lesbar
         // ist, zeigt sich erst hier. (Als root ist auch chmod 000 lesbar,
         // dieser Test schlüge dort fehl.)
-        val unlesbar = createTempDirectory("loader-test").resolve("unlesbar.yaml")
-        unlesbar.writeText(resource("rechnung.yaml"))
-        unlesbar.toFile().setReadable(false)
+        val unreadable = createTempDirectory("loader-test").resolve("unlesbar.yaml")
+        unreadable.writeText(resource("rechnung.yaml"))
+        unreadable.toFile().setReadable(false)
 
-        val failure = shouldThrow<InputFileException> { YamlLoader.loadInvoice(unlesbar) }
+        val failure = shouldThrow<InputFileException> { YamlLoader.loadInvoice(unreadable) }
 
-        failure.message!! shouldContain unlesbar.toString()
+        failure.message!! shouldContain unreadable.toString()
         failure.message!! shouldContain "keine Leseberechtigung"
     }
 
@@ -237,9 +237,9 @@ class YamlLoaderTest : FunSpec({
     context("logo") {
         // Stammdaten mit Logo-Eintrag in einem eigenen Verzeichnis; das Logo
         // liegt, wo der Test es hinlegt.
-        fun stammdatenMitLogo(eintrag: String): Path {
+        fun sellerConfigWithLogo(entry: String): Path {
             val file = createTempDirectory("loader-test").resolve("stammdaten.yaml")
-            file.writeText(resource("stammdaten.yaml") + "logo: $eintrag\n")
+            file.writeText(resource("stammdaten.yaml") + "logo: $entry\n")
             return file
         }
 
@@ -252,26 +252,26 @@ class YamlLoaderTest : FunSpec({
 
         test("ein relativer Pfad gilt ab dem Verzeichnis der Stammdaten") {
             // Nicht ab dem Arbeitsverzeichnis des Tests – das ist ein anderes.
-            val file = stammdatenMitLogo("marke/logo.tex")
-            val logoDatei = file.resolveSibling("marke").createDirectories().resolve("logo.tex")
-            logoDatei.writeText("\\fill (0,0) circle (1);")
+            val file = sellerConfigWithLogo("marke/logo.tex")
+            val logoFile = file.resolveSibling("marke").createDirectories().resolve("logo.tex")
+            logoFile.writeText("\\fill (0,0) circle (1);")
 
             val logo = YamlLoader.loadSellerConfig(file).logo!!
 
-            logo.source shouldBe logoDatei.toAbsolutePath()
+            logo.source shouldBe logoFile.toAbsolutePath()
             logo.content.decodeToString() shouldBe "\\fill (0,0) circle (1);"
         }
 
         test("ein absoluter Pfad gilt, wie er dasteht") {
-            val logoDatei = createTempDirectory("loader-logo").resolve("logo.tex")
-            logoDatei.writeText("\\fill (0,0) circle (1);")
+            val logoFile = createTempDirectory("loader-logo").resolve("logo.tex")
+            logoFile.writeText("\\fill (0,0) circle (1);")
 
-            YamlLoader.loadSellerConfig(stammdatenMitLogo(logoDatei.toAbsolutePath().toString())).logo!!.source shouldBe
-                logoDatei.toAbsolutePath()
+            YamlLoader.loadSellerConfig(sellerConfigWithLogo(logoFile.toAbsolutePath().toString())).logo!!.source shouldBe
+                logoFile.toAbsolutePath()
         }
 
         test("eine fehlende Logodatei nennt beide Dateien") {
-            val file = stammdatenMitLogo("gibtsnicht.tex")
+            val file = sellerConfigWithLogo("gibtsnicht.tex")
 
             val failure = shouldThrow<InputFileException> { YamlLoader.loadSellerConfig(file) }
 
@@ -282,7 +282,7 @@ class YamlLoaderTest : FunSpec({
 
         test("eine andere Endung als .tex bricht ab, bevor gelesen wird") {
             // Die Datei gibt es nicht einmal: Die Endung entscheidet vorher.
-            val file = stammdatenMitLogo("logo.png")
+            val file = sellerConfigWithLogo("logo.png")
 
             val failure = shouldThrow<InputFileException> { YamlLoader.loadSellerConfig(file) }
 
@@ -295,7 +295,7 @@ class YamlLoaderTest : FunSpec({
             // eine Datei Logo.TEX ist eine .tex-Datei. Weitergereicht wird die
             // Endung klein: Die Vorlage liest \input{logo}, und das findet
             // unter Linux nur logo.tex.
-            val file = stammdatenMitLogo("Logo.TEX")
+            val file = sellerConfigWithLogo("Logo.TEX")
             file.resolveSibling("Logo.TEX").writeText("\\fill (0,0) circle (1);")
 
             YamlLoader.loadSellerConfig(file).logo!!.extension shouldBe "tex"

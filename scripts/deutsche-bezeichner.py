@@ -56,6 +56,7 @@ TECHNICAL = set(
     padded arity neighbours website subcommand newcommand typesetter toolchain
     acc lua fixture fixtures stdout stderr stdin println runner prepayment
     prepayments setup builtin bytes handwritten newline enum whitespace
+    unbuildable
     rechnungsgenerator helsinki prag
     """.split()
 )

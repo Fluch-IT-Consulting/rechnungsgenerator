@@ -37,14 +37,14 @@ class EuMemberStatesTest : FunSpec({
     // Vorgabe ist scharf. `config(enabled = …)` überspringt den Test, statt ihn
     // grün zu melden – im Bericht steht er dann als übersprungen.
     test("die hinterlegte Liste ist höchstens sechs Monate alt")
-        .config(enabled = System.getenv(ALTERSPRUEFUNG) != "aus") {
-            val alter = ChronoUnit.MONTHS.between(EuMemberStates.AS_OF, LocalDate.now())
+        .config(enabled = System.getenv(AGE_CHECK_VARIABLE) != "aus") {
+            val age = ChronoUnit.MONTHS.between(EuMemberStates.AS_OF, LocalDate.now())
 
             withClue(
                 """
 
                 Die Liste der EU-Mitgliedstaaten wurde zuletzt am ${EuMemberStates.AS_OF} geprüft
-                und ist jetzt $alter Monate alt.
+                und ist jetzt $age Monate alt.
 
                 Dieser Test wird absichtlich mit der Zeit rot, ohne dass jemand Code geändert hat.
                 Das ist kein Defekt, sondern der Zweck: Die Liste entscheidet mit, ob eine Rechnung
@@ -59,15 +59,15 @@ class EuMemberStatesTest : FunSpec({
                      nichts geändert hat. Das Datum sagt "geprüft", nicht "geändert".
 
                 Nur wer bewusst einen älteren Stand baut (git bisect, Nachbau eines alten PDF),
-                überspringt diesen Test mit $ALTERSPRUEFUNG=aus.
+                überspringt diesen Test mit $AGE_CHECK_VARIABLE=aus.
 
                 """.trimIndent(),
             ) {
-                alter shouldBeLessThan 6L
+                age shouldBeLessThan 6L
             }
         }
 })
 
 // `const val` auf oberster Ebene: eine Konstante zur Übersetzungszeit, damit der
 // Name im Test und in seiner Meldung nicht zweimal getippt wird.
-private const val ALTERSPRUEFUNG = "EU_LISTE_ALTERSPRUEFUNG"
+private const val AGE_CHECK_VARIABLE = "EU_LISTE_ALTERSPRUEFUNG"
