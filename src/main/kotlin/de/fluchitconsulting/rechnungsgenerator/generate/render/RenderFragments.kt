@@ -31,7 +31,7 @@ internal fun summaryRow(label: String, amount: Money): Latex =
     Latex.raw("\n  ") +
         Latex.macro(
             TemplateMacro.ABSCHLUSSZEILE,
-            listOf(label.escapeLatex(), GermanFormat.amountWithCurrency(amount)),
+            listOf(label.escapeLatex(), Numbers.amount(amount)),
         )
 
 /**

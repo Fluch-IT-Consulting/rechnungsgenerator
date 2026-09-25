@@ -142,6 +142,19 @@ CV/Web-Auftritt des Autors), PDF/A-Prüfung über veraPDF.
   beiden Aufzählungen nicht haben, liest ADR-0017 und baut nicht am Renderer
   vorbei.
 
+- **Zahlen** (ADR-0021): Kotlin bestimmt die Ziffern, die Vorlage ihre
+  Schreibweise. `Numbers` reicht Beträge, Einzelpreise, Mengen und Sätze als
+  `\betrag{8337.50}`, `\menge{86.5}`, `\prozent{19}` durch – Punkt, keine
+  Gruppierung, `toPlainString()` und nie `toString()`, sonst läse siunitx
+  `1E+3` als Exponenten. Jede Vorlage setzt sie mit siunitx und übernimmt den
+  ganzen `\sisetup`-Block: Fehlt eine Einstellung, setzt siunitx still
+  etwas anderes, etwa `0,033.5` statt `0,0335`. Weil siunitx über amstext
+  `\frenchspacing` umdefiniert, legt jede Vorlage `\normalsfcodes` selbst
+  fest; sonst stünde im Fuß nach „USt-IdNr.“ der breite Satzabstand.
+  `GermanFormat` formatiert nur noch Daten. Den Vertrag „jede Ziffer, keine
+  weitere“ hält der `PflichtangabenTest` je Design am fertigen PDF, samt
+  `schreibweise-der-zahlen.yaml`.
+
 - **Texte mit Platzhaltern** (ADR-0010, ADR-0019): Der Pflichtsatz ist ein
   `TextTemplate<InvoiceVariable>`, beim Bau zerlegt – ein vertippter Name wirft,
   sobald `InvoiceType` geladen wird. Das `TextTemplate` kennt weder Format noch

@@ -15,7 +15,7 @@ import de.fluchitconsulting.rechnungsgenerator.core.text.VariableResolver
  * kommt nichts ins Dokument, das nicht einen der drei Wege genommen hat:
  *
  *  - [escapeLatex] für alles, was aus den YAML-Dateien stammt,
- *  - [GermanFormat] für Beträge, Sätze, Mengen und Daten,
+ *  - [GermanFormat] für Daten, [Numbers] für Beträge, Sätze und Mengen,
  *  - [raw] für Markup – die eine benannte Luke, absichtlich zählbar.
  *
  * `value class`: Zur Laufzeit bleibt es eine Zeichenkette, es entsteht kein

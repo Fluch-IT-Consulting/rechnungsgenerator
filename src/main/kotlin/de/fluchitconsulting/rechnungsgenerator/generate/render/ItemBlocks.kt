@@ -31,18 +31,18 @@ internal object ItemBlocks {
                     listOf(
                         "${index + 1}".escapeLatex(),
                         describeItem(item, calculatedInvoice.invoice.type),
-                        GermanFormat.quantity(item.quantity),
+                        Numbers.quantity(item.quantity),
                         item.unit.label.escapeLatex(),
-                        GermanFormat.priceWithCurrency(item.unitPrice),
+                        Numbers.price(item.unitPrice),
                         // In der Spalte steht, was vereinbart wurde: der Satz
                         // oder der Betrag, und der ohne Vorzeichen – das trägt
                         // im Storno die Menge.
                         when (val discount = item.discount) {
                             null -> Latex.EMPTY
-                            is Discount.Rate -> GermanFormat.percent(discount.rate)
-                            is Discount.Amount -> GermanFormat.amountWithCurrency(discount.amount)
+                            is Discount.Rate -> Numbers.percent(discount.rate)
+                            is Discount.Amount -> Numbers.amount(discount.amount)
                         },
-                        GermanFormat.amountWithCurrency(line.net),
+                        Numbers.amount(line.net),
                     ),
                 )
             }.joinToLatex(rowSeparator(TemplateMacro.POSITIONSTRENNER))
@@ -96,27 +96,25 @@ internal object ItemBlocks {
      */
     fun totalsBlock(calculatedInvoice: CalculatedInvoice): Latex =
         buildList {
-            add(Latex.macro(TemplateMacro.NETTOZEILE, listOf(GermanFormat.amountWithCurrency(calculatedInvoice.netTotal))))
+            add(Latex.macro(TemplateMacro.NETTOZEILE, listOf(Numbers.amount(calculatedInvoice.netTotal))))
             // §14 Abs. 4 Nr. 7 UStG verlangt das Entgelt je Steuersatz (#218).
             // Bei nur einer Gruppe ist es die Zwischensumme und stünde doppelt da;
             // sonst steht es in der Steuerzeile. Steuerfreie Gruppen zählen mit,
             // ihr Entgelt nennt taxNotes.
             val showsBase = calculatedInvoice.vatGroups.size > 1
             calculatedInvoice.vatGroups.filter { it.exemptionReason == null }.forEach { group ->
-                // Das Prozentzeichen ist maskiert, bevor es hier ankommt –
-                // GermanFormat.percent liefert ein fertiges Fragment.
-                val base = if (showsBase) GermanFormat.amountWithCurrency(group.base) else Latex.EMPTY
+                val base = if (showsBase) Numbers.amount(group.base) else Latex.EMPTY
                 add(
                     Latex.macro(
                         TemplateMacro.STEUERZEILE,
-                        listOf(GermanFormat.percent(group.rate), base, GermanFormat.amountWithCurrency(group.amount)),
+                        listOf(Numbers.percent(group.rate), base, Numbers.amount(group.amount)),
                     ),
                 )
             }
         }.map { Latex.raw("  ") + it }
             .joinToLatex(rowSeparator(TemplateMacro.SUMMENTRENNER)) +
             Latex.raw("\n  ") +
-            Latex.macro(TemplateMacro.GESAMTZEILE, listOf(GermanFormat.amountWithCurrency(calculatedInvoice.grossTotal)))
+            Latex.macro(TemplateMacro.GESAMTZEILE, listOf(Numbers.amount(calculatedInvoice.grossTotal)))
 
     /**
      * Der Pflichtsatz der Rechnungsart, unter den Summen. Ob eine Art einen hat
@@ -186,12 +184,12 @@ internal object ItemBlocks {
         val firstTier = stufen.first()
         val sentence =
             "Bei Zahlung bis\u00A0".escapeLatex() + deadline(firstTier) + " können ".escapeLatex() +
-                GermanFormat.percent(firstTier.rate) + " Skonto abgezogen werden".escapeLatex() +
+                Numbers.percent(firstTier.rate) + " Skonto abgezogen werden".escapeLatex() +
                 stufen
                     .drop(1)
                     .map { stufe ->
                         ", bei Zahlung bis\u00A0".escapeLatex() + deadline(stufe) + " ".escapeLatex() +
-                            GermanFormat.percent(stufe.rate)
+                            Numbers.percent(stufe.rate)
                     }.joinToLatex() +
                 ".".escapeLatex()
         return Latex.macro(TemplateMacro.HINWEISABSATZ, listOf(sentence))
@@ -218,7 +216,7 @@ internal object ItemBlocks {
             .mapNotNull { group ->
                 group.exemptionReason?.let { reason ->
                     val sentence =
-                        "Auf ".escapeLatex() + GermanFormat.amountWithCurrency(group.base) +
+                        "Auf ".escapeLatex() + Numbers.amount(group.base) +
                             " entfällt keine Umsatzsteuer: ".escapeLatex() + reason.escapeLatex() +
                             ".".escapeLatex()
                     Latex.macro(TemplateMacro.STEUERHINWEIS, listOf(sentence))
