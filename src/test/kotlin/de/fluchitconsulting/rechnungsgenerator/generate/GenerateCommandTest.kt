@@ -36,11 +36,10 @@ import kotlin.io.path.writeText
  * Prüft, was zwischen Einlesen und Ergebnis passiert: kopieren, ausgeben,
  * aufräumen, Exitcode setzen.
  *
- * Das war bis hierher die einzige größere Stelle ohne Test, weil jeder Lauf
- * LuaLaTeX und veraPDF vorausgesetzt hätte. Hinter der Naht steht jetzt ein
- * Adapter, der ein vorbereitetes PDF und ein vorbereitetes Prüfergebnis
- * liefert – der Weg davor bleibt echt, nur die beiden fremden Programme sind
- * ersetzt.
+ * Ohne die Naht [Typesetter] setzte jeder Lauf LuaLaTeX und veraPDF voraus.
+ * Hinter ihr steht hier ein Adapter, der ein vorbereitetes PDF und ein
+ * vorbereitetes Prüfergebnis liefert – der Weg davor bleibt echt, nur die
+ * beiden fremden Programme sind ersetzt.
  *
  * Aufgerufen wird über das Elternkommando, so wie ein Mensch es tut:
  * `rechnungsgenerator erzeuge …`. Die Ausgabe lässt sich trotzdem dort

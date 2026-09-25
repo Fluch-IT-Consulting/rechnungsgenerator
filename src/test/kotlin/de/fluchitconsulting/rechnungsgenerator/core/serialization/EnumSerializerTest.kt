@@ -8,10 +8,9 @@ import io.kotest.matchers.string.shouldContain
 import kotlinx.serialization.SerializationException
 
 /**
- * Der Fall, der dieses Werkzeug ausgelöst hat: Beim dritten Enum wich die Kopie
- * ab – die Map schlüsselte roh, nachgeschlagen wurde kleingeschrieben. Solange
- * alle Schreibweisen klein sind, ist das folgenlos, und kein Test der
- * Eingabeseite bemerkt es.
+ * Die Abweichung, die [CodeLookup] ausschließt: Schlüsselt die Map roh und wird
+ * kleingeschrieben nachgeschlagen, ist das folgenlos, solange alle
+ * Schreibweisen klein sind, und kein Test der Eingabeseite bemerkt es.
  *
  * Hier wird es bemerkt: Die Werte tragen absichtlich Großbuchstaben.
  */

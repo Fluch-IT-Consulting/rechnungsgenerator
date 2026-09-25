@@ -124,17 +124,16 @@ class ItemRulesTest : FunSpec({
         // Nicht RESTBETRAG_NEGATIV (#47): Seine Meldung spricht von abgesetzten
         // Abschlägen – bei einer Rechnung, die gar keine hat.
         message shouldNotContain "Abschläge"
-        // Und sie meldet sich auch nicht daneben: Seit alle Befunde erscheinen
+        // Und sie meldet sich auch nicht daneben: Weil alle Befunde erscheinen
         // (#49), fiele eine zweite, unsinnige Zeile sofort auf.
         calculatedInvoice.rules() shouldNotContain Rule.RESTBETRAG_NEGATIV
     }
 
     test("eine negative Korrekturzeile bleibt zulässig, solange der Gesamtbetrag es ist") {
-        // Negative Mengen waren in #47 offengelassen, mit dem Vermerk, die Frage
-        // hänge an Gutschrift und Storno. ADR-0006 hat sie beantwortet: Die
-        // negative Menge ist der von EN 16931 vorgesehene Weg zu einem
-        // negativen Betrag, weil BR-27 den negativen Einzelpreis verbietet.
-        // Einzeln bleibt sie damit zulässig, solange die Summe stimmt.
+        // Die negative Menge ist der von EN 16931 vorgesehene Weg zu einem
+        // negativen Betrag, weil BR-27 den negativen Einzelpreis verbietet
+        // (ADR-0006). Einzeln bleibt sie damit zulässig, solange die Summe
+        // stimmt.
         val invoice =
             testInvoice(items = listOf(testItem(unitPrice = "100.00"), testItem(quantity = "-1", unitPrice = "30.00")))
 

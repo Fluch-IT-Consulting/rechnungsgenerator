@@ -375,8 +375,8 @@ class CalculatedInvoiceTest : FunSpec({
         }
 
         test("Inland heißt das Land des Rechnungsstellers, nicht Deutschland") {
-            // Die Verwechslung, die im Renderer schon einmal stand: Für einen
-            // Rechnungssteller in Österreich ist ein Kunde in Wien Inland.
+            // Für einen Rechnungssteller in Österreich ist ein Kunde in Wien
+            // Inland.
             val calculated = between(seller = "AT", customer = "AT")
 
             calculated.isDomestic shouldBe true

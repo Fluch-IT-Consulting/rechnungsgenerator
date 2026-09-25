@@ -53,8 +53,8 @@ class NumbersTest : FunSpec({
     }
 
     /**
-     * Der Kern von #14: Feste Muster haben hier gerundet, ohne es zu sagen.
-     * Ein Einzelpreis von 0,00001 € wurde zu `0,00` – und dann stand auf der
+     * Der Kern von #14: Ein festes Muster rundete, ohne es zu sagen. Aus einem
+     * Einzelpreis von 0,00001 € würde `0,00` – und dann stünde auf der
      * Rechnung "10.000 zu 0,00 € = 0,10 €".
      */
     test("nichts wird stillschweigend gerundet") {
