@@ -1,0 +1,39 @@
+# Fiktive Schlussrechnung, deren vereinnahmte Abschläge den Gesamtbetrag genau
+# decken (#342): 20.000,00 € netto und 3.800,00 € Umsatzsteuer, abgesetzt
+# in zwei Abschlägen zu je 10.000,00 € und 1.900,00 €. Statt eines
+# Restbetrags von null steht ein Satz auf dem Blatt, und Zahlungsziel und
+# Bankverbindung entfallen, weil das Dokument kein Geld fordert.
+nummer: R26-048
+art: schlussrechnung
+datum: 2026-11-05
+leistungszeitraum:
+  von: 2026-06-01
+  bis: 2026-10-31
+kunde:
+  name: Beispiel Software GmbH
+  anschrift:
+    strasse: Industriestraße 1
+    plz: "90402"
+    ort: Nürnberg
+positionen:
+  - bezeichnung: Projekt Süd, Gesamtleistung
+    menge: 1
+    einheit: pauschal
+    einzelpreis: 20000.00
+abschlaege:
+  - rechnungsnummer: R26-015
+    rechnungsdatum: 2026-06-15
+    vereinnahmt-am: 2026-06-24
+    steueranteile:
+      - steuerkategorie: S
+        ust-satz: 19
+        netto: 10000.00
+        ust: 1900.00
+  - rechnungsnummer: R26-018
+    rechnungsdatum: 2026-08-20
+    vereinnahmt-am: 2026-09-02
+    steueranteile:
+      - steuerkategorie: S
+        ust-satz: 19
+        netto: 10000.00
+        ust: 1900.00

@@ -227,6 +227,36 @@ class PflichtangabenTest : FunSpec({
         }
     }
 
+    // Skonto (#342): §14 Abs. 4 Satz 1 Nr. 7 verlangt die im Voraus
+    // vereinbarte Minderung. Keine Rechnung einer Art trägt eines, deshalb
+    // eine eigene Datei, mit zwei Stufen.
+    for (design in designs) {
+        test("Skonto im Design ${design.name}: gültig, mit Satz und Frist jeder Stufe") {
+            val (calculated, _) = setzeUndPruefe("skonto", design, design.stammdaten, zielname = "${design.name}-skonto")
+
+            calculated.invoice.skonto.size shouldBe 2
+        }
+    }
+
+    // Eine Schlussrechnung, deren Abschläge den Gesamtbetrag genau decken
+    // (#342): Die Schlussrechnung der Arten hat einen Restbetrag, und ohne
+    // diese Datei entstünden der Satz statt der Null und der Wegfall von
+    // Zahlungsziel und Bankverbindung in keinem PDF.
+    for (design in designs) {
+        test("ausgeglichene Schlussrechnung im Design ${design.name}: gültig, ohne Zahlungsaufforderung") {
+            val (calculated, _) =
+                setzeUndPruefe(
+                    "schlussrechnung-ausgeglichen",
+                    design,
+                    design.stammdaten,
+                    zielname = "${design.name}-ausgeglichen",
+                )
+
+            calculated.prepayments.size shouldBe 2
+            calculated.remainingAmount.isZero() shouldBe true
+        }
+    }
+
     // Mehr Positionen, als auf eine Seite passen (#318, ADR-0020): Jede steht
     // auf dem Blatt, und das Blatt hat so viele Seiten, wie das Design für
     // diese Datei nennt. Was die Folgeseiten tragen, prüft `pruefe` an jeder
@@ -321,6 +351,10 @@ private class Blatt(
         angabe: String,
         vararg schreibweisen: String,
     ) = steht(seitenText[seite - 1], "$angabe auf Seite $seite", schreibweisen)
+
+    /** Die Seiten, auf denen eine der Schreibweisen vollständig steht. */
+    fun seitenMit(vararg schreibweisen: String): Set<Int> =
+        (1..seiten).filter { seite -> schreibweisen.any { normalize(it) in seitenText[seite - 1] } }.toSet()
 
     /** Die erste Seite, auf der die Angabe vollständig steht, oder null. */
     fun seiteMit(angabe: String): Int? = seitenText.indexOfFirst { normalize(angabe) in it }.takeIf { it >= 0 }?.plus(1)
@@ -486,6 +520,29 @@ private fun Blatt.pruefe(
         bankUeberschrift?.let { fehlt("Überschrift der Bankverbindung", it) }
     }
 
+    // §14 Abs. 4 Satz 1 Nr. 7: das im Voraus vereinbarte Skonto, je Stufe mit
+    // Satz und Frist. Die Frist rechnet der Test selbst, aus demselben Grund
+    // wie die Werte des Pflichtsatzes.
+    val skonto = invoice.skonto.map { stufe -> satz(stufe.rate) to datum(invoice.issueDate.plusDays(stufe.days.toLong())) }
+    skonto.forEach { (satz, frist) ->
+        steht("Skontosatz", *satz)
+        steht("Skontofrist", *frist)
+    }
+
+    // Decken die Abschläge den Gesamtbetrag genau, steht statt eines
+    // Restbetrags von null ein Satz da, und das Dokument fordert kein Geld.
+    // Das prüft der Test hier an den Beträgen und nicht erst an `dueDate`:
+    // Setzte das Programm ein Zahlungsziel, obwohl nichts offen ist, sähe der
+    // Zweig oben es als Forderung.
+    val ausgeglichen = calculated.prepayments.isNotEmpty() && calculated.remainingAmount.isZero()
+    if (ausgeglichen) {
+        steht("Satz zum ausgeglichenen Restbetrag", AUSGEGLICHEN)
+        fehlt("Beschriftung des Zahlungsziels", design.zahlungszielBeschriftung)
+        bankUeberschrift?.let { fehlt("Überschrift der Bankverbindung", it) }
+    } else {
+        fehlt("Satz zum ausgeglichenen Restbetrag", AUSGEGLICHEN)
+    }
+
     // Die Folgeseiten (ADR-0020): Jede trägt Rechnungsnummer, Datum und
     // Seitenzahl, damit eine lose Seite zu ihrer Rechnung findet, und den Fuß
     // des Briefbogens mit Anschrift, Register, USt-IdNr. und Bankverbindung.
@@ -552,15 +609,27 @@ private fun Blatt.pruefe(
             if (grundSeite != null) stehtAufSeite(grundSeite, "Entgelt beim Befreiungsgrund", betrag(gruppe.base))
         }
 
-        // Ebenso wenig der Pflichtsatz oder die Zahlungsfrist: Der Pflichtsatz
-        // steht ganz auf einer Seite, das Zahlungsziel auf der Seite seiner
+        // Ebenso wenig die übrigen fachlichen Sätze: Pflichtsatz und Satz zum
+        // ausgeglichenen Restbetrag stehen ganz auf einer Seite, das Skonto
+        // mit allen Stufen auf einer, das Zahlungsziel auf der Seite seiner
         // Beschriftung – in helsinki ist das die Kopfzeile, in prag der Anfang
-        // des Satzes. Skonto und den Satz zum ausgeglichenen Restbetrag
-        // erreicht keine Beispieldatei (#342).
+        // des Satzes.
         pflichtsatz?.let { schreibweisen ->
             withClue("Pflichtsatz steht auf keiner Seite vollständig: ${schreibweisen.first()}") {
                 schreibweisen.any { seiteMit(it) != null } shouldBe true
             }
+        }
+        if (ausgeglichen) {
+            withClue("Satz zum ausgeglichenen Restbetrag steht auf keiner Seite vollständig") {
+                (seiteMit(AUSGEGLICHEN) != null) shouldBe true
+            }
+        }
+        if (skonto.isNotEmpty()) {
+            val gemeinsam =
+                skonto
+                    .flatMap { (satz, frist) -> listOf(seitenMit(*satz), seitenMit(*frist)) }
+                    .reduce { a, b -> a intersect b }
+            withClue("Skonto steht nicht mit allen Stufen auf einer Seite") { gemeinsam.isNotEmpty() shouldBe true }
         }
         if (dueDate != null) {
             val fristSeite = seiteMit(design.zahlungszielBeschriftung)
@@ -576,6 +645,16 @@ private fun Blatt.pruefe(
         }
     }
 }
+
+/**
+ * Der Satz, der bei ausgeglichenem Restbetrag statt einer Zahl dasteht.
+ * Abgeschrieben und nicht aus `DeductionBlocks` gelesen: Ändert sich der
+ * Wortlaut, wird das Netz rot, und das ist eine Frage wie bei den
+ * Vergleichsdateien. Er ist ein Satz des Programms und keiner eines Designs,
+ * deshalb steht er hier und nicht in [Design].
+ */
+private const val AUSGEGLICHEN =
+    "Der Rechnungsbetrag ist durch die vereinnahmten Abschläge ausgeglichen; es verbleibt kein Restbetrag."
 
 // --- Schreibweisen ----------------------------------------------------------
 // Bewusst unabhängig von GermanFormat, siehe oben. Jede Funktion liefert alle
