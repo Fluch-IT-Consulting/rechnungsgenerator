@@ -22,18 +22,18 @@ import kotlin.io.path.createTempDirectory
  */
 class ExternalPdfAValidatorTest : FunSpec({
 
-    fun mitschnitt(name: String) = File("src/test/resources/werkzeugausgaben/$name").readText()
+    fun transcript(name: String) = File("src/test/resources/werkzeugausgaben/$name").readText()
 
     val pdf = createTempDirectory("pdfavalidator-test").resolve("rechnung.pdf")
 
-    fun pruefen(exitCode: Int, output: String, errorOutput: String = "") =
+    fun validate(exitCode: Int, output: String, errorOutput: String = "") =
         ExternalPdfAValidator(
             FakeProcessRunner(FakeProcessRunner.Run(exitCode, output, errorOutput)),
         ).validate(pdf)
 
     // Der einzige erfundene Bericht hier: Für ein konformes PDF gibt es keinen
     // Mitschnitt, weil dieser Fall im Integrationstest ohnehin echt vorkommt.
-    val konform =
+    val compliant =
         """<?xml version="1.0" encoding="utf-8"?>
         |<report><jobs><job><validationReport><details>
         |<rule status="passed" clause="6.1.2" testNumber="1">
@@ -54,13 +54,13 @@ class ExternalPdfAValidatorTest : FunSpec({
             |WARNING: Couldn't find expected endstream keyword(object key = 4 0 obj, offset = 327)
             """.trimMargin()
 
-        val result = pruefen(exitCode = 0, output = konform, errorOutput = log)
+        val result = validate(exitCode = 0, output = compliant, errorOutput = log)
 
         result.valid shouldBe true
     }
 
     test("Exitcode 0 heißt konform") {
-        val result = pruefen(exitCode = 0, output = konform)
+        val result = validate(exitCode = 0, output = compliant)
 
         result.valid shouldBe true
         result.violations.shouldBeEmpty()
@@ -70,7 +70,7 @@ class ExternalPdfAValidatorTest : FunSpec({
     test("Exitcode 1 ist ein Prüfergebnis, kein Fehler") {
         // veraPDF unterscheidet über den Exitcode: 1 heißt "nicht konform".
         // Das ist eine Antwort auf unsere Frage und kein Absturz.
-        val result = pruefen(exitCode = 1, output = mitschnitt("verapdf-nicht-konform.txt"))
+        val result = validate(exitCode = 1, output = transcript("verapdf-nicht-konform.txt"))
 
         result.valid shouldBe false
         // Der Bericht führt bestandene und verletzte Regeln; nur die verletzten
@@ -87,31 +87,31 @@ class ExternalPdfAValidatorTest : FunSpec({
         // veraPDF ist selbst eine Java-Anwendung und schreibt Warnungen auf
         // stderr; der Aufruf führt stderr und stdout zusammen, also stehen sie
         // vor dem Bericht. Ein Parser, der von vorne liest, bricht daran ab.
-        val roh = mitschnitt("verapdf-nicht-konform.txt")
-        roh.substringBefore("<?xml") shouldContain "WARNING"
+        val raw = transcript("verapdf-nicht-konform.txt")
+        raw.substringBefore("<?xml") shouldContain "WARNING"
 
-        pruefen(exitCode = 1, output = roh).violations shouldHaveSize 7
+        validate(exitCode = 1, output = raw).violations shouldHaveSize 7
     }
 
     test("ohne XML in der Ausgabe sagt die Meldung, was stattdessen kam") {
-        val fehler = shouldThrow<ToolchainException> { pruefen(exitCode = 1, output = "verapdf: command not found") }
+        val error = shouldThrow<ToolchainException> { validate(exitCode = 1, output = "verapdf: command not found") }
 
-        fehler.message!! shouldContain "command not found"
+        error.message!! shouldContain "command not found"
     }
 
     test("jeder andere Exitcode ist ein Abbruch des Werkzeugs") {
         // Alles außer 0 und 1 heißt: veraPDF selbst kam nicht klar, etwa weil
         // die Datei nicht lesbar war. Dann gibt es kein Prüfergebnis.
-        val fehler = shouldThrow<ToolchainException> { pruefen(exitCode = 3, output = "Can't read file") }
+        val error = shouldThrow<ToolchainException> { validate(exitCode = 3, output = "Can't read file") }
 
-        fehler.message!! shouldContain "Exitcode 3"
-        fehler.message!! shouldContain "Can't read file"
+        error.message!! shouldContain "Exitcode 3"
+        error.message!! shouldContain "Can't read file"
     }
 
     test("ein Verstoß beschreibt sich selbst") {
-        val verstoss = pruefen(exitCode = 1, output = mitschnitt("verapdf-nicht-konform.txt")).violations.first()
+        val violation = validate(exitCode = 1, output = transcript("verapdf-nicht-konform.txt")).violations.first()
 
-        verstoss.toString() shouldContain "ISO 19005-1"
+        violation.toString() shouldContain "ISO 19005-1"
     }
 
     /**
@@ -124,12 +124,12 @@ class ExternalPdfAValidatorTest : FunSpec({
      * und kennt es womöglich nicht einmal.
      */
     test("fehlt verapdf, nennt die Meldung das Programm und seinen Installationshinweis") {
-        val pruefer = ExternalPdfAValidator(FakeProcessRunner(missing = setOf("verapdf")))
+        val validator = ExternalPdfAValidator(FakeProcessRunner(missing = setOf("verapdf")))
 
-        val fehler = shouldThrow<ToolchainException> { pruefer.checkAvailable() }
+        val error = shouldThrow<ToolchainException> { validator.checkAvailable() }
 
-        fehler.message!! shouldContain "verapdf"
-        fehler.message!! shouldContain "brew install verapdf"
+        error.message!! shouldContain "verapdf"
+        error.message!! shouldContain "brew install verapdf"
     }
 
     test("ist verapdf da, meldet checkAvailable nichts") {

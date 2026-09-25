@@ -30,15 +30,15 @@ import kotlin.time.measureTime
  */
 class ExternalToolTest : FunSpec({
 
-    val arbeitsverzeichnis = createTempDirectory("externaltool-test")
+    val workDir = createTempDirectory("externaltool-test")
 
     test("ein Programm, das es nicht gibt, wird beim Namen genannt") {
-        val fehler =
+        val error =
             shouldThrow<ToolchainException> {
-                ExternalTool.run("gibt-es-nicht-lualatex", emptyList(), arbeitsverzeichnis)
+                ExternalTool.run("gibt-es-nicht-lualatex", emptyList(), workDir)
             }
 
-        fehler.message!! shouldContain "Programm nicht gefunden: gibt-es-nicht-lualatex"
+        error.message!! shouldContain "Programm nicht gefunden: gibt-es-nicht-lualatex"
     }
 
     /**
@@ -48,32 +48,32 @@ class ExternalToolTest : FunSpec({
      * Schreiben der Rechnung – `erzeuge` meldete ihn sonst als solchen (#300).
      */
     test("scheitert der Lauf an einer IOException, wird sie zur ToolchainException mit dem Programm") {
-        val gibtEsNicht = arbeitsverzeichnis.resolve("gibt-es-nicht")
+        val missing = workDir.resolve("gibt-es-nicht")
 
-        val fehler = shouldThrow<ToolchainException> { ExternalTool.run("true", emptyList(), gibtEsNicht) }
+        val error = shouldThrow<ToolchainException> { ExternalTool.run("true", emptyList(), missing) }
 
-        fehler.message!! shouldContain "true"
-        fehler.message!! shouldContain gibtEsNicht.toString()
+        error.message!! shouldContain "true"
+        error.message!! shouldContain missing.toString()
     }
 
     test("ein hängender Prozess wird nach der Zeitgrenze abgeräumt") {
-        lateinit var fehler: ToolchainException
+        lateinit var error: ToolchainException
 
-        val gebraucht =
+        val needed =
             measureTime {
-                fehler =
+                error =
                     shouldThrow<ToolchainException> {
-                        ExternalTool.run("sleep", listOf("10"), arbeitsverzeichnis, timeout = 1.seconds)
+                        ExternalTool.run("sleep", listOf("10"), workDir, timeout = 1.seconds)
                     }
             }
 
-        fehler.message!! shouldContain "sleep hat nach"
-        fehler.message!! shouldContain "nicht geantwortet und wurde abgebrochen"
+        error.message!! shouldContain "sleep hat nach"
+        error.message!! shouldContain "nicht geantwortet und wurde abgebrochen"
         // Der eigentliche Beweis: Es wurde nicht auf das Ende von sleep
         // gewartet. Ohne diese Zusicherung wäre der Test auch dann grün, wenn
         // die Zeitgrenze erst nach dem Prozessende griffe.
-        withClue("Der Aufruf kehrte erst nach $gebraucht zurück") {
-            gebraucht shouldBeLessThan 5.seconds
+        withClue("Der Aufruf kehrte erst nach $needed zurück") {
+            needed shouldBeLessThan 5.seconds
         }
     }
 
@@ -82,7 +82,7 @@ class ExternalToolTest : FunSpec({
             ExternalTool.run(
                 "printenv",
                 listOf("RECHNUNGSGENERATOR_TEST"),
-                arbeitsverzeichnis,
+                workDir,
                 environment = mapOf("RECHNUNGSGENERATOR_TEST" to "angekommen"),
             )
 
@@ -102,7 +102,7 @@ class ExternalToolTest : FunSpec({
             ExternalTool.run(
                 "sh",
                 listOf("-c", "echo nach-stdout; echo nach-stderr >&2"),
-                arbeitsverzeichnis,
+                workDir,
             )
 
         result.standardOutput.trim() shouldBe "nach-stdout"
@@ -118,14 +118,14 @@ class ExternalToolTest : FunSpec({
      * Name allein hilft niemandem weiter, der das Programm nicht kennt.
      */
     test("ein fehlendes Programm steht mit seinem Installationshinweis in der Meldung") {
-        val fehler =
+        val error =
             shouldThrow<ToolchainException> {
                 ExternalTool.requireAll("gibt-es-nicht-verapdf" to "brew install gibt-es-nicht")
             }
 
-        fehler.message!! shouldContain "Diese Programme fehlen im PATH:"
-        fehler.message!! shouldContain "gibt-es-nicht-verapdf"
-        fehler.message!! shouldContain "brew install gibt-es-nicht"
+        error.message!! shouldContain "Diese Programme fehlen im PATH:"
+        error.message!! shouldContain "gibt-es-nicht-verapdf"
+        error.message!! shouldContain "brew install gibt-es-nicht"
     }
 
     /**
@@ -135,7 +135,7 @@ class ExternalToolTest : FunSpec({
      * grün, wenn `requireAll` gar nicht erst nachsähe.
      */
     test("mehrere fehlende Programme stehen alle in der Meldung, ein vorhandenes nicht") {
-        val fehler =
+        val error =
             shouldThrow<ToolchainException> {
                 ExternalTool.requireAll(
                     "gibt-es-nicht-lualatex" to "brew install lualatex-attrappe",
@@ -144,9 +144,9 @@ class ExternalToolTest : FunSpec({
                 )
             }
 
-        fehler.message!! shouldContain "gibt-es-nicht-lualatex"
-        fehler.message!! shouldContain "gibt-es-nicht-verapdf"
-        fehler.message!! shouldNotContain "liegt auf jedem Rechner"
+        error.message!! shouldContain "gibt-es-nicht-lualatex"
+        error.message!! shouldContain "gibt-es-nicht-verapdf"
+        error.message!! shouldNotContain "liegt auf jedem Rechner"
     }
 
     test("sind alle Programme da, geschieht nichts") {
