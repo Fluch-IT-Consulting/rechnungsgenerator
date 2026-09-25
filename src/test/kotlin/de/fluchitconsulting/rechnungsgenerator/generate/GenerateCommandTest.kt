@@ -5,6 +5,7 @@ import com.github.ajalt.clikt.core.context
 import com.github.ajalt.clikt.core.parse
 import de.fluchitconsulting.rechnungsgenerator.RechnungsgeneratorCommand
 import de.fluchitconsulting.rechnungsgenerator.core.model.Root
+import de.fluchitconsulting.rechnungsgenerator.generate.render.Foundation
 import de.fluchitconsulting.rechnungsgenerator.generate.toolchain.BuiltInPdfAValidator
 import de.fluchitconsulting.rechnungsgenerator.generate.toolchain.ExternalPdfAValidator
 import de.fluchitconsulting.rechnungsgenerator.generate.toolchain.FakeTypesetter
@@ -473,19 +474,19 @@ class GenerateCommandTest : FunSpec({
 
             generate(fake, "-o", target("logo-prag"), sellerConfigFile = sellerConfigWithLogo("prag"))
 
-            fake.sources!!.files.keys shouldBe setOf("logo.tex")
+            fake.sources!!.files.keys shouldBe setOf(Foundation.FILE_NAME, "logo.tex")
             fake.sources!!
                 .files
                 .getValue("logo.tex")
                 .decodeToString() shouldBe logo.readText()
         }
 
-        test("helsinki übergeht das Logo und reicht keine Datei weiter") {
+        test("helsinki übergeht das Logo und reicht keine Datei dafür weiter") {
             val fake = FakeTypesetter()
 
             generate(fake, "-o", target("logo-helsinki"), sellerConfigFile = sellerConfigWithLogo("helsinki"))
 
-            fake.sources!!.files shouldBe emptyMap()
+            fake.sources!!.files.keys shouldBe setOf(Foundation.FILE_NAME)
         }
 
         test("scheitert der Satz, nennt die Meldung das Logo mit seinem Pfad") {

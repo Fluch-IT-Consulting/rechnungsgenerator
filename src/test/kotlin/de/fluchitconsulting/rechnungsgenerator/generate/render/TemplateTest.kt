@@ -15,14 +15,18 @@ private val required = TemplateValue.entries.filter { it.required } + TemplateVa
 // was er prüfen will.
 private val empty = TemplateValue.entries.associateWith { Latex.EMPTY }
 
-/** Die Definitionen aller Makros – bis auf die genannte Abweichung. */
+// Der Kopf jeder Vorlage: die Klasse und direkt danach die Grundlage.
+private val head = "\\documentclass{article}\n${Foundation.USAGE}\n"
+
+/** Der Kopf und die Definitionen aller Makros – bis auf die genannte Abweichung. */
 private fun macros(missing: TemplateMacro? = null, wrongArity: TemplateMacro? = null) =
-    TemplateMacro.entries
-        .filterNot { it == missing }
-        .joinToString("\n") { macro ->
-            val arity = if (macro == wrongArity) macro.arity + 1 else macro.arity
-            "\\newcommand{\\${macro.macroName}}[$arity]{}"
-        }
+    head +
+        TemplateMacro.entries
+            .filterNot { it == missing }
+            .joinToString("\n") { macro ->
+                val arity = if (macro == wrongArity) macro.arity + 1 else macro.arity
+                "\\newcommand{\\${macro.macroName}}[$arity]{}"
+            }
 
 /** Eine Vorlage mit allen Makros und genau diesen Platzhaltern. */
 private fun templateWith(placeholders: List<TemplateValue>) = macros() + "\n" + placeholders.joinToString("\n") { it.placeholder }
@@ -61,6 +65,31 @@ class TemplateTest : FunSpec({
         // den sie setzen muss.
         Design.entries.forEach { design ->
             withClue(design) { Template.of(design) }
+        }
+    }
+
+    context("Jede Vorlage lädt die Grundlage (ADR-0022)") {
+        val body = templateWith(required).removePrefix(head)
+
+        test("ohne sie wird die Vorlage abgelehnt") {
+            val error = shouldThrow<IllegalStateException> { Template.of("\\documentclass{article}\n$body") }
+
+            error.message!! shouldContain Foundation.USAGE
+        }
+
+        test("sie muss direkt nach der Klasse stehen, denn sie lädt pdfx") {
+            shouldThrow<IllegalStateException> {
+                Template.of("\\documentclass{article}\n\\usepackage{geometry}\n${Foundation.USAGE}\n$body")
+            }
+        }
+
+        test("Leerzeilen und Kommentarzeilen dazwischen zählen nicht, eine auskommentierte Grundlage aber auch nicht") {
+            Template.of("\\documentclass{article}\n\n%% Die Grundlage.\n${Foundation.USAGE}\n$body")
+            shouldThrow<IllegalStateException> { Template.of("\\documentclass{article}\n% ${Foundation.USAGE}\n$body") }
+        }
+
+        test("die Vorlage bringt die Grundlage als Datei mit") {
+            complete.files.keys shouldBe setOf(Foundation.FILE_NAME)
         }
     }
 

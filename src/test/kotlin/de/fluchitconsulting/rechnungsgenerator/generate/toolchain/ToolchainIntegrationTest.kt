@@ -167,8 +167,9 @@ class ToolchainIntegrationTest : FunSpec({
     /**
      * Eine Rechnung hat keine Lesezeichen, und das PDF sagt das auch (#321):
      * Mit Lesezeichen verlangte hyperref ohne Not einen weiteren Lauf, und
-     * `/UseOutlines` öffnete im Viewer eine leere Seitenleiste. Jedes Design,
-     * weil jede Vorlage pdfx selbst lädt.
+     * `/UseOutlines` öffnete im Viewer eine leere Seitenleiste. Jedes Design:
+     * pdfx lädt zwar die Grundlage, aber was eine Vorlage danach lädt, kann
+     * hyperref noch umstellen.
      */
     test("das PDF hat keine Lesezeichen und öffnet keine Lesezeichenleiste") {
         val pdfs = Design.entries.map { run.generate("rechnung", "lesezeichen-$it", sellerConfig = sellerConfigFor(it)).first }

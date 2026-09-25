@@ -13,8 +13,8 @@ import de.fluchitconsulting.rechnungsgenerator.generate.toolchain.PdfSources
  * einzige Kante von `generate.render` nach `generate.toolchain`.
  *
  * [includesLogo] sagt, ob ein Fehler im Satz am Logo liegen kann. Ausdrücklich
- * und nicht aus den Dateien geschlossen: Das ginge nur, solange das Logo die
- * einzige ist (#203).
+ * und nicht aus den Dateien geschlossen: Neben dem Logo liegt immer die
+ * Grundlage (#203).
  *
  * Keine `data class`, aus demselben Grund wie beim Logo: Ihr `equals` verglich
  * die `ByteArray`s nach Identität.

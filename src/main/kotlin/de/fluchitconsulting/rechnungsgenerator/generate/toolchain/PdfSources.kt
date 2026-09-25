@@ -13,8 +13,8 @@ import java.time.LocalDate
  * zweiter Lauf dasselbe Dokument ergibt.
  *
  * [files] sind weitere Quellen, die [tex] unter ihrem Namen einbindet – etwa
- * `logo.tex` (#198). Bytes und nicht Text, weil ein Bild später auch welche
- * ist.
+ * `grundlage.sty` und `logo.tex` (ADR-0022, #198). Bytes und nicht Text,
+ * weil ein Bild später auch welche ist.
  *
  * Nicht dabei: Arbeitsverzeichnis und Jobname. Beide sagen, *wohin* gesetzt
  * wird, nicht *woraus*, und sie bleiben Sache des Kommandos – es legt das

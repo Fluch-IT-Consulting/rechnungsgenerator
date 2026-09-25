@@ -1,0 +1,127 @@
+%% Die Grundlage jeder Vorlage (ADR-0022): was ein Design nicht anders setzen
+%% darf, und nichts sonst. Die Frage für jede Zeile: Wäre ein Design mit einer
+%% anderen Zeile falsch oder nur anders? Nur was falsch wäre, steht hier – dass
+%% eine Zeile in allen Vorlagen gleich steht, genügt nicht.
+%%
+%% Zwei Regeln, die Template.of prüft:
+%%  - Kein Platzhalter. Diese Datei ist für jede Rechnung dieselbe; was an der
+%%    Rechnung hängt, fragt die Vorlage.
+%%  - Kein Makro, das der Renderer aufruft (TemplateMacro). Die definiert die
+%%    Vorlage selbst, aus den Bausteinen hier, damit ihr Volltext jede
+%%    Definition enthält, die der Renderer aufruft.
+%%
+%% Geladen werden hier, und die Vorlage lädt sie nicht noch einmal: pdfx samt
+%% hyperref und xcolor, fontspec, siunitx, longtable, lastpage und refcount.
+\NeedsTeXFormat{LaTeX2e}
+\ProvidesPackage{grundlage}
+
+%% pdfx erzeugt das PDF/A-1b: XMP-Metadaten, OutputIntent mit sRGB-Profil und
+%% eingebettete Schriften. Es muss vor allem anderen geladen werden, deshalb
+%% lädt jede Vorlage die Grundlage direkt nach \documentclass. Die Metadaten
+%% kommen aus der .xmpdata-Datei neben der .tex.
+%%
+%% Ohne Lesezeichen, denn eine Rechnung hat keine. hyperref schriebe sonst
+%% eine leere .out-Datei, die im ersten Lauf als geändert gilt, weil es sie
+%% vorher nicht gab – ein Grund für einen zweiten Lauf, der keiner ist –, und
+%% das PDF wiese den Viewer an, eine leere Lesezeichenleiste zu öffnen (#321).
+%% Als Ladeoption: Ein \hypersetup nach pdfx kommt für bookmarks zu spät.
+%%
+%% xcolor lädt pdfx selbst. Eine Vorlage, die es mit Optionen noch einmal
+%% lädt, bekommt einen "Option clash".
+\PassOptionsToPackage{bookmarks=false}{hyperref}
+\RequirePackage[a-1b]{pdfx}
+
+%% Ligatures=TeXOff: fontspec zieht sonst Folgen wie "--", "<<" oder zwei
+%% Hochkommas zu einem Zeichen zusammen (Strich, Guillemet,
+%% Anführungszeichen). Keine Vorlage braucht das, sie schreiben keine dieser
+%% Folgen; getroffen hätte es nur Text aus den Eingabedaten, und der soll so
+%% dastehen, wie er in der YAML-Datei steht. In escapeLatex aufbrechen geht
+%% nicht: Nachgemessen trennt LuaLaTeX die Ligatur weder bei "-{}-" noch bei
+%% "{<}{<}". Die Schriftligaturen (fi, fl) bleiben, sie ändern keinen Text (#81).
+%%
+%% Mit den Familien in eckigen Klammern: fontspec.cfg legt Ligatures=TeX eigens
+%% für \rmfamily und \sffamily fest, und die Vorgabe der Familie schlägt die
+%% allgemeine. Ohne sie übersetzt die Zeile klaglos und wirkt nicht. Sie gilt
+%% für jedes \setmainfont und \setsansfont danach.
+\RequirePackage{fontspec}
+\defaultfontfeatures[\rmfamily,\sffamily]{Ligatures=TeXOff}
+
+%% Zahlen setzt siunitx (ADR-0021). Der Renderer liefert nur die Ziffern, als
+%% \betrag{8337.50}, \menge{86.5} oder \prozent{19} – mit Punkt, ohne
+%% Gruppierung. Wie sie aussehen, wählt die Vorlage mit ihrem eigenen
+%% \sisetup: output-decimal-marker, group-separator, group-minimum-digits.
+%%
+%% Hier stehen die Einstellungen, ohne die siunitx still eine falsche Zahl
+%% setzt:
+%%  - mode=text: sonst kämen die Ziffern aus der Mathematikschrift und nicht
+%%    aus der des Designs. pdftotext liest dann dieselben Zeichen, nur die
+%%    Schrift ist Computer Modern.
+%%  - group-digits=integer: Nach dem Komma wird nie getrennt, weder durch
+%%    einen Punkt noch durch Leerraum – sonst stünde 0,033.5 oder 0,033 5 für
+%%    0,0335 da. Die Ziffern hinter dem Komma trägt Price, als eine Folge.
+%%  - reset-text-...=false: sonst fiele eine Zahl in einer fetten Zeile aus
+%%    dem Fettdruck.
+%% round-mode=none ist die Vorgabe und steht trotzdem da: Beim Setzen wird
+%% nie gerundet, sonst ließe sich die Rechnung nicht nachrechnen (#14).
+%% Das Minus setzt siunitx in mode=text als \textminus, also U+2212 (#320).
+\RequirePackage{siunitx}
+\sisetup{
+  mode              = text,
+  group-digits      = integer,
+  round-mode        = none,
+  reset-text-series = false,
+  reset-text-shape  = false,
+  reset-text-family = false,
+}
+
+%% Satzabstand: Nach Punkt, Doppelpunkt und Komma steht der gewöhnliche
+%% Wortzwischenraum, nicht der breitere englische (#143). Von sich aus hielte
+%% TeX jeden Punkt nach einem Kleinbuchstaben oder einer Ziffer für ein
+%% Satzende – "Dr. Erika", "14. August", "USt-IdNr. DE" –, und aus den
+%% Eingabedaten lässt sich nicht ablesen, wo ein Satz wirklich endet. Den
+%% breiten Abstand bekommen nur die eigenen Sätze des Programms, siehe
+%% \programmsatz.
+\frenchspacing
+%% Auch in Kopf und Fuß der Seite. Die setzt LaTeX in der Ausgaberoutine mit
+%% \normalsfcodes, und ob das \frenchspacing ist, entscheidet \begin{document}
+%% daran, ob der Punkt den \sfcode 1000 trägt. amsgen, das siunitx über
+%% amstext lädt, setzt ihn in \frenchspacing auf 1006, damit \@addpunct ein
+%% Satzzeichen erkennt – dann hielte LaTeX das für \nonfrenchspacing, und im
+%% Fuß stünde nach "USt-IdNr." wieder der breite Abstand (#353). Deshalb nach
+%% siunitx.
+\let\normalsfcodes\frenchspacing
+
+%% Die eigenen Sätze des Programms: nur in ihnen steht nach einem Satzende der
+%% breitere Abstand (#143) – nach . ? !, aber nicht nach : ; , – das sind nie
+%% Satzenden. Die Gruppe hält das auf das Argument beschränkt. Eingabedaten
+%% gehören deshalb nicht hier hinein: Eine Abkürzung wie "Dr." bekäme sonst
+%% wieder den breiten Abstand.
+\newcommand{\programmsatz}[1]{{\nonfrenchspacing\sfcode`\:=1000 \sfcode`\;=1000 \sfcode`\,=1000 #1}}
+
+%% Ein Absatz, der nicht über zwei Seiten bricht (ADR-0020): Eine Seite, die
+%% mit "gezahlter Betrag wird erstattet." beginnt, hat den Anfang verloren.
+%% Deshalb endet der Absatz im Makro, und dort gilt \interlinepenalty – die
+%% Strafe zählt, wenn der Absatz gebrochen wird, nicht wenn er beginnt.
+%% Allein der Zusammenhalt und kein Satzabstand, damit auch ein Satz aus den
+%% Eingabedaten ihn bekommt, ohne den breiten Abstand von \programmsatz.
+\newcommand{\ungeteilt}[1]{{\interlinepenalty=10000 #1\par}}
+
+%% Setzt sein Argument nur auf einer Seite, der eine weitere folgt – für den
+%% Fortsetzungshinweis (ADR-0020); was er sagt und wo er steht, entscheidet die
+%% Vorlage. Er gehört zur Seite und nicht zur Tabelle: Passen Positionen und
+%% Summen auf eine Seite, der Rest aber nicht, bricht die Tabelle gar nicht
+%% um, und die Seite braucht ihn trotzdem. Beim ersten Lauf kennt LaTeX die
+%% letzte Seite noch nicht, die Zahl ist 0, und der Hinweis fehlt – den
+%% zweiten Lauf verlangt die neue Marke LastPage ohnehin.
+\RequirePackage{lastpage}
+\RequirePackage{refcount}
+\newcommand{\wennweitereseite}[1]{\ifnum\value{page}<\getpagerefnumber{LastPage}\relax #1\fi}
+
+%% Die Positionen brechen über Seiten um (ADR-0020), mit longtable.
+%% LTchunksize so groß, dass jede Rechnung ein Block ist: Dann misst longtable
+%% die Spalten über alle Positionen auf einmal, und sie sind auf jeder Seite
+%% gleich breit, schon im ersten Lauf.
+\RequirePackage{longtable}
+\setcounter{LTchunksize}{10000}
+
+\endinput

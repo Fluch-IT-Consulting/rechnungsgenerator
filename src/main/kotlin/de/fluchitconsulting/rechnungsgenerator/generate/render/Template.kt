@@ -3,12 +3,12 @@ package de.fluchitconsulting.rechnungsgenerator.generate.render
 import de.fluchitconsulting.rechnungsgenerator.core.values.Design
 
 // Ein Platzhalter der Vorlage: <<GROSSGESCHRIEBEN>>.
-private val PLACEHOLDER = Regex("<<([A-Z_]+)>>")
+internal val PLACEHOLDER = Regex("<<([A-Z_]+)>>")
 
 /**
- * Eine geprüfte Vorlage: ohne Kommentarzeilen, mit jedem Makro, das der
- * Renderer aufruft, und jedem Platzhalter, den keine Vorlage weglassen darf
- * (#201).
+ * Eine geprüfte Vorlage: ohne Kommentarzeilen, mit der [Foundation] als erstem
+ * Paket, mit jedem Makro, das der Renderer aufruft, und jedem Platzhalter, den
+ * keine Vorlage weglassen darf (#201).
  *
  * Derselbe Zug wie bei der `AcceptedInvoice`: Was ungeprüft ist, lässt sich
  * nicht bauen. Der Konstruktor ist privat, gebaut wird über [of], und dort
@@ -30,6 +30,13 @@ class Template private constructor(
      * Kommentarzeile steht, zählt nicht – die ist schon gestrichen.
      */
     fun uses(value: TemplateValue): Boolean = value.placeholder in source
+
+    /**
+     * Die Dateien, die jede Vorlage neben ihrer `.tex` braucht: die
+     * [Foundation]. Dass die Vorlage sie lädt, prüft der Bau.
+     */
+    val files: Map<String, ByteArray>
+        get() = mapOf(Foundation.FILE_NAME to Foundation.BUILT_IN.content)
 
     /**
      * Setzt die Werte in die Vorlage – und prüft vorher, dass jeder Platzhalter
@@ -117,33 +124,33 @@ class Template private constructor(
          */
         fun of(source: String): Template {
             val withoutComments = withoutCommentLines(source)
+            checkFoundation(withoutComments)
             checkMacros(withoutComments)
             checkPlaceholders(withoutComments)
             return Template(withoutComments)
         }
 
         /**
-         * Streicht die Kommentarzeilen der Vorlage – jede Zeile, deren erstes
-         * Zeichen nach Leerraum ein `%` ist, samt ihrem Zeilenende (#149).
+         * Prüft, dass die Vorlage die [Foundation] lädt, und zwar in der Zeile
+         * direkt nach `\documentclass`: Die Grundlage lädt pdfx, und das muss
+         * vor allem anderen stehen.
          *
-         * Die Kommentare erklären die Vorlage, im erzeugten `.tex` liest sie
-         * niemand. Blieben sie stehen, machte eine geänderte Kommentarzeile jede
-         * Vergleichsdatei rot, und Inhaltstests fänden Wörter aus den Kommentaren.
-         *
-         * Für TeX ändert sich nichts: Eine Kommentarzeile verschluckt ihr eigenes
-         * Zeilenende, und Leerraum am Zeilenanfang überliest TeX ohnehin.
-         * Nachgestellte Kommentare bleiben dagegen stehen – ein `%` am Zeilenende
-         * unterdrückt in einer Makrodefinition den Zwischenraum, und `\%` ist gar
-         * keiner. Das zu unterscheiden, bräuchte einen LaTeX-Parser. Aus demselben
-         * Grund bleiben die Leerzeilen, die zwischen gestrichenen Blöcken
-         * zusammenrücken: Zwei Leerzeilen sind für TeX dasselbe wie eine, aber das
-         * wäre eine zweite Umformung mit eigener Begründung.
+         * Ohne die Prüfung übersetzte eine Vorlage ohne Grundlage weiter, und
+         * nur manches fiele auf – `\ungeteilt` als unbekanntes Makro. Das
+         * Rundungsverbot von siunitx fehlte dagegen einfach (ADR-0022).
          */
-        private fun withoutCommentLines(source: String): String =
-            source
-                .lines()
-                .filterNot { it.trimStart().startsWith("%") }
-                .joinToString("\n")
+        private fun checkFoundation(source: String) {
+            val afterClass =
+                source
+                    .lines()
+                    .dropWhile { !it.startsWith("\\documentclass") }
+                    .drop(1)
+                    .firstOrNull { it.isNotBlank() }
+            check(afterClass?.trim() == Foundation.USAGE) {
+                "Die Vorlage lädt die Grundlage nicht direkt nach \\documentclass. Die erste Zeile danach muss " +
+                    "${Foundation.USAGE} sein, denn die Grundlage lädt pdfx."
+            }
+        }
 
         /**
          * Prüft, dass die Vorlage jedes Makro kennt, das der Renderer aufruft – und
@@ -202,3 +209,28 @@ class Template private constructor(
         }
     }
 }
+
+/**
+ * Streicht die Kommentarzeilen – jede Zeile, deren erstes Zeichen nach
+ * Leerraum ein `%` ist, samt ihrem Zeilenende (#149). Die [Foundation] wird
+ * nur so geprüft und behält ihre Kommentare, sie steht in keiner
+ * Vergleichsdatei.
+ *
+ * Die Kommentare erklären die Vorlage, im erzeugten `.tex` liest sie
+ * niemand. Blieben sie stehen, machte eine geänderte Kommentarzeile jede
+ * Vergleichsdatei rot, und Inhaltstests fänden Wörter aus den Kommentaren.
+ *
+ * Für TeX ändert sich nichts: Eine Kommentarzeile verschluckt ihr eigenes
+ * Zeilenende, und Leerraum am Zeilenanfang überliest TeX ohnehin.
+ * Nachgestellte Kommentare bleiben dagegen stehen – ein `%` am Zeilenende
+ * unterdrückt in einer Makrodefinition den Zwischenraum, und `\%` ist gar
+ * keiner. Das zu unterscheiden, bräuchte einen LaTeX-Parser. Aus demselben
+ * Grund bleiben die Leerzeilen, die zwischen gestrichenen Blöcken
+ * zusammenrücken: Zwei Leerzeilen sind für TeX dasselbe wie eine, aber das
+ * wäre eine zweite Umformung mit eigener Begründung.
+ */
+internal fun withoutCommentLines(source: String): String =
+    source
+        .lines()
+        .filterNot { it.trimStart().startsWith("%") }
+        .joinToString("\n")
