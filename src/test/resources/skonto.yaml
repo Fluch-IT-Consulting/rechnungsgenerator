@@ -1,0 +1,26 @@
+# Fiktive Rechnung mit zwei Skontostufen (#342): §14 Abs. 4 Satz 1 Nr. 7 UStG
+# verlangt die im Voraus vereinbarte Minderung auf dem Blatt. Die Stufen
+# stehen absichtlich nicht nach Frist sortiert, und eine hat einen Satz mit
+# Nachkommastelle.
+nummer: R26-047
+datum: 2026-08-14
+leistungszeitraum:
+  von: 2026-07-01
+  bis: 2026-07-31
+kunde:
+  name: Beispiel Software GmbH
+  anschrift:
+    strasse: Industriestraße 1
+    plz: "90402"
+    ort: Nürnberg
+skonto:
+  - satz: 1.5
+    tage: 10
+  - satz: 2
+    tage: 7
+positionen:
+  - bezeichnung: IT-Beratungsleistungen
+    beschreibung: Rahmenvertrag vom 01.02.2026
+    menge: 40
+    einheit: Std.
+    einzelpreis: 95.00
