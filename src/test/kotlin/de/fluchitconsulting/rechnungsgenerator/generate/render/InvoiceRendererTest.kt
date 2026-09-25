@@ -59,9 +59,9 @@ class InvoiceRendererTest : FunSpec({
 
     // Das Beispiellogo aus den Testressourcen. Der Pfad ist nur ein Name –
     // gelesen hat der Test die Datei selbst, wie sonst YamlLoader.
-    val beispielLogo = Logo(Path.of("logo.tex"), resource("logo.tex").toByteArray())
+    val exampleLogo = Logo(Path.of("logo.tex"), resource("logo.tex").toByteArray())
 
-    fun renderMit(vararg items: de.fluchitconsulting.rechnungsgenerator.core.model.LineItem): String {
+    fun renderWith(vararg items: de.fluchitconsulting.rechnungsgenerator.core.model.LineItem): String {
         val invoice = testInvoice(items = items.toList())
         return InvoiceRenderer.render(CalculatedInvoice(invoice, config).accepted()).sources.tex
     }
@@ -72,14 +72,14 @@ class InvoiceRendererTest : FunSpec({
      * Vorlage, also in jedem gesetzten Text. Ob eine Angabe dasteht, zeigt
      * deshalb ihr Wert: leer oder nicht.
      */
-    fun wert(
+    fun valueOf(
         key: TemplateValue,
         invoice: Invoice = testInvoice(),
-        stammdaten: SellerConfig = config,
-    ): String = InvoiceRenderer.values(CalculatedInvoice(invoice, stammdaten).accepted()).getValue(key).tex
+        sellerConfig: SellerConfig = config,
+    ): String = InvoiceRenderer.values(CalculatedInvoice(invoice, sellerConfig).accepted()).getValue(key).tex
 
     test("eine Position ohne Zusatzangaben bleibt einzeilig") {
-        val tex = renderMit(testItem())
+        val tex = renderWith(testItem())
 
         tex shouldContain "Testposition"
         // Kein Umbruch, keine zweite Zeile: Die schlichte Position soll
@@ -92,14 +92,14 @@ class InvoiceRendererTest : FunSpec({
     test("jede Position trägt ihre laufende Nummer, beginnend bei 1") {
         // Das erste Argument von \positionszeile. Ob ein Design sie setzt,
         // entscheidet die Vorlage; helsinki setzt sie nicht (#188).
-        val tex = renderMit(testItem().copy(name = "Erste"), testItem().copy(name = "Zweite"))
+        val tex = renderWith(testItem().copy(name = "Erste"), testItem().copy(name = "Zweite"))
 
         tex shouldContain "\\positionszeile{1}{Erste}"
         tex shouldContain "\\positionszeile{2}{Zweite}"
     }
 
     test("die Beschreibung wird zur zweiten Zeile, klein und gedämpft") {
-        val tex = renderMit(testItem(description = "Rahmenvertrag vom 01.02.2026"))
+        val tex = renderWith(testItem(description = "Rahmenvertrag vom 01.02.2026"))
 
         // Wie die zweite Zeile aussieht, steht in der Vorlage; hier wird
         // geprüft, was hineingeht (#51).
@@ -107,7 +107,7 @@ class InvoiceRendererTest : FunSpec({
     }
 
     test("Beschreibung und Hinweis stehen zusammen in der zweiten Zeile") {
-        val tex = renderMit(testItem(description = "Arbeitspaket Nord", note = "Abschlag September 2026"))
+        val tex = renderWith(testItem(description = "Arbeitspaket Nord", note = "Abschlag September 2026"))
 
         tex shouldContain "Arbeitspaket Nord · Abschlag September 2026"
     }
@@ -120,13 +120,13 @@ class InvoiceRendererTest : FunSpec({
                 servicePeriod = ServicePeriod(LocalDate.of(2026, 6, 1), LocalDate.of(2026, 6, 30)),
             )
 
-        renderMit(item) shouldContain "Arbeitspaket Nord · Zeitraum: Juni 2026"
+        renderWith(item) shouldContain "Arbeitspaket Nord · Zeitraum: Juni 2026"
     }
 
     test("Sonderzeichen werden auch in den Zusatzfeldern maskiert") {
         // Ein nacktes & beendet in LaTeX die Tabellenspalte, ein % den Rest der
         // Zeile. Beides würde den Satz zerlegen, nicht bloß hässlich aussehen.
-        val tex = renderMit(testItem(description = "Meier & Söhne", note = "50 % Anzahlung"))
+        val tex = renderWith(testItem(description = "Meier & Söhne", note = "50 % Anzahlung"))
 
         tex shouldContain "Meier \\& Söhne · 50 \\% Anzahlung"
     }
@@ -190,7 +190,7 @@ class InvoiceRendererTest : FunSpec({
         // Mit Logo (#198): Das zeigt prag, und ohne Logo stünde in der
         // Vergleichsdatei nur ein leeres \ifblank.
         val seller =
-            YamlLoader.parseSellerConfig(resource("stammdaten.yaml")).copy(design = Design.PRAG, logo = beispielLogo)
+            YamlLoader.parseSellerConfig(resource("stammdaten.yaml")).copy(design = Design.PRAG, logo = exampleLogo)
         val invoice = YamlLoader.parseInvoice(resource("rechnung.yaml"))
 
         InvoiceRenderer.render(CalculatedInvoice(invoice, seller).accepted()).sources.tex shouldBe
@@ -198,50 +198,50 @@ class InvoiceRendererTest : FunSpec({
     }
 
     context("logo (#198)") {
-        fun gesetzt(design: Design, logo: Logo?) =
+        fun typeset(design: Design, logo: Logo?) =
             InvoiceRenderer.render(CalculatedInvoice(testInvoice(), config.copy(design = design, logo = logo)).accepted())
 
         test("der Platzhalter ist ein Schalter: der Name der Datei oder leer") {
-            wert(TemplateValue.LOGO, stammdaten = config.copy(logo = beispielLogo)) shouldBe "logo"
-            wert(TemplateValue.LOGO) shouldBe ""
+            valueOf(TemplateValue.LOGO, sellerConfig = config.copy(logo = exampleLogo)) shouldBe "logo"
+            valueOf(TemplateValue.LOGO) shouldBe ""
         }
 
         test("prag bindet das Logo ein und bekommt es als logo.tex mit") {
-            val rendered = gesetzt(Design.PRAG, beispielLogo)
+            val rendered = typeset(Design.PRAG, exampleLogo)
 
             rendered.sources.tex shouldContain "\\input{logo}"
             rendered.sources.files.keys shouldBe setOf("logo.tex")
-            rendered.sources.files.getValue("logo.tex") shouldBe beispielLogo.content
+            rendered.sources.files.getValue("logo.tex") shouldBe exampleLogo.content
         }
 
         test("helsinki übergeht das Logo und bekommt keine Datei") {
             // Sonst ginge die Datei in die Trailer-ID ein, und dieselbe
             // Rechnung ergäbe mit und ohne Eintrag verschiedene PDFs.
-            val mitLogo = gesetzt(Design.HELSINKI, beispielLogo)
+            val withLogo = typeset(Design.HELSINKI, exampleLogo)
 
-            mitLogo.sources.files shouldBe emptyMap()
-            mitLogo.sources.tex shouldBe gesetzt(Design.HELSINKI, null).sources.tex
+            withLogo.sources.files shouldBe emptyMap()
+            withLogo.sources.tex shouldBe typeset(Design.HELSINKI, null).sources.tex
         }
 
         test("ohne Logo gibt es in keinem Design eine Datei") {
             Design.entries.forEach { design ->
-                withClue(design) { gesetzt(design, null).sources.files shouldBe emptyMap() }
+                withClue(design) { typeset(design, null).sources.files shouldBe emptyMap() }
             }
         }
 
         // Ob das Blatt das Logo zeigt, sagt der Renderer ausdrücklich – das
         // Kommando nennt es danach in einer Fehlermeldung (#203).
         test("prag mit Logo zeigt es") {
-            gesetzt(Design.PRAG, beispielLogo).includesLogo shouldBe true
+            typeset(Design.PRAG, exampleLogo).includesLogo shouldBe true
         }
 
         test("helsinki mit Logo zeigt es nicht") {
-            gesetzt(Design.HELSINKI, beispielLogo).includesLogo shouldBe false
+            typeset(Design.HELSINKI, exampleLogo).includesLogo shouldBe false
         }
 
         test("ohne Logo in den Stammdaten zeigt es kein Design, auch wenn die Vorlage den Platzhalter trägt") {
             Design.entries.forEach { design ->
-                withClue(design) { gesetzt(design, null).includesLogo shouldBe false }
+                withClue(design) { typeset(design, null).includesLogo shouldBe false }
             }
         }
     }
@@ -251,31 +251,31 @@ class InvoiceRendererTest : FunSpec({
         // gesetzten LaTeX keine ankommt (#149).
 
         test("im gesetzten LaTeX steht keine Kommentarzeile der Vorlage") {
-            renderMit(testItem()).lines().filter { it.trimStart().startsWith("%") }.shouldBeEmpty()
+            renderWith(testItem()).lines().filter { it.trimStart().startsWith("%") }.shouldBeEmpty()
         }
     }
 
     context("Das Land in der Anschrift") {
 
         /** Der Block, in dem die Anschrift des Kunden steht. */
-        fun anschrift(kundenland: String, stellerland: String): String {
+        fun address(customerCountry: String, sellerCountry: String): String {
             val basis = testInvoice()
             val invoice =
                 basis.copy(
                     customer =
                         basis.customer.copy(
-                            address = basis.customer.address.copy(countryCode = CountryCode(kundenland)),
+                            address = basis.customer.address.copy(countryCode = CountryCode(customerCountry)),
                         ),
                 )
-            val stammdaten = config.copy(address = config.address.copy(countryCode = CountryCode(stellerland)))
-            return wert(TemplateValue.EMPFAENGER, invoice, stammdaten)
+            val sellerConfig = config.copy(address = config.address.copy(countryCode = CountryCode(sellerCountry)))
+            return valueOf(TemplateValue.EMPFAENGER, invoice, sellerConfig)
         }
 
         test("ein kleingeschriebenes Land ist dasselbe Land") {
             // Der Defekt, gegen den dieser Typ steht: Ohne ihn stünde hier eine
             // Zeile "de" unter der Anschrift, während der Calculator dieselbe
             // Rechnung als Inlandsrechnung behandelt.
-            anschrift(kundenland = "de", stellerland = "DE") shouldBe
+            address(customerCountry = "de", sellerCountry = "DE") shouldBe
                 """Beispiel Software GmbH\zeilenwechsel{}Industriestraße 1\zeilenwechsel{}90402 Nürnberg"""
         }
 
@@ -283,12 +283,12 @@ class InvoiceRendererTest : FunSpec({
             // Sitzt der Rechnungssteller in Österreich, ist ein deutscher Kunde
             // für ihn Ausland – und bekommt sein Land genannt. Stünde "DE"
             // fest im Code, verschwiege diese Rechnung es.
-            anschrift(kundenland = "DE", stellerland = "AT") shouldBe
+            address(customerCountry = "DE", sellerCountry = "AT") shouldBe
                 """Beispiel Software GmbH\zeilenwechsel{}Industriestraße 1\zeilenwechsel{}90402 Nürnberg\zeilenwechsel{}DE"""
         }
 
         test("das Land des Kunden wird genannt, wenn es ein anderes ist") {
-            anschrift(kundenland = "at", stellerland = "DE") shouldBe
+            address(customerCountry = "at", sellerCountry = "DE") shouldBe
                 """Beispiel Software GmbH\zeilenwechsel{}Industriestraße 1\zeilenwechsel{}90402 Nürnberg\zeilenwechsel{}AT"""
         }
     }
@@ -297,7 +297,7 @@ class InvoiceRendererTest : FunSpec({
         // Der Fall aus #14: Mit gerundetem Einzelpreis stünde hier
         // "10.000 & Std. & 0,00 € & 0,10 €" – die Summe stimmt, aber
         // nachrechnen ließe sie sich nicht.
-        val tex = renderMit(testItem(quantity = "10000", unitPrice = "0.00001"))
+        val tex = renderWith(testItem(quantity = "10000", unitPrice = "0.00001"))
 
         tex shouldContain "{10.000}{Std.}{0,00001~€}{}{0,10~€}"
     }
@@ -316,7 +316,7 @@ class InvoiceRendererTest : FunSpec({
             val invoice = YamlLoader.parseInvoice(resource("abschlagsrechnung.yaml"))
             val seller = YamlLoader.parseSellerConfig(resource("stammdaten.yaml"))
 
-            wert(TemplateValue.LEISTUNGSZEITRAUM, invoice, seller) shouldBe "Juni bis Oktober 2026"
+            valueOf(TemplateValue.LEISTUNGSZEITRAUM, invoice, seller) shouldBe "Juni bis Oktober 2026"
         }
 
         test("der Zeitraum ist der voraussichtliche") {
@@ -326,10 +326,10 @@ class InvoiceRendererTest : FunSpec({
             //
             // Deshalb kommt diese Beschriftung vom Renderer und nicht aus der
             // Vorlage: Sie trägt eine fachliche Aussage (#188).
-            wert(TemplateValue.ZEITRAUM_BESCHRIFTUNG, testInvoice(type = InvoiceType.PREPAYMENT)) shouldBe
+            valueOf(TemplateValue.ZEITRAUM_BESCHRIFTUNG, testInvoice(type = InvoiceType.PREPAYMENT)) shouldBe
                 "Voraussichtlicher Leistungszeitraum"
-            wert(TemplateValue.ZEITRAUM_BESCHRIFTUNG) shouldBe "Leistungszeitraum"
-            wert(TemplateValue.LEISTUNGSZEITRAUM) shouldBe "Juli 2026"
+            valueOf(TemplateValue.ZEITRAUM_BESCHRIFTUNG) shouldBe "Leistungszeitraum"
+            valueOf(TemplateValue.LEISTUNGSZEITRAUM) shouldBe "Juli 2026"
         }
 
         test("der Pflichtsatz steht unter den Summen") {
@@ -340,7 +340,7 @@ class InvoiceRendererTest : FunSpec({
             // Satz eine Ankündigung, unter dem Gesamtbetrag ist er der Vorbehalt
             // zu genau dieser Summe.
             tex.indexOf("Die Leistung ist noch nicht erbracht.") shouldBeGreaterThan tex.indexOf("\\gesamtzeile{")
-            renderMit(testItem()) shouldNotContain "noch nicht erbracht"
+            renderWith(testItem()) shouldNotContain "noch nicht erbracht"
         }
 
         test("auch der Zeitraum einer Position ist der voraussichtliche") {
@@ -357,8 +357,8 @@ class InvoiceRendererTest : FunSpec({
         test("die Vereinnahmung wird genannt, sobald sie feststeht") {
             val vereinnahmt = testInvoice(type = InvoiceType.PREPAYMENT, receivedOn = LocalDate.of(2026, 8, 10))
 
-            wert(TemplateValue.VEREINNAHMT_AM, vereinnahmt) shouldBe "10.~August 2026"
-            wert(TemplateValue.VEREINNAHMT_AM, testInvoice(type = InvoiceType.PREPAYMENT)) shouldBe ""
+            valueOf(TemplateValue.VEREINNAHMT_AM, vereinnahmt) shouldBe "10.~August 2026"
+            valueOf(TemplateValue.VEREINNAHMT_AM, testInvoice(type = InvoiceType.PREPAYMENT)) shouldBe ""
         }
 
         test("die Metadaten des PDF tragen dieselbe Bezeichnung") {
@@ -371,18 +371,18 @@ class InvoiceRendererTest : FunSpec({
         }
     }
     context("Schlussrechnung") {
-        fun schlussrechnung(items: List<LineItem>, vararg prepayments: Prepayment): String {
+        fun finalInvoice(items: List<LineItem>, vararg prepayments: Prepayment): String {
             val invoice = testInvoice(type = InvoiceType.FINAL, items = items, prepayments = prepayments.toList())
             return InvoiceRenderer.render(CalculatedInvoice(invoice, config).accepted()).sources.tex
         }
 
-        val gesamtleistung = listOf(testItem(quantity = "1", unitPrice = "20000.00"))
+        val totalService = listOf(testItem(quantity = "1", unitPrice = "20000.00"))
 
         test("die Abschläge stehen unter dem Gesamtbetrag, nicht in der Positionstabelle") {
             // ADR-0002: Ein Abschlag ist keine negative Position. Stünde er in
             // der Tabelle, senkte er die Bemessungsgrundlage und damit die
             // ausgewiesene Umsatzsteuer.
-            val tex = schlussrechnung(gesamtleistung, testPrepayment())
+            val tex = finalInvoice(totalService, testPrepayment())
 
             tex.indexOf("R26-009") shouldBeGreaterThan tex.indexOf("\\gesamtzeile{")
         }
@@ -391,8 +391,8 @@ class InvoiceRendererTest : FunSpec({
             // UStAE 14.8 Abs. 7 ließe die Summe genügen; einzeln, damit der
             // Kunde sieht, welche seiner Zahlungen abgesetzt wurde.
             val tex =
-                schlussrechnung(
-                    gesamtleistung,
+                finalInvoice(
+                    totalService,
                     testPrepayment(invoiceNumber = "R26-009"),
                     testPrepayment(
                         invoiceNumber = "R26-011",
@@ -412,7 +412,7 @@ class InvoiceRendererTest : FunSpec({
         }
 
         test("der Restbetrag steht unter dem Strich, und darunter die Bankverbindung") {
-            val tex = schlussrechnung(gesamtleistung, testPrepayment())
+            val tex = finalInvoice(totalService, testPrepayment())
 
             tex shouldContain "\\abschlusszeile{Restbetrag}{19.040,00~€}"
             // Der Aufruf und nicht bloß der Name: Die Vorlage definiert
@@ -422,7 +422,7 @@ class InvoiceRendererTest : FunSpec({
 
         test("ein Restbetrag von null bekommt einen Satz statt einer Zahl") {
             // Ein nacktes "0,00 €" unter dem Strich sieht aus wie ein Fehler.
-            val tex = schlussrechnung(listOf(testItem(quantity = "1", unitPrice = "4000.00")), testPrepayment())
+            val tex = finalInvoice(listOf(testItem(quantity = "1", unitPrice = "4000.00")), testPrepayment())
 
             tex shouldContain "es verbleibt kein Restbetrag"
             // Keine Abschlusszeile mit Betrag (#94).
@@ -430,31 +430,31 @@ class InvoiceRendererTest : FunSpec({
             // Und kein Zahlungsziel daneben: Das wäre die zweite, andere
             // Aussage desselben Blattes. Die Gegenprobe: Eine gewöhnliche
             // Rechnung nennt sehr wohl eines.
-            val gedeckt =
+            val settled =
                 testInvoice(
                     type = InvoiceType.FINAL,
                     items = listOf(testItem(quantity = "1", unitPrice = "4000.00")),
                     prepayments = listOf(testPrepayment()),
                 )
-            wert(TemplateValue.ZAHLUNGSZIEL, gedeckt) shouldBe ""
-            wert(TemplateValue.ZAHLUNGSZIEL) shouldBe "28.~August 2026"
+            valueOf(TemplateValue.ZAHLUNGSZIEL, settled) shouldBe ""
+            valueOf(TemplateValue.ZAHLUNGSZIEL) shouldBe "28.~August 2026"
             // Ebenso wenig ein Konto: Wer nichts zu zahlen hat, bekommt keines
             // genannt (#94). Die IBAN in der Fußzeile bleibt.
-            wert(TemplateValue.BANKVERBINDUNG, gedeckt) shouldBe ""
+            valueOf(TemplateValue.BANKVERBINDUNG, settled) shouldBe ""
         }
 
         test("eine gewöhnliche Rechnung bekommt keine Absetzung") {
-            renderMit(testItem()) shouldNotContain "Abzüglich"
+            renderWith(testItem()) shouldNotContain "Abzüglich"
         }
     }
 
     context("Skonto") {
         // Rechnungsdatum 14.08.2026, Zahlungsziel 14 Tage.
-        fun mitSkonto(vararg stufen: SkontoTier): String =
+        fun withSkonto(vararg stufen: SkontoTier): String =
             InvoiceRenderer.render(CalculatedInvoice(testInvoice(skonto = stufen.toList()), config).accepted()).sources.tex
 
         test("eine Stufe wird ein Satz unter den Summen") {
-            val tex = mitSkonto(SkontoTier(rate = Percent("2"), days = 7))
+            val tex = withSkonto(SkontoTier(rate = Percent("2"), days = 7))
 
             tex shouldContain
                 "\\hinweisabsatz{Bei Zahlung bis~\\zusammen{21.~August 2026} können 2~\\% " +
@@ -463,7 +463,7 @@ class InvoiceRendererTest : FunSpec({
         }
 
         test("weitere Stufen hängen sich nach der Frist sortiert an") {
-            val tex = mitSkonto(SkontoTier(rate = Percent("1.5"), days = 10), SkontoTier(rate = Percent("2"), days = 7))
+            val tex = withSkonto(SkontoTier(rate = Percent("1.5"), days = 10), SkontoTier(rate = Percent("2"), days = 7))
 
             tex shouldContain
                 "\\hinweisabsatz{Bei Zahlung bis~\\zusammen{21.~August 2026} können 2~\\% " +
@@ -473,49 +473,49 @@ class InvoiceRendererTest : FunSpec({
         test("das Zahlungsziel im Kopf bleibt, wie es ist") {
             // Kein Datum steht doppelt: Jede Skontofrist endet vor dem
             // Zahlungsziel, das SKONTOFRIST_NICHT_VOR_ZAHLUNGSZIEL hält.
-            wert(TemplateValue.ZAHLUNGSZIEL, testInvoice(skonto = listOf(SkontoTier(rate = Percent("2"), days = 7)))) shouldBe
+            valueOf(TemplateValue.ZAHLUNGSZIEL, testInvoice(skonto = listOf(SkontoTier(rate = Percent("2"), days = 7)))) shouldBe
                 "28.~August 2026"
         }
 
         test("ohne Skonto kein Satz") {
-            renderMit(testItem()) shouldNotContain "Skonto"
+            renderWith(testItem()) shouldNotContain "Skonto"
         }
     }
 
     context("Zahlungsfrist") {
         // Der Satz, den prag statt der Kopfzeile "Zahlbar bis" setzt (#211).
         // Die Stammdaten des Tests haben 14 Tage.
-        fun frist(invoice: Invoice): String = wert(TemplateValue.ZAHLUNGSFRIST, invoice)
+        fun paymentTerm(invoice: Invoice): String = valueOf(TemplateValue.ZAHLUNGSFRIST, invoice)
 
         test("mehrere Tage ab Rechnungsdatum") {
-            frist(testInvoice()) shouldBe "\\hinweisabsatz{Die Zahlung ist 14 Tage nach Rechnungsdatum fällig.}"
+            paymentTerm(testInvoice()) shouldBe "\\hinweisabsatz{Die Zahlung ist 14 Tage nach Rechnungsdatum fällig.}"
         }
 
         test("ein Tag in der Einzahl") {
-            frist(testInvoice(paymentTermDaysOverride = 1)) shouldBe
+            paymentTerm(testInvoice(paymentTermDaysOverride = 1)) shouldBe
                 "\\hinweisabsatz{Die Zahlung ist 1 Tag nach Rechnungsdatum fällig.}"
         }
 
         test("null Tage heißt sofort") {
-            frist(testInvoice(paymentTermDaysOverride = 0)) shouldBe "\\hinweisabsatz{Die Zahlung ist sofort fällig.}"
+            paymentTerm(testInvoice(paymentTermDaysOverride = 0)) shouldBe "\\hinweisabsatz{Die Zahlung ist sofort fällig.}"
         }
 
         test("mit Skonto ohne Abzug") {
             // Ohne Skonto fehlen die Worte: Dort fragte man sich, welcher
             // Abzug gemeint ist.
-            frist(testInvoice(skonto = listOf(SkontoTier(rate = Percent("2"), days = 7)))) shouldBe
+            paymentTerm(testInvoice(skonto = listOf(SkontoTier(rate = Percent("2"), days = 7)))) shouldBe
                 "\\hinweisabsatz{Die Zahlung ist ohne Abzug 14 Tage nach Rechnungsdatum fällig.}"
         }
 
         test("ohne Zahlungsziel kein Satz") {
             // Eine voll abgesetzte Schlussrechnung fordert kein Geld (#94).
-            val gedeckt =
+            val settled =
                 testInvoice(
                     type = InvoiceType.FINAL,
                     items = listOf(testItem(quantity = "1", unitPrice = "4000.00")),
                     prepayments = listOf(testPrepayment()),
                 )
-            frist(gedeckt) shouldBe ""
+            paymentTerm(settled) shouldBe ""
         }
     }
 
@@ -524,12 +524,12 @@ class InvoiceRendererTest : FunSpec({
         // Deren Stammdaten haben alles, und keine ihrer Rechnungen ist
         // steuerfrei. Geprüft wird am Inhalt, nicht am Makro.
 
-        fun render(invoice: Invoice, stammdaten: SellerConfig = config): String =
-            InvoiceRenderer.render(CalculatedInvoice(invoice, stammdaten).accepted()).sources.tex
+        fun render(invoice: Invoice, sellerConfig: SellerConfig = config): String =
+            InvoiceRenderer.render(CalculatedInvoice(invoice, sellerConfig).accepted()).sources.tex
 
         // Eine Position zum Regelsatz und eine mit Steuerschuldnerschaft des
         // Leistungsempfängers – die verlangt die USt-IdNr. des Kunden.
-        fun mitReverseCharge() =
+        fun withReverseCharge() =
             testInvoice(
                 items =
                     listOf(
@@ -542,14 +542,14 @@ class InvoiceRendererTest : FunSpec({
         test("eine Position ohne Umsatzsteuer bekommt ihren Grund genannt") {
             // BT-120. Bei Reverse Charge verlangt §14a Abs. 5 UStG den Hinweis
             // ausdrücklich auf der Rechnung.
-            render(mitReverseCharge()) shouldContain
+            render(withReverseCharge()) shouldContain
                 "Auf 200,00~€ entfällt keine Umsatzsteuer: Steuerschuldnerschaft des Leistungsempfängers (Reverse Charge)."
         }
 
         test("eine Steuergruppe ohne Steuerbetrag steht nicht in den Summen") {
             // "zzgl. 0 % USt. 0,00 €" sähe aus wie ein Rechenfehler; warum keine
             // Steuer anfällt, sagt der Hinweis darunter.
-            val tex = render(mitReverseCharge())
+            val tex = render(withReverseCharge())
 
             tex shouldContain "\\steuerzeile{19~\\%}"
             tex shouldNotContain "\\steuerzeile{0"
@@ -585,41 +585,41 @@ class InvoiceRendererTest : FunSpec({
 
         test("die USt-IdNr. des Kunden steht unter seiner Anschrift, wenn er eine hat") {
             // §14a UStG. Wo sie steht, entscheidet die Vorlage; hier nur, ob.
-            val kundenId = VatId("ATU12345678")
+            val customerVatId = VatId("ATU12345678")
 
-            wert(TemplateValue.KUNDE_USTID, testInvoice(customerVatId = kundenId)) shouldBe kundenId.formatted()
-            wert(TemplateValue.KUNDE_USTID) shouldBe ""
+            valueOf(TemplateValue.KUNDE_USTID, testInvoice(customerVatId = customerVatId)) shouldBe customerVatId.formatted()
+            valueOf(TemplateValue.KUNDE_USTID) shouldBe ""
         }
 
         test("der Ansprechpartner steht unter dem Namen und vor der Straße, wenn es einen gibt") {
             // BT-56 (#196). Die Reihenfolge ist Postkonvention, deshalb im
             // Block EMPFAENGER und nicht als eigener Platzhalter.
-            wert(TemplateValue.EMPFAENGER, testInvoice(contactPoint = "Herrn Max Beispiel")) shouldBe
+            valueOf(TemplateValue.EMPFAENGER, testInvoice(contactPoint = "Herrn Max Beispiel")) shouldBe
                 """Beispiel Software GmbH\zeilenwechsel{}Herrn Max Beispiel\zeilenwechsel{}Industriestraße 1\zeilenwechsel{}90402 Nürnberg"""
-            wert(TemplateValue.EMPFAENGER) shouldBe
+            valueOf(TemplateValue.EMPFAENGER) shouldBe
                 """Beispiel Software GmbH\zeilenwechsel{}Industriestraße 1\zeilenwechsel{}90402 Nürnberg"""
         }
 
         test("die Kundennummer kommt maskiert, und ohne sie ist der Wert leer") {
             // BT-46 (#190). Leer heißt: helsinki lässt die Zeile samt "Kundennr."
             // weg. Das & zeigt, dass sie wie jeder Freitext maskiert wird.
-            wert(TemplateValue.KUNDENNUMMER, testInvoice(buyerIdentifier = "K-17 & Co")) shouldBe "K-17 \\& Co"
-            wert(TemplateValue.KUNDENNUMMER) shouldBe ""
+            valueOf(TemplateValue.KUNDENNUMMER, testInvoice(buyerIdentifier = "K-17 & Co")) shouldBe "K-17 \\& Co"
+            valueOf(TemplateValue.KUNDENNUMMER) shouldBe ""
         }
 
         test("die Auftragsnummer kommt maskiert, und ohne sie ist der Wert leer") {
             // BT-14 (#191). Leer heißt: helsinki lässt die Zeile samt
             // "Unsere Auftragsnr." weg.
-            wert(TemplateValue.AUFTRAGSNUMMER, testInvoice(salesOrderReference = "A_2026_014")) shouldBe "A\\_2026\\_014"
-            wert(TemplateValue.AUFTRAGSNUMMER) shouldBe ""
+            valueOf(TemplateValue.AUFTRAGSNUMMER, testInvoice(salesOrderReference = "A_2026_014")) shouldBe "A\\_2026\\_014"
+            valueOf(TemplateValue.AUFTRAGSNUMMER) shouldBe ""
         }
 
         test("die Einleitung kommt maskiert, und ohne sie ist der Wert leer") {
             // #209. Leer heißt: Die Vorlage setzt über der Tabelle nichts, und
             // der Abstand ändert sich nicht.
-            wert(TemplateValue.EINLEITUNG, testInvoice(introduction = "Für Projekt A & B:")) shouldBe
+            valueOf(TemplateValue.EINLEITUNG, testInvoice(introduction = "Für Projekt A & B:")) shouldBe
                 "Für Projekt A \\& B:"
-            wert(TemplateValue.EINLEITUNG) shouldBe ""
+            valueOf(TemplateValue.EINLEITUNG) shouldBe ""
         }
 
         test("Geschäftsführung, Telefon, Registergericht und Referenz sind leer, wenn sie fehlen") {
@@ -627,32 +627,32 @@ class InvoiceRendererTest : FunSpec({
             // Regel "die Person im Kopf nur ohne Geschäftsführung". Hier bleibt
             // die Frage, ob der Renderer eine fehlende Angabe leer liefert und
             // eine vorhandene so, wie sie in der Eingabe steht.
-            wert(TemplateValue.GESCHAEFTSFUEHRUNG) shouldBe ""
-            wert(TemplateValue.TELEFON) shouldBe ""
-            wert(TemplateValue.REGISTERGERICHT) shouldBe ""
-            wert(TemplateValue.REGISTERNUMMER) shouldBe ""
-            wert(TemplateValue.KUNDENREFERENZ) shouldBe ""
+            valueOf(TemplateValue.GESCHAEFTSFUEHRUNG) shouldBe ""
+            valueOf(TemplateValue.TELEFON) shouldBe ""
+            valueOf(TemplateValue.REGISTERGERICHT) shouldBe ""
+            valueOf(TemplateValue.REGISTERNUMMER) shouldBe ""
+            valueOf(TemplateValue.KUNDENREFERENZ) shouldBe ""
 
             val basis = testInvoice()
-            val mitReferenz = basis.copy(customer = basis.customer.copy(buyerReference = "Bestellung 4711"))
-            val stammdaten =
+            val withReference = basis.copy(customer = basis.customer.copy(buyerReference = "Bestellung 4711"))
+            val sellerConfig =
                 config.copy(
                     managingDirector = "Gero Geschäftsführer",
                     phone = "+49 931 000000",
                     registerCourt = "Würzburg",
                     registerNumber = "HRB 1",
                 )
-            wert(TemplateValue.GESCHAEFTSFUEHRUNG, mitReferenz, stammdaten) shouldBe "Gero Geschäftsführer"
-            wert(TemplateValue.TELEFON, mitReferenz, stammdaten) shouldBe "+49 931 000000"
-            wert(TemplateValue.REGISTERGERICHT, mitReferenz, stammdaten) shouldBe "Würzburg"
-            wert(TemplateValue.REGISTERNUMMER, mitReferenz, stammdaten) shouldBe "HRB 1"
-            wert(TemplateValue.KUNDENREFERENZ, mitReferenz, stammdaten) shouldBe "Bestellung 4711"
+            valueOf(TemplateValue.GESCHAEFTSFUEHRUNG, withReference, sellerConfig) shouldBe "Gero Geschäftsführer"
+            valueOf(TemplateValue.TELEFON, withReference, sellerConfig) shouldBe "+49 931 000000"
+            valueOf(TemplateValue.REGISTERGERICHT, withReference, sellerConfig) shouldBe "Würzburg"
+            valueOf(TemplateValue.REGISTERNUMMER, withReference, sellerConfig) shouldBe "HRB 1"
+            valueOf(TemplateValue.KUNDENREFERENZ, withReference, sellerConfig) shouldBe "Bestellung 4711"
         }
 
         test("die Angaben der Stammdaten kommen maskiert") {
             // Einzeln statt als fertige Zeile, aber genauso maskiert: Ein & in
             // der Firmierung zerlegte sonst den Fuß.
-            wert(TemplateValue.FIRMA, stammdaten = config.copy(companyName = "Meier & Söhne")) shouldBe "Meier \\& Söhne"
+            valueOf(TemplateValue.FIRMA, sellerConfig = config.copy(companyName = "Meier & Söhne")) shouldBe "Meier \\& Söhne"
         }
     }
 })
