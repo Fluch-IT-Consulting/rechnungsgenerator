@@ -15,8 +15,8 @@ class ToolResultTest : FunSpec({
 
     fun output(standardOutput: String, errorOutput: String) = ToolResult(0, standardOutput, errorOutput).output
 
-    // Der Fall aus #246: Endet stdout nicht auf einem Umbruch, stand in der
-    // Fehlermeldung "letzte Zeileerste Zeile" – eine Zeile aus zwei Quellen.
+    // Der Fall aus #246: Endet stdout nicht auf einem Umbruch, stünde sonst in
+    // der Fehlermeldung "letzte Zeileerste Zeile" – eine Zeile aus zwei Quellen.
     test("ohne Umbruch am Ende von stdout kommt einer dazu") {
         output("letzte Zeile", "erste Zeile") shouldBe "letzte Zeile\nerste Zeile"
     }

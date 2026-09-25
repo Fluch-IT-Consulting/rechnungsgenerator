@@ -73,9 +73,9 @@ class MainTest : FunSpec({
     }
 
     test("eine unlesbare Datei spricht vom Lesen, nicht vom Schreiben") {
-        // Der IOException-Zweig war für ein nicht beschreibbares Ziel gedacht
-        // und fing den Lesefehler gleich mit. (Als root ist auch chmod 000
-        // lesbar, dieser Test schlüge dort fehl.)
+        // Auch ein Lesefehler ist eine IOException: Ein Zweig, der sie für ein
+        // nicht beschreibbares Ziel fängt, spräche hier vom Schreiben. (Als
+        // root ist auch chmod 000 lesbar, dieser Test schlüge dort fehl.)
         val unreadable =
             inputDir.resolve("unlesbar.yaml").also {
                 it.writeText("nummer: R26-001\n")

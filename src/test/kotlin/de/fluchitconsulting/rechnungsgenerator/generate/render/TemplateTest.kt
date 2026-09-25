@@ -145,8 +145,8 @@ class TemplateTest : FunSpec({
         }
 
         test("einer, der nur in einer Kommentarzeile steht, fehlt ebenso") {
-            // Der Fall aus 553ff49: Geprüft wurde die Vorlage mit
-            // Kommentarzeilen, gesetzt wird sie ohne.
+            // Der Fall aus 553ff49: Gesetzt wird die Vorlage ohne
+            // Kommentarzeilen, also zählen sie auch bei der Prüfung nicht.
             val error =
                 shouldThrow<IllegalStateException> {
                     Template.of(templateWith(required - TemplateValue.SKONTO) + "\n% <<SKONTO>>")
