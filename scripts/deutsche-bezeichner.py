@@ -37,7 +37,7 @@ DICTIONARIES = ["/usr/share/dict/words", "/usr/share/dict/web2a"]
 GLOSSARY = set(
     """
     abschlag abschlaege anteil anteile restbetrag vereinnahmt
-    zeitraum zeitraeume skonto stufe stufen
+    zeitraum zeitraeume skonto stufe stufen pflichtangaben
     """.split()
 )
 
@@ -55,7 +55,7 @@ TECHNICAL = set(
     timeout cancelled descriptor deserialize encoder decoder entries formatted
     padded arity neighbours website subcommand newcommand typesetter toolchain
     acc lua fixture fixtures stdout stderr stdin println runner prepayment
-    prepayments setup builtin bytes handwritten newline enum
+    prepayments setup builtin bytes handwritten newline enum whitespace
     rechnungsgenerator helsinki prag
     """.split()
 )

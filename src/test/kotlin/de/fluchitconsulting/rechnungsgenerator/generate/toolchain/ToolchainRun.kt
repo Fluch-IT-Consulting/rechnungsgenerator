@@ -30,26 +30,26 @@ class ToolchainRun(
      * Die Ausgaben werden eingesammelt, damit die Meldung von veraPDF im
      * Testbericht landet – sonst stünde dort nur "expected true but was false".
      */
-    fun erzeuge(
-        rechnung: String,
-        zielname: String = rechnung,
-        eingabe: Path = Path.of("src/test/resources/$rechnung.yaml"),
-        stammdaten: Path = Path.of("src/test/resources/stammdaten.yaml"),
+    fun generate(
+        example: String,
+        targetName: String = example,
+        input: Path = Path.of("src/test/resources/$example.yaml"),
+        sellerConfig: Path = Path.of("src/test/resources/stammdaten.yaml"),
     ): Pair<Path, List<String>> {
-        val ziel = workDir.resolve("$zielname.pdf")
-        val ausgabe = mutableListOf<String>()
+        val target = workDir.resolve("$targetName.pdf")
+        val output = mutableListOf<String>()
         val command = RechnungsgeneratorCommand()
-        command.context { echoMessage = { _, message, _, _ -> ausgabe += message.toString() } }
+        command.context { echoMessage = { _, message, _, _ -> output += message.toString() } }
 
-        val fehler =
+        val error =
             runCatching {
                 command.parse(
-                    arrayOf("erzeuge", eingabe.toString(), "-s", stammdaten.toString(), "-o", ziel.toString()),
+                    arrayOf("erzeuge", input.toString(), "-s", sellerConfig.toString(), "-o", target.toString()),
                 )
             }.exceptionOrNull()
 
-        withClue(ausgabe.joinToString("\n")) { fehler shouldBe null }
-        return ziel to ausgabe
+        withClue(output.joinToString("\n")) { error shouldBe null }
+        return target to output
     }
 
     /**
@@ -60,13 +60,13 @@ class ToolchainRun(
         // Die Ausgabe in eine Datei, nicht in einen Stream – aus demselben
         // Grund wie bei den Werkzeugen des Programms (siehe ProcessRunner).
         val text = workDir.resolve("${pdf.fileName}.txt")
-        val prozess =
+        val process =
             ProcessBuilder("pdftotext", "-enc", "UTF-8", pdf.toString(), text.toString())
                 .redirectErrorStream(true)
                 .redirectOutput(workDir.resolve("pdftotext.log").toFile())
                 .start()
-        prozess.waitFor(30, TimeUnit.SECONDS) shouldBe true
-        prozess.exitValue() shouldBe 0
+        process.waitFor(30, TimeUnit.SECONDS) shouldBe true
+        process.exitValue() shouldBe 0
         return text.readText()
     }
 
@@ -78,14 +78,14 @@ class ToolchainRun(
         pdf: Path,
         dpi: Int = 100,
     ): BufferedImage {
-        val stamm = workDir.resolve(pdf.fileName.toString().removeSuffix(".pdf"))
-        val prozess =
-            ProcessBuilder("pdftoppm", "-png", "-singlefile", "-r", dpi.toString(), pdf.toString(), stamm.toString())
+        val prefix = workDir.resolve(pdf.fileName.toString().removeSuffix(".pdf"))
+        val process =
+            ProcessBuilder("pdftoppm", "-png", "-singlefile", "-r", dpi.toString(), pdf.toString(), prefix.toString())
                 .redirectErrorStream(true)
                 .redirectOutput(workDir.resolve("pdftoppm.log").toFile())
                 .start()
-        prozess.waitFor(30, TimeUnit.SECONDS) shouldBe true
-        prozess.exitValue() shouldBe 0
-        return ImageIO.read(workDir.resolve("${stamm.fileName}.png").toFile())
+        process.waitFor(30, TimeUnit.SECONDS) shouldBe true
+        process.exitValue() shouldBe 0
+        return ImageIO.read(workDir.resolve("${prefix.fileName}.png").toFile())
     }
 }
