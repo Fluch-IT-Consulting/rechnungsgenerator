@@ -1,34 +1,22 @@
 \documentclass[11pt,a4paper]{article}
 
-\PassOptionsToPackage{bookmarks=false}{hyperref}
-\usepackage[a-1b]{pdfx}
+\usepackage{grundlage}
 
-\usepackage{fontspec}
 \usepackage{geometry}
 \usepackage{colortbl}
 \usepackage{booktabs}  %% \midrule bringt die vertikalen Abstände selbst mit
 \usepackage{xltabular}
 \usepackage{fancyhdr}
-\usepackage{lastpage}  %% die Zahl der Seiten für den Kopf der Folgeseiten
-\usepackage{refcount}  %% dieselbe Zahl als Zahl, für den Fortsetzungshinweis
 \usepackage{array}
 \usepackage{etoolbox}  %% \ifblank für die Angaben, die leer sein dürfen
 
-\usepackage{siunitx}
 \sisetup{
-  mode                  = text,
   output-decimal-marker = {,},
   group-separator       = {.},
-  group-digits          = integer,
   group-minimum-digits  = 4,
-  round-mode            = none,
-  reset-text-series     = false,
-  reset-text-shape      = false,
-  reset-text-family     = false,
 }
 
 \setmainfont{texgyreheros}[
-  Ligatures      = TeXOff,
   Extension      = .otf,
   UprightFont    = *-regular,
   BoldFont       = *-bold,
@@ -57,17 +45,14 @@
   \fancyfoot[C]{\fuss}\fancyfoot[R]{\fortsetzung}}
 \pagestyle{folge}
 
-\newcommand{\fortsetzung}{\ifnum\value{page}<\getpagerefnumber{LastPage}\relax
-  \raisebox{\dimexpr\footskip-3mm\relax}[0pt][0pt]{\footnotesize\color{gedaempft}Fortsetzung auf der nächsten Seite}\fi}
+\newcommand{\fortsetzung}{\wennweitereseite{%
+  \raisebox{\dimexpr\footskip-3mm\relax}[0pt][0pt]{\footnotesize\color{gedaempft}Fortsetzung auf der nächsten Seite}}}
 
 \raggedright
 
 \hyphenpenalty=10000
 \exhyphenpenalty=10000
 \tolerance=2000
-
-\frenchspacing
-\let\normalsfcodes\frenchspacing
 
 
 \newlength{\balkenhoehe}
@@ -95,10 +80,8 @@
 
 \newcommand{\rubrik}[1]{{\footnotesize\color{gedaempft}\addfontfeature{LetterSpace=14}\MakeUppercase{#1}}}
 
-\newcommand{\ungeteilt}[1]{{\interlinepenalty=10000 #1\par}}
-
 \newcommand{\hinweisabsatz}[1]{\par\vspace{6mm}\noindent%
-  \ungeteilt{\nonfrenchspacing\sfcode`\:=1000 \sfcode`\;=1000 \sfcode`\,=1000 #1}}
+  \ungeteilt{\programmsatz{#1}}}
 
 \newcommand{\steuerhinweis}[1]{\noindent\ungeteilt{#1}}
 
@@ -179,7 +162,6 @@ USt-IdNr. DE 123 456 788 · Musterbank Würzburg · BIC MUSTDEFFXXX · IBAN DE89
 
 \setlength{\LTpre}{\lineskip}\setlength{\LTpost}{0pt}%
 \setlength{\LTleft}{0pt}\setlength{\LTright}{0pt}%
-\setcounter{LTchunksize}{10000}%
 \newlength{\summenluft}\setlength{\summenluft}{\dimexpr 5mm+\lineskip\relax}%
 \begin{xltabular}{\linewidth}{@{}>{\raggedright\arraybackslash}X r@{\hspace{1.5mm}}l r R r@{}}
   \positionskopf

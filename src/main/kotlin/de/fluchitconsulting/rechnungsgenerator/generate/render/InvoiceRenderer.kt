@@ -36,9 +36,8 @@ object InvoiceRenderer {
     fun render(acceptedInvoice: AcceptedInvoice): RenderedInvoice {
         val template = Template.of(acceptedInvoice.calculated.config.design)
         val logo = includedLogo(template, acceptedInvoice)
-        // Dateien und Auskunft folgen beide aus dem eingebundenen Logo, nicht
-        // das eine aus dem anderen: Kommt eine zweite Datei dazu, stimmt die
-        // Auskunft weiter (#203).
+        // Die Auskunft folgt aus dem eingebundenen Logo und nicht aus den
+        // Dateien: Neben ihm liegt immer die Grundlage (#203).
         return RenderedInvoice(
             sources =
                 PdfSources(
@@ -47,7 +46,7 @@ object InvoiceRenderer {
                     // Das Rechnungsdatum und nicht die Uhr: Eine neu erzeugte
                     // Rechnung soll nicht jünger aussehen als die verschickte.
                     creationDate = acceptedInvoice.calculated.invoice.issueDate,
-                    files = logo?.let { mapOf("$LOGO_NAME.${it.extension}" to it.content) }.orEmpty(),
+                    files = template.files + logo?.let { mapOf("$LOGO_NAME.${it.extension}" to it.content) }.orEmpty(),
                 ),
             includesLogo = logo != null,
         )

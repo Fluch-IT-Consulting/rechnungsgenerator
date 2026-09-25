@@ -15,22 +15,15 @@
 %% als Spaltenkopf der Positionstabelle.
 \documentclass[11pt,a4paper]{article}
 
-%% pdfx erzeugt das PDF/A-1b: XMP-Metadaten, OutputIntent mit sRGB-Profil und
-%% eingebettete Schriften. Muss früh geladen werden, es zieht hyperref mit.
-%% Die Metadaten kommen aus der gleichnamigen .xmpdata-Datei daneben.
-%%
-%% Ohne Lesezeichen, denn eine Rechnung hat keine. hyperref schriebe sonst
-%% eine leere .out-Datei, die im ersten Lauf als geändert gilt, weil es sie
-%% vorher nicht gab – ein Grund für einen zweiten Lauf, der keiner ist –, und
-%% das PDF wiese den Viewer an, eine leere Lesezeichenleiste zu öffnen (#321).
-%% Als Ladeoption: Ein \hypersetup nach pdfx kommt für bookmarks zu spät.
-\PassOptionsToPackage{bookmarks=false}{hyperref}
-\usepackage[a-1b]{pdfx}
+%% Was jedes Design gleich setzen muss, steht in der Grundlage (ADR-0022):
+%% PDF/A, Ligaturen, die Einstellungen von siunitx gegen falsche Zahlen, der
+%% Satzabstand und die Bausteine \ungeteilt, \programmsatz und
+%% \wennweitereseite. Als Erstes, denn sie lädt pdfx. Welche Pakete sie lädt,
+%% steht in ihrem Kopf; die lädt diese Vorlage nicht noch einmal.
+\usepackage{grundlage}
 
-\usepackage{fontspec}
 \usepackage{geometry}
-%% xcolor lädt pdfx bereits selbst – ein zweites \usepackage mit Optionen
-%% gäbe einen "Option clash". colortbl direkt nachladen liefert \arrayrulecolor.
+%% xcolor lädt die Grundlage mit pdfx. colortbl liefert \arrayrulecolor.
 \usepackage{colortbl}
 \usepackage{booktabs}  %% \midrule bringt die vertikalen Abstände selbst mit
 %% xltabular ist tabularx, das über Seiten umbricht (ADR-0020): die X-Spalte
@@ -38,49 +31,20 @@
 %% bleibt für Summen und Absetzung, die nie umbrechen.
 \usepackage{xltabular}
 \usepackage{fancyhdr}
-\usepackage{lastpage}  %% die Zahl der Seiten für den Kopf der Folgeseiten
-\usepackage{refcount}  %% dieselbe Zahl als Zahl, für den Fortsetzungshinweis
 \usepackage{array}
 \usepackage{etoolbox}  %% \ifblank für die Angaben, die leer sein dürfen
 
-%% Zahlen setzt siunitx (ADR-0021). Der Renderer liefert nur die Ziffern, als
-%% \betrag{8337.50}, \menge{86.5} oder \prozent{19} – mit Punkt, ohne
-%% Gruppierung –, und hier entsteht die Schreibweise. Jede Einstellung zählt;
-%% fehlt eine, setzt siunitx still etwas anderes:
-%%  - mode=text: sonst kämen die Ziffern aus der Mathematikschrift und nicht
-%%    aus der des Designs,
-%%  - group-digits=integer: sonst gruppierte es auch hinter dem Komma und
-%%    machte aus 0,0335 ein 0,033.5,
-%%  - group-minimum-digits=4: sonst stünde 8337,50 ohne Punkt da,
-%%  - reset-text-...=false: sonst fiele eine Zahl in einer fetten Zeile aus
-%%    dem Fettdruck.
-%% round-mode=none ist die Vorgabe und steht trotzdem da: Beim Setzen wird
-%% nie gerundet, sonst ließe sich die Rechnung nicht nachrechnen (#14).
-%% Das Minus setzt siunitx in mode=text als \textminus, also U+2212 (#320).
-\usepackage{siunitx}
+%% Die Schreibweise der Zahlen (ADR-0021): Komma, Punkt als Tausendertrenner,
+%% ab vier Stellen – sonst stünde 8337,50 ohne Punkt da. Die übrigen
+%% Einstellungen von siunitx setzt die Grundlage.
 \sisetup{
-  mode                  = text,
   output-decimal-marker = {,},
   group-separator       = {.},
-  group-digits          = integer,
   group-minimum-digits  = 4,
-  round-mode            = none,
-  reset-text-series     = false,
-  reset-text-shape      = false,
-  reset-text-family     = false,
 }
 
 %% Dieselbe Schrift wie im Lebenslauf – dadurch passen die Dokumente zusammen.
-%%
-%% Ligatures=TeXOff: fontspec zieht für die Hauptschrift sonst Folgen wie
-%% "--", "<<" oder zwei Hochkommas zu einem Zeichen zusammen (Strich, Guillemet,
-%% Anführungszeichen). Die Vorlage braucht das nicht, sie schreibt keine dieser
-%% Folgen; getroffen hätte es nur Text aus den Eingabedaten, und der soll so
-%% dastehen, wie er in der YAML-Datei steht. In escapeLatex aufbrechen geht
-%% nicht: Nachgemessen trennt LuaLaTeX die Ligatur weder bei "-{}-" noch bei
-%% "{<}{<}". Die Schriftligaturen (fi, fl) bleiben, sie ändern keinen Text.
 \setmainfont{texgyreheros}[
-  Ligatures      = TeXOff,
   Extension      = .otf,
   UprightFont    = *-regular,
   BoldFont       = *-bold,
@@ -126,16 +90,12 @@
 \pagestyle{folge}
 
 %% Der Fortsetzungshinweis unten rechts auf jeder Seite, der eine weitere
-%% folgt. Er gehört zur Seite und nicht zur Tabelle: Passen Positionen und
-%% Summen auf eine Seite, der Rest aber nicht, bricht die Tabelle gar nicht
-%% um, und die Seite braucht ihn trotzdem. Er steht im Fuß, damit er an
+%% folgt (\wennweitereseite aus der Grundlage). Er steht im Fuß, damit er an
 %% jeder Seite hängt, und nimmt dort keinen Raum ein ([0pt][0pt]): 3 mm unter
 %% dem Ende des Textbereichs, der \footskip über der Grundlinie des Fußes
-%% endet. Beim ersten Lauf kennt LaTeX die letzte Seite noch nicht, die Zahl
-%% ist 0, und der Hinweis fehlt – den zweiten Lauf verlangt die neue Marke
-%% LastPage ohnehin.
-\newcommand{\fortsetzung}{\ifnum\value{page}<\getpagerefnumber{LastPage}\relax
-  \raisebox{\dimexpr\footskip-3mm\relax}[0pt][0pt]{\footnotesize\color{gedaempft}Fortsetzung auf der nächsten Seite}\fi}
+%% endet.
+\newcommand{\fortsetzung}{\wennweitereseite{%
+  \raisebox{\dimexpr\footskip-3mm\relax}[0pt][0pt]{\footnotesize\color{gedaempft}Fortsetzung auf der nächsten Seite}}}
 
 %% Flattersatz statt Blocksatz. In den schmalen Spalten einer Rechnung reißt
 %% Blocksatz sichtbare Löcher zwischen die Wörter; Heros verträgt Flattersatz gut.
@@ -146,22 +106,6 @@
 \hyphenpenalty=10000
 \exhyphenpenalty=10000
 \tolerance=2000
-
-%% Satzabstand: Nach Punkt, Doppelpunkt und Komma steht der gewöhnliche
-%% Wortzwischenraum, nicht der breitere englische (#143). Von sich aus hielte
-%% TeX jeden Punkt nach einem Kleinbuchstaben oder einer Ziffer für ein
-%% Satzende – "Dr. Erika", "14. August", "USt-IdNr. DE" –, und aus den
-%% Eingabedaten lässt sich nicht ablesen, wo ein Satz wirklich endet. Den
-%% breiten Abstand bekommen nur die eigenen Sätze des Programms, siehe
-%% \hinweisabsatz.
-\frenchspacing
-%% Auch in Kopf und Fuß der Seite. Die setzt LaTeX in der Ausgaberoutine mit
-%% \normalsfcodes, und ob das \frenchspacing ist, entscheidet \begin{document}
-%% daran, ob der Punkt den \sfcode 1000 trägt. amsgen, das siunitx über
-%% amstext lädt, setzt ihn in \frenchspacing auf 1006, damit \@addpunct ein
-%% Satzzeichen erkennt – dann hielte LaTeX das für \nonfrenchspacing, und im
-%% Fuß stünde nach "USt-IdNr." wieder der breite Abstand (#353).
-\let\normalsfcodes\frenchspacing
 
 %% Achtung: minipage ruft \@parboxrestore auf und setzt damit die
 %% Absatzparameter zurück – der Flattersatz von oben gilt dort NICHT.
@@ -229,33 +173,22 @@
 %% \rubrik statt \label, das ist in LaTeX vergeben.
 \newcommand{\rubrik}[1]{{\footnotesize\color{gedaempft}\addfontfeature{LetterSpace=14}\MakeUppercase{#1}}}
 
-%% Ein Absatz, der nicht über zwei Seiten bricht (ADR-0020): Eine Seite, die
-%% mit "gezahlter Betrag wird erstattet." beginnt, hat den Anfang verloren.
-%% Deshalb endet der Absatz im Makro, und dort gilt \interlinepenalty – die
-%% Strafe zählt, wenn der Absatz gebrochen wird, nicht wenn er beginnt.
-%% Allein der Zusammenhalt und kein Satzabstand, damit auch ein Satz aus den
-%% Eingabedaten ihn bekommt, ohne den breiten Abstand von \hinweisabsatz.
-\newcommand{\ungeteilt}[1]{{\interlinepenalty=10000 #1\par}}
-
 %% Ein Hinweisabsatz unter den Summen – der Pflichtsatz der Rechnungsart oder
 %% der Satz zum ausgeglichenen Restbetrag. Er bringt seinen Abstand selbst mit,
 %% weil er nur bei einzelnen Rechnungsarten gesetzt wird: Stünde der \vspace in
 %% der Vorlage, nähme er bei allen anderen Raum ein, obwohl dort nichts steht.
 %%
-%% Er trägt die eigenen Sätze des Programms, und nur in ihm steht nach einem
-%% Satzende der breitere Abstand (#143): nach . ? !, aber nicht nach : ; , –
-%% das sind nie Satzenden. Die Gruppe hält das auf das Argument beschränkt.
-%% Eingabedaten gehören deshalb nicht hier hinein: Eine Abkürzung wie "Dr."
-%% bekäme sonst wieder den breiten Abstand. Das % hinter \noindent verhindert
-%% einen Leerraum am Absatzanfang.
-%%
-%% Ein solcher Satz bricht nicht über zwei Seiten, siehe \ungeteilt.
+%% Er trägt die eigenen Sätze des Programms und damit als einziger den breiten
+%% Abstand nach einem Satzende, und er bricht nicht über zwei Seiten – beides
+%% aus der Grundlage (\programmsatz, \ungeteilt). Eingabedaten gehören deshalb
+%% nicht hier hinein. Das % hinter \noindent verhindert einen Leerraum am
+%% Absatzanfang.
 \newcommand{\hinweisabsatz}[1]{\par\vspace{6mm}\noindent%
-  \ungeteilt{\nonfrenchspacing\sfcode`\:=1000 \sfcode`\;=1000 \sfcode`\,=1000 #1}}
+  \ungeteilt{\programmsatz{#1}}}
 
 %% Der Hinweis auf eine Steuerbefreiung (BT-120), ein Satz je befreiter
-%% Steuergruppe. Er hält zusammen wie ein \hinweisabsatz, aber ohne dessen
-%% Satzabstand: Der Befreiungsgrund kommt aus den Eingabedaten (#143). Den
+%% Steuergruppe. Er hält zusammen wie ein \hinweisabsatz, aber ohne
+%% \programmsatz: Der Befreiungsgrund kommt aus den Eingabedaten (#143). Den
 %% Abstand darüber setzt die Vorlage einmal für alle, zwischen zwei
 %% Hinweisen steht keiner.
 \newcommand{\steuerhinweis}[1]{\noindent\ungeteilt{#1}}
@@ -460,13 +393,10 @@ USt-IdNr. <<USTID>> · <<INSTITUT>> · BIC <<BIC>> · IBAN <<IBAN>>}}
 %%
 %% Davor genau \lineskip und kein \bigskip: So weit stand die tabularx vom
 %% Absatz darüber ab, denn sie war selbst ein Absatz, und ihre Höhe ließ TeX
-%% nur diesen Mindestabstand. Danach nichts und kein Einzug.
-%% LTchunksize so groß, dass jede Rechnung ein Block ist:
-%% Dann misst longtable die Spalten über alle Positionen auf einmal, und sie
-%% sind auf jeder Seite gleich breit, schon im ersten Lauf.
+%% nur diesen Mindestabstand. Danach nichts und kein Einzug. Dass die Spalten
+%% auf jeder Seite gleich breit sind, sichert die Grundlage (LTchunksize).
 \setlength{\LTpre}{\lineskip}\setlength{\LTpost}{0pt}%
 \setlength{\LTleft}{0pt}\setlength{\LTright}{0pt}%
-\setcounter{LTchunksize}{10000}%
 \newlength{\summenluft}\setlength{\summenluft}{\dimexpr 5mm+\lineskip\relax}%
 \begin{xltabular}{\linewidth}{@{}>{\raggedright\arraybackslash}X r@{\hspace{1.5mm}}l r R r@{}}
   \positionskopf
@@ -516,7 +446,7 @@ USt-IdNr. <<USTID>> · <<INSTITUT>> · BIC <<BIC>> · IBAN <<IBAN>>}}
 %% letzten Seite ein "Mit freundlichen Grüßen" ohne den Satz, den es beschließt.
 %% Gehalten wird mit Strafen und nicht mit einer Box, denn Strafen nehmen keinen
 %% Raum ein, und eine Rechnung mit einer Seite bleibt, wie sie ist:
-%% \ungeteilt im Satz, \nopagebreak danach, \\* im Gruß.
+%% \ungeteilt aus der Grundlage im Satz, \nopagebreak danach, \\* im Gruß.
 \ungeteilt{<<SCHLUSSSATZ>>}
 \nopagebreak
 \vspace{5mm}

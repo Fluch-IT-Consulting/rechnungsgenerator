@@ -10,44 +10,30 @@
 %% Logo oben links mit, wenn die Stammdaten eines nennen.
 \documentclass[10pt,a4paper]{article}
 
-%% pdfx erzeugt das PDF/A-1b, siehe helsinki.tex. Früh laden, es zieht hyperref
-%% und xcolor mit. Ohne Lesezeichen, siehe dort.
-\PassOptionsToPackage{bookmarks=false}{hyperref}
-\usepackage[a-1b]{pdfx}
+%% Was jedes Design gleich setzen muss, steht in der Grundlage (ADR-0022).
+%% Als Erstes, denn sie lädt pdfx. Welche Pakete sie lädt, steht in ihrem
+%% Kopf; die lädt diese Vorlage nicht noch einmal.
+\usepackage{grundlage}
 
-\usepackage{fontspec}
 \usepackage{geometry}
 %% xltabular für die Positionen, die über Seiten umbrechen (ADR-0020), wie in
 %% helsinki.tex. Es lädt tabularx selbst, das für die Absetzung bleibt.
 \usepackage{xltabular}
 \usepackage{fancyhdr}
-\usepackage{lastpage}  %% die Zahl der Seiten für den Kopf der Folgeseiten
-\usepackage{refcount}  %% dieselbe Zahl als Zahl, für den Fortsetzungshinweis
 \usepackage{array}
 \usepackage{etoolbox}  %% \ifblank für die Angaben, die leer sein dürfen
 \usepackage{tikz}      %% das Logo
 
-%% Zahlen setzt siunitx (ADR-0021). Dieselben Einstellungen wie in
-%% helsinki.tex, und jede aus demselben Grund – dort steht, was ohne sie
-%% auf dem Blatt stünde.
-\usepackage{siunitx}
+%% Die Schreibweise der Zahlen (ADR-0021): Komma, Punkt als Tausendertrenner,
+%% ab vier Stellen. Die übrigen Einstellungen von siunitx setzt die Grundlage.
 \sisetup{
-  mode                  = text,
   output-decimal-marker = {,},
   group-separator       = {.},
-  group-digits          = integer,
   group-minimum-digits  = 4,
-  round-mode            = none,
-  reset-text-series     = false,
-  reset-text-shape      = false,
-  reset-text-family     = false,
 }
 
-%% Fira Sans, aus TeX Live. Ligatures=TeXOff aus demselben Grund wie in
-%% helsinki.tex: Text aus den Eingabedaten soll so dastehen, wie er in der
-%% YAML-Datei steht, auch "--" und "<<" (#81).
+%% Fira Sans, aus TeX Live.
 \setmainfont{FiraSans}[
-  Ligatures      = TeXOff,
   Extension      = .otf,
   UprightFont    = *-Regular,
   BoldFont       = *-Bold,
@@ -77,16 +63,12 @@
 \pagestyle{folge}
 
 %% Der Fortsetzungshinweis unten rechts auf jeder Seite, der eine weitere
-%% folgt. Er gehört zur Seite und nicht zur Tabelle: Passen Positionen und
-%% Summen auf eine Seite, der Rest aber nicht, bricht die Tabelle gar nicht
-%% um, und die Seite braucht ihn trotzdem. Er steht im Fuß, damit er an
+%% folgt (\wennweitereseite aus der Grundlage). Er steht im Fuß, damit er an
 %% jeder Seite hängt, und nimmt dort keinen Raum ein ([0pt][0pt]): 3 mm unter
 %% dem Ende des Textbereichs, der \footskip über der Grundlinie des Fußes
-%% endet. Beim ersten Lauf kennt LaTeX die letzte Seite noch nicht, die Zahl
-%% ist 0, und der Hinweis fehlt – den zweiten Lauf verlangt die neue Marke
-%% LastPage ohnehin.
-\newcommand{\fortsetzung}{\ifnum\value{page}<\getpagerefnumber{LastPage}\relax
-  \raisebox{\dimexpr\footskip-3mm\relax}[0pt][0pt]{\small Fortsetzung auf der nächsten Seite}\fi}
+%% endet.
+\newcommand{\fortsetzung}{\wennweitereseite{%
+  \raisebox{\dimexpr\footskip-3mm\relax}[0pt][0pt]{\small Fortsetzung auf der nächsten Seite}}}
 \raggedright
 
 %% Keine Silbentrennung, aus demselben Grund wie in helsinki.tex: Eigennamen,
@@ -94,13 +76,6 @@
 \hyphenpenalty=10000
 \exhyphenpenalty=10000
 \tolerance=2000
-
-%% Gewöhnlicher Wortzwischenraum nach jedem Punkt (#143); den breiten
-%% bekommen nur die eigenen Sätze des Programms in \hinweisabsatz.
-\frenchspacing
-%% Auch in Kopf und Fuß der Seite, siehe helsinki.tex: Ohne diese Zeile
-%% setzte LaTeX sie mit \nonfrenchspacing, sobald siunitx geladen ist (#353).
-\let\normalsfcodes\frenchspacing
 
 %% Etwas Luft in den Zeilen des Gitters, sonst kleben die Ziffern an den Linien.
 \renewcommand{\arraystretch}{1.35}
@@ -129,18 +104,15 @@
 %% gewöhnlichen Rechnung "Vereinnahmt am" ohne Datum.
 \newcommand{\kopfangabe}[2]{\ifblank{#2}{}{#1 & #2\\}}
 
-%% Ein Absatz, der nicht über zwei Seiten bricht, und der Zusammenhalt allein,
-%% ohne Satzabstand – wie in helsinki.tex, siehe dort.
-\newcommand{\ungeteilt}[1]{{\interlinepenalty=10000 #1\par}}
-
-%% Die eigenen Sätze des Programms unter den Summen, wie in helsinki.tex: nur hier
-%% der breite Abstand nach einem Satzende (#143), deshalb keine Eingabedaten.
+%% Die eigenen Sätze des Programms unter den Summen: zusammenhaltend und mit
+%% dem breiten Abstand nach einem Satzende, beides aus der Grundlage. Deshalb
+%% keine Eingabedaten.
 \newcommand{\hinweisabsatz}[1]{\par\vspace{5mm}\noindent%
-  \ungeteilt{\nonfrenchspacing\sfcode`\:=1000 \sfcode`\;=1000 \sfcode`\,=1000 #1}}
+  \ungeteilt{\programmsatz{#1}}}
 
 %% Der Hinweis auf eine Steuerbefreiung, ein Satz je befreiter Steuergruppe:
-%% zusammenhaltend, aber ohne den Satzabstand von \hinweisabsatz, wie in
-%% helsinki.tex.
+%% zusammenhaltend, aber ohne \programmsatz – der Befreiungsgrund kommt aus
+%% den Eingabedaten (#143).
 \newcommand{\steuerhinweis}[1]{\noindent\ungeteilt{#1}}
 
 \newcommand{\absetzungskopf}[1]{\par\vspace{6mm}\noindent #1\par\vspace{1.5mm}}
@@ -317,12 +289,10 @@
 %%
 %% Davor \lineskip, danach \lineskip ohne Zeilenabstand: Die tabularx stand in
 %% einem Absatz, und TeX ließ zwischen ihr und ihren Nachbarn nur diesen
-%% Mindestabstand. longtable hinterlässt eine Unterlänge von null. LTchunksize
-%% so groß, dass jede Rechnung ein Block ist und die Spalten auf jeder Seite
-%% gleich breit sind, siehe helsinki.tex.
+%% Mindestabstand. longtable hinterlässt eine Unterlänge von null. Dass die
+%% Spalten auf jeder Seite gleich breit sind, sichert die Grundlage.
 \setlength{\LTpre}{\lineskip}\setlength{\LTpost}{0pt}%
 \setlength{\LTleft}{0pt}\setlength{\LTright}{0pt}%
-\setcounter{LTchunksize}{10000}%
 \begin{xltabular}{\linewidth}{|>{\centering\arraybackslash}p{7mm}|>{\raggedright\arraybackslash}X|>{\raggedleft\arraybackslash}p{13mm}|>{\raggedright\arraybackslash}p{15mm}|>{\raggedleft\arraybackslash}p{22mm}|RB|}
   \positionskopf
   \endfirsthead
@@ -356,7 +326,7 @@
 <<BANKVERBINDUNG>>
 
 %% Der Schlusssatz aus Stammdaten oder Rechnung. Keine Grußformel. Er bricht
-%% nicht über zwei Seiten, wie Schlusssatz und Gruß in helsinki.tex, und er
+%% nicht über zwei Seiten (\ungeteilt aus der Grundlage), und er
 %% hängt am Absatz davor – der Zahlungsfrist, ohne sie dem Pflichtsatz –,
 %% sonst stünde er allein auf der letzten Seite. \nopagebreak vor dem Abstand
 %% und nicht danach: Hinter einer Strafe ist der Abstand keine Stelle mehr, an
