@@ -203,10 +203,10 @@ class PflichtangabenTest : FunSpec({
     }
 
     for (design in designs) {
-        for ((art, file) in exampleInvoices) {
+        for ((invoiceType, file) in exampleInvoices) {
             test("$file im Design ${design.name}: gültiges PDF/A-1b mit allen Pflichtangaben") {
                 val (calculated, _) = typesetAndCheck(file, design, design.sellerConfig, targetName = "${design.name}-$file")
-                calculated.invoice.type shouldBe art
+                calculated.invoice.type shouldBe invoiceType
             }
         }
     }
