@@ -50,14 +50,14 @@ class ServicePeriodRulesTest : FunSpec({
         }
 
         test("für Teil- und Schlussrechnung gilt dasselbe") {
-            val vorzeitig = LocalDate.of(2026, 7, 15)
+            val early = LocalDate.of(2026, 7, 15)
 
             messageFor(
-                testInvoice(type = InvoiceType.PARTIAL).copy(issueDate = vorzeitig),
+                testInvoice(type = InvoiceType.PARTIAL).copy(issueDate = early),
                 Rule.ZEITRAUM_NACH_RECHNUNGSDATUM,
             ) shouldContain "Teilrechnung"
             messageFor(
-                testInvoice(type = InvoiceType.FINAL, prepayments = listOf(testPrepayment())).copy(issueDate = vorzeitig),
+                testInvoice(type = InvoiceType.FINAL, prepayments = listOf(testPrepayment())).copy(issueDate = early),
                 Rule.ZEITRAUM_NACH_RECHNUNGSDATUM,
             ) shouldContain "Schlussrechnung"
         }
@@ -66,10 +66,10 @@ class ServicePeriodRulesTest : FunSpec({
             // Ihr Zeitraum ist eine Prognose: Die Leistung steht noch aus, und
             // genau darüber stellt sie die Rechnung.
             val item = testItem().copy(servicePeriod = ServicePeriod(LocalDate.of(2026, 9, 1), LocalDate.of(2026, 9, 30)))
-            val abschlagsrechnung =
+            val prepaymentInvoice =
                 testInvoice(type = InvoiceType.PREPAYMENT, items = listOf(item)).copy(issueDate = LocalDate.of(2026, 6, 15))
 
-            CalculatedInvoice(abschlagsrechnung, config).aborts().shouldBeEmpty()
+            CalculatedInvoice(prepaymentInvoice, config).aborts().shouldBeEmpty()
         }
 
         test("das Storno einer Abschlagsrechnung darf den Zeitraum der Prognose tragen") {
@@ -79,7 +79,7 @@ class ServicePeriodRulesTest : FunSpec({
             // Rechnungsdatum des Stornos. Ein Abbruch riete, es sei dann eine
             // Abschlagsrechnung: Das ist die Ursprungsrechnung ja gerade
             // (#151, #66).
-            val storno =
+            val cancellation =
                 testInvoice(
                     type = InvoiceType.CANCELLATION,
                     items = listOf(testItem(quantity = "-1")),
@@ -89,7 +89,7 @@ class ServicePeriodRulesTest : FunSpec({
                     servicePeriod = ServicePeriod(LocalDate.of(2026, 6, 1), LocalDate.of(2026, 10, 31)),
                 )
 
-            CalculatedInvoice(storno, config).aborts().shouldBeEmpty()
+            CalculatedInvoice(cancellation, config).aborts().shouldBeEmpty()
         }
     }
 
@@ -110,11 +110,11 @@ class ServicePeriodRulesTest : FunSpec({
         }
 
         test("auch bei einer Abschlagsrechnung – die Prognose darf in der Zukunft liegen, verdreht sein darf sie nicht") {
-            val abschlagsrechnung =
+            val prepaymentInvoice =
                 testInvoice(type = InvoiceType.PREPAYMENT)
                     .copy(servicePeriod = ServicePeriod(LocalDate.of(2026, 10, 31), LocalDate.of(2026, 6, 1)))
 
-            messageFor(abschlagsrechnung, Rule.ZEITRAUM_VERDREHT) shouldContain "beginnt am 2026-10-31"
+            messageFor(prepaymentInvoice, Rule.ZEITRAUM_VERDREHT) shouldContain "beginnt am 2026-10-31"
         }
     }
 })

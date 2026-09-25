@@ -26,8 +26,8 @@ class IdentifiersTest : FunSpec({
         test("erkennt einen Zahlendreher über die Prüfsumme") {
             // Genau der Fehler, den man beim Abtippen macht: zwei Ziffern vertauscht.
             // Das Muster stimmt weiterhin, nur die Prüfsumme nicht.
-            val fehler = shouldThrow<InvalidIdentifierException> { Iban("DE89 3704 0044 0532 0130 09") }
-            fehler.message!! shouldContain "Prüfsumme"
+            val error = shouldThrow<InvalidIdentifierException> { Iban("DE89 3704 0044 0532 0130 09") }
+            error.message!! shouldContain "Prüfsumme"
         }
 
         test("weist zu kurze oder unsinnige Eingaben ab") {
@@ -113,26 +113,26 @@ class IdentifiersTest : FunSpec({
         // Nachschlagefunktion: Das ist der Weg, den eine YAML-Datei tatsächlich
         // nimmt, und seit die Deklaration an einer Stelle steht, gibt es
         // daneben keine zweite Tür mehr.
-        fun einheit(text: String): Unit = Yaml.default.decodeFromString(UnitSerializer, text)
+        fun unit(text: String): Unit = Yaml.default.decodeFromString(UnitSerializer, text)
 
         test("löst die deutschen Schreibweisen auf Rec-20-Codes auf") {
             assertSoftly {
-                einheit("Std.").code shouldBe "HUR"
-                einheit("Tage").code shouldBe "DAY"
-                einheit("pauschal").code shouldBe "LS"
-                einheit("Stück").code shouldBe "H87"
+                unit("Std.").code shouldBe "HUR"
+                unit("Tage").code shouldBe "DAY"
+                unit("pauschal").code shouldBe "LS"
+                unit("Stück").code shouldBe "H87"
             }
         }
 
         test("ist unempfindlich gegen Groß- und Kleinschreibung") {
-            einheit("STD.") shouldBe Unit.HOUR
+            unit("STD.") shouldBe Unit.HOUR
         }
 
         test("eine unbekannte Einheit nennt die zulässigen") {
-            val fehler = shouldThrow<Exception> { einheit("Stnd.") }
+            val error = shouldThrow<Exception> { unit("Stnd.") }
             assertSoftly {
-                fehler.message!! shouldContain "Stnd."
-                fehler.message!! shouldContain "Std."
+                error.message!! shouldContain "Stnd."
+                error.message!! shouldContain "Std."
             }
         }
     }

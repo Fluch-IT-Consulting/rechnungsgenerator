@@ -37,7 +37,7 @@ class InvoiceKindRulesTest : FunSpec({
     fun kindOf(invoice: Invoice): InvoiceKind = CalculatedInvoice(invoice, config).accepted().kind
 
     // Das Gegenstück zur Ursprungsrechnung: dieselbe Position, negative Menge.
-    fun storno(
+    fun cancellation(
         cancelled: CancelledInvoice? = testCancelled(),
         quantity: String = "-1",
     ) = testInvoice(
@@ -47,21 +47,21 @@ class InvoiceKindRulesTest : FunSpec({
     )
 
     // Die Gesamtleistung: 20.000 € netto, 19 % USt., also 23.800 € brutto.
-    fun gesamtleistung(): List<LineItem> = listOf(testItem(quantity = "1", unitPrice = "20000.00"))
+    fun totalService(): List<LineItem> = listOf(testItem(quantity = "1", unitPrice = "20000.00"))
 
-    fun schlussrechnung(vararg prepayments: Prepayment) =
-        testInvoice(type = InvoiceType.FINAL, items = gesamtleistung(), prepayments = prepayments.toList())
+    fun finalInvoice(vararg prepayments: Prepayment) =
+        testInvoice(type = InvoiceType.FINAL, items = totalService(), prepayments = prepayments.toList())
 
     // Je ein Weg, auf dem kein Typ entsteht – die Kennungen selbst stehen nicht
     // noch einmal hier.
-    fun unbaubar(): List<Invoice> =
+    fun unbuildable(): List<Invoice> =
         listOf(
-            storno(cancelled = null),
+            cancellation(cancelled = null),
             testInvoice(cancelled = testCancelled()),
             testInvoice(receivedOn = LocalDate.of(2026, 8, 10)),
-            testInvoice(items = gesamtleistung(), prepayments = listOf(testPrepayment())),
-            schlussrechnung(),
-            schlussrechnung(testPrepayment(receivedOn = null)),
+            testInvoice(items = totalService(), prepayments = listOf(testPrepayment())),
+            finalInvoice(),
+            finalInvoice(testPrepayment(receivedOn = null)),
         )
 
     context("aus jeder Rechnungsart wird ihr Typ") {
@@ -77,7 +77,7 @@ class InvoiceKindRulesTest : FunSpec({
         }
 
         test("die Schlussrechnung trägt ihre Abschläge, jeden mit feststehender Vereinnahmung") {
-            val kind = kindOf(schlussrechnung(testPrepayment())).shouldBeInstanceOf<InvoiceKind.FinalInvoice>()
+            val kind = kindOf(finalInvoice(testPrepayment())).shouldBeInstanceOf<InvoiceKind.FinalInvoice>()
 
             kind.deductions.single().receivedOn shouldBe LocalDate.of(2026, 6, 10)
             kind.deductions
@@ -86,13 +86,13 @@ class InvoiceKindRulesTest : FunSpec({
         }
 
         test("das Storno trägt seinen Bezug") {
-            kindOf(storno()) shouldBe InvoiceKind.Cancellation(testCancelled())
+            kindOf(cancellation()) shouldBe InvoiceKind.Cancellation(testCancelled())
         }
     }
 
     context("was den Typ unbaubar macht") {
         test("ein Storno ohne Bezug wird abgelehnt") {
-            val message = messageFor(storno(cancelled = null), Rule.STORNO_OHNE_BEZUG)
+            val message = messageFor(cancellation(cancelled = null), Rule.STORNO_OHNE_BEZUG)
 
             message shouldContain "'storniert'"
             // Die Meldung sagt, warum es die Angabe braucht, nicht nur dass sie fehlt.
@@ -137,7 +137,7 @@ class InvoiceKindRulesTest : FunSpec({
         test("Abschläge nur in einer Schlussrechnung") {
             val message =
                 messageFor(
-                    testInvoice(items = gesamtleistung(), prepayments = listOf(testPrepayment())),
+                    testInvoice(items = totalService(), prepayments = listOf(testPrepayment())),
                     Rule.ABSCHLAEGE_FALSCHE_ART,
                 )
 
@@ -148,7 +148,7 @@ class InvoiceKindRulesTest : FunSpec({
             // Ohne neue Regel: Die bestehende sagt "nur in einer Schlussrechnung".
             val message =
                 messageFor(
-                    storno().copy(prepayments = listOf(testPrepayment())),
+                    cancellation().copy(prepayments = listOf(testPrepayment())),
                     Rule.ABSCHLAEGE_FALSCHE_ART,
                 )
 
@@ -156,7 +156,7 @@ class InvoiceKindRulesTest : FunSpec({
         }
 
         test("eine Schlussrechnung ohne Abschläge") {
-            val message = messageFor(schlussrechnung(), Rule.ABSCHLAEGE_FEHLEN)
+            val message = messageFor(finalInvoice(), Rule.ABSCHLAEGE_FEHLEN)
 
             message shouldContain "abschlaege"
         }
@@ -164,7 +164,7 @@ class InvoiceKindRulesTest : FunSpec({
         test("ein Abschlag ohne Vereinnahmung wird nicht abgesetzt") {
             // §14 Abs. 5 Satz 2 UStG setzt ab, was vereinnahmt wurde. Ein
             // berechneter, aber unbezahlter Abschlag ist eine offene Forderung.
-            val message = messageFor(schlussrechnung(testPrepayment(receivedOn = null)), Rule.ABSCHLAG_OHNE_VEREINNAHMUNG)
+            val message = messageFor(finalInvoice(testPrepayment(receivedOn = null)), Rule.ABSCHLAG_OHNE_VEREINNAHMUNG)
 
             message shouldContain "R26-009"
             message shouldContain "vereinnahmt-am"
@@ -173,7 +173,7 @@ class InvoiceKindRulesTest : FunSpec({
         test("ohne gebaute Rechnungsart wird nicht angenommen") {
             // Die Voraussetzung von ADR-0008: Eine AcceptedInvoice ohne kind
             // gibt es nicht, also auch keine Stornorechnung ohne Bezug im Renderer.
-            val verdict = AcceptedInvoice.check(CalculatedInvoice(storno(cancelled = null), config))
+            val verdict = AcceptedInvoice.check(CalculatedInvoice(cancellation(cancelled = null), config))
 
             verdict.shouldBeInstanceOf<Verdict.Rejected>().aborts.rules() shouldContain Rule.STORNO_OHNE_BEZUG
         }
@@ -182,7 +182,7 @@ class InvoiceKindRulesTest : FunSpec({
             // AcceptedInvoice.check lehnt eine Rechnung ohne gebaute Art mit ihren
             // Abbrüchen ab. Wäre einer dieser Befunde bloß ein Hinweis, stünde
             // eine Ablehnung ohne Grund da (#93).
-            unbaubar().forEach { invoice ->
+            unbuildable().forEach { invoice ->
                 val notBuilt =
                     InvoiceKindRules
                         .check(CalculatedInvoice(invoice, config))
@@ -202,7 +202,7 @@ class InvoiceKindRulesTest : FunSpec({
             // Das Gegenstück zum Test davor: Abbruch sein genügt nicht, der Befund
             // muss auch in der Ablehnung ankommen (#105). Gebaut wird hier eigens, damit
             // der Test nicht mitliest, was AcceptedInvoice.check selbst gebaut hat.
-            unbaubar().forEach { invoice ->
+            unbuildable().forEach { invoice ->
                 val calculated = CalculatedInvoice(invoice, config)
                 val notBuilt = InvoiceKindRules.check(calculated).shouldBeInstanceOf<InvoiceKindRules.Result.NotBuilt>()
 

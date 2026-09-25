@@ -17,7 +17,7 @@ class InvoiceVariableResolverTest : FunSpec({
 
     val config = testSellerConfig()
 
-    val storno =
+    val cancellation =
         InvoiceVariableResolver(
             CalculatedInvoice(
                 testInvoice(
@@ -32,8 +32,8 @@ class InvoiceVariableResolverTest : FunSpec({
     val invoice = InvoiceVariableResolver(CalculatedInvoice(testInvoice(), config).accepted())
 
     test("auf einer Stornorechnung: Nummer und Datum der Ursprungsrechnung, noch ohne Format") {
-        storno.resolve(InvoiceVariable.URSPRUNGSNUMMER) shouldBe TextValue.Text("R26-042")
-        storno.resolve(InvoiceVariable.URSPRUNGSDATUM) shouldBe TextValue.Date(LocalDate.of(2026, 7, 15))
+        cancellation.resolve(InvoiceVariable.URSPRUNGSNUMMER) shouldBe TextValue.Text("R26-042")
+        cancellation.resolve(InvoiceVariable.URSPRUNGSDATUM) shouldBe TextValue.Date(LocalDate.of(2026, 7, 15))
     }
 
     test("auf einer anderen Rechnungsart gibt es die Ursprungsrechnung nicht") {

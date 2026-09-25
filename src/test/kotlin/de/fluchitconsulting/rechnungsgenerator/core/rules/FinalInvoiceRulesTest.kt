@@ -34,10 +34,10 @@ class FinalInvoiceRulesTest : FunSpec({
     val config = testSellerConfig()
 
     // Die Gesamtleistung: 20.000 € netto, 19 % USt., also 23.800 € brutto.
-    fun gesamtleistung(): List<LineItem> = listOf(testItem(quantity = "1", unitPrice = "20000.00"))
+    fun totalService(): List<LineItem> = listOf(testItem(quantity = "1", unitPrice = "20000.00"))
 
-    fun schlussrechnung(vararg prepayments: Prepayment) =
-        testInvoice(type = InvoiceType.FINAL, items = gesamtleistung(), prepayments = prepayments.toList())
+    fun finalInvoice(vararg prepayments: Prepayment) =
+        testInvoice(type = InvoiceType.FINAL, items = totalService(), prepayments = prepayments.toList())
 
     fun messageFor(invoice: Invoice, rule: Rule): String = CalculatedInvoice(invoice, config).messageOf(rule)
 
@@ -48,7 +48,7 @@ class FinalInvoiceRulesTest : FunSpec({
         test("vereinnahmt nach dem Rechnungsdatum") {
             val message =
                 messageFor(
-                    schlussrechnung(testPrepayment(receivedOn = LocalDate.of(2026, 9, 1))),
+                    finalInvoice(testPrepayment(receivedOn = LocalDate.of(2026, 9, 1))),
                     Rule.ABSCHLAG_NACH_RECHNUNGSDATUM,
                 )
 
@@ -57,7 +57,7 @@ class FinalInvoiceRulesTest : FunSpec({
         }
 
         test("die Steuer des Abschlags stimmt nicht mit Netto und Satz überein") {
-            val message = messageFor(schlussrechnung(testPrepayment(vat = "670.00")), Rule.ABSCHLAG_PRUEFSUMME)
+            val message = messageFor(finalInvoice(testPrepayment(vat = "670.00")), Rule.ABSCHLAG_PRUEFSUMME)
 
             message shouldContain "670"
             message shouldContain "760"
@@ -67,14 +67,14 @@ class FinalInvoiceRulesTest : FunSpec({
             // Die Gesamtleistung ist mit 19 % abgerechnet; ein Abschlag mit 7 %
             // gehört entweder zu einer anderen Rechnung oder war damals falsch.
             val message =
-                messageFor(schlussrechnung(testPrepayment(vatRate = "7", vat = "280.00")), Rule.ABSCHLAG_KOMBINATION_FEHLT)
+                messageFor(finalInvoice(testPrepayment(vatRate = "7", vat = "280.00")), Rule.ABSCHLAG_KOMBINATION_FEHLT)
 
             message shouldContain "kommt in dieser Schlussrechnung nicht vor"
             message shouldContain "R26-009"
         }
 
         test("dieselbe Rechnungsnummer zweimal") {
-            val message = messageFor(schlussrechnung(testPrepayment(), testPrepayment()), Rule.ABSCHLAG_DOPPELT)
+            val message = messageFor(finalInvoice(testPrepayment(), testPrepayment()), Rule.ABSCHLAG_DOPPELT)
 
             message shouldContain "R26-009"
             message shouldContain "2-mal"
@@ -85,25 +85,25 @@ class FinalInvoiceRulesTest : FunSpec({
             // die erste doppelte Nummer da; die zweite fiele erst im nächsten
             // Lauf auf (#152).
             val invoice =
-                schlussrechnung(
+                finalInvoice(
                     testPrepayment(invoiceNumber = "R26-009"),
                     testPrepayment(invoiceNumber = "R26-009"),
                     testPrepayment(invoiceNumber = "R26-011"),
                     testPrepayment(invoiceNumber = "R26-011"),
                 )
 
-            val doppelte =
+            val duplicates =
                 CalculatedInvoice(invoice, config).aborts().filter { it.rule == Rule.ABSCHLAG_DOPPELT }
 
-            doppelte.size shouldBe 2
-            doppelte.joinToString { it.describe() } shouldContain "R26-009"
-            doppelte.joinToString { it.describe() } shouldContain "R26-011"
+            duplicates.size shouldBe 2
+            duplicates.joinToString { it.describe() } shouldContain "R26-009"
+            duplicates.joinToString { it.describe() } shouldContain "R26-011"
         }
 
         test("dreimal dieselbe Nummer nennt die Anzahl, nicht zweimal") {
             // Wer "zweimal" liest und eine Zeile löscht, läuft in denselben Abbruch.
             val message =
-                messageFor(schlussrechnung(testPrepayment(), testPrepayment(), testPrepayment()), Rule.ABSCHLAG_DOPPELT)
+                messageFor(finalInvoice(testPrepayment(), testPrepayment(), testPrepayment()), Rule.ABSCHLAG_DOPPELT)
 
             message shouldContain "3-mal"
         }
@@ -112,7 +112,7 @@ class FinalInvoiceRulesTest : FunSpec({
             // Der Generator nimmt nichts über das Schema einer Nummer an (#53):
             // "r26-009" und "R26-009 " sind andere Nummern als "R26-009".
             val invoice =
-                schlussrechnung(
+                finalInvoice(
                     testPrepayment(invoiceNumber = "R26-009"),
                     testPrepayment(invoiceNumber = "r26-009"),
                     testPrepayment(invoiceNumber = "R26-009 "),
@@ -127,7 +127,7 @@ class FinalInvoiceRulesTest : FunSpec({
             // sondern ein Fall für eine Rückzahlung.
             val tooLarge = testPrepayment(net = "30000.00", vat = "5700.00")
 
-            val message = messageFor(schlussrechnung(tooLarge), Rule.RESTBETRAG_NEGATIV)
+            val message = messageFor(finalInvoice(tooLarge), Rule.RESTBETRAG_NEGATIV)
 
             message shouldContain "Restbetrag"
         }
@@ -137,7 +137,7 @@ class FinalInvoiceRulesTest : FunSpec({
             // Abschlag still 0,00 € ab, ohne dass die Prüfsumme je etwas zu
             // prüfen hätte.
             val message =
-                messageFor(schlussrechnung(testPrepayment(taxShares = emptyList())), Rule.ABSCHLAG_OHNE_STEUERANTEILE)
+                messageFor(finalInvoice(testPrepayment(taxShares = emptyList())), Rule.ABSCHLAG_OHNE_STEUERANTEILE)
 
             message shouldContain "steueranteile"
             message shouldContain "R26-009"
@@ -150,7 +150,7 @@ class FinalInvoiceRulesTest : FunSpec({
             // die nicht hierher gehört.
             val message =
                 messageFor(
-                    schlussrechnung(testPrepayment(issueDate = LocalDate.of(2026, 9, 1))),
+                    finalInvoice(testPrepayment(issueDate = LocalDate.of(2026, 9, 1))),
                     Rule.ABSCHLAG_SPAETER_DATIERT,
                 )
 
@@ -176,17 +176,17 @@ class FinalInvoiceRulesTest : FunSpec({
                     ),
                     testPrepayment(invoiceNumber = "R26-012", vatRate = "7", vat = "280.00"),
                 )
-            val ohne = CalculatedInvoice(testInvoice(items = gesamtleistung()), config)
-            val mit = CalculatedInvoice(testInvoice(items = gesamtleistung(), prepayments = abschlaege), config)
+            val absent = CalculatedInvoice(testInvoice(items = totalService()), config)
+            val present = CalculatedInvoice(testInvoice(items = totalService(), prepayments = abschlaege), config)
 
-            mit.rules() shouldContainExactlyInAnyOrder ohne.rules() + Rule.ABSCHLAEGE_FALSCHE_ART
+            present.rules() shouldContainExactlyInAnyOrder absent.rules() + Rule.ABSCHLAEGE_FALSCHE_ART
         }
     }
 
     context("was am Ende dasteht") {
         test("zwei Abschläge, Netto und Steuer getrennt abgesetzt") {
             val invoice =
-                schlussrechnung(
+                finalInvoice(
                     testPrepayment(invoiceNumber = "R26-009"),
                     testPrepayment(invoiceNumber = "R26-011", issueDate = LocalDate.of(2026, 7, 20)),
                 )
@@ -249,7 +249,7 @@ class FinalInvoiceRulesTest : FunSpec({
         }
 
         test("ohne Abschläge bleibt der Restbetrag der Gesamtbetrag") {
-            val totals = CalculatedInvoice(testInvoice(items = gesamtleistung()), config)
+            val totals = CalculatedInvoice(testInvoice(items = totalService()), config)
 
             totals.prepayments.shouldBeEmpty()
             totals.remainingAmount shouldBe totals.grossTotal

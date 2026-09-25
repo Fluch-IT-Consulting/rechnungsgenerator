@@ -32,23 +32,23 @@ class PlausibilityHintsTest : FunSpec({
     }
 
     context("GESAMTBETRAG_NULL (#214)") {
-        fun ueberNull(type: InvoiceType) =
+        fun aboveZero(type: InvoiceType) =
             CalculatedInvoice(testInvoice(type = type, items = listOf(testItem(unitPrice = "0.00"))), config)
 
         test("eine Rechnung über null bekommt einen Hinweis") {
-            val hint = ueberNull(InvoiceType.INVOICE).messageOf(Rule.GESAMTBETRAG_NULL)
+            val hint = aboveZero(InvoiceType.INVOICE).messageOf(Rule.GESAMTBETRAG_NULL)
 
             hint shouldContain "0.00"
             hint shouldContain "gewollt"
         }
 
         test("eine Teilrechnung ebenso") {
-            ueberNull(InvoiceType.PARTIAL).rules() shouldContain Rule.GESAMTBETRAG_NULL
+            aboveZero(InvoiceType.PARTIAL).rules() shouldContain Rule.GESAMTBETRAG_NULL
         }
 
         test("die Abschlagsrechnung bricht stattdessen ab") {
             // ABSCHLAGSRECHNUNG_OHNE_BETRAG sagt es schon, und strenger.
-            ueberNull(InvoiceType.PREPAYMENT).rules() shouldNotContain Rule.GESAMTBETRAG_NULL
+            aboveZero(InvoiceType.PREPAYMENT).rules() shouldNotContain Rule.GESAMTBETRAG_NULL
         }
 
         test("eine Rechnung mit Betrag bekommt keinen") {
@@ -65,30 +65,30 @@ class PlausibilityHintsTest : FunSpec({
     }
 
     context("Rechnung mehr als sechs Monate nach der Leistung (§14 Abs. 2 UStG)") {
-        fun rechnungAm(datum: LocalDate) = CalculatedInvoice(testInvoice().copy(issueDate = datum), config)
+        fun invoiceOn(date: LocalDate) = CalculatedInvoice(testInvoice().copy(issueDate = date), config)
 
         test("danach gibt es einen Hinweis") {
-            val hint = rechnungAm(LocalDate.of(2027, 2, 1)).messageOf(Rule.RECHNUNG_SPAET)
+            val hint = invoiceOn(LocalDate.of(2027, 2, 1)).messageOf(Rule.RECHNUNG_SPAET)
 
             hint shouldContain "sechs Monate"
             hint shouldContain "2026-07-31"
         }
 
         test("genau sechs Monate danach noch nicht") {
-            rechnungAm(LocalDate.of(2027, 1, 31)).rules() shouldNotContain Rule.RECHNUNG_SPAET
+            invoiceOn(LocalDate.of(2027, 1, 31)).rules() shouldNotContain Rule.RECHNUNG_SPAET
         }
 
         test("er fängt den Tippfehler im Jahr") {
             // 2062 statt 2026: Die Rechnung entstünde 36 Jahre nach der Leistung.
             // Der Tippfehler in die andere Richtung, 2016, bricht schon ab: Dann
             // läge das Rechnungsdatum vor dem Ende der Leistung.
-            rechnungAm(LocalDate.of(2062, 8, 14)).messageOf(Rule.RECHNUNG_SPAET) shouldContain "sechs Monate"
+            invoiceOn(LocalDate.of(2062, 8, 14)).messageOf(Rule.RECHNUNG_SPAET) shouldContain "sechs Monate"
         }
 
         test("bei einer Abschlagsrechnung nicht – ihr Zeitraum ist eine Prognose") {
-            val abschlagsrechnung = testInvoice(type = InvoiceType.PREPAYMENT).copy(issueDate = LocalDate.of(2027, 2, 1))
+            val prepaymentInvoice = testInvoice(type = InvoiceType.PREPAYMENT).copy(issueDate = LocalDate.of(2027, 2, 1))
 
-            CalculatedInvoice(abschlagsrechnung, config).hints().shouldBeEmpty()
+            CalculatedInvoice(prepaymentInvoice, config).hints().shouldBeEmpty()
         }
     }
 })

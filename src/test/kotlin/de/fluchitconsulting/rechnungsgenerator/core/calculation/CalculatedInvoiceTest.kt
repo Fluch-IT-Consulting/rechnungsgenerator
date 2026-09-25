@@ -130,13 +130,13 @@ class CalculatedInvoiceTest : FunSpec({
         // Die Probe darauf, dass das Storno den Rabatt auf den Cent genau
         // aufhebt: dieselbe Position, einmal berechnet und einmal negiert.
         test("Rechnung und Storno heben sich mit festem Rabattbetrag auf") {
-            val rechnung = testItem(quantity = "3", unitPrice = "33.33", discountAmount = "19.99")
-            val storno = testItem(quantity = "-3", unitPrice = "33.33", discountAmount = "19.99")
+            val invoiceItem = testItem(quantity = "3", unitPrice = "33.33", discountAmount = "19.99")
+            val cancellationItem = testItem(quantity = "-3", unitPrice = "33.33", discountAmount = "19.99")
 
-            val netto = CalculatedInvoice(testInvoice(items = listOf(rechnung)), config).lines.single().net
-            val gegenNetto = CalculatedInvoice(testInvoice(items = listOf(storno)), config).lines.single().net
+            val net = CalculatedInvoice(testInvoice(items = listOf(invoiceItem)), config).lines.single().net
+            val counterNet = CalculatedInvoice(testInvoice(items = listOf(cancellationItem)), config).lines.single().net
 
-            netto + gegenNetto shouldBe Money.ZERO
+            net + counterNet shouldBe Money.ZERO
         }
 
         test("ohne Rabatt gibt es keinen Rabattbetrag, und das Netto ist die Basis") {
@@ -170,9 +170,9 @@ class CalculatedInvoiceTest : FunSpec({
     // Ein Paar aus einer Rechnung und den Summen einer anderen soll nicht baubar sein.
     test("copy mit einer anderen Rechnung rechnet deren Summen") {
         val calculated = CalculatedInvoice(testInvoice(items = listOf(testItem(quantity = "1", unitPrice = "100.00"))), config)
-        val andere = testInvoice(items = listOf(testItem(quantity = "2", unitPrice = "100.00")))
+        val other = testInvoice(items = listOf(testItem(quantity = "2", unitPrice = "100.00")))
 
-        calculated.copy(invoice = andere).netTotal shouldBe Money("200.00")
+        calculated.copy(invoice = other).netTotal shouldBe Money("200.00")
     }
 
     context("USt.-Gruppen") {
@@ -247,10 +247,10 @@ class CalculatedInvoiceTest : FunSpec({
 
     context("Skonto") {
         test("die Skontostufen stehen nach der Skontofrist sortiert") {
-            val kurz = SkontoTier(rate = Percent("2"), days = 7)
-            val lang = SkontoTier(rate = Percent("1"), days = 10)
+            val short = SkontoTier(rate = Percent("2"), days = 7)
+            val long = SkontoTier(rate = Percent("1"), days = 10)
 
-            CalculatedInvoice(testInvoice(skonto = listOf(lang, kurz)), config).skonto shouldBe listOf(kurz, lang)
+            CalculatedInvoice(testInvoice(skonto = listOf(long, short)), config).skonto shouldBe listOf(short, long)
         }
 
         test("die Skontofrist endet so viele Tage nach dem Rechnungsdatum") {
@@ -349,24 +349,26 @@ class CalculatedInvoiceTest : FunSpec({
         // folgt, prüfen VatIdCheckRulesTest und InvoiceRendererTest.
 
         /** Die Beispielrechnung, mit Rechnungssteller und Kunde in den genannten Ländern. */
-        fun zwischen(steller: String, kunde: String): CalculatedInvoice {
+        fun between(seller: String, customer: String): CalculatedInvoice {
             val invoice = testInvoice()
             val sellerConfig = testSellerConfig()
             return CalculatedInvoice(
-                invoice.copy(customer = invoice.customer.copy(address = invoice.customer.address.copy(countryCode = CountryCode(kunde)))),
-                sellerConfig.copy(address = sellerConfig.address.copy(countryCode = CountryCode(steller))),
+                invoice.copy(
+                    customer = invoice.customer.copy(address = invoice.customer.address.copy(countryCode = CountryCode(customer))),
+                ),
+                sellerConfig.copy(address = sellerConfig.address.copy(countryCode = CountryCode(seller))),
             )
         }
 
         test("Kunde im Land des Rechnungsstellers: Inland") {
-            val calculated = zwischen(steller = "DE", kunde = "DE")
+            val calculated = between(seller = "DE", customer = "DE")
 
             calculated.isDomestic shouldBe true
             calculated.customerInEu shouldBe true
         }
 
         test("Kunde in einem anderen Mitgliedstaat: Ausland, aber EU") {
-            val calculated = zwischen(steller = "DE", kunde = "AT")
+            val calculated = between(seller = "DE", customer = "AT")
 
             calculated.isDomestic shouldBe false
             calculated.customerInEu shouldBe true
@@ -375,14 +377,14 @@ class CalculatedInvoiceTest : FunSpec({
         test("Inland heißt das Land des Rechnungsstellers, nicht Deutschland") {
             // Die Verwechslung, die im Renderer schon einmal stand: Für einen
             // Rechnungssteller in Österreich ist ein Kunde in Wien Inland.
-            val calculated = zwischen(steller = "AT", kunde = "AT")
+            val calculated = between(seller = "AT", customer = "AT")
 
             calculated.isDomestic shouldBe true
             calculated.customerInEu shouldBe true
         }
 
         test("Kunde in einem Drittland: Ausland und nicht EU") {
-            val calculated = zwischen(steller = "DE", kunde = "CH")
+            val calculated = between(seller = "DE", customer = "CH")
 
             calculated.isDomestic shouldBe false
             calculated.customerInEu shouldBe false

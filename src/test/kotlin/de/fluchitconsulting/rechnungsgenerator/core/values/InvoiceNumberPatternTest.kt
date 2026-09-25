@@ -14,11 +14,11 @@ import io.kotest.matchers.string.shouldContain
 class InvoiceNumberPatternTest : FunSpec({
 
     test("das Muster trifft die ganze Nummer, nicht bloß eine Stelle darin") {
-        val muster = InvoiceNumberPattern("R\\d{2}-\\d{3}")
+        val pattern = InvoiceNumberPattern("R\\d{2}-\\d{3}")
 
-        muster.matches("R26-001") shouldBe true
-        muster.matches("XR26-001") shouldBe false
-        muster.matches("R26-001-storno") shouldBe false
+        pattern.matches("R26-001") shouldBe true
+        pattern.matches("XR26-001") shouldBe false
+        pattern.matches("R26-001-storno") shouldBe false
     }
 
     test("Anker sind erlaubt und ändern nichts") {
@@ -28,21 +28,21 @@ class InvoiceNumberPatternTest : FunSpec({
     test("mehrere Nummernkreise stehen als Alternative im Ausdruck") {
         // UStAE 14.5 Abs. 11 erlaubt sie; eine eigene Mechanik dafür braucht es
         // nicht, ein regulärer Ausdruck trägt seine Alternativen selbst.
-        val muster = InvoiceNumberPattern("(R|G)\\d{2}-\\d{3}")
+        val pattern = InvoiceNumberPattern("(R|G)\\d{2}-\\d{3}")
 
-        muster.matches("R26-001") shouldBe true
-        muster.matches("G26-001") shouldBe true
-        muster.matches("X26-001") shouldBe false
+        pattern.matches("R26-001") shouldBe true
+        pattern.matches("G26-001") shouldBe true
+        pattern.matches("X26-001") shouldBe false
     }
 
     test("ein Ausdruck, der keiner ist, wird beim Bauen abgelehnt") {
         // Der Tippfehler steckt in der Wiederholung: {2-3} statt {2,3}.
-        val fehler = shouldThrow<InvalidIdentifierException> { InvoiceNumberPattern("R\\d{2-3}") }
+        val error = shouldThrow<InvalidIdentifierException> { InvoiceNumberPattern("R\\d{2-3}") }
 
-        fehler.message!! shouldContain "R\\d{2-3}"
+        error.message!! shouldContain "R\\d{2-3}"
         // Die Meldung der PatternSyntaxException wird übernommen, nicht ersetzt:
         // Sie zeigt mit einem ^ auf die schadhafte Stelle im Ausdruck.
-        fehler.message!! shouldContain "^"
+        error.message!! shouldContain "^"
     }
 
     test("zwei gleiche Ausdrücke sind derselbe Wert") {

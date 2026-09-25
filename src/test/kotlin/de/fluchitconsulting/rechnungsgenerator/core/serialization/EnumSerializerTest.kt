@@ -17,48 +17,48 @@ import kotlinx.serialization.SerializationException
  */
 class EnumSerializerTest : FunSpec({
 
-    data class Farbe(val name: String)
+    data class Color(val name: String)
 
-    val farben = listOf(Farbe("Rot"), Farbe("Grün"), Farbe("Blau"))
-    val lookup = CodeLookup("Unbekannte Farbe", farben, { it.trim().lowercase() }, Farbe::name)
+    val colors = listOf(Color("Rot"), Color("Grün"), Color("Blau"))
+    val lookup = CodeLookup("Unbekannte Farbe", colors, { it.trim().lowercase() }, Color::name)
 
     test("normalisiert auf beiden Seiten, nicht nur bei der Eingabe") {
         // Der Schlüssel im Eintrag ist großgeschrieben, die Eingabe klein –
         // gefunden wird trotzdem, weil beide Seiten durch dieselbe
         // Normalisierung gehen.
-        lookup.of("rot") shouldBe Farbe("Rot")
-        lookup.of("ROT") shouldBe Farbe("Rot")
-        lookup.of("  Rot  ") shouldBe Farbe("Rot")
+        lookup.of("rot") shouldBe Color("Rot")
+        lookup.of("ROT") shouldBe Color("Rot")
+        lookup.of("  Rot  ") shouldBe Color("Rot")
     }
 
     test("nennt bei einem Fehlschlag den Wert und alle zulässigen") {
-        val fehler = shouldThrow<SerializationException> { lookup.of("Lila") }
+        val error = shouldThrow<SerializationException> { lookup.of("Lila") }
 
-        fehler.message!! shouldContain "Unbekannte Farbe 'Lila'"
-        fehler.message!! shouldContain "Rot, Grün, Blau"
+        error.message!! shouldContain "Unbekannte Farbe 'Lila'"
+        error.message!! shouldContain "Rot, Grün, Blau"
     }
 
     test("enumSerializer verpackt beides: lesen und melden") {
         // Die öffentliche Tür. Dass sie dieselbe Vereinheitlichung mitbringt
         // wie CodeLookup, ist der Sinn der Übung – ein Enum deklariert damit
         // an einer Stelle, was unter seinem Schlüssel stehen darf.
-        val serializer = enumSerializer("Farbe", farben, "Unbekannte Farbe", { it.trim().lowercase() }, Farbe::name)
+        val serializer = enumSerializer("Farbe", colors, "Unbekannte Farbe", { it.trim().lowercase() }, Color::name)
 
-        Yaml.default.decodeFromString(serializer, "  ROT  ") shouldBe Farbe("Rot")
-        Yaml.default.encodeToString(serializer, Farbe("Grün")) shouldBe "\"Grün\""
+        Yaml.default.decodeFromString(serializer, "  ROT  ") shouldBe Color("Rot")
+        Yaml.default.encodeToString(serializer, Color("Grün")) shouldBe "\"Grün\""
 
-        val fehler = shouldThrow<SerializationException> { Yaml.default.decodeFromString(serializer, "Lila") }
-        fehler.message!! shouldContain "Unbekannte Farbe 'Lila'"
+        val error = shouldThrow<SerializationException> { Yaml.default.decodeFromString(serializer, "Lila") }
+        error.message!! shouldContain "Unbekannte Farbe 'Lila'"
     }
 
     test("die Beschreibung in der Meldung darf mehr zeigen als den Schlüssel") {
         // So macht es TaxCategory: Der Code allein ("S") sagt niemandem etwas,
         // "S (Regelsatz)" schon.
-        val mitErklaerung =
-            CodeLookup("Unbekannte Farbe", farben, { it.lowercase() }, Farbe::name) { "${it.name} (eine Farbe)" }
+        val withDescription =
+            CodeLookup("Unbekannte Farbe", colors, { it.lowercase() }, Color::name) { "${it.name} (eine Farbe)" }
 
-        val fehler = shouldThrow<SerializationException> { mitErklaerung.of("Lila") }
+        val error = shouldThrow<SerializationException> { withDescription.of("Lila") }
 
-        fehler.message!! shouldContain "Rot (eine Farbe)"
+        error.message!! shouldContain "Rot (eine Farbe)"
     }
 })
