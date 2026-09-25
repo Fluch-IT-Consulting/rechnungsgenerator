@@ -27,190 +27,190 @@ import kotlin.io.path.writeText
  */
 class OffeneAbschlaegeSkriptTest : FunSpec({
 
-    val skript = File(".claude/skills/rechnung/scripts/offene-abschlaege.py").absolutePath
-    val kunde = "Beispiel Software GmbH"
+    val script = File(".claude/skills/rechnung/scripts/offene-abschlaege.py").absolutePath
+    val customer = "Beispiel Software GmbH"
 
-    data class Lauf(val exitCode: Int, val ausgabe: String, val fehler: String)
+    data class ScriptRun(val exitCode: Int, val stdout: String, val stderr: String)
 
-    fun abschlagsrechnung(nummer: String, datum: String) =
+    fun prepaymentInvoice(number: String, date: String) =
         """
-        nummer: $nummer
+        nummer: $number
         art: abschlagsrechnung
-        datum: $datum
+        datum: $date
         kunde:
-          name: $kunde
+          name: $customer
         """.trimIndent()
 
-    fun schlussrechnung(nummer: String, vararg abgesetzt: String) =
+    fun finalInvoice(number: String, vararg deducted: String) =
         """
-        nummer: $nummer
+        nummer: $number
         art: schlussrechnung
         datum: 2026-11-05
         kunde:
-          name: $kunde
+          name: $customer
         abschlaege:
         """.trimIndent() +
-            abgesetzt.joinToString("") {
+            deducted.joinToString("") {
                 "\n  - rechnungsnummer: $it"
             }
 
-    fun stornorechnung(nummer: String, aufgehoben: String) =
+    fun cancellation(number: String, cancelled: String) =
         """
-        nummer: $nummer
+        nummer: $number
         art: stornorechnung
         datum: 2026-11-10
         storniert:
-          rechnungsnummer: $aufgehoben
+          rechnungsnummer: $cancelled
           rechnungsdatum: 2026-06-15
         kunde:
-          name: $kunde
+          name: $customer
         """.trimIndent()
 
     // Der Dateiname bestimmt die Reihenfolge, in der das Skript liest – deshalb
     // steht er in den Tests und wird nicht aus der Nummer abgeleitet.
-    fun ablage(vararg dateien: Pair<String, String>): Path {
-        val verzeichnis = createTempDirectory("offene-abschlaege-test")
-        dateien.forEach { (name, inhalt) -> verzeichnis.resolve(name).writeText(inhalt) }
-        return verzeichnis
+    fun archive(vararg files: Pair<String, String>): Path {
+        val dir = createTempDirectory("offene-abschlaege-test")
+        files.forEach { (name, content) -> dir.resolve(name).writeText(content) }
+        return dir
     }
 
-    fun lauf(verzeichnis: Path): Lauf {
-        val ausgabe = verzeichnis.resolve("stdout.txt")
-        val fehler = verzeichnis.resolve("stderr.txt")
-        val prozess =
-            ProcessBuilder("python3", skript, verzeichnis.toString(), kunde)
-                .redirectOutput(ausgabe.toFile())
-                .redirectError(fehler.toFile())
+    fun runScript(dir: Path): ScriptRun {
+        val stdout = dir.resolve("stdout.txt")
+        val stderr = dir.resolve("stderr.txt")
+        val process =
+            ProcessBuilder("python3", script, dir.toString(), customer)
+                .redirectOutput(stdout.toFile())
+                .redirectError(stderr.toFile())
                 .start()
-        check(prozess.waitFor(30, TimeUnit.SECONDS)) { "Das Skript hat nach 30 s nicht geantwortet." }
-        return Lauf(prozess.exitValue(), ausgabe.readText().trim(), fehler.readText().trim())
+        check(process.waitFor(30, TimeUnit.SECONDS)) { "Das Skript hat nach 30 s nicht geantwortet." }
+        return ScriptRun(process.exitValue(), stdout.readText().trim(), stderr.readText().trim())
     }
 
     test("offen ist, was keine Schlussrechnung absetzt") {
-        val verzeichnis =
-            ablage(
-                "r009.yaml" to abschlagsrechnung("R26-009", "2026-06-15"),
-                "r011.yaml" to abschlagsrechnung("R26-011", "2026-07-15"),
-                "r014.yaml" to schlussrechnung("R26-014", "R26-009"),
+        val dir =
+            archive(
+                "r009.yaml" to prepaymentInvoice("R26-009", "2026-06-15"),
+                "r011.yaml" to prepaymentInvoice("R26-011", "2026-07-15"),
+                "r014.yaml" to finalInvoice("R26-014", "R26-009"),
             )
 
-        val ergebnis = lauf(verzeichnis)
+        val result = runScript(dir)
 
-        ergebnis.exitCode shouldBe 0
-        ergebnis.ausgabe shouldContain "R26-011\t2026-07-15\t"
-        ergebnis.ausgabe shouldNotContain "R26-009"
+        result.exitCode shouldBe 0
+        result.stdout shouldContain "R26-011\t2026-07-15\t"
+        result.stdout shouldNotContain "R26-009"
     }
 
     test("eine stornierte Abschlagsrechnung gilt nicht als offen") {
         // Fall 1 aus #66: Das Geld ist zurück, abzusetzen gibt es nichts mehr.
-        val verzeichnis =
-            ablage(
-                "r009.yaml" to abschlagsrechnung("R26-009", "2026-06-15"),
-                "r010.yaml" to stornorechnung("R26-010", "R26-009"),
+        val dir =
+            archive(
+                "r009.yaml" to prepaymentInvoice("R26-009", "2026-06-15"),
+                "r010.yaml" to cancellation("R26-010", "R26-009"),
             )
 
-        val ergebnis = lauf(verzeichnis)
+        val result = runScript(dir)
 
-        ergebnis.ausgabe shouldBe ""
-        ergebnis.fehler shouldContain "R26-009 ist durch R26-010 storniert"
+        result.stdout shouldBe ""
+        result.stderr shouldContain "R26-009 ist durch R26-010 storniert"
         // Die Schlussmeldung nennt den Grund, den es hier wirklich gibt.
-        ergebnis.fehler shouldContain "abgesetzt oder storniert"
+        result.stderr shouldContain "abgesetzt oder storniert"
     }
 
     test("eine stornierte Schlussrechnung gibt ihre Abschläge wieder frei") {
         // Fall 2 aus #66. Das Storno liegt hinter seiner Schlussrechnung –
         // deshalb entscheidet das Skript erst, wenn alle Dateien gelesen sind.
-        val verzeichnis =
-            ablage(
-                "r009.yaml" to abschlagsrechnung("R26-009", "2026-06-15"),
-                "r014.yaml" to schlussrechnung("R26-014", "R26-009"),
-                "r015.yaml" to stornorechnung("R26-015", "R26-014"),
+        val dir =
+            archive(
+                "r009.yaml" to prepaymentInvoice("R26-009", "2026-06-15"),
+                "r014.yaml" to finalInvoice("R26-014", "R26-009"),
+                "r015.yaml" to cancellation("R26-015", "R26-014"),
             )
 
-        val ergebnis = lauf(verzeichnis)
+        val result = runScript(dir)
 
-        ergebnis.ausgabe shouldContain "R26-009\t2026-06-15\t"
-        ergebnis.fehler shouldContain "R26-009 war in der stornierten Schlussrechnung R26-014 abgesetzt"
+        result.stdout shouldContain "R26-009\t2026-06-15\t"
+        result.stderr shouldContain "R26-009 war in der stornierten Schlussrechnung R26-014 abgesetzt"
     }
 
     test("stand der Abschlag in zwei stornierten Schlussrechnungen, nennt der Vermerk beide") {
         // Sonst läse man aus der Meldung eine Geschichte, die zu kurz ist.
-        val verzeichnis =
-            ablage(
-                "r009.yaml" to abschlagsrechnung("R26-009", "2026-06-15"),
-                "r014.yaml" to schlussrechnung("R26-014", "R26-009"),
-                "r015.yaml" to stornorechnung("R26-015", "R26-014"),
-                "r016.yaml" to schlussrechnung("R26-016", "R26-009"),
-                "r017.yaml" to stornorechnung("R26-017", "R26-016"),
+        val dir =
+            archive(
+                "r009.yaml" to prepaymentInvoice("R26-009", "2026-06-15"),
+                "r014.yaml" to finalInvoice("R26-014", "R26-009"),
+                "r015.yaml" to cancellation("R26-015", "R26-014"),
+                "r016.yaml" to finalInvoice("R26-016", "R26-009"),
+                "r017.yaml" to cancellation("R26-017", "R26-016"),
             )
 
-        val ergebnis = lauf(verzeichnis)
+        val result = runScript(dir)
 
-        ergebnis.ausgabe shouldContain "R26-009\t2026-06-15\t"
-        ergebnis.fehler shouldContain "in den stornierten Schlussrechnungen R26-014, R26-016 abgesetzt"
+        result.stdout shouldContain "R26-009\t2026-06-15\t"
+        result.stderr shouldContain "in den stornierten Schlussrechnungen R26-014, R26-016 abgesetzt"
     }
 
     test("eine gültige Schlussrechnung genügt, damit der Abschlag abgesetzt bleibt") {
         // Nur eine der beiden ist storniert – die andere setzt weiter ab.
-        val verzeichnis =
-            ablage(
-                "r009.yaml" to abschlagsrechnung("R26-009", "2026-06-15"),
-                "r014.yaml" to schlussrechnung("R26-014", "R26-009"),
-                "r015.yaml" to stornorechnung("R26-015", "R26-014"),
-                "r016.yaml" to schlussrechnung("R26-016", "R26-009"),
+        val dir =
+            archive(
+                "r009.yaml" to prepaymentInvoice("R26-009", "2026-06-15"),
+                "r014.yaml" to finalInvoice("R26-014", "R26-009"),
+                "r015.yaml" to cancellation("R26-015", "R26-014"),
+                "r016.yaml" to finalInvoice("R26-016", "R26-009"),
             )
 
-        val ergebnis = lauf(verzeichnis)
+        val result = runScript(dir)
 
-        ergebnis.ausgabe shouldBe ""
+        result.stdout shouldBe ""
         // Und es ist auch keine doppelte Absetzung: Die stornierte setzt nichts ab.
-        ergebnis.fehler shouldNotContain "Achtung"
+        result.stderr shouldNotContain "Achtung"
     }
 
     test("zwei gültige Schlussrechnungen über denselben Abschlag werden gemeldet") {
         // #67: Der Generator lehnt dieselbe Nummer zweimal ab, aber nur
         // innerhalb einer Datei. Hier zahlte der Kunde einmal zu wenig.
-        val verzeichnis =
-            ablage(
-                "r009.yaml" to abschlagsrechnung("R26-009", "2026-06-15"),
-                "r014.yaml" to schlussrechnung("R26-014", "R26-009"),
-                "r018.yaml" to schlussrechnung("R26-018", "R26-009"),
+        val dir =
+            archive(
+                "r009.yaml" to prepaymentInvoice("R26-009", "2026-06-15"),
+                "r014.yaml" to finalInvoice("R26-014", "R26-009"),
+                "r018.yaml" to finalInvoice("R26-018", "R26-009"),
             )
 
-        val ergebnis = lauf(verzeichnis)
+        val result = runScript(dir)
 
-        ergebnis.ausgabe shouldBe ""
-        ergebnis.fehler shouldContain
+        result.stdout shouldBe ""
+        result.stderr shouldContain
             "Achtung: R26-009 wird mehrfach abgesetzt – in den Schlussrechnungen R26-014, R26-018."
     }
 
     test("ein stornierter Abschlag in einer gültigen Schlussrechnung wird gemeldet") {
         // Weder offen noch in Ordnung: Die Schlussrechnung setzt Geld ab, das
         // der Kunde zurückbekommen hat.
-        val verzeichnis =
-            ablage(
-                "r009.yaml" to abschlagsrechnung("R26-009", "2026-06-15"),
-                "r010.yaml" to stornorechnung("R26-010", "R26-009"),
-                "r014.yaml" to schlussrechnung("R26-014", "R26-009"),
+        val dir =
+            archive(
+                "r009.yaml" to prepaymentInvoice("R26-009", "2026-06-15"),
+                "r010.yaml" to cancellation("R26-010", "R26-009"),
+                "r014.yaml" to finalInvoice("R26-014", "R26-009"),
             )
 
-        val ergebnis = lauf(verzeichnis)
+        val result = runScript(dir)
 
-        ergebnis.ausgabe shouldBe ""
-        ergebnis.fehler shouldContain "Achtung: R26-009 ist durch R26-010 storniert, wird aber in der Schlussrechnung R26-014 abgesetzt."
+        result.stdout shouldBe ""
+        result.stderr shouldContain "Achtung: R26-009 ist durch R26-010 storniert, wird aber in der Schlussrechnung R26-014 abgesetzt."
     }
 
     test("ohne Storno bleibt die Schlussmeldung, wie sie war") {
-        val verzeichnis =
-            ablage(
-                "r009.yaml" to abschlagsrechnung("R26-009", "2026-06-15"),
-                "r014.yaml" to schlussrechnung("R26-014", "R26-009"),
+        val dir =
+            archive(
+                "r009.yaml" to prepaymentInvoice("R26-009", "2026-06-15"),
+                "r014.yaml" to finalInvoice("R26-014", "R26-009"),
             )
 
-        val ergebnis = lauf(verzeichnis)
+        val result = runScript(dir)
 
-        ergebnis.ausgabe shouldBe ""
-        ergebnis.fehler shouldContain "Alle 1 Abschlagsrechnungen an '$kunde' sind schon abgesetzt."
+        result.stdout shouldBe ""
+        result.stderr shouldContain "Alle 1 Abschlagsrechnungen an '$customer' sind schon abgesetzt."
     }
 
     // Die Tests darüber schreiben ihr YAML selbst, und zwar nur die Schlüssel,
@@ -219,55 +219,55 @@ class OffeneAbschlaegeSkriptTest : FunSpec({
     // (#139). Die beiden folgenden lesen deshalb die Beispielrechnungen, die
     // andere Tests mit dem Generator lesen: Eine Umbenennung muss dort
     // nachgezogen werden und kommt so auch hier an.
-    fun beispiele(vararg namen: String): Path {
-        val verzeichnis = createTempDirectory("offene-abschlaege-beispiele")
-        namen.forEach { Path.of("src/test/resources", it).copyTo(verzeichnis.resolve(it)) }
-        return verzeichnis
+    fun examples(vararg names: String): Path {
+        val dir = createTempDirectory("offene-abschlaege-beispiele")
+        names.forEach { Path.of("src/test/resources", it).copyTo(dir.resolve(it)) }
+        return dir
     }
 
     test("in den Beispielrechnungen setzt die Schlussrechnung beide Abschläge ab") {
         // Das Storno der Beispiele hebt eine gewöhnliche Rechnung auf und darf
         // am Ergebnis nichts ändern. Eine Umbenennung von `storniert` fiele
         // hier deshalb nicht auf – die decken die Beispiele nicht ab.
-        val verzeichnis =
-            beispiele(
+        val dir =
+            examples(
                 "abschlagsrechnung.yaml",
                 "abschlagsrechnung-2.yaml",
                 "schlussrechnung.yaml",
                 "stornorechnung.yaml",
             )
 
-        val ergebnis = lauf(verzeichnis)
+        val result = runScript(dir)
 
-        ergebnis.exitCode shouldBe 0
-        ergebnis.ausgabe shouldBe ""
-        ergebnis.fehler shouldContain "Alle 2 Abschlagsrechnungen an '$kunde' sind schon abgesetzt."
+        result.exitCode shouldBe 0
+        result.stdout shouldBe ""
+        result.stderr shouldContain "Alle 2 Abschlagsrechnungen an '$customer' sind schon abgesetzt."
     }
 
     test("ohne Schlussrechnung ist die Abschlagsrechnung aus den Beispielen offen") {
-        val verzeichnis = beispiele("abschlagsrechnung-2.yaml")
+        val dir = examples("abschlagsrechnung-2.yaml")
 
-        val ergebnis = lauf(verzeichnis)
+        val result = runScript(dir)
 
-        ergebnis.exitCode shouldBe 0
-        ergebnis.ausgabe shouldBe "R26-011\t2026-08-20\t${verzeichnis.resolve("abschlagsrechnung-2.yaml")}"
+        result.exitCode shouldBe 0
+        result.stdout shouldBe "R26-011\t2026-08-20\t${dir.resolve("abschlagsrechnung-2.yaml")}"
     }
 
     test("die Stammdaten im Ordner der Wurzel stören nicht") {
         // Seit ADR-0015 liegen sie in einem versteckten Ordner, in den rglob
         // hineinsteigt. Sie tragen keine `art` und fallen deshalb durch – ohne
         // Warnung, denn lesbar sind sie ja.
-        val verzeichnis = ablage("r011.yaml" to abschlagsrechnung("R26-011", "2026-07-15"))
-        verzeichnis
+        val dir = archive("r011.yaml" to prepaymentInvoice("R26-011", "2026-07-15"))
+        dir
             .resolve(Root.FOLDER)
             .createDirectories()
             .resolve(Root.SELLER_CONFIG)
             .writeText(File("src/test/resources/stammdaten.yaml").readText())
 
-        val ergebnis = lauf(verzeichnis)
+        val result = runScript(dir)
 
-        ergebnis.exitCode shouldBe 0
-        ergebnis.ausgabe shouldContain "R26-011"
-        ergebnis.fehler shouldNotContain Root.SELLER_CONFIG
+        result.exitCode shouldBe 0
+        result.stdout shouldContain "R26-011"
+        result.stderr shouldNotContain Root.SELLER_CONFIG
     }
 })

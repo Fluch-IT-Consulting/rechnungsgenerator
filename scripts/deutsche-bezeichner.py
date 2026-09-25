@@ -18,7 +18,7 @@ rutscht durch. Was fälschlich gemeldet wird, gehört in TECHNICAL; was
 durchrutscht, in GERMAN_ALSO_ENGLISH; was die Ausnahme erlaubt, in GLOSSARY –
 nie eine davon aus Bequemlichkeit.
 
-Aufruf:  deutsche-bezeichner.py [<verzeichnis> ...] [--vorkommen]
+Aufruf:  deutsche-bezeichner.py [<verzeichnis oder datei> ...] [--vorkommen]
          ohne Verzeichnis: src/main/kotlin und src/test/kotlin
 Endet mit 1, solange es etwas meldet.
 """
@@ -74,6 +74,11 @@ GERMAN_ALSO_ENGLISH = set(
 # Vorlagen (ADR-0017). Die Platzhalter selbst heißen wie in der Vorlage,
 # <<ZAHLUNGSZIEL>>, und eine benannte Menge von ihnen gehört dazu.
 TEMPLATE_VOCABULARY = {"ZAHLUNGSANGABE"}
+
+# Tests, die nach der Datei heißen, die sie prüfen – so wie LatexCompilerTest
+# nach LatexCompiler. Die Skripte des rechnung-Skills heißen deutsch, und ein
+# übersetzter Klassenname verlöre den Weg zu seiner Datei.
+FILE_NAMED = {"OffeneAbschlaegeSkriptTest", "NaechsteNummerSkriptTest"}
 
 DECLARATIONS = [
     re.compile(r"\bfun\s+(?:<[^>]*>\s*)?(?:[\w.<>?]+\.)?(\w+)\s*\("),
@@ -224,17 +229,20 @@ def main() -> int:
     args = parser.parse_args()
 
     words = load_words()
-    sources = {
-        path: strip_strings_and_comments(path.read_text(encoding="utf-8"))
-        for root in args.roots
-        for path in sorted(pathlib.Path(root).rglob("*.kt"))
-    }
+    # Eine einzelne Datei ergäbe mit rglob "0 von 0 Dateien" – das sähe aus
+    # wie ein sauberes Ergebnis und wäre keines.
+    paths = []
+    for root in map(pathlib.Path, args.roots):
+        if not root.exists():
+            sys.exit(f"{root} gibt es nicht.")
+        paths += [root] if root.is_file() else sorted(root.rglob("*.kt"))
+    sources = {path: strip_strings_and_comments(path.read_text(encoding="utf-8")) for path in paths}
 
     german = {
         name
         for source in sources.values()
         for name in declared_names(source)
-        if name not in TEMPLATE_VOCABULARY
+        if name not in TEMPLATE_VOCABULARY | FILE_NAMED
         and any(len(p) > 2 and not is_english(p, words) for p in word_parts(name))
     }
 
