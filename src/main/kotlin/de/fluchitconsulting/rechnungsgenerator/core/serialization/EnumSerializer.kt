@@ -7,12 +7,12 @@ import kotlinx.serialization.SerializationException
  * Schlägt eine Schreibweise aus der YAML in einem Enum nach und sagt bei einem
  * Fehlschlag, was zulässig gewesen wäre.
  *
- * Drei Enums taten das mit derselben Bauform – Map, Nachschlagen, Meldung –,
- * und beim dritten wich die Kopie schon beim Abschreiben ab: Die Map
- * schlüsselte roh, nachgeschlagen wurde kleingeschrieben. Folgenlos, solange
- * alle Schreibweisen klein sind, und von keinem Test zu bemerken. Genau diese
- * Art Abweichung verschwindet, wenn [normalize] nur einmal angewandt wird –
- * hier, auf beiden Seiten.
+ * Drei Enums brauchen dieselbe Bauform – Map, Nachschlagen, Meldung. Als
+ * Kopie wiche sie leicht ab, ohne dass es auffiele: Schlüsselt die Map roh und
+ * wird kleingeschrieben nachgeschlagen, bleibt das folgenlos, solange alle
+ * Schreibweisen klein sind, und kein Test bemerkt es. Diese Art Abweichung
+ * gibt es nicht, wenn [normalize] nur einmal angewandt wird – hier, auf
+ * beiden Seiten.
  *
  * Was die drei **unterschiedlich** machen, bleibt sichtbar und wird nicht
  * eingeebnet: `TaxCategory` schlägt über den Code in Großschreibung nach, weil
