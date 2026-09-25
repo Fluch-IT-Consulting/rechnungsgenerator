@@ -130,13 +130,13 @@ internal object FinalInvoiceRules {
             // deshalb muss die Kombination aus Kategorie und Satz passen – nicht
             // nur der Satz.
             val present = calculated.vatGroups.map { it.category to it.rate }.toSet()
-            prepayments.forEach { abgesetzt ->
-                abgesetzt.prepayment.taxShares.forEach { anteil ->
+            prepayments.forEach { deducted ->
+                deducted.prepayment.taxShares.forEach { anteil ->
                     if ((anteil.taxCategory to anteil.vatRate) !in present) {
                         add(
                             Finding(
                                 Rule.ABSCHLAG_KOMBINATION_FEHLT,
-                                Subject.Prepayment(abgesetzt.prepayment.invoiceNumber),
+                                Subject.Prepayment(deducted.prepayment.invoiceNumber),
                                 "${anteil.taxCategory.code} zu " +
                                     "${anteil.vatRate} kommt in dieser Schlussrechnung nicht vor. Entweder war der " +
                                     "Abschlag damals falsch oder die Schlussrechnung ist es jetzt.",

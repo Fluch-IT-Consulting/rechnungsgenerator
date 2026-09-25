@@ -56,7 +56,7 @@ internal object SkontoRules {
 
         return skonto.flatMap { tier(it, calculated.paymentTermDays) } +
             // `zipWithNext` liefert die Paare benachbarter Elemente: (1, 2), (2, 3), …
-            skonto.zipWithNext().mapNotNull { (frueher, spaeter) -> neighbours(frueher, spaeter) }
+            skonto.zipWithNext().mapNotNull { (earlier, later) -> neighbours(earlier, later) }
     }
 
     /** Was an einer Stufe für sich falsch sein kann. */
@@ -65,10 +65,10 @@ internal object SkontoRules {
         paymentTermDays: Int,
     ): List<Finding> =
         buildList {
-            val satz = stufe.rate.valueAsPercentage
+            val percentage = stufe.rate.valueAsPercentage
             // Zwei Nachkommastellen, wie die XRechnung sie für den Satz schreibt
             // (`PROZENT=2.00`). `stripTrailingZeros`, weil Percent intern mehr führt.
-            if (satz <= BigDecimal.ZERO || satz >= HUNDRED || satz.stripTrailingZeros().scale() > 2) {
+            if (percentage <= BigDecimal.ZERO || percentage >= HUNDRED || percentage.stripTrailingZeros().scale() > 2) {
                 add(
                     Finding(
                         Rule.SKONTOSATZ_UNGUELTIG,
@@ -104,26 +104,26 @@ internal object SkontoRules {
 
     /** Was zwei benachbarte Stufen zusammen falsch machen können. */
     private fun neighbours(
-        frueher: SkontoTier,
-        spaeter: SkontoTier,
+        earlier: SkontoTier,
+        later: SkontoTier,
     ): Finding? =
         when {
-            frueher.days == spaeter.days -> {
+            earlier.days == later.days -> {
                 Finding(
                     Rule.SKONTOFRIST_DOPPELT,
                     Subject.WholeInvoice,
-                    "Zwei Skontostufen haben dieselbe Frist von ${frueher.days} Tagen " +
-                        "(${frueher.rate} und ${spaeter.rate}). Welcher Satz gilt, bliebe offen.",
+                    "Zwei Skontostufen haben dieselbe Frist von ${earlier.days} Tagen " +
+                        "(${earlier.rate} und ${later.rate}). Welcher Satz gilt, bliebe offen.",
                 )
             }
             // Wer später zahlt, bekäme mindestens so viel – die Stufe mit der
             // kürzeren Frist nutzte niemand. Meist sind die Sätze vertauscht.
-            spaeter.rate.valueAsPercentage >= frueher.rate.valueAsPercentage -> {
+            later.rate.valueAsPercentage >= earlier.rate.valueAsPercentage -> {
                 Finding(
                     Rule.SKONTOSTUFE_WERTLOS,
                     Subject.WholeInvoice,
-                    "Die Skontostufe ${frueher.rate} bis ${frueher.days} Tage ist wertlos: Bis " +
-                        "${spaeter.days} Tage gelten schon ${spaeter.rate}. Sind die Sätze vertauscht?",
+                    "Die Skontostufe ${earlier.rate} bis ${earlier.days} Tage ist wertlos: Bis " +
+                        "${later.days} Tage gelten schon ${later.rate}. Sind die Sätze vertauscht?",
                 )
             }
             else -> {

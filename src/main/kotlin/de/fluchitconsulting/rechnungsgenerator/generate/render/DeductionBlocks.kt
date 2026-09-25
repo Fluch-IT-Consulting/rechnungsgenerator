@@ -43,13 +43,13 @@ internal object DeductionBlocks {
         // entscheidet GermanFormat, für jede negative Zahl gleich (#320).
         val rows =
             deductions
-                .map { abgesetzt ->
+                .map { deduction ->
                     Latex.raw("  ") +
                         Latex.macro(
                             TemplateMacro.SUMMENZEILE,
                             listOf(
-                                describePrepayment(abgesetzt),
-                                GermanFormat.amountWithCurrency(-abgesetzt.deducted.gross),
+                                describePrepayment(deduction),
+                                GermanFormat.amountWithCurrency(-deduction.deducted.gross),
                             ),
                         )
                 }.joinToLatex(rowSeparator(TemplateMacro.POSITIONSTRENNER))
@@ -88,9 +88,9 @@ internal object DeductionBlocks {
      * der ersten Zeile, die Aufteilung in Netto und Steuer klein darunter –
      * dieselbe Zweizeiligkeit wie bei einer Position.
      */
-    private fun describePrepayment(abgesetzt: Deduction): Latex {
-        val abschlag = abgesetzt.deducted.prepayment
-        val vereinnahmtAm = abgesetzt.receivedOn
+    private fun describePrepayment(deduction: Deduction): Latex {
+        val abschlag = deduction.deducted.prepayment
+        val vereinnahmtAm = deduction.receivedOn
         val heading =
             "Abschlagsrechnung ".escapeLatex() + abschlag.invoiceNumber.escapeLatex() + " vom ".escapeLatex() +
                 GermanFormat.shortDate(abschlag.issueDate) + ", vereinnahmt am ".escapeLatex() +

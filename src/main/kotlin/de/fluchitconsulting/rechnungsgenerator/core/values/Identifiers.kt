@@ -57,9 +57,9 @@ class Iban(raw: String) {
          * BigInteger, weil die Zahl bis zu 38 Stellen lang wird.
          */
         fun checksum(iban: String): BigInteger {
-            val umgestellt = iban.substring(4) + iban.substring(0, 4)
-            val ziffern = umgestellt.map { if (it.isDigit()) it.toString() else (it - 'A' + 10).toString() }
-            return BigInteger(ziffern.joinToString("")).mod(BigInteger.valueOf(97))
+            val rearranged = iban.substring(4) + iban.substring(0, 4)
+            val digits = rearranged.map { if (it.isDigit()) it.toString() else (it - 'A' + 10).toString() }
+            return BigInteger(digits.joinToString("")).mod(BigInteger.valueOf(97))
         }
     }
 }
@@ -99,11 +99,11 @@ class VatId(raw: String) {
             throw InvalidIdentifierException("Keine gültige USt-IdNr.: '$raw' (erwartet Länderpräfix und Kennung)")
         }
         if (value.startsWith("DE")) {
-            val ziffern = value.drop(2)
-            if (!Regex("^[0-9]{9}$").matches(ziffern)) {
+            val digits = value.drop(2)
+            if (!Regex("^[0-9]{9}$").matches(digits)) {
                 throw InvalidIdentifierException("Deutsche USt-IdNr. braucht neun Ziffern: '$raw'")
             }
-            if (germanCheckDigit(ziffern.take(8)) != ziffern.last().digitToInt()) {
+            if (germanCheckDigit(digits.take(8)) != digits.last().digitToInt()) {
                 throw InvalidIdentifierException("USt-IdNr. mit falscher Prüfziffer: '$raw'")
             }
         }
@@ -149,8 +149,8 @@ class TaxNumber(raw: String) {
     val value: String = raw.trim()
 
     init {
-        val ziffern = value.filter { it.isDigit() }
-        if (!Regex("^[0-9/ ]+$").matches(value) || ziffern.length !in 10..13) {
+        val digits = value.filter { it.isDigit() }
+        if (!Regex("^[0-9/ ]+$").matches(value) || digits.length !in 10..13) {
             throw InvalidIdentifierException(
                 "Keine plausible Steuernummer: '$raw' (erwartet 10 bis 13 Ziffern, ggf. mit Schrägstrichen)",
             )
@@ -169,9 +169,9 @@ class TaxNumber(raw: String) {
 // fehlerhafte Kennung als SerializationException melden. Dadurch nennt die
 // CLI den Fehler wie einen YAML-Fehler und nicht wie einen Programmabsturz.
 
-private inline fun <T> parseOrFail(raw: String, bauen: (String) -> T): T =
+private inline fun <T> parseOrFail(raw: String, build: (String) -> T): T =
     try {
-        bauen(raw)
+        build(raw)
     } catch (e: InvalidIdentifierException) {
         throw SerializationException(e.message, e)
     }

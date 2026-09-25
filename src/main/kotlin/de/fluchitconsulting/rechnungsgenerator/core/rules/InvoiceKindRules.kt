@@ -53,11 +53,11 @@ internal object InvoiceKindRules {
 
     fun check(calculated: CalculatedInvoice): Result {
         val invoice = calculated.invoice
-        val fremd = foreignFields(invoice)
+        val foreign = foreignFields(invoice)
 
         // `when` über ein Enum ohne `else`: Kommt eine Rechnungsart dazu,
         // übersetzt diese Stelle nicht mehr, bis sie ihren Typ bekommt.
-        val eigen =
+        val own =
             when (invoice.type) {
                 InvoiceType.INVOICE, InvoiceType.PARTIAL -> Result.Built(InvoiceKind.Ordinary(invoice.type))
                 InvoiceType.PREPAYMENT -> Result.Built(InvoiceKind.PrepaymentInvoice(invoice.receivedOn))
@@ -65,9 +65,9 @@ internal object InvoiceKindRules {
                 InvoiceType.CANCELLATION -> cancellation(invoice)
             }
 
-        return when (eigen) {
-            is Result.Built -> if (fremd.isEmpty()) eigen else Result.NotBuilt(fremd)
-            is Result.NotBuilt -> Result.NotBuilt(fremd + eigen.findings)
+        return when (own) {
+            is Result.Built -> if (foreign.isEmpty()) own else Result.NotBuilt(foreign)
+            is Result.NotBuilt -> Result.NotBuilt(foreign + own.findings)
         }
     }
 
@@ -140,17 +140,17 @@ internal object InvoiceKindRules {
 
         val deductions = mutableListOf<Deduction>()
         val findings = mutableListOf<Finding>()
-        calculated.prepayments.forEach { abgesetzt ->
+        calculated.prepayments.forEach { deducted ->
             // §14 Abs. 5 Satz 2 UStG setzt ab, was vereinnahmt wurde, nicht was
             // berechnet wurde.
-            val vereinnahmtAm = abgesetzt.prepayment.receivedOn
+            val vereinnahmtAm = deducted.prepayment.receivedOn
             if (vereinnahmtAm != null) {
-                deductions += Deduction(abgesetzt, vereinnahmtAm)
+                deductions += Deduction(deducted, vereinnahmtAm)
             } else {
                 findings +=
                     Finding(
                         Rule.ABSCHLAG_OHNE_VEREINNAHMUNG,
-                        Subject.Prepayment(abgesetzt.prepayment.invoiceNumber),
+                        Subject.Prepayment(deducted.prepayment.invoiceNumber),
                         "ohne 'vereinnahmt-am' keine Absetzung. Abgesetzt wird, was vereinnahmt " +
                             "wurde – ein berechneter, aber unbezahlter Abschlag ist eine offene Forderung " +
                             "und wird gemahnt oder storniert.",

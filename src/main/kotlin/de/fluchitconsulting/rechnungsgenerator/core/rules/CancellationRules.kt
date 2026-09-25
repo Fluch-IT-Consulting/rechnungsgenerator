@@ -32,11 +32,11 @@ internal object CancellationRules {
             }
             // Ohne Bezug gibt es nichts zu prüfen; dass er fehlt, meldet
             // InvoiceKindRules.
-            val storniert = invoice.cancelled ?: return@buildList
+            val cancelled = invoice.cancelled ?: return@buildList
 
             // Verglichen wird zeichengenau, wie bei den Abschlägen (#53): Über
             // die Schreibweise fremder Nummern weiß dieses Programm nichts.
-            if (storniert.invoiceNumber == invoice.number) {
+            if (cancelled.invoiceNumber == invoice.number) {
                 add(
                     Finding(
                         Rule.STORNO_AUF_SICH_SELBST,
@@ -46,12 +46,12 @@ internal object CancellationRules {
                     ),
                 )
             }
-            if (storniert.issueDate.isAfter(invoice.issueDate)) {
+            if (cancelled.issueDate.isAfter(invoice.issueDate)) {
                 add(
                     Finding(
                         Rule.URSPRUNGSRECHNUNG_SPAETER_DATIERT,
                         Subject.WholeInvoice,
-                        "Die Ursprungsrechnung ist auf ${storniert.issueDate} datiert, nach dem Rechnungsdatum " +
+                        "Die Ursprungsrechnung ist auf ${cancelled.issueDate} datiert, nach dem Rechnungsdatum " +
                             "${invoice.issueDate} dieses Stornos. Aufheben lässt sich nur, was es schon gibt.",
                     ),
                 )

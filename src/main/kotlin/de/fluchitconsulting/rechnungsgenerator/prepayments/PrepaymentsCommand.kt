@@ -48,7 +48,7 @@ class PrepaymentsCommand : CoreCliktCommand(name = "abschlaege") {
         // von hier an mit der Rechnung: Er soll am Ende über ihrem
         // Abschlag stehen, aber nie der Pfad – der wechselt, sobald die
         // Datei in einen Jahresordner wandert.
-        val abschlagsrechnungen = invoiceFiles.map { NamedInvoice(it.name, YamlLoader.loadInvoice(it)) }
+        val prepaymentInvoices = invoiceFiles.map { NamedInvoice(it.name, YamlLoader.loadInvoice(it)) }
 
         // Alles oder nichts (ADR-0003), und dann alle Gründe auf einmal: Wer
         // fünf Dateien übergibt, soll nicht fünfmal starten müssen. Ob es
@@ -57,7 +57,7 @@ class PrepaymentsCommand : CoreCliktCommand(name = "abschlaege") {
         // stdout – bis hierher kann jede Datei noch scheitern, und dann soll
         // dort gar nichts stehen. Ein halber Block fiele keiner Regel der
         // Schlussrechnung auf.
-        when (val collected = prepaymentsOf(abschlagsrechnungen, config)) {
+        when (val collected = prepaymentsOf(prepaymentInvoices, config)) {
             is CollectedPrepayments.Complete -> echo(PrepaymentBlock.render(collected.entries))
             is CollectedPrepayments.Rejected -> throw RejectedException(collected.aborts)
         }

@@ -149,8 +149,8 @@ data class CalculatedInvoice(
     val vatGroups: List<VatGroup> =
         lines
             .groupBy { it.item.taxCategory to it.item.vatRate }
-            .map { (schluessel, group) ->
-                val (category, rate) = schluessel
+            .map { (key, group) ->
+                val (category, rate) = key
                 val base = group.sumOf { it.net }
                 VatGroup(
                     category = category,

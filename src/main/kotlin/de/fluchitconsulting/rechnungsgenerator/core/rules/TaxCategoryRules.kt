@@ -16,19 +16,19 @@ internal object TaxCategoryRules {
 
             invoice.items.forEachIndexed { index, item ->
                 val position = Subject.Item(index, item.name)
-                val kategorie = item.taxCategory
+                val category = item.taxCategory
 
-                if (kategorie.requiresZeroRate && item.vatRate.valueAsMultiplier.signum() != 0) {
+                if (category.requiresZeroRate && item.vatRate.valueAsMultiplier.signum() != 0) {
                     add(
                         Finding(
                             Rule.SATZ_MUSS_NULL_SEIN,
                             position,
-                            "Kategorie ${kategorie.code} (${kategorie.label}) verlangt einen Steuersatz von 0%, " +
+                            "Kategorie ${category.code} (${category.label}) verlangt einen Steuersatz von 0%, " +
                                 "angegeben ist ${item.vatRate}.",
                         ),
                     )
                 }
-                if (kategorie == TaxCategory.STANDARD && item.vatRate.valueAsMultiplier.signum() == 0) {
+                if (category == TaxCategory.STANDARD && item.vatRate.valueAsMultiplier.signum() == 0) {
                     add(
                         Finding(
                             Rule.REGELSATZ_MIT_NULL,
@@ -38,21 +38,21 @@ internal object TaxCategoryRules {
                         ),
                     )
                 }
-                if (!kategorie.requiresReason && item.taxExemptionReason != null) {
+                if (!category.requiresReason && item.taxExemptionReason != null) {
                     add(
                         Finding(
                             Rule.BEFREIUNGSGRUND_UNZULAESSIG,
                             position,
-                            "Kategorie ${kategorie.code} trägt keinen Steuerbefreiungsgrund.",
+                            "Kategorie ${category.code} trägt keinen Steuerbefreiungsgrund.",
                         ),
                     )
                 }
-                if (kategorie.requiresReason && item.taxExemptionReason == null && kategorie.defaultReason == null) {
+                if (category.requiresReason && item.taxExemptionReason == null && category.defaultReason == null) {
                     add(
                         Finding(
                             Rule.BEFREIUNGSGRUND_FEHLT,
                             position,
-                            "Kategorie ${kategorie.code} (${kategorie.label}) verlangt einen " +
+                            "Kategorie ${category.code} (${category.label}) verlangt einen " +
                                 "Steuerbefreiungsgrund – bitte 'steuerbefreiungsgrund' angeben.",
                         ),
                     )
@@ -61,13 +61,13 @@ internal object TaxCategoryRules {
 
             // BT-48: Ohne USt-IdNr. des Empfängers lässt sich weder die
             // Steuerschuldnerschaft noch eine innergemeinschaftliche Lieferung belegen.
-            val brauchtKundenUstId = calculated.taxCategories.filter { it.requiresCustomerVatId }
-            if (brauchtKundenUstId.isNotEmpty() && invoice.customer.vatId == null) {
+            val requiringCustomerVatId = calculated.taxCategories.filter { it.requiresCustomerVatId }
+            if (requiringCustomerVatId.isNotEmpty() && invoice.customer.vatId == null) {
                 add(
                     Finding(
                         Rule.KUNDEN_UST_ID_FEHLT,
                         Subject.WholeInvoice,
-                        "Kategorie ${brauchtKundenUstId.first().code} verlangt die USt-IdNr. des Kunden – " +
+                        "Kategorie ${requiringCustomerVatId.first().code} verlangt die USt-IdNr. des Kunden – " +
                             "bitte 'kunde: umsatzsteuer-id' angeben.",
                     ),
                 )

@@ -37,29 +37,29 @@ internal object VatIdCheckRules {
             // das andere diese Pflicht. Stünde hier das Papier, bliebe eine
             // Kategorie mit Nachweis und ohne Angabe still ungeprüft – heute
             // ohne Folgen, weil beide bei AE und K anschlagen (#148).
-            val kategorien = calculated.taxCategories.filter { it.vatIdConfirmation != VatIdConfirmation.NEVER }
-            if (kategorien.isEmpty()) return@buildList
-            val kunde = invoice.customer
-            val pflicht =
-                kategorien.any {
+            val categories = calculated.taxCategories.filter { it.vatIdConfirmation != VatIdConfirmation.NEVER }
+            if (categories.isEmpty()) return@buildList
+            val customer = invoice.customer
+            val required =
+                categories.any {
                     when (it.vatIdConfirmation) {
                         VatIdConfirmation.ALWAYS -> true
                         VatIdConfirmation.IN_EU -> !calculated.isDomestic && calculated.customerInEu
                         VatIdConfirmation.NEVER -> false
                     }
                 }
-            if (!pflicht) return@buildList
+            if (!required) return@buildList
 
             // Ohne Nachweis entfällt auch die Frage nach seinem Datum – deshalb
             // hier das frühe Weiterspringen.
-            val pruefung = kunde.vatIdCheck
-            if (pruefung == null) {
+            val vatIdCheck = customer.vatIdCheck
+            if (vatIdCheck == null) {
                 add(
                     Finding(
                         Rule.BESTAETIGUNGSABFRAGE_FEHLT,
                         Subject.WholeInvoice,
                         "Ohne dokumentierte Bestätigungsabfrage keine Rechnung ohne Umsatzsteuer. " +
-                            "Bitte die USt-IdNr. ${kunde.vatId} beim BZSt oder über VIES prüfen und das " +
+                            "Bitte die USt-IdNr. ${customer.vatId} beim BZSt oder über VIES prüfen und das " +
                             "Ergebnis unter 'kunde: ust-id-geprueft' eintragen (am, verfahren, nachweis).",
                     ),
                 )
@@ -67,12 +67,12 @@ internal object VatIdCheckRules {
             }
 
             // Eine Abfrage nach dem Rechnungsdatum belegt für diese Rechnung nichts.
-            if (pruefung.date.isAfter(invoice.issueDate)) {
+            if (vatIdCheck.date.isAfter(invoice.issueDate)) {
                 add(
                     Finding(
                         Rule.BESTAETIGUNGSABFRAGE_NACH_RECHNUNGSDATUM,
                         Subject.WholeInvoice,
-                        "Die Bestätigungsabfrage vom ${pruefung.date} liegt nach dem Rechnungsdatum " +
+                        "Die Bestätigungsabfrage vom ${vatIdCheck.date} liegt nach dem Rechnungsdatum " +
                             "${invoice.issueDate} – für diese Rechnung belegt sie nichts.",
                     ),
                 )
@@ -83,8 +83,8 @@ internal object VatIdCheckRules {
     private fun hints(calculated: CalculatedInvoice): List<Finding> =
         buildList {
             val invoice = calculated.invoice
-            val kunde = invoice.customer
-            val kategorien = calculated.taxCategories
+            val customer = invoice.customer
+            val categories = calculated.taxCategories
 
             // Die Altersprüfung der EU-Liste hängt bewusst am Ausland und läuft
             // nicht immer: Bei einer Inlandsrechnung wird die Liste gar nicht
@@ -92,15 +92,15 @@ internal object VatIdCheckRules {
             // jeder Rechnung erscheinen, liest nach der dritten niemand mehr –
             // dann geht der eine unter, auf den es ankommt.
             if (!calculated.isDomestic) {
-                val listenAlter = ChronoUnit.MONTHS.between(EuMemberStates.AS_OF, invoice.issueDate)
-                if (listenAlter >= 12) {
+                val listAge = ChronoUnit.MONTHS.between(EuMemberStates.AS_OF, invoice.issueDate)
+                if (listAge >= 12) {
                     add(
                         Finding(
                             Rule.EU_LISTE_ALT,
                             Subject.WholeInvoice,
-                            "Die hinterlegte Liste der EU-Mitgliedstaaten ist $listenAlter Monate alt " +
+                            "Die hinterlegte Liste der EU-Mitgliedstaaten ist $listAge Monate alt " +
                                 "(zuletzt geprüft am ${EuMemberStates.AS_OF}). Sie entscheidet mit, ob für " +
-                                "${kunde.address.countryCode} ein Nachweis verlangt wird – bitte gegen die " +
+                                "${customer.address.countryCode} ein Nachweis verlangt wird – bitte gegen die " +
                                 "amtliche Aufstellung abgleichen und EuMemberStates.AS_OF nachziehen.",
                         ),
                     )
@@ -111,36 +111,36 @@ internal object VatIdCheckRules {
             // ist, trifft hier auf einen Kunden ausserhalb: Verlangt wird dann
             // nichts (siehe confirmation), aber die Akte braucht trotzdem
             // etwas.
-            val nurInEu = kategorien.any { it.vatIdConfirmation == VatIdConfirmation.IN_EU }
-            if (nurInEu && !calculated.isDomestic && !calculated.customerInEu) {
+            val onlyInEu = categories.any { it.vatIdConfirmation == VatIdConfirmation.IN_EU }
+            if (onlyInEu && !calculated.isDomestic && !calculated.customerInEu) {
                 add(
                     Finding(
                         Rule.KEIN_VIES_MOEGLICH,
                         Subject.WholeInvoice,
-                        "${kunde.address.countryCode} ist kein EU-Mitgliedstaat – eine VIES-Abfrage gibt es dafür " +
+                        "${customer.address.countryCode} ist kein EU-Mitgliedstaat – eine VIES-Abfrage gibt es dafür " +
                             "nicht. Für die Akte braucht es einen anderen Nachweis der Unternehmereigenschaft, " +
                             "etwa eine Unternehmerbescheinigung.",
                     ),
                 )
             }
-            kunde.vatIdCheck?.let { pruefung ->
-                if (pruefung.method == CheckMethod.SIMPLE) {
+            customer.vatIdCheck?.let { vatIdCheck ->
+                if (vatIdCheck.method == CheckMethod.SIMPLE) {
                     add(
                         Finding(
                             Rule.ABFRAGE_EINFACH,
                             Subject.WholeInvoice,
-                            "Die Abfrage vom ${pruefung.date} war einfach, nicht qualifiziert. Nur die " +
+                            "Die Abfrage vom ${vatIdCheck.date} war einfach, nicht qualifiziert. Nur die " +
                                 "qualifizierte Abfrage beim BZSt gleicht Name und Anschrift ab und verschafft " +
                                 "Vertrauensschutz.",
                         ),
                     )
                 }
-                if (pruefung.reference == null) {
+                if (vatIdCheck.reference == null) {
                     add(
                         Finding(
                             Rule.ABFRAGE_OHNE_NACHWEIS,
                             Subject.WholeInvoice,
-                            "Zur Abfrage vom ${pruefung.date} ist kein Nachweis vermerkt – " +
+                            "Zur Abfrage vom ${vatIdCheck.date} ist kein Nachweis vermerkt – " +
                                 "ohne Protokoll nützt sie im Zweifel wenig.",
                         ),
                     )
@@ -149,13 +149,13 @@ internal object VatIdCheckRules {
                 // Abfrage der Ursprungsrechnung, und zu der musste sie passen. Eine
                 // frische Abfrage für ein Dokument zu verlangen, das den Umsatz
                 // zurücknimmt, hieße Arbeit ohne Zweck.
-                val alter = ChronoUnit.MONTHS.between(pruefung.date, invoice.issueDate)
-                if (invoice.type.chargesForService && alter >= 12) {
+                val checkAge = ChronoUnit.MONTHS.between(vatIdCheck.date, invoice.issueDate)
+                if (invoice.type.chargesForService && checkAge >= 12) {
                     add(
                         Finding(
                             Rule.ABFRAGE_ALT,
                             Subject.WholeInvoice,
-                            "Die Bestätigungsabfrage ist $alter Monate alt. Bei laufender Geschäftsbeziehung " +
+                            "Die Bestätigungsabfrage ist $checkAge Monate alt. Bei laufender Geschäftsbeziehung " +
                                 "wird üblicherweise regelmäßig erneut geprüft.",
                         ),
                     )

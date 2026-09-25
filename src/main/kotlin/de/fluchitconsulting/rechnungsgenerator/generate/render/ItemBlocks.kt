@@ -67,7 +67,7 @@ internal object ItemBlocks {
      * Textzeile.
      */
     private fun describeItem(item: LineItem, type: InvoiceType): Latex {
-        val zusatz =
+        val details =
             buildList {
                 item.description?.let { add(it.escapeLatex()) }
                 item.note?.let { add(it.escapeLatex()) }
@@ -76,9 +76,9 @@ internal object ItemBlocks {
                 // Prognose wie der Zeitraum der ganzen Rechnung.
                 item.servicePeriod?.let { add("${type.itemPeriodLabel}: ".escapeLatex() + servicePeriod(it, type)) }
             }
-        val bezeichnung = item.name.escapeLatex()
-        if (zusatz.isEmpty()) return bezeichnung
-        return bezeichnung + Latex.macro(TemplateMacro.POSITIONSDETAIL, listOf(zusatz.joinToLatex(" · ")))
+        val name = item.name.escapeLatex()
+        if (details.isEmpty()) return name
+        return name + Latex.macro(TemplateMacro.POSITIONSDETAIL, listOf(details.joinToLatex(" · ")))
     }
 
     /**
@@ -181,20 +181,20 @@ internal object ItemBlocks {
         val stufen = calculatedInvoice.skonto
         if (stufen.isEmpty()) return Latex.EMPTY
 
-        fun frist(stufe: SkontoTier): Latex = together(GermanFormat.date(calculatedInvoice.skontoUntil(stufe)))
+        fun deadline(stufe: SkontoTier): Latex = together(GermanFormat.date(calculatedInvoice.skontoUntil(stufe)))
 
-        val erste = stufen.first()
-        val satz =
-            "Bei Zahlung bis\u00A0".escapeLatex() + frist(erste) + " können ".escapeLatex() +
-                GermanFormat.percent(erste.rate) + " Skonto abgezogen werden".escapeLatex() +
+        val firstTier = stufen.first()
+        val sentence =
+            "Bei Zahlung bis\u00A0".escapeLatex() + deadline(firstTier) + " können ".escapeLatex() +
+                GermanFormat.percent(firstTier.rate) + " Skonto abgezogen werden".escapeLatex() +
                 stufen
                     .drop(1)
                     .map { stufe ->
-                        ", bei Zahlung bis\u00A0".escapeLatex() + frist(stufe) + " ".escapeLatex() +
+                        ", bei Zahlung bis\u00A0".escapeLatex() + deadline(stufe) + " ".escapeLatex() +
                             GermanFormat.percent(stufe.rate)
                     }.joinToLatex() +
                 ".".escapeLatex()
-        return Latex.macro(TemplateMacro.HINWEISABSATZ, listOf(satz))
+        return Latex.macro(TemplateMacro.HINWEISABSATZ, listOf(sentence))
     }
 
     /**
@@ -217,11 +217,11 @@ internal object ItemBlocks {
         calculatedInvoice.vatGroups
             .mapNotNull { group ->
                 group.exemptionReason?.let { reason ->
-                    val satz =
+                    val sentence =
                         "Auf ".escapeLatex() + GermanFormat.amountWithCurrency(group.base) +
                             " entfällt keine Umsatzsteuer: ".escapeLatex() + reason.escapeLatex() +
                             ".".escapeLatex()
-                    Latex.macro(TemplateMacro.STEUERHINWEIS, listOf(satz))
+                    Latex.macro(TemplateMacro.STEUERHINWEIS, listOf(sentence))
                 }
             }.joinToLatex("\n")
 }

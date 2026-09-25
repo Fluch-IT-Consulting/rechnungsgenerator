@@ -65,12 +65,12 @@ sealed interface CollectedPrepayments {
  * Abschlagsrechnung, als sie entstand, nicht der Schlussrechnung von heute.
  * Ihre Abbrüche kommen mit, mit der Herkunft davor.
  */
-fun prepaymentsOf(abschlagsrechnungen: List<NamedInvoice>, config: SellerConfig): CollectedPrepayments {
+fun prepaymentsOf(prepaymentInvoices: List<NamedInvoice>, config: SellerConfig): CollectedPrepayments {
     val findings = mutableListOf<Finding>()
 
     // groupBy bildet eine Map vom Kundennamen auf die Abschlagsrechnungen an
     // diesen Kunden; mehr als ein Schlüssel heißt: mehr als ein Kunde.
-    val byCustomer = abschlagsrechnungen.groupBy { it.invoice.customer.name }
+    val byCustomer = prepaymentInvoices.groupBy { it.invoice.customer.name }
     if (byCustomer.size > 1) {
         val customers =
             byCustomer.entries.joinToString(", ") { (name, invoices) ->
@@ -87,7 +87,7 @@ fun prepaymentsOf(abschlagsrechnungen: List<NamedInvoice>, config: SellerConfig)
 
     // Exakt verglichen wie die Regel der Schlussrechnung (#53).
     // Je Nummer ein Befund, mit ihrer Anzahl – wie in der Schlussrechnung (#152).
-    abschlagsrechnungen
+    prepaymentInvoices
         .groupBy { it.invoice.number }
         .filterValues { it.size > 1 }
         .forEach { (number, duplicates) ->
@@ -106,21 +106,21 @@ fun prepaymentsOf(abschlagsrechnungen: List<NamedInvoice>, config: SellerConfig)
     // `(name, abschlagsrechnung)` in der Lambda-Parameterliste zerlegt das
     // NamedInvoice in seine beiden Felder ("destructuring").
     val entries =
-        abschlagsrechnungen.mapNotNull { (name, abschlagsrechnung) ->
+        prepaymentInvoices.mapNotNull { (name, prepaymentInvoice) ->
             // Keine Regel der Schlussrechnung kennt die Art des Dokuments, aus dem
             // ein Abschlag stammt – eine gewöhnliche Rechnung ginge dort klaglos
             // durch. Ein `when` über alle Arten ohne `else` (#281): Eine neue Art
             // entscheidet hier, ob sie ein Abschlag ist, statt still unter die
             // übrigen zu fallen.
-            when (abschlagsrechnung.type) {
+            when (prepaymentInvoice.type) {
                 InvoiceType.PREPAYMENT -> {
-                    when (val verdict = AcceptedInvoice.check(CalculatedInvoice(abschlagsrechnung, config))) {
+                    when (val verdict = AcceptedInvoice.check(CalculatedInvoice(prepaymentInvoice, config))) {
                         is Verdict.Accepted -> {
                             CollectedPrepayment(name, prepaymentOf(verdict.invoice))
                         }
                         is Verdict.Rejected -> {
                             findings +=
-                                verdict.aborts.map { it.copy(subject = Subject.FromInvoice(abschlagsrechnung.number, it.subject)) }
+                                verdict.aborts.map { it.copy(subject = Subject.FromInvoice(prepaymentInvoice.number, it.subject)) }
                             null
                         }
                     }
@@ -129,8 +129,8 @@ fun prepaymentsOf(abschlagsrechnungen: List<NamedInvoice>, config: SellerConfig)
                     findings +=
                         Finding(
                             Rule.KEINE_ABSCHLAGSRECHNUNG,
-                            Subject.FromInvoice(abschlagsrechnung.number, Subject.WholeInvoice),
-                            "ist eine ${abschlagsrechnung.type.documentName}, keine Abschlagsrechnung. " +
+                            Subject.FromInvoice(prepaymentInvoice.number, Subject.WholeInvoice),
+                            "ist eine ${prepaymentInvoice.type.documentName}, keine Abschlagsrechnung. " +
                                 "Abgesetzt werden nur Abschläge.",
                         )
                     null
@@ -166,11 +166,11 @@ fun prepaymentsOf(abschlagsrechnungen: List<NamedInvoice>, config: SellerConfig)
  * Die Vorprüfung am flachen Modell bleibt, damit ein fremdes Dokument gar
  * nicht erst gerechnet wird (#118).
  */
-private fun prepaymentOf(abschlagsrechnung: AcceptedInvoice): Prepayment {
-    val calculatedInvoice = abschlagsrechnung.calculated
+private fun prepaymentOf(prepaymentInvoice: AcceptedInvoice): Prepayment {
+    val calculatedInvoice = prepaymentInvoice.calculated
     val invoice = calculatedInvoice.invoice
     val receivedOn =
-        when (val kind = abschlagsrechnung.kind) {
+        when (val kind = prepaymentInvoice.kind) {
             is InvoiceKind.PrepaymentInvoice -> kind.receivedOn
             else -> error("${invoice.number} ist keine Abschlagsrechnung – das prüft prepaymentsOf, bevor es hierher kommt.")
         }

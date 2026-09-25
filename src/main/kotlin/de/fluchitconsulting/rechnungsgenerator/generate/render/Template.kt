@@ -155,18 +155,18 @@ class Template private constructor(
          * TeX. Hier fällt er beim Bau auf, mit Namen.
          */
         private fun checkMacros(source: String) {
-            val definiert =
+            val defined =
                 NEWCOMMAND
                     .findAll(source)
                     .associate { it.groupValues[1] to (it.groupValues[2].toIntOrNull() ?: 0) }
 
             TemplateMacro.entries.forEach { macro ->
-                val stelligkeit =
-                    checkNotNull(definiert[macro.macroName]) {
+                val arity =
+                    checkNotNull(defined[macro.macroName]) {
                         "Der Renderer ruft \\${macro.macroName} auf, aber die Vorlage definiert es nicht."
                     }
-                check(stelligkeit == macro.arity) {
-                    "\\${macro.macroName} nimmt in der Vorlage $stelligkeit Argumente, im Renderer ${macro.arity}."
+                check(arity == macro.arity) {
+                    "\\${macro.macroName} nimmt in der Vorlage $arity Argumente, im Renderer ${macro.arity}."
                 }
             }
         }
