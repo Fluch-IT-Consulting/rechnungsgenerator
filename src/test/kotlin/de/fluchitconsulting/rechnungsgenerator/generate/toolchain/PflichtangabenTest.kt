@@ -14,7 +14,6 @@ import io.kotest.assertions.assertSoftly
 import io.kotest.assertions.withClue
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.collections.shouldContain
-import io.kotest.matchers.ints.shouldBeGreaterThan
 import io.kotest.matchers.shouldBe
 import java.math.BigDecimal
 import java.nio.file.Path
@@ -61,6 +60,15 @@ import kotlin.io.path.writeText
  * unter den Summen und hält den Schlusssatz daran fest, damit er nicht allein
  * auf der letzten Seite steht. In helsinki steht die Frist im Kopf, und den
  * Schlusssatz hält der Gruß.
+ *
+ * [spaltenkopf] ist ein Wort aus dem Kopf der Positionstabelle, so wie
+ * `pdftotext` es liest. Es steht auf jeder Seite, die Positionen trägt.
+ *
+ * [seiten] nennt je Beispieldatei, wie viele Seiten sie in diesem Design hat,
+ * sobald es mehr als eine sind; jede andere hat eine. Nachgemessen und nicht
+ * hergeleitet: "Mehr als eine" übersähe eine Seite mehr oder weniger (#337),
+ * und eine gewöhnliche Rechnung, die still auf zwei Seiten wüchse, sähe nicht
+ * mehr aus wie bisher (ADR-0020).
  */
 private data class Design(
     val name: String,
@@ -72,6 +80,8 @@ private data class Design(
     val seitenzahl: (seite: Int, von: Int) -> String,
     val grussformel: String?,
     val schlusssatzBeiZahlungsfrist: Boolean,
+    val spaltenkopf: String,
+    val seiten: Map<String, Int>,
 )
 
 /**
@@ -136,6 +146,13 @@ class PflichtangabenTest : FunSpec({
                 seitenzahl = { seite, von -> "Seite $seite von $von" },
                 grussformel = "Mit freundlichen Grüßen",
                 schlusssatzBeiZahlungsfrist = false,
+                spaltenkopf = "EINZELPREIS",
+                seiten =
+                    mapOf(
+                        "viele-positionen" to 3,
+                        "schluss-an-der-seitengrenze" to 3,
+                        "befreiungsgrund-an-der-seitengrenze" to 3,
+                    ),
             ),
             Design(
                 name = "prag",
@@ -148,6 +165,13 @@ class PflichtangabenTest : FunSpec({
                 seitenzahl = { seite, von -> "Seite $seite von $von" },
                 grussformel = null,
                 schlusssatzBeiZahlungsfrist = true,
+                spaltenkopf = "Einzelpreis",
+                seiten =
+                    mapOf(
+                        "viele-positionen" to 3,
+                        "schluss-an-der-seitengrenze" to 3,
+                        "befreiungsgrund-an-der-seitengrenze" to 3,
+                    ),
             ),
         )
 
@@ -171,7 +195,10 @@ class PflichtangabenTest : FunSpec({
         withClue(ausgabe.joinToString("\n")) { ausgabe shouldContain "PDF/A-1b: gültig" }
 
         val blatt = Blatt(run.textOf(pdf))
-        assertSoftly { blatt.pruefe(calculated, design) }
+        assertSoftly {
+            withClue("Seitenzahl") { blatt.seiten shouldBe (design.seiten[file] ?: 1) }
+            blatt.pruefe(calculated, design)
+        }
         return Gesetzt(calculated, blatt)
     }
 
@@ -201,16 +228,15 @@ class PflichtangabenTest : FunSpec({
     }
 
     // Mehr Positionen, als auf eine Seite passen (#318, ADR-0020): Jede steht
-    // auf dem Blatt, und das Blatt hat mehr als eine Seite. Was die Folgeseiten
-    // tragen, prüft `pruefe` an jeder Rechnung – hier ist die einzige, die
-    // welche hat.
+    // auf dem Blatt, und das Blatt hat so viele Seiten, wie das Design für
+    // diese Datei nennt. Was die Folgeseiten tragen, prüft `pruefe` an jeder
+    // mehrseitigen Rechnung; hier brechen die Positionen über zwei Seiten.
     for (design in designs) {
-        test("viele-positionen im Design ${design.name}: gültig, jede Position auf dem Blatt, über mehr als eine Seite") {
-            val (calculated, blatt) =
+        test("viele-positionen im Design ${design.name}: gültig, jede Position auf dem Blatt, über mehrere Seiten") {
+            val (calculated, _) =
                 setzeUndPruefe("viele-positionen", design, design.stammdaten, zielname = "${design.name}-viele")
 
             calculated.invoice.items.size shouldBe 40
-            blatt.seiten shouldBeGreaterThan 1
         }
     }
 
@@ -222,10 +248,7 @@ class PflichtangabenTest : FunSpec({
     // es darauf ankommt.
     for (design in designs) {
         test("Schluss an der Seitengrenze im Design ${design.name}: der Schluss bricht nicht auseinander") {
-            val (_, blatt) =
-                setzeUndPruefe("schluss-an-der-seitengrenze", design, design.stammdaten, zielname = "${design.name}-grenze")
-
-            blatt.seiten shouldBeGreaterThan 1
+            setzeUndPruefe("schluss-an-der-seitengrenze", design, design.stammdaten, zielname = "${design.name}-grenze")
         }
     }
 
@@ -235,7 +258,7 @@ class PflichtangabenTest : FunSpec({
     // Rechnung; diese Datei ist die, bei der es darauf ankommt.
     for (design in designs) {
         test("Befreiungsgrund an der Seitengrenze im Design ${design.name}: der Hinweis bricht nicht auseinander") {
-            val (calculated, blatt) =
+            val (calculated, _) =
                 setzeUndPruefe(
                     "befreiungsgrund-an-der-seitengrenze",
                     design,
@@ -244,7 +267,6 @@ class PflichtangabenTest : FunSpec({
                 )
 
             calculated.vatGroups.count { it.exemptionReason != null } shouldBe 1
-            blatt.seiten shouldBeGreaterThan 1
         }
     }
 
@@ -435,17 +457,19 @@ private fun Blatt.pruefe(
     // Der Pflichtsatz der Art, mit eingesetzten Werten.
     // Die Werte holt der Test selbst und nicht über den InvoiceVariableResolver:
     // Holte der das falsche Datum, sähe der Test sonst dasselbe falsche Datum.
-    invoice.type.mandatoryNote?.let { satz ->
-        val werte =
-            VariableResolver<InvoiceVariable> { variable ->
-                val bezug = checkNotNull(invoice.cancelled) { "<<$variable>> ohne Ursprungsrechnung" }
-                when (variable) {
-                    InvoiceVariable.URSPRUNGSNUMMER -> TextValue.Text(bezug.invoiceNumber)
-                    InvoiceVariable.URSPRUNGSDATUM -> TextValue.Date(bezug.issueDate)
+    val pflichtsatz =
+        invoice.type.mandatoryNote?.let { satz ->
+            val werte =
+                VariableResolver<InvoiceVariable> { variable ->
+                    val bezug = checkNotNull(invoice.cancelled) { "<<$variable>> ohne Ursprungsrechnung" }
+                    when (variable) {
+                        InvoiceVariable.URSPRUNGSNUMMER -> TextValue.Text(bezug.invoiceNumber)
+                        InvoiceVariable.URSPRUNGSDATUM -> TextValue.Date(bezug.issueDate)
+                    }
                 }
-            }
-        steht("Pflichtsatz", satz.klartext(werte, KURZ), satz.klartext(werte, LANG))
-    }
+            listOf(satz.klartext(werte, KURZ), satz.klartext(werte, LANG))
+        }
+    pflichtsatz?.let { steht("Pflichtsatz", *it.toTypedArray()) }
 
     // Zahlungsziel und Bankverbindung genau dann, wenn das Dokument Zahlung
     // fordert. Die Abwesenheit zeigt sich an der Beschriftung: Ein Design, das
@@ -464,9 +488,11 @@ private fun Blatt.pruefe(
 
     // Die Folgeseiten (ADR-0020): Jede trägt Rechnungsnummer, Datum und
     // Seitenzahl, damit eine lose Seite zu ihrer Rechnung findet, und den Fuß
-    // des Briefbogens. Jede Seite, auf die eine folgt, sagt das am Ende. Eine
-    // Rechnung mit einer Seite trägt nichts davon – „Seite 1 von 1“ sagte
-    // nichts.
+    // des Briefbogens mit Anschrift, Register, USt-IdNr. und Bankverbindung.
+    // Vom Register prüft das Netz nur die Nummer: Das Registergericht heißt
+    // wie ein Ort und stünde meist schon mit der Anschrift da. Jede Seite, auf
+    // die eine folgt, sagt das am Ende. Eine Rechnung mit einer Seite trägt
+    // nichts davon – „Seite 1 von 1“ sagte nichts.
     if (seiten == 1) {
         fehlt("Seitenzahl", design.seitenzahl(1, 1))
         fehlt("Fortsetzungshinweis", design.fortsetzungshinweis)
@@ -479,10 +505,26 @@ private fun Blatt.pruefe(
             }
             stehtAufSeite(seite, "Rechnungssteller im Fuß", config.companyName)
             stehtAufSeite(seite, "USt-IdNr. im Fuß", config.vatId.value, config.vatId.formatted())
+            stehtAufSeite(seite, "Anschrift im Fuß", config.address.street)
+            stehtAufSeite(seite, "Ort im Fuß", "${config.address.postalCode} ${config.address.city}")
+            config.registerNumber?.let { stehtAufSeite(seite, "Handelsregisternummer im Fuß", it) }
+            stehtAufSeite(seite, "IBAN im Fuß", config.bank.iban.formatted())
+            stehtAufSeite(seite, "BIC im Fuß", config.bank.bic.value)
             if (seite == 1) continue
             stehtAufSeite(seite, "Seitenzahl", design.seitenzahl(seite, seiten))
             stehtAufSeite(seite, "Rechnungsnummer", invoice.number)
             stehtAufSeite(seite, "Rechnungsdatum", *datum(invoice.issueDate))
+        }
+
+        // Jede Seite mit Positionen trägt den Spaltenkopf, und die Summen
+        // stehen bei der letzten Position: Summen ohne das, was sie summieren,
+        // waren der Befund aus #318.
+        invoice.items
+            .mapNotNull { seiteMit(it.name) }
+            .distinct()
+            .forEach { stehtAufSeite(it, "Spaltenkopf", design.spaltenkopf) }
+        seiteMit(invoice.items.last().name)?.let {
+            stehtAufSeite(it, "Gesamtbetrag bei der letzten Position", betrag(calculated.grossTotal))
         }
 
         // Schlusssatz, Grußformel und Name brechen nicht auseinander: Der Satz
@@ -508,6 +550,29 @@ private fun Blatt.pruefe(
             val grundSeite = seiteMit(grund)
             withClue("Befreiungsgrund steht auf keiner Seite vollständig: $grund") { (grundSeite != null) shouldBe true }
             if (grundSeite != null) stehtAufSeite(grundSeite, "Entgelt beim Befreiungsgrund", betrag(gruppe.base))
+        }
+
+        // Ebenso wenig der Pflichtsatz oder die Zahlungsfrist: Der Pflichtsatz
+        // steht ganz auf einer Seite, das Zahlungsziel auf der Seite seiner
+        // Beschriftung – in helsinki ist das die Kopfzeile, in prag der Anfang
+        // des Satzes. Skonto und den Satz zum ausgeglichenen Restbetrag
+        // erreicht keine Beispieldatei (#342).
+        pflichtsatz?.let { schreibweisen ->
+            withClue("Pflichtsatz steht auf keiner Seite vollständig: ${schreibweisen.first()}") {
+                schreibweisen.any { seiteMit(it) != null } shouldBe true
+            }
+        }
+        if (dueDate != null) {
+            val fristSeite = seiteMit(design.zahlungszielBeschriftung)
+            withClue("Beschriftung des Zahlungsziels auf keiner Seite") { (fristSeite != null) shouldBe true }
+            if (fristSeite != null) {
+                stehtAufSeite(
+                    fristSeite,
+                    "Zahlungsziel bei seiner Beschriftung",
+                    *datum(dueDate),
+                    *frist(calculated.paymentTermDays),
+                )
+            }
         }
     }
 }
