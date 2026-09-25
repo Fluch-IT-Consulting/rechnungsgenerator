@@ -15,12 +15,12 @@ internal object PaymentTermRules {
         // Negativ setzte es die Fälligkeit vor das Rechnungsdatum (#47). Die
         // Meldung nennt, woher der Wert kommt; 0 heißt "sofort" und bleibt.
         if (termDays >= 0) return emptyList()
-        val quelle = if (calculated.invoice.paymentTermDaysOverride != null) "in der Rechnung" else "in den Stammdaten"
+        val source = if (calculated.invoice.paymentTermDaysOverride != null) "in der Rechnung" else "in den Stammdaten"
         return listOf(
             Finding(
                 Rule.ZAHLUNGSZIEL_NEGATIV,
                 Subject.WholeInvoice,
-                "Das Zahlungsziel $quelle ist $termDays Tage, die Fälligkeit läge also vor dem " +
+                "Das Zahlungsziel $source ist $termDays Tage, die Fälligkeit läge also vor dem " +
                     "Rechnungsdatum. Bitte 'zahlungsziel-tage' prüfen; 0 heißt sofort.",
             ),
         )

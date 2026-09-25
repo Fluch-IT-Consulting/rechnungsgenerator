@@ -63,13 +63,13 @@ internal object InvoiceNumberRules {
 
         // Ohne Muster in den Stammdaten wird die Form nicht geprüft: Welche
         // Nummern gültig sind, weiß nur der Rechnungssteller.
-        val muster = calculated.config.invoiceNumberPattern ?: return emptyList()
-        if (!muster.matches(number)) {
+        val pattern = calculated.config.invoiceNumberPattern ?: return emptyList()
+        if (!pattern.matches(number)) {
             return listOf(
                 Finding(
                     Rule.RECHNUNGSNUMMER_PASST_NICHT,
                     Subject.WholeInvoice,
-                    "Die Rechnungsnummer '$number' passt nicht zum Muster '$muster' aus den Stammdaten " +
+                    "Die Rechnungsnummer '$number' passt nicht zum Muster '$pattern' aus den Stammdaten " +
                         "('rechnungsnummer-muster').",
                 ),
             )

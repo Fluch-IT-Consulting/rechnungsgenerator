@@ -58,7 +58,7 @@ object GermanFormat {
     private fun exact(value: BigDecimal, minFraction: Int): String {
         // stripTrailingZeros macht aus 19,0000000 die 19 und aus 1000 ein
         // 1E+3 mit negativem scale – deshalb der Boden bei minFraction.
-        val stellen = maxOf(value.stripTrailingZeros().scale(), minFraction)
+        val fractionDigits = maxOf(value.stripTrailingZeros().scale(), minFraction)
         // DecimalFormat ist nicht thread-safe, deshalb pro Aufruf eine neue
         // Instanz statt einer geteilten val. Das Rendern läuft ein paar Dutzend
         // Mal pro Rechnung – der Aufwand ist gegenüber dem LaTeX-Lauf nicht
@@ -67,7 +67,7 @@ object GermanFormat {
             .apply {
                 roundingMode = RoundingMode.UNNECESSARY
                 minimumFractionDigits = minFraction
-                maximumFractionDigits = stellen
+                maximumFractionDigits = fractionDigits
             }.format(value)
     }
 
