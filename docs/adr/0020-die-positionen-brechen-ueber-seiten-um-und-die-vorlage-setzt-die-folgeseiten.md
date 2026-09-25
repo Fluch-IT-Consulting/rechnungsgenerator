@@ -170,3 +170,26 @@ zweite Seite so weit, dass sie ohne Zusammenhalt nach der ersten Zeile des
 Hinweises endete. Geprüft wird an jeder mehrseitigen Rechnung, dass jeder
 Befreiungsgrund ganz auf einer Seite steht und das Entgelt, mit dem sein
 Satz beginnt, auf derselben.
+
+## Nachtrag vom 25.09.2026: was das Netz davon prüft
+
+Die Liste oben ist die Checkliste für ein Design, und das Netz prüft sie an
+jeder mehrseitigen Rechnung (#337): auf jeder Seite den ganzen Fuß des
+Briefbogens, auf jeder Seite mit Positionen den Spaltenkopf, auf der Seite
+der letzten Position den Gesamtbetrag, und dass Pflichtsatz und Zahlungsfrist
+ganz auf einer Seite stehen. Vom Register prüft es nur die Nummer: Das
+Registergericht heißt meist wie ein Ort und stünde schon mit der Anschrift
+da.
+
+Die Seitenzahl jeder Beispieldatei steht im Netz je Design, nachgemessen und
+nicht hergeleitet; jede Datei, die dort nicht steht, hat eine Seite. „Mehr
+als eine“ übersah eine Seite mehr oder weniger, und eine gewöhnliche
+Rechnung, die still auf zwei Seiten wüchse, sähe nicht mehr aus wie bisher.
+Ändert sich das Satzbild, wird die Zahl neu gemessen, wie eine
+Vergleichsdatei neu erzeugt wird: erst nachsehen, ob die Änderung gewollt
+ist.
+
+Zwei fachliche Sätze hat das Netz noch nicht, Skonto und den Satz zum
+ausgeglichenen Restbetrag: Keine Beispieldatei erreicht sie, und eine Prüfung
+ohne Beispiel prüfte nichts (#342). Den Pflichtsatz erreicht keine
+mehrseitige Datei; seine Prüfung steht, greift aber erst mit einer.
