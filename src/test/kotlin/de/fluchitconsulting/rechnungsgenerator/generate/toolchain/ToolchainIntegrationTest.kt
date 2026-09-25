@@ -86,8 +86,8 @@ class ToolchainIntegrationTest : FunSpec({
      * wirklich aus dem übernimmt, was es bekommt, zeigt nur ein echter Lauf.
      */
     test("zwei Läufe über dieselbe Datei ergeben dasselbe PDF, datiert auf das Rechnungsdatum") {
-        val (erster, _) = run.erzeuge("rechnung", "reproduzierbar-1")
-        val (zweiter, _) = run.erzeuge("rechnung", "reproduzierbar-2")
+        val (erster, _) = run.generate("rechnung", "reproduzierbar-1")
+        val (zweiter, _) = run.generate("rechnung", "reproduzierbar-2")
 
         val bytes = erster.readBytes()
         withClue("${erster.fileSize()} und ${zweiter.fileSize()} Bytes") {
@@ -142,8 +142,8 @@ class ToolchainIntegrationTest : FunSpec({
                 it.writeText(Path.of("src/test/resources/stammdaten.yaml").readText() + "design: prag\nlogo: $logo\n")
             }
 
-        val (erster, _) = run.erzeuge("rechnung", "logo-1", stammdaten = stammdaten)
-        val (zweiter, _) = run.erzeuge("rechnung", "logo-2", stammdaten = stammdaten)
+        val (erster, _) = run.generate("rechnung", "logo-1", sellerConfig = stammdaten)
+        val (zweiter, _) = run.generate("rechnung", "logo-2", sellerConfig = stammdaten)
 
         erster.readBytes().contentEquals(zweiter.readBytes()) shouldBe true
         run.textOf(erster) shouldContain "MUSTERIT"
@@ -162,8 +162,8 @@ class ToolchainIntegrationTest : FunSpec({
             }
         val pdfs =
             listOf(
-                run.erzeuge("rechnung", "lesezeichen-helsinki").first,
-                run.erzeuge("rechnung", "lesezeichen-prag", stammdaten = prag).first,
+                run.generate("rechnung", "lesezeichen-helsinki").first,
+                run.generate("rechnung", "lesezeichen-prag", sellerConfig = prag).first,
             )
 
         pdfs.forEach { pdf ->
@@ -199,7 +199,7 @@ class ToolchainIntegrationTest : FunSpec({
                             "design: prag\nlogo: ${logo.toAbsolutePath()}\n",
                     )
                 }
-            val (pdf, ausgabe) = run.erzeuge("rechnung", "hoehe-${logo.fileName}", stammdaten = stammdaten)
+            val (pdf, ausgabe) = run.generate("rechnung", "hoehe-${logo.fileName}", sellerConfig = stammdaten)
             withClue(ausgabe.joinToString("\n")) { ausgabe shouldContain "PDF/A-1b: gültig" }
 
             val bild = run.imageOf(pdf, dpi = 300)
@@ -240,7 +240,7 @@ class ToolchainIntegrationTest : FunSpec({
         val eingabe = workDir.resolve("ligaturen.yaml")
         eingabe.writeText(beispiel.substringBefore("positionen:") + "positionen:\n" + positionen)
 
-        val (pdf, _) = run.erzeuge("ligaturen", eingabe = eingabe)
+        val (pdf, _) = run.generate("ligaturen", input = eingabe)
 
         val gesetzt = run.textOf(pdf)
         bezeichnungen.forEach { gesetzt shouldContain it }
@@ -258,7 +258,7 @@ class ToolchainIntegrationTest : FunSpec({
         val eingabe = workDir.resolve("klammer.yaml")
         eingabe.writeText(beispiel.replace("strasse: Industriestraße 1", "strasse: \"$strasse\""))
 
-        val (pdf, _) = run.erzeuge("klammer", eingabe = eingabe)
+        val (pdf, _) = run.generate("klammer", input = eingabe)
 
         run.textOf(pdf) shouldContain strasse
     }
@@ -269,7 +269,7 @@ class ToolchainIntegrationTest : FunSpec({
      * `pdftotext` an seiner Stelle zweimal U+FFFD (#192).
      */
     test("ein tagesgenauer Leistungszeitraum steht als Text im PDF") {
-        val (pdf, _) = run.erzeuge("schlussrechnung", zielname = "zeitraum")
+        val (pdf, _) = run.generate("schlussrechnung", targetName = "zeitraum")
 
         run.textOf(pdf) shouldContain "Leistungszeitraum: 01.06.2026 – 31.10.2026"
     }
@@ -355,7 +355,7 @@ class ToolchainIntegrationTest : FunSpec({
      */
     test("beide Prüfer urteilen über dasselbe PDF gleich")
         .config(enabledOrReasonIf = { mitVerapdf }) {
-            val (gueltig, _) = run.erzeuge("rechnung", zielname = "zwei-pruefer")
+            val (gueltig, _) = run.generate("rechnung", targetName = "zwei-pruefer")
             // Ins Arbeitsverzeichnis kopiert: Der externe Prüfer legt seine
             // Ausgabedatei neben das PDF, und das wäre hier der Testbestand.
             val nichtKonform =
