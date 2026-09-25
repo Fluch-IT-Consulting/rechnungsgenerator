@@ -108,3 +108,26 @@ Kommando übergibt.
   1:08. Was davon auf #223 entfällt, steht dort.
 
 Umgesetzt in #226.
+
+## Nachtrag vom 26.09.2026: ZUGFeRD ändert zwei Verworfene
+
+Mit ZUGFeRD (ADR-0023) prüft die Naht auch PDF/A-3u. Das Profil ist jetzt eine
+Angabe, 1b oder 3u, und der externe Prüfer bekommt `-f 3u`. Die Gründe dieses
+ADR bleiben, wie sie sind. Zwei Punkte unter „Verworfen“ werden neu
+entschieden, und zwar jeweils aus einem Grund, den es damals nicht gab:
+
+- **Die `-jakarta`-Artefakte kommen doch.** Verworfen waren sie wegen der
+  Warnzeilen, und daran ändert sich nichts: Die JVM-Schalter bleiben nötig und
+  decken auch diese Familie ab. Der neue Grund ist Mustang. Es zieht
+  `validation-model-jakarta` nach, und neben `validation-model` lägen rund 800
+  gleichnamige Klassen im Klassenpfad. Unsere Prüfer laufen mit der
+  `-jakarta`-Familie unverändert, auch der Vergleich der beiden Prüfer.
+- **Der Klassenpfad wird gekürzt, aber nicht der des Prüfers.** Die Falle, vor
+  der dieses ADR warnt, war eine *fehlende Regel statt eines Absturzes*: Saxon
+  und xmlresolver gehören zu veraPDF selbst, und ohne sie könnte ein Urteil
+  still anders ausfallen. Sie bleiben deshalb drin. Ausgeschlossen werden zwei
+  ganze Funktionen von Mustang, die der Generator nie aufruft: FOP samt Batik
+  und die Umwandlung nach UBL. Fehlt dort eine Klasse, gibt es einen
+  `NoClassDefFoundError`, also einen lauten Absturz, den die Tests des
+  ZUGFeRD-Wegs finden. Außerdem ist der Posten größer als damals: 38 JARs mit
+  rund 24 MB, und jede davon bräuchte einen Eintrag in `THIRD-PARTY.md`.
