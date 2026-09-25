@@ -1,99 +1,27 @@
 package de.fluchitconsulting.rechnungsgenerator.generate.render
 
-import de.fluchitconsulting.rechnungsgenerator.core.values.Money
-import de.fluchitconsulting.rechnungsgenerator.core.values.Percent
-import de.fluchitconsulting.rechnungsgenerator.core.values.Price
-import java.math.BigDecimal
-import java.math.RoundingMode
-import java.text.DecimalFormat
-import java.text.DecimalFormatSymbols
 import java.time.LocalDate
 import java.time.YearMonth
 import java.time.format.DateTimeFormatter
 import java.util.Locale
 
 /**
- * Deutsche Darstellung von Zahlen und Daten – die Ausgabeschicht, die die
- * Value Objects bewusst nicht kennen (dort ist toString() locale-unabhängige
- * Debug-Form, siehe Money.toString).
+ * Deutsche Darstellung von Daten – die Ausgabeschicht, die `LocalDate` nicht
+ * kennt.
  *
- * Geliefert werden fertige [Latex]-Fragmente, keine Zeichenketten: Genau eine
- * dieser Funktionen erzeugt ein LaTeX-Sonderzeichen ([percent] mit dem `%`),
- * und welche das ist, soll keine Aufrufstelle wissen müssen. Die Maskierung
- * sitzt deshalb hier, nicht bei den zwanzig Aufrufern.
+ * Zahlen stehen nicht hier: Ihre Ziffern liefert [Numbers], ihre Schreibweise
+ * die Vorlage (ADR-0021). Ein Datum bleibt, weil in seiner Schreibweise eine
+ * Entscheidung steckt – ob ein Zeitraum „Juli 2026“ heißt oder zwei Daten
+ * nennt, folgt aus §31 Abs. 4 UStDV und nicht aus dem Satzbild.
+ *
+ * Geliefert werden fertige [Latex]-Fragmente, keine Zeichenketten, damit die
+ * Maskierung hier sitzt und nicht bei den Aufrufern.
  *
  * Alle Formate werden mit explizitem Locale erzeugt, nie mit dem Standard-Locale
  * der JVM: Sonst hinge das Aussehen einer Rechnung davon ab, wie der Rechner
  * eingestellt ist, auf dem sie erzeugt wurde.
  */
 object GermanFormat {
-    // Das Minuszeichen U+2212 statt des Bindestrichs, den Locale.GERMANY
-    // mitbringt: Der Bindestrich ist ein Trennzeichen, kein Rechenzeichen.
-    // Hier und nicht bei den Aufrufern, damit jede negative Zahl auf dem Blatt
-    // dasselbe Zeichen trägt (#320). Kein \textminus: Unter fontspec ist das
-    // dasselbe Zeichen, nur als Markup, und kein $-$, das käme aus der
-    // Mathematikschrift und nicht aus der des Designs.
-    private val SYMBOLS = DecimalFormatSymbols(Locale.GERMANY).apply { minusSign = '\u2212' }
-
-    /**
-     * Zahl mit so vielen Nachkommastellen, wie der Wert hat – mindestens
-     * [minFraction], höchstens so viele, wie tatsächlich da sind.
-     *
-     * Ein festes Muster rundete hier stillschweigend: `#,##0.00##` machte aus
-     * einem Einzelpreis von 0,00001 € ein `0,00`, und dann stünde auf der
-     * Rechnung "10.000 Stück zu 0,00 € = 0,10 €". Die Summen stimmten – der
-     * Calculator rechnet mit dem exakten Wert –, aber nachrechnen könnte das
-     * niemand. Genau das soll eine Rechnung erlauben.
-     *
-     * Der Preis dafür ist eine breitere Spalte in genau den Fällen, in denen
-     * die Breite die Wahrheit ist.
-     *
-     * Gerundet wird hier nicht: Die Nachkommastellen reichen bis zur letzten,
-     * die der Wert trägt. UNNECESSARY hält das fest – müsste doch eine Stelle
-     * fallen, wirft DecimalFormat eine ArithmeticException. Eine Rundungsart
-     * wie HALF_UP legte nur fest, in welche Richtung still gerundet wird, und
-     * eine still gerundete Zahl ist genau die, die sich nicht nachrechnen
-     * lässt (#330).
-     */
-    private fun exact(value: BigDecimal, minFraction: Int): String {
-        // stripTrailingZeros macht aus 19,0000000 die 19 und aus 1000 ein
-        // 1E+3 mit negativem scale – deshalb der Boden bei minFraction.
-        val fractionDigits = maxOf(value.stripTrailingZeros().scale(), minFraction)
-        // DecimalFormat ist nicht thread-safe, deshalb pro Aufruf eine neue
-        // Instanz statt einer geteilten val. Das Rendern läuft ein paar Dutzend
-        // Mal pro Rechnung – der Aufwand ist gegenüber dem LaTeX-Lauf nicht
-        // messbar.
-        return DecimalFormat("#,##0", SYMBOLS)
-            .apply {
-                roundingMode = RoundingMode.UNNECESSARY
-                minimumFractionDigits = minFraction
-                maximumFractionDigits = fractionDigits
-            }.format(value)
-    }
-
-    /** Betrag mit Währung und geschütztem Leerzeichen: `8.337,50 €` */
-    fun amountWithCurrency(money: Money): Latex = "${exact(money.value, minFraction = 2)}\u00A0€".escapeLatex()
-
-    /**
-     * Einzelpreis mit Währung: mindestens zwei, höchstens so viele
-     * Nachkommastellen, wie der Wert selbst trägt. Price darf mehr Stellen
-     * haben als Money (EN 16931 BT-146), und die sollen auf der Rechnung auch
-     * sichtbar sein: `0,3350 €` statt `0,34 €`.
-     */
-    fun priceWithCurrency(price: Price): Latex = "${exact(price.value, minFraction = 2)}\u00A0€".escapeLatex()
-
-    /** Menge ohne überflüssige Nullen: `86,5`, `1`, `1000` */
-    fun quantity(quantity: BigDecimal): Latex = exact(quantity, minFraction = 0).escapeLatex()
-
-    /**
-     * Steuersatz in Prozentschreibweise: `19 %`, `7 %`, `2,5 %`.
-     *
-     * Die einzige Funktion hier, deren Ergebnis maskiert werden **muss**: Ein
-     * nacktes `%` kommentiert in LaTeX den Rest der Zeile aus, samt
-     * Spaltentrenner und Zeilenumbruch.
-     */
-    fun percent(percent: Percent): Latex = "${exact(percent.valueAsPercentage, minFraction = 0)}\u00A0%".escapeLatex()
-
     /**
      * Ausgeschriebenes Datum: `14. August 2026`.
      *

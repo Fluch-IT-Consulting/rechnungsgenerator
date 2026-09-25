@@ -43,6 +43,33 @@
 \usepackage{array}
 \usepackage{etoolbox}  %% \ifblank für die Angaben, die leer sein dürfen
 
+%% Zahlen setzt siunitx (ADR-0021). Der Renderer liefert nur die Ziffern, als
+%% \betrag{8337.50}, \menge{86.5} oder \prozent{19} – mit Punkt, ohne
+%% Gruppierung –, und hier entsteht die Schreibweise. Jede Einstellung zählt;
+%% fehlt eine, setzt siunitx still etwas anderes:
+%%  - mode=text: sonst kämen die Ziffern aus der Mathematikschrift und nicht
+%%    aus der des Designs,
+%%  - group-digits=integer: sonst gruppierte es auch hinter dem Komma und
+%%    machte aus 0,0335 ein 0,033.5,
+%%  - group-minimum-digits=4: sonst stünde 8337,50 ohne Punkt da,
+%%  - reset-text-...=false: sonst fiele eine Zahl in einer fetten Zeile aus
+%%    dem Fettdruck.
+%% round-mode=none ist die Vorgabe und steht trotzdem da: Beim Setzen wird
+%% nie gerundet, sonst ließe sich die Rechnung nicht nachrechnen (#14).
+%% Das Minus setzt siunitx in mode=text als \textminus, also U+2212 (#320).
+\usepackage{siunitx}
+\sisetup{
+  mode                  = text,
+  output-decimal-marker = {,},
+  group-separator       = {.},
+  group-digits          = integer,
+  group-minimum-digits  = 4,
+  round-mode            = none,
+  reset-text-series     = false,
+  reset-text-shape      = false,
+  reset-text-family     = false,
+}
+
 %% Dieselbe Schrift wie im Lebenslauf – dadurch passen die Dokumente zusammen.
 %%
 %% Ligatures=TeXOff: fontspec zieht für die Hauptschrift sonst Folgen wie
@@ -128,6 +155,13 @@
 %% breiten Abstand bekommen nur die eigenen Sätze des Programms, siehe
 %% \hinweisabsatz.
 \frenchspacing
+%% Auch in Kopf und Fuß der Seite. Die setzt LaTeX in der Ausgaberoutine mit
+%% \normalsfcodes, und ob das \frenchspacing ist, entscheidet \begin{document}
+%% daran, ob der Punkt den \sfcode 1000 trägt. amsgen, das siunitx über
+%% amstext lädt, setzt ihn in \frenchspacing auf 1006, damit \@addpunct ein
+%% Satzzeichen erkennt – dann hielte LaTeX das für \nonfrenchspacing, und im
+%% Fuß stünde nach "USt-IdNr." wieder der breite Abstand (#353).
+\let\normalsfcodes\frenchspacing
 
 %% Achtung: minipage ruft \@parboxrestore auf und setzt damit die
 %% Absatzparameter zurück – der Flattersatz von oben gilt dort NICHT.
@@ -187,6 +221,11 @@
 %% Diese Angabe bricht nicht um. Im schmalen Block oben rechts bräche
 %% "Juni bis Oktober 2026" sonst hinter dem "bis" und läse sich wie zwei Angaben.
 \newcommand{\zusammen}[1]{\mbox{#1}}
+%% Die Zahlen, gesetzt nach \sisetup oben. Das €-Zeichen und das Prozentzeichen
+%% hängen mit festem Leerzeichen an der Zahl. Einzelpreise nehmen \betrag.
+\newcommand{\betrag}[1]{\num{#1}~€}
+\newcommand{\prozent}[1]{\num{#1}~\%}
+\newcommand{\menge}[1]{\num{#1}}
 
 \newcommand{\rubrik}[1]{{\footnotesize\color{gedaempft}\addfontfeature{LetterSpace=14}\MakeUppercase{#1}}}
 

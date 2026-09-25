@@ -13,6 +13,19 @@
 \usepackage{etoolbox}  %% \ifblank für die Angaben, die leer sein dürfen
 \usepackage{tikz}      %% das Logo
 
+\usepackage{siunitx}
+\sisetup{
+  mode                  = text,
+  output-decimal-marker = {,},
+  group-separator       = {.},
+  group-digits          = integer,
+  group-minimum-digits  = 4,
+  round-mode            = none,
+  reset-text-series     = false,
+  reset-text-shape      = false,
+  reset-text-family     = false,
+}
+
 \setmainfont{FiraSans}[
   Ligatures      = TeXOff,
   Extension      = .otf,
@@ -42,6 +55,7 @@
 \tolerance=2000
 
 \frenchspacing
+\let\normalsfcodes\frenchspacing
 
 \renewcommand{\arraystretch}{1.35}
 
@@ -52,6 +66,9 @@
 \newcommand{\summentrenner}{\\}
 \newcommand{\zeilenwechsel}{\\}
 \newcommand{\zusammen}[1]{\mbox{#1}}
+\newcommand{\betrag}[1]{\num{#1}~€}
+\newcommand{\prozent}[1]{\num{#1}~\%}
+\newcommand{\menge}[1]{\num{#1}}
 
 \newcommand{\kopfangabe}[2]{\ifblank{#2}{}{#1 & #2\\}}
 
@@ -153,13 +170,13 @@
   \endfirsthead
   \positionskopf
   \endhead
-\positionszeile{1}{IT-Beratungsleistungen\positionsdetail{Rahmenvertrag vom 01.02.2026}}{86,5}{Std.}{95,00~€}{}{8.217,50~€} \positionstrenner{}
-\positionszeile{2}{Fahrtkostenpauschale\positionsdetail{Juli 2026}}{1}{pauschal}{120,00~€}{}{120,00~€}\\*
+\positionszeile{1}{IT-Beratungsleistungen\positionsdetail{Rahmenvertrag vom 01.02.2026}}{\menge{86.5}}{Std.}{\betrag{95.00}}{}{\betrag{8217.50}} \positionstrenner{}
+\positionszeile{2}{Fahrtkostenpauschale\positionsdetail{Juli 2026}}{\menge{1}}{pauschal}{\betrag{120.00}}{}{\betrag{120.00}}\\*
   \noalign{\hrule height\arrayrulewidth}
   \multicolumn{\spaltenzahl}{@{}l@{}}{\begin{tabularx}{\linewidth}[t]{|>{\raggedright\arraybackslash}X|B|}
-  \nettozeile{8.337,50~€} \summentrenner{}
-  \steuerzeile{19~\%}{}{1.584,13~€}
-  \gesamtzeile{9.921,63~€}\\
+  \nettozeile{\betrag{8337.50}} \summentrenner{}
+  \steuerzeile{\prozent{19}}{}{\betrag{1584.13}}
+  \gesamtzeile{\betrag{9921.63}}\\
   \hline
   \end{tabularx}}
 \end{xltabular}

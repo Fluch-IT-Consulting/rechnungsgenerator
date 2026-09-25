@@ -40,7 +40,8 @@ internal object DeductionBlocks {
         // Abgesetzt wird, also steht der Betrag negativ da. Das Vorzeichen
         // kommt aus der Zahl und nicht aus der Vorlage: Es ist Inhalt, so wie
         // das €-Zeichen zum Betrag gehört (#76). Welches Zeichen es ist,
-        // entscheidet GermanFormat, für jede negative Zahl gleich (#320).
+        // entscheidet die Vorlage in \betrag, für jede negative Zahl gleich
+        // (#320, ADR-0021).
         val rows =
             deductions
                 .map { deduction ->
@@ -49,7 +50,7 @@ internal object DeductionBlocks {
                             TemplateMacro.SUMMENZEILE,
                             listOf(
                                 describePrepayment(deduction),
-                                GermanFormat.amountWithCurrency(-deduction.deducted.gross),
+                                Numbers.amount(-deduction.deducted.gross),
                             ),
                         )
                 }.joinToLatex(rowSeparator(TemplateMacro.POSITIONSTRENNER))
@@ -98,9 +99,9 @@ internal object DeductionBlocks {
         val anteile =
             abschlag.taxShares
                 .map { anteil ->
-                    "netto ".escapeLatex() + GermanFormat.amountWithCurrency(anteil.net) + " zzgl. ".escapeLatex() +
-                        GermanFormat.percent(anteil.vatRate) + " USt. ".escapeLatex() +
-                        GermanFormat.amountWithCurrency(anteil.vat)
+                    "netto ".escapeLatex() + Numbers.amount(anteil.net) + " zzgl. ".escapeLatex() +
+                        Numbers.percent(anteil.vatRate) + " USt. ".escapeLatex() +
+                        Numbers.amount(anteil.vat)
                 }.joinToLatex(" · ")
         return heading + Latex.macro(TemplateMacro.ABSETZUNGSDETAIL, listOf(anteile))
     }

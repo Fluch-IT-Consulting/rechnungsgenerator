@@ -60,4 +60,11 @@ enum class TemplateMacro(val macroName: String, val arity: Int) {
     // Ohne Argument: Den Inhalt setzt die Vorlage aus den Werten der Bank, der
     // Renderer entscheidet nur, ob der Block dasteht.
     BANKBLOCK("bankblock", 0),
+
+    // Die Zahlen (ADR-0021): Der Renderer liefert die Ziffern, die Vorlage
+    // setzt sie mit siunitx. Einzelpreise nehmen BETRAG – den Unterschied zu
+    // einem Betrag tragen schon die Ziffern.
+    BETRAG("betrag", 1),
+    MENGE("menge", 1),
+    PROZENT("prozent", 1),
 }

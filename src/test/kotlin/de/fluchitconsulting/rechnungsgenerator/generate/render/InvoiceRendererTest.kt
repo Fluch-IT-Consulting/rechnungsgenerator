@@ -299,7 +299,7 @@ class InvoiceRendererTest : FunSpec({
         // nachrechnen ließe sie sich nicht.
         val tex = renderWith(testItem(quantity = "10000", unitPrice = "0.00001"))
 
-        tex shouldContain "{10.000}{Std.}{0,00001~€}{}{0,10~€}"
+        tex shouldContain "{\\menge{10000}}{Std.}{\\betrag{0.00001}}{}{\\betrag{0.10}}"
     }
 
     context("Abschlagsrechnung") {
@@ -403,18 +403,16 @@ class InvoiceRendererTest : FunSpec({
 
             tex shouldContain "Abschlagsrechnung R26-009 vom 15.06.2026, vereinnahmt am 10.06.2026"
             tex shouldContain "Abschlagsrechnung R26-011 vom 20.07.2026, vereinnahmt am 25.07.2026"
-            // Die Tilde vor Einheit und Währung ist das geschützte Leerzeichen
-            // aus GermanFormat, beim Maskieren übersetzt – LaTeX liest sie als
-            // \nobreakspace.
-            tex shouldContain "netto 4.000,00~€ zzgl. 19~\\% USt. 760,00~€"
-            // Abgesetzt wird, also mit Minuszeichen – und zwar dem typografischen.
-            tex shouldContain "\u22124.760,00~€"
+            tex shouldContain "netto \\betrag{4000.00} zzgl. \\prozent{19} USt. \\betrag{760.00}"
+            // Abgesetzt wird, also negativ. Welches Minuszeichen auf dem Blatt
+            // steht, entscheidet die Vorlage (ADR-0021).
+            tex shouldContain "\\betrag{-4760.00}"
         }
 
         test("der Restbetrag steht unter dem Strich, und darunter die Bankverbindung") {
             val tex = finalInvoice(totalService, testPrepayment())
 
-            tex shouldContain "\\abschlusszeile{Restbetrag}{19.040,00~€}"
+            tex shouldContain "\\abschlusszeile{Restbetrag}{\\betrag{19040.00}}"
             // Der Aufruf und nicht bloß der Name: Die Vorlage definiert
             // \bankblock, das Wort steht also in jedem erzeugten .tex.
             tex shouldContain "\\bankblock{}"
@@ -457,7 +455,7 @@ class InvoiceRendererTest : FunSpec({
             val tex = withSkonto(SkontoTier(rate = Percent("2"), days = 7))
 
             tex shouldContain
-                "\\hinweisabsatz{Bei Zahlung bis~\\zusammen{21.~August 2026} können 2~\\% " +
+                "\\hinweisabsatz{Bei Zahlung bis~\\zusammen{21.~August 2026} können \\prozent{2} " +
                 "Skonto abgezogen werden.}"
             tex.indexOf("Skonto abgezogen") shouldBeGreaterThan tex.indexOf("\\gesamtzeile{")
         }
@@ -466,8 +464,8 @@ class InvoiceRendererTest : FunSpec({
             val tex = withSkonto(SkontoTier(rate = Percent("1.5"), days = 10), SkontoTier(rate = Percent("2"), days = 7))
 
             tex shouldContain
-                "\\hinweisabsatz{Bei Zahlung bis~\\zusammen{21.~August 2026} können 2~\\% " +
-                "Skonto abgezogen werden, bei Zahlung bis~\\zusammen{24.~August 2026} 1,5~\\%.}"
+                "\\hinweisabsatz{Bei Zahlung bis~\\zusammen{21.~August 2026} können \\prozent{2} " +
+                "Skonto abgezogen werden, bei Zahlung bis~\\zusammen{24.~August 2026} \\prozent{1.5}.}"
         }
 
         test("das Zahlungsziel im Kopf bleibt, wie es ist") {
@@ -543,7 +541,7 @@ class InvoiceRendererTest : FunSpec({
             // BT-120. Bei Reverse Charge verlangt §14a Abs. 5 UStG den Hinweis
             // ausdrücklich auf der Rechnung.
             render(withReverseCharge()) shouldContain
-                "Auf 200,00~€ entfällt keine Umsatzsteuer: Steuerschuldnerschaft des Leistungsempfängers (Reverse Charge)."
+                "Auf \\betrag{200.00} entfällt keine Umsatzsteuer: Steuerschuldnerschaft des Leistungsempfängers (Reverse Charge)."
         }
 
         test("eine Steuergruppe ohne Steuerbetrag steht nicht in den Summen") {
@@ -551,8 +549,8 @@ class InvoiceRendererTest : FunSpec({
             // Steuer anfällt, sagt der Hinweis darunter.
             val tex = render(withReverseCharge())
 
-            tex shouldContain "\\steuerzeile{19~\\%}"
-            tex shouldNotContain "\\steuerzeile{0"
+            tex shouldContain "\\steuerzeile{\\prozent{19}}"
+            tex shouldNotContain "\\steuerzeile{\\prozent{0}"
         }
 
         test("jeder Hinweis auf eine Steuerbefreiung ist ein eigener Satz") {
@@ -579,8 +577,8 @@ class InvoiceRendererTest : FunSpec({
                 )
 
             tex shouldContain
-                "\\steuerhinweis{Auf 100,00~€ entfällt keine Umsatzsteuer: Steuerfrei nach §4 Nr. 21 UStG.}\n" +
-                "\\steuerhinweis{Auf 300,00~€ entfällt keine Umsatzsteuer: Nicht im Inland steuerbar.}"
+                "\\steuerhinweis{Auf \\betrag{100.00} entfällt keine Umsatzsteuer: Steuerfrei nach §4 Nr. 21 UStG.}\n" +
+                "\\steuerhinweis{Auf \\betrag{300.00} entfällt keine Umsatzsteuer: Nicht im Inland steuerbar.}"
         }
 
         test("die USt-IdNr. des Kunden steht unter seiner Anschrift, wenn er eine hat") {

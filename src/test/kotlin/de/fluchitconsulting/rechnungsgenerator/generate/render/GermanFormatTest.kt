@@ -1,12 +1,8 @@
 package de.fluchitconsulting.rechnungsgenerator.generate.render
 
-import de.fluchitconsulting.rechnungsgenerator.core.values.Money
-import de.fluchitconsulting.rechnungsgenerator.core.values.Percent
-import de.fluchitconsulting.rechnungsgenerator.core.values.Price
 import io.kotest.assertions.assertSoftly
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
-import java.math.BigDecimal
 import java.time.LocalDate
 import java.util.Locale
 
@@ -16,56 +12,6 @@ class GermanFormatTest : FunSpec({
     // Unter en_US wären Punkt und Komma vertauscht.
     beforeSpec { Locale.setDefault(Locale.US) }
     afterSpec { Locale.setDefault(Locale.getDefault()) }
-
-    test("Beträge mit Tausenderpunkt und Dezimalkomma") {
-        assertSoftly {
-            GermanFormat.amountWithCurrency(Money("8337.50")).tex shouldBe "8.337,50~€"
-            GermanFormat.amountWithCurrency(Money("0.5")).tex shouldBe "0,50~€"
-            GermanFormat.amountWithCurrency(Money("9921.63")).tex shouldBe "9.921,63~€"
-        }
-    }
-
-    // Das Minuszeichen U+2212 und nicht der Bindestrich, den DecimalFormat für
-    // Locale.GERMANY mitbringt: Auf einem Storno ist fast jede Zahl negativ,
-    // und die Absetzung der Schlussrechnung setzt dasselbe Zeichen (#320).
-    test("negative Zahlen tragen das Minuszeichen, nicht den Bindestrich") {
-        assertSoftly {
-            GermanFormat.amountWithCurrency(Money("-1234.05")).tex shouldBe "\u22121.234,05~€"
-            GermanFormat.quantity(BigDecimal("-86.5")).tex shouldBe "\u221286,5"
-        }
-    }
-
-    test("Einzelpreise zeigen bis zu vier Nachkommastellen") {
-        assertSoftly {
-            GermanFormat.priceWithCurrency(Price("95.00")).tex shouldBe "95,00~€"
-            // Der Sub-Cent-Preis bleibt sichtbar – das ist der Sinn von Price.
-            GermanFormat.priceWithCurrency(Price("0.335")).tex shouldBe "0,335~€"
-            GermanFormat.priceWithCurrency(Price("0.0425")).tex shouldBe "0,0425~€"
-        }
-    }
-
-    test("Mengen ohne überflüssige Nullen") {
-        assertSoftly {
-            GermanFormat.quantity(BigDecimal("86.5")).tex shouldBe "86,5"
-            GermanFormat.quantity(BigDecimal("1")).tex shouldBe "1"
-            GermanFormat.quantity(BigDecimal("1000")).tex shouldBe "1.000"
-        }
-    }
-
-    // Aus dem geschützten Leerzeichen, das GermanFormat setzt, wird beim
-    // Maskieren eine Tilde – in LaTeX die Abkürzung für \nobreakspace: gleich
-    // unbrechbar, aber dehnbar wie ein gewöhnlicher Zwischenraum. Das nackte
-    // U+00A0 bliebe fest und risse im Blocksatz eine zu schmale Lücke.
-    //
-    // Das Prozentzeichen ist maskiert: Die Formatierung liefert ein fertiges
-    // LaTeX-Fragment, damit keine Aufrufstelle daran denken muss.
-    test("Steuersätze in Prozentschreibweise, mit maskiertem Prozentzeichen") {
-        assertSoftly {
-            GermanFormat.percent(Percent("19")).tex shouldBe "19~\\%"
-            GermanFormat.percent(Percent("7")).tex shouldBe "7~\\%"
-            GermanFormat.percent(Percent("2.5")).tex shouldBe "2,5~\\%"
-        }
-    }
 
     test("Leistungszeitraum: ganzer Monat wird zum Monatsnamen") {
         assertSoftly {
@@ -77,28 +23,6 @@ class GermanFormatTest : FunSpec({
                 "01.07.2026\\,–\\,15.07.2026"
             GermanFormat.servicePeriod(LocalDate.of(2026, 7, 1), LocalDate.of(2026, 8, 31)).tex shouldBe
                 "01.07.2026\\,–\\,31.08.2026"
-        }
-    }
-
-    /**
-     * Der Kern von #14: Feste Muster haben hier gerundet, ohne es zu sagen.
-     * Ein Einzelpreis von 0,00001 € wurde zu `0,00` – und dann stand auf der
-     * Rechnung "10.000 zu 0,00 € = 0,10 €".
-     */
-    test("nichts wird stillschweigend gerundet") {
-        assertSoftly {
-            // Preis: mindestens zwei Stellen, sonst so viele wie da sind.
-            GermanFormat.priceWithCurrency(Price("0.00001")).tex shouldBe "0,00001~€"
-            GermanFormat.priceWithCurrency(Price("0.12345")).tex shouldBe "0,12345~€"
-            GermanFormat.priceWithCurrency(Price("95")).tex shouldBe "95,00~€"
-            // Menge: keine Untergrenze.
-            GermanFormat.quantity(BigDecimal("86.5678")).tex shouldBe "86,5678"
-            GermanFormat.quantity(BigDecimal("0.0004")).tex shouldBe "0,0004"
-            GermanFormat.quantity(BigDecimal("1000")).tex shouldBe "1.000"
-            // Satz: "0 %" wäre auf einer Rechnung nicht ungenau, sondern eine
-            // andere Aussage – die Kategorie unterscheidet steuerfrei von 0 %.
-            GermanFormat.percent(Percent("0.0004")).tex shouldBe "0,0004~\\%"
-            GermanFormat.percent(Percent("19.1234")).tex shouldBe "19,1234~\\%"
         }
     }
 
