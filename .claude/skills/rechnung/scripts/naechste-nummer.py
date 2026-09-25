@@ -30,11 +30,11 @@ import pathlib
 import re
 import sys
 
-MUSTER = re.compile(r"Rechnung_R(\d{2})-(\d{3})\b")
-NUMMER = re.compile(r"R(\d{2})-(\d{3})")
+FILE_NAME_PATTERN = re.compile(r"Rechnung_R(\d{2})-(\d{3})\b")
+NUMBER_PATTERN = re.compile(r"R(\d{2})-(\d{3})")
 
 
-def yaml_modul():
+def yaml_module():
     """PyYAML, oder ein Abbruch mit Installationshinweis."""
     # Der Import steht in einer Funktion und nicht oben, damit ein fehlendes
     # PyYAML eine Meldung ergibt statt eines Stacktraces.
@@ -46,100 +46,106 @@ def yaml_modul():
     return yaml
 
 
-def muster_aus_stammdaten(pfad: pathlib.Path) -> str | None:
+def pattern_from_seller_config(path: pathlib.Path) -> str | None:
     """Der Prüfausdruck aus den Stammdaten, oder None, wenn keiner eingetragen ist."""
-    yaml = yaml_modul()
+    yaml = yaml_module()
     try:
-        stammdaten = yaml.safe_load(pfad.read_text(encoding="utf-8"))
-    except (OSError, UnicodeDecodeError, yaml.YAMLError) as fehler:
-        print(f"Stammdaten nicht lesbar ({pfad}): {fehler}", file=sys.stderr)
+        seller_config = yaml.safe_load(path.read_text(encoding="utf-8"))
+    except (OSError, UnicodeDecodeError, yaml.YAMLError) as error:
+        print(f"Stammdaten nicht lesbar ({path}): {error}", file=sys.stderr)
         raise SystemExit(1)
 
     # Kein Eintrag heißt: nicht prüfen. Dieselbe Regel wie im Generator.
-    return (stammdaten or {}).get("rechnungsnummer-muster")
+    return (seller_config or {}).get("rechnungsnummer-muster")
 
 
-def nummern_aus_yaml(verzeichnis: pathlib.Path):
+def numbers_from_yaml(directory: pathlib.Path):
     """Die Nummern aus dem Feld `nummer` aller YAML-Dateien, als (Jahr, Zähler)."""
-    yaml = yaml_modul()
-    for datei in sorted(verzeichnis.rglob("*.yaml")):
+    yaml = yaml_module()
+    for file in sorted(directory.rglob("*.yaml")):
         try:
-            inhalt = yaml.safe_load(datei.read_text(encoding="utf-8"))
-        except (yaml.YAMLError, UnicodeDecodeError) as fehler:
+            content = yaml.safe_load(file.read_text(encoding="utf-8"))
+        except (yaml.YAMLError, UnicodeDecodeError) as error:
             # Warnen wie offene-abschlaege.py, nicht still überspringen: Eine
             # kaputte Datei kann eine Rechnung sein, deren Nummer vergeben ist.
             # Abbrechen dagegen hielte jede Rechnung an, weil irgendwo im
             # Verzeichnis eine unfertige Datei liegt.
-            grund = getattr(fehler, "problem", None) or str(fehler).splitlines()[0]
-            print(f"Übersprungen, nicht lesbar: {datei}: {grund}", file=sys.stderr)
+            reason = getattr(error, "problem", None) or str(error).splitlines()[0]
+            print(f"Übersprungen, nicht lesbar: {file}: {reason}", file=sys.stderr)
             continue
         # Stammdaten, vereinnahmungen.yaml und Ähnliches haben keine Nummer.
-        if not isinstance(inhalt, dict) or "nummer" not in inhalt:
+        if not isinstance(content, dict) or "nummer" not in content:
             continue
         # str(): Eine ungequotete Nummer kann YAML als Zahl lesen. Nummern in
         # einem anderen Schema passen nicht und können mit diesem nicht
         # zusammenstoßen.
-        if m := NUMMER.fullmatch(str(inhalt["nummer"])):
+        if m := NUMBER_PATTERN.fullmatch(str(content["nummer"])):
             yield m.group(1), int(m.group(2))
 
 
 def main() -> int:
     p = argparse.ArgumentParser()
-    p.add_argument("verzeichnis", type=pathlib.Path)
+    # Die Namen der Oberfläche bleiben deutsch, der Skill ruft sie so auf;
+    # dest und metavar trennen sie vom Attribut.
+    p.add_argument("directory", metavar="verzeichnis", type=pathlib.Path)
     p.add_argument(
         "--rechnungsdatum",
+        dest="invoice_date",
+        metavar="RECHNUNGSDATUM",
         type=datetime.date.fromisoformat,
         default=datetime.date.today(),
         help="Datum der Rechnung, die geschrieben wird (JJJJ-MM-TT); Vorgabe ist heute",
     )
     p.add_argument(
         "--stammdaten",
+        dest="seller_config",
+        metavar="STAMMDATEN",
         type=pathlib.Path,
         default=None,
         help="Stammdaten, gegen deren rechnungsnummer-muster die Nummer geprüft wird",
     )
     args = p.parse_args()
 
-    if not args.verzeichnis.is_dir():
-        print(f"Verzeichnis nicht gefunden: {args.verzeichnis}", file=sys.stderr)
+    if not args.directory.is_dir():
+        print(f"Verzeichnis nicht gefunden: {args.directory}", file=sys.stderr)
         return 1
 
     # Das Jahr der Rechnung, nicht das von heute: Eine Rechnung vom 31.12., die
     # erst am 2.1. geschrieben wird, gehört in den Nummernkreis des alten Jahres.
-    jahr = f"{args.rechnungsdatum.year % 100:02d}"
+    year = f"{args.invoice_date.year % 100:02d}"
 
     # rglob statt glob: Ältere Jahrgänge liegen in Unterordnern. Sie stören
     # nicht, weil nur Treffer des gesuchten Jahres zählen – aber wer eine
     # Rechnung versehentlich einsortiert hat, bekommt trotzdem keine
     # doppelte Nummer.
-    belegt = {
+    taken = {
         int(m.group(2))
-        for datei in args.verzeichnis.rglob("Rechnung_R*")
-        if (m := MUSTER.search(datei.name)) and m.group(1) == jahr
+        for file in args.directory.rglob("Rechnung_R*")
+        if (m := FILE_NAME_PATTERN.search(file.name)) and m.group(1) == year
     }
-    belegt |= {zaehler for j, zaehler in nummern_aus_yaml(args.verzeichnis) if j == jahr}
+    taken |= {counter for j, counter in numbers_from_yaml(args.directory) if j == year}
 
-    naechste = max(belegt) + 1 if belegt else 1
-    if naechste > 999:
-        print(f"Nummernkreis R{jahr} ist erschöpft (999 Rechnungen).", file=sys.stderr)
+    next_counter = max(taken) + 1 if taken else 1
+    if next_counter > 999:
+        print(f"Nummernkreis R{year} ist erschöpft (999 Rechnungen).", file=sys.stderr)
         return 1
 
-    nummer = f"R{jahr}-{naechste:03d}"
+    number = f"R{year}-{next_counter:03d}"
 
-    if args.stammdaten is not None:
-        muster = muster_aus_stammdaten(args.stammdaten)
+    if args.seller_config is not None:
+        pattern = pattern_from_seller_config(args.seller_config)
         # fullmatch, nicht search: Der Generator prüft mit Regex.matches, also
         # ebenfalls gegen die ganze Nummer.
-        if muster is not None and not re.fullmatch(muster, nummer):
+        if pattern is not None and not re.fullmatch(pattern, number):
             print(
-                f"Die nächste Nummer wäre {nummer}, aber sie passt nicht zum Muster '{muster}' "
-                f"aus {args.stammdaten}. Dieses Skript vergibt im Schema R{{JJ}}-{{NNN}} – wer das "
+                f"Die nächste Nummer wäre {number}, aber sie passt nicht zum Muster '{pattern}' "
+                f"aus {args.seller_config}. Dieses Skript vergibt im Schema R{{JJ}}-{{NNN}} – wer das "
                 f"Muster wechselt, muss es hier mitwechseln.",
                 file=sys.stderr,
             )
             return 1
 
-    print(nummer)
+    print(number)
     return 0
 
 

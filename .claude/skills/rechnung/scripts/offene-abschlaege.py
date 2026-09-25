@@ -33,132 +33,136 @@ except ImportError:
     sys.exit(1)
 
 
-def als_text(nummer) -> str:
+def as_text(number) -> str:
     # Exakt verglichen wie ABSCHLAG_DOPPELT im Generator (#53). str(), weil YAML
     # eine Nummer wie 123 als Zahl liest, der Generator aber als Text.
-    return str(nummer)
+    return str(number)
 
 
-def genannt(nummern, eigenschaft: str = "") -> str:
+def final_invoice_phrase(numbers, adjective: str = "") -> str:
     # Derselbe Abschlag kann in mehreren Schlussrechnungen stehen – dann
     # gehören alle in die Meldung, nicht bloß die erste. Dativ, damit sich der
     # Satzbau der Meldung nicht nach der Anzahl richten muss: "in der
     # stornierten Schlussrechnung X" / "in den stornierten Schlussrechnungen
     # X, Y".
-    if len(nummern) == 1:
-        return f"der {eigenschaft}Schlussrechnung {nummern[0]}"
-    return f"den {eigenschaft}Schlussrechnungen " + ", ".join(nummern)
+    if len(numbers) == 1:
+        return f"der {adjective}Schlussrechnung {numbers[0]}"
+    return f"den {adjective}Schlussrechnungen " + ", ".join(numbers)
 
 
 def main() -> int:
     p = argparse.ArgumentParser()
-    p.add_argument("verzeichnis", type=pathlib.Path)
-    p.add_argument("kunde", help="Kundenname genau so, wie er unter kunde/name steht")
+    # Die Namen der Oberfläche bleiben deutsch, der Skill ruft sie so auf;
+    # metavar trennt sie vom Attribut.
+    p.add_argument("directory", metavar="verzeichnis", type=pathlib.Path)
+    p.add_argument(
+        "customer", metavar="kunde", help="Kundenname genau so, wie er unter kunde/name steht"
+    )
     args = p.parse_args()
 
-    if not args.verzeichnis.is_dir():
-        print(f"Verzeichnis nicht gefunden: {args.verzeichnis}", file=sys.stderr)
+    if not args.directory.is_dir():
+        print(f"Verzeichnis nicht gefunden: {args.directory}", file=sys.stderr)
         return 1
 
-    abschlagsrechnungen = []
+    prepayment_invoices = []
     # Nummer der aufgehobenen Rechnung -> Nummer ihres Stornos.
-    storniert_durch = {}
+    cancelled_by = {}
     # Nummer der Schlussrechnung -> Nummern der darin abgesetzten Abschläge.
-    schlussrechnungen = []
+    final_invoices = []
     # rglob wie bei naechste-nummer.py: Abschlag und Schlussrechnung liegen
     # oft in verschiedenen Jahrgängen.
-    for datei in sorted(args.verzeichnis.rglob("*.yaml")):
+    for file in sorted(args.directory.rglob("*.yaml")):
         try:
-            rechnung = yaml.safe_load(datei.read_text(encoding="utf-8"))
-        except (yaml.YAMLError, UnicodeDecodeError) as fehler:
+            invoice = yaml.safe_load(file.read_text(encoding="utf-8"))
+        except (yaml.YAMLError, UnicodeDecodeError) as error:
             # Warnen statt still überspringen: Eine kaputte Datei könnte genau
             # die gesuchte Abschlagsrechnung sein. Eine Zeile genügt; die
             # ausführliche Meldung gibt der Generator, wenn man die Datei mit
             # ihm liest.
-            stelle = getattr(fehler, "problem_mark", None)
-            wo = f", Zeile {stelle.line + 1}" if stelle else ""
-            grund = getattr(fehler, "problem", None) or str(fehler).splitlines()[0]
-            print(f"Übersprungen, nicht lesbar: {datei}{wo}: {grund}", file=sys.stderr)
+            mark = getattr(error, "problem_mark", None)
+            location = f", Zeile {mark.line + 1}" if mark else ""
+            reason = getattr(error, "problem", None) or str(error).splitlines()[0]
+            print(f"Übersprungen, nicht lesbar: {file}{location}: {reason}", file=sys.stderr)
             continue
-        if not isinstance(rechnung, dict):
+        if not isinstance(invoice, dict):
             continue
 
-        art = rechnung.get("art")
-        if art == "abschlagsrechnung":
-            abschlagsrechnungen.append((datei, rechnung))
-        elif art == "schlussrechnung":
-            abgesetzte = set()
-            for abschlag in rechnung.get("abschlaege") or []:
+        invoice_type = invoice.get("art")
+        if invoice_type == "abschlagsrechnung":
+            prepayment_invoices.append((file, invoice))
+        elif invoice_type == "schlussrechnung":
+            deducted = set()
+            for abschlag in invoice.get("abschlaege") or []:
                 if isinstance(abschlag, dict) and "rechnungsnummer" in abschlag:
-                    abgesetzte.add(als_text(abschlag["rechnungsnummer"]))
-            schlussrechnungen.append((als_text(rechnung.get("nummer") or datei.name), abgesetzte))
-        elif art == "stornorechnung":
-            aufgehoben = rechnung.get("storniert")
-            if isinstance(aufgehoben, dict) and "rechnungsnummer" in aufgehoben:
+                    deducted.add(as_text(abschlag["rechnungsnummer"]))
+            final_invoices.append((as_text(invoice.get("nummer") or file.name), deducted))
+        elif invoice_type == "stornorechnung":
+            cancelled = invoice.get("storniert")
+            if isinstance(cancelled, dict) and "rechnungsnummer" in cancelled:
                 # Ohne eigene Nummer wird der Dateiname genannt: Die Meldung
                 # soll das Storno auffindbar machen, auch wenn die Datei noch
                 # unfertig ist.
-                storniert_durch[als_text(aufgehoben["rechnungsnummer"])] = \
-                    als_text(rechnung.get("nummer") or datei.name)
+                cancelled_by[as_text(cancelled["rechnungsnummer"])] = \
+                    as_text(invoice.get("nummer") or file.name)
 
     # Erst jetzt, wo alle Dateien gelesen sind: Ein Storno darf in der
     # Verzeichnisreihenfolge hinter seiner Schlussrechnung liegen.
-    abgesetzt_in = {}
-    freigegeben_von = {}
-    for nummer, abgesetzte in schlussrechnungen:
-        ziel = freigegeben_von if nummer in storniert_durch else abgesetzt_in
-        for abschlag in abgesetzte:
-            ziel.setdefault(abschlag, []).append(nummer)
+    deducted_in = {}
+    released_by = {}
+    for number, deducted in final_invoices:
+        target = released_by if number in cancelled_by else deducted_in
+        for abschlag in deducted:
+            target.setdefault(abschlag, []).append(number)
 
-    def kunde_von(rechnung) -> str:
-        kunde = rechnung.get("kunde")
-        return kunde.get("name", "") if isinstance(kunde, dict) else ""
+    def customer_of(invoice) -> str:
+        customer = invoice.get("kunde")
+        return customer.get("name", "") if isinstance(customer, dict) else ""
 
-    des_kunden = [(d, r) for d, r in abschlagsrechnungen if kunde_von(r) == args.kunde]
-    if not des_kunden:
+    customer_invoices = [(d, r) for d, r in prepayment_invoices if customer_of(r) == args.customer]
+    if not customer_invoices:
         # Ein leicht abweichender Name fiele sonst als "nichts offen" durch.
-        andere = sorted({kunde_von(r) for _, r in abschlagsrechnungen} - {""})
-        if andere:
-            print(f"Keine Abschlagsrechnung an '{args.kunde}'. Abschlagsrechnungen gibt es an: "
-                  + "; ".join(andere), file=sys.stderr)
+        others = sorted({customer_of(r) for _, r in prepayment_invoices} - {""})
+        if others:
+            print(f"Keine Abschlagsrechnung an '{args.customer}'. Abschlagsrechnungen gibt es an: "
+                  + "; ".join(others), file=sys.stderr)
         else:
-            print(f"Keine Abschlagsrechnung im Verzeichnis {args.verzeichnis}.", file=sys.stderr)
+            print(f"Keine Abschlagsrechnung im Verzeichnis {args.directory}.", file=sys.stderr)
         return 0
 
-    offen = []
-    for datei, rechnung in sorted(des_kunden, key=lambda t: als_text(t[1].get("nummer", ""))):
-        nummer = als_text(rechnung.get("nummer", ""))
-        storno = storniert_durch.get(nummer)
-        if storno:
-            if nummer in abgesetzt_in:
+    still_open = []
+    for file, invoice in sorted(customer_invoices, key=lambda t: as_text(t[1].get("nummer", ""))):
+        number = as_text(invoice.get("nummer", ""))
+        cancellation = cancelled_by.get(number)
+        if cancellation:
+            if number in deducted_in:
                 # Weder offen noch in Ordnung: Eine gültige Schlussrechnung
                 # setzt Geld ab, das der Kunde zurückbekommen hat.
-                print(f"Achtung: {nummer} ist durch {storno} storniert, wird aber in "
-                      f"{genannt(abgesetzt_in[nummer])} abgesetzt.", file=sys.stderr)
+                print(f"Achtung: {number} ist durch {cancellation} storniert, wird aber in "
+                      f"{final_invoice_phrase(deducted_in[number])} abgesetzt.", file=sys.stderr)
             else:
-                print(f"{nummer} ist durch {storno} storniert – gilt nicht als offen.",
+                print(f"{number} ist durch {cancellation} storniert – gilt nicht als offen.",
                       file=sys.stderr)
             continue
-        if nummer in abgesetzt_in:
-            if len(abgesetzt_in[nummer]) > 1:
+        if number in deducted_in:
+            if len(deducted_in[number]) > 1:
                 # Der Generator lehnt dieselbe Nummer zweimal ab, aber nur
                 # innerhalb einer Datei (ADR-0001). Über Dateigrenzen sieht
                 # das nur, wer das Verzeichnis liest (#67).
-                print(f"Achtung: {nummer} wird mehrfach abgesetzt – in "
-                      f"{genannt(abgesetzt_in[nummer])}.", file=sys.stderr)
+                print(f"Achtung: {number} wird mehrfach abgesetzt – in "
+                      f"{final_invoice_phrase(deducted_in[number])}.", file=sys.stderr)
             continue
-        if nummer in freigegeben_von:
-            print(f"{nummer} war in {genannt(freigegeben_von[nummer], 'stornierten ')} "
+        if number in released_by:
+            print(f"{number} war in {final_invoice_phrase(released_by[number], 'stornierten ')} "
                   f"abgesetzt – gilt wieder als offen.", file=sys.stderr)
-        offen.append((datei, rechnung))
-        print(f"{rechnung.get('nummer')}\t{rechnung.get('datum')}\t{datei}")
-    if not offen:
+        still_open.append((file, invoice))
+        print(f"{invoice.get('nummer')}\t{invoice.get('datum')}\t{file}")
+    if not still_open:
         # "oder storniert" nur, wenn wirklich eines dabei war – sonst nennt die
         # Meldung einen Grund, den es nicht gibt.
-        wie = ("abgesetzt oder storniert"
-               if any(als_text(r.get("nummer", "")) in storniert_durch for _, r in des_kunden)
+        how = ("abgesetzt oder storniert"
+               if any(as_text(r.get("nummer", "")) in cancelled_by for _, r in customer_invoices)
                else "abgesetzt")
-        print(f"Alle {len(des_kunden)} Abschlagsrechnungen an '{args.kunde}' sind schon {wie}.",
+        print(f"Alle {len(customer_invoices)} Abschlagsrechnungen an '{args.customer}' sind schon {how}.",
               file=sys.stderr)
     return 0
 
