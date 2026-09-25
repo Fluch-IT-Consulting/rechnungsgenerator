@@ -533,6 +533,9 @@ CV/Web-Auftritt des Autors), PDF/A-Prüfung über veraPDF.
   (BT-1), und so steht sie im Code seit jeher. Das Glossar zieht die Grenze der
   Begriffe, nicht die der Bezeichner: Es sagt, dass es *Rechnungsnummer* heißt
   und nicht *Belegnummer* – nicht, dass der Bezeichner deutsch sein muss.
+
+  Wie weit der Code davon abweicht, misst `scripts/deutsche-bezeichner.py`; es
+  endet mit 1, solange es etwas findet.
 - Wo ein Kommentar, ein Testname oder ein Dokument eine Regel nennt, nennt es
   ihre Kennung aus `Rule`, etwa `ABSCHLAG_OHNE_VEREINNAHMUNG`. Die Kennung
   findet `grep`, und sie ändert sich nur mit der Regel selbst (ADR-0004).
