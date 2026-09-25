@@ -115,3 +115,18 @@ aus #320.
   heute nicht gibt.
 
 Entschieden in #353.
+
+## Nachtrag vom 25.09.2026: Die Einstellungen gegen stille Fehler stehen in der Grundlage
+
+Verworfen war oben ein gemeinsames `\sisetup` für alle Designs, weil das Netz
+je Design prüfe, dass keines eine stille Vorgabe übernimmt. Für `mode` und
+`reset-text-*` stimmt das nicht: `pdftotext` liest mit den Vorgaben
+zeichengleich dasselbe, nur Schrift und Fettdruck der Ziffern sind falsch
+(#355).
+
+Seither stehen `mode`, `group-digits`, `round-mode` und `reset-text-*` in der
+Grundlage (ADR-0022), die jede Vorlage lädt. Die Entscheidung oben bleibt:
+Die Schreibweise – Dezimalzeichen, Tausendertrenner, ab wie vielen Stellen
+gruppiert wird – wählt jedes Design selbst. Nur die Konsequenz „Wer ein
+Design baut, übernimmt den ganzen `\sisetup`-Block“ gilt nicht mehr; es
+übernimmt die Zeilen der Schreibweise.
