@@ -142,15 +142,28 @@ CV/Web-Auftritt des Autors), PDF/A-Prüfung über veraPDF.
   beiden Aufzählungen nicht haben, liest ADR-0017 und baut nicht am Renderer
   vorbei.
 
+- **Grundlage** (ADR-0022): Was ein Design nicht anders setzen darf, steht
+  einmal, in `templates/grundlage.sty` – pdfx, Ligaturen, die Einstellungen
+  von siunitx gegen falsche Zahlen, Satzabstand, `LTchunksize` und die
+  Bausteine `\ungeteilt`, `\programmsatz`, `\wennweitereseite`. Jede Vorlage
+  lädt sie direkt nach `\documentclass`, der Renderer legt sie über
+  `PdfSources.files` daneben, und was sie lädt, lädt die Vorlage nicht noch
+  einmal. Die Frage für jede Zeile: Wäre ein Design mit einer anderen Zeile
+  *falsch* oder nur *anders*? Hinein gehört nur, was falsch wäre; eine Zeile,
+  die in allen Vorlagen gleich steht, bleibt Satzbild der Vorlage. Zwei
+  Regeln prüft `Foundation.of`: kein Platzhalter, und kein Makro aus
+  `TemplateMacro` – die definiert die Vorlage aus den Bausteinen, damit ihr
+  Volltext jede Definition enthält, die der Renderer aufruft.
+
 - **Zahlen** (ADR-0021): Kotlin bestimmt die Ziffern, die Vorlage ihre
   Schreibweise. `Numbers` reicht Beträge, Einzelpreise, Mengen und Sätze als
   `\betrag{8337.50}`, `\menge{86.5}`, `\prozent{19}` durch – Punkt, keine
   Gruppierung, `toPlainString()` und nie `toString()`, sonst läse siunitx
-  `1E+3` als Exponenten. Jede Vorlage setzt sie mit siunitx und übernimmt den
-  ganzen `\sisetup`-Block: Fehlt eine Einstellung, setzt siunitx still
-  etwas anderes, etwa `0,033.5` statt `0,0335`. Weil siunitx über amstext
-  `\frenchspacing` umdefiniert, legt jede Vorlage `\normalsfcodes` selbst
-  fest; sonst stünde im Fuß nach „USt-IdNr.“ der breite Satzabstand.
+  `1E+3` als Exponenten. Die Vorlage setzt sie mit siunitx und wählt in
+  ihrem `\sisetup` nur die Schreibweise: Dezimalzeichen, Tausendertrenner,
+  ab wie vielen Stellen gruppiert wird. Was siunitx sonst still falsch
+  setzte, etwa `0,033.5` statt `0,0335`, steht in der Grundlage. Nach dem
+  Komma wird nie getrennt, weder durch Punkt noch durch Leerraum.
   `GermanFormat` formatiert nur noch Daten. Den Vertrag „jede Ziffer, keine
   weitere“ hält der `PflichtangabenTest` je Design am fertigen PDF, samt
   `schreibweise-der-zahlen.yaml`.
@@ -170,8 +183,8 @@ CV/Web-Auftritt des Autors), PDF/A-Prüfung über veraPDF.
   Vorlage, die derselbe Renderer füllt – kein zweiter Renderer, kein Schalter,
   keine mitgebrachte Vorlage. Feste Texte gehören zum Design, ein Wortlaut mit
   fachlicher Aussage kommt aus Kotlin (ADR-0017). Ein neues Design ist eine
-  Vorlage, ein Eintrag in `Design`, eine Vergleichsdatei und eine Zeile im
-  Pflichtangaben-Netz.
+  Vorlage, die die Grundlage lädt, ein Eintrag in `Design`, eine
+  Vergleichsdatei und eine Zeile im Pflichtangaben-Netz.
 
 - **Mehrere Seiten** (ADR-0020): Die Positionen brechen zwischen zwei
   Positionen um, und die Vorlage setzt die Folgeseiten – ein kurzer Kopf mit
@@ -181,8 +194,8 @@ CV/Web-Auftritt des Autors), PDF/A-Prüfung über veraPDF.
   Seite bricht. Die Summen sind die letzte Zeile der Positionstabelle und
   stehen so nie ohne eine Position darüber; Schlusssatz, Gruß und Name
   bleiben beisammen, und kein fachlicher Satz bricht über zwei Seiten – auch
-  kein Hinweis auf eine Steuerbefreiung, deshalb trennt jede Vorlage den
-  Zusammenhalt (`\ungeteilt`) vom Satzabstand (`\hinweisabsatz`). Eine
+  kein Hinweis auf eine Steuerbefreiung, deshalb trennt die Grundlage den
+  Zusammenhalt (`\ungeteilt`) vom Satzabstand (`\programmsatz`). Eine
   einseitige Rechnung sieht aus wie zuvor, bei 300 dpi pixelgleich; ein
   neues Design muss die Folgeseiten selbst setzen, und das Netz prüft sie an
   `viele-positionen.yaml`, `schluss-an-der-seitengrenze.yaml` und
