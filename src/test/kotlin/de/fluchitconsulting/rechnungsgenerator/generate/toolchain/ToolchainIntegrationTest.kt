@@ -44,7 +44,7 @@ object Toolchain : Tag()
  * werden. Übersprungen und nicht bestanden, wie beim Altersnachweis der
  * EU-Liste: Ein Netz, das fehlt, soll nicht aussehen wie eines, das hält.
  */
-private val mitVerapdf =
+private val withVerapdf =
     if (ExternalTool.canRun("verapdf")) {
         Enabled.enabled
     } else {
@@ -86,12 +86,12 @@ class ToolchainIntegrationTest : FunSpec({
      * wirklich aus dem übernimmt, was es bekommt, zeigt nur ein echter Lauf.
      */
     test("zwei Läufe über dieselbe Datei ergeben dasselbe PDF, datiert auf das Rechnungsdatum") {
-        val (erster, _) = run.generate("rechnung", "reproduzierbar-1")
-        val (zweiter, _) = run.generate("rechnung", "reproduzierbar-2")
+        val (first, _) = run.generate("rechnung", "reproduzierbar-1")
+        val (second, _) = run.generate("rechnung", "reproduzierbar-2")
 
-        val bytes = erster.readBytes()
-        withClue("${erster.fileSize()} und ${zweiter.fileSize()} Bytes") {
-            bytes.contentEquals(zweiter.readBytes()) shouldBe true
+        val bytes = first.readBytes()
+        withClue("${first.fileSize()} und ${second.fileSize()} Bytes") {
+            bytes.contentEquals(second.readBytes()) shouldBe true
         }
         // ISO-8859-1 bildet jedes Byte auf ein Zeichen ab, so lässt sich im
         // PDF nach Text suchen, ohne dass der Binärteil beim Dekodieren stört.
@@ -119,8 +119,8 @@ class ToolchainIntegrationTest : FunSpec({
         val jobNames = listOf(accepted.fileBaseName, "rechnung")
         val pdfs =
             jobNames.map { jobName ->
-                val eigenesVerzeichnis = createTempDirectory(workDir, "jobname")
-                String(LatexCompiler(ExternalTool).compile(eigenesVerzeichnis, jobName, sources).readBytes(), Charsets.ISO_8859_1)
+                val ownDir = createTempDirectory(workDir, "jobname")
+                String(LatexCompiler(ExternalTool).compile(ownDir, jobName, sources).readBytes(), Charsets.ISO_8859_1)
             }
 
         val documentId = Regex("<xmpMM:DocumentID>uuid:([0-9A-F-]+)</xmpMM:DocumentID>")
@@ -137,16 +137,16 @@ class ToolchainIntegrationTest : FunSpec({
      */
     test("mit Logo ergeben zwei Läufe dasselbe PDF, und das Logo steht darin") {
         val logo = Path.of("src/test/resources/logo.tex").toAbsolutePath()
-        val stammdaten =
+        val sellerConfig =
             workDir.resolve("stammdaten-logo.yaml").also {
                 it.writeText(Path.of("src/test/resources/stammdaten.yaml").readText() + "design: prag\nlogo: $logo\n")
             }
 
-        val (erster, _) = run.generate("rechnung", "logo-1", sellerConfig = stammdaten)
-        val (zweiter, _) = run.generate("rechnung", "logo-2", sellerConfig = stammdaten)
+        val (first, _) = run.generate("rechnung", "logo-1", sellerConfig = sellerConfig)
+        val (second, _) = run.generate("rechnung", "logo-2", sellerConfig = sellerConfig)
 
-        erster.readBytes().contentEquals(zweiter.readBytes()) shouldBe true
-        run.textOf(erster) shouldContain "MUSTERIT"
+        first.readBytes().contentEquals(second.readBytes()) shouldBe true
+        run.textOf(first) shouldContain "MUSTERIT"
     }
 
     /**
@@ -185,38 +185,38 @@ class ToolchainIntegrationTest : FunSpec({
      * Messung konnte die Toleranz überschreiten.
      */
     test("der Skalierungsfaktor der Logodatei setzt das Logo größer") {
-        val skaliert = Path.of("src/test/resources/logo-skaliert.tex")
-        val ohneFaktor =
+        val scaledLogo = Path.of("src/test/resources/logo-skaliert.tex")
+        val unscaledLogo =
             workDir.resolve("logo-ohne-faktor.tex").also { file ->
-                file.writeText(skaliert.readLines().filterNot { "logoskalierung" in it }.joinToString("\n"))
+                file.writeText(scaledLogo.readLines().filterNot { "logoskalierung" in it }.joinToString("\n"))
             }
 
-        fun logoHoehe(logo: Path): Int {
-            val stammdaten =
+        fun logoHeight(logo: Path): Int {
+            val sellerConfig =
                 workDir.resolve("stammdaten-${logo.fileName}.yaml").also {
                     it.writeText(
                         Path.of("src/test/resources/stammdaten.yaml").readText() +
                             "design: prag\nlogo: ${logo.toAbsolutePath()}\n",
                     )
                 }
-            val (pdf, ausgabe) = run.generate("rechnung", "hoehe-${logo.fileName}", sellerConfig = stammdaten)
-            withClue(ausgabe.joinToString("\n")) { ausgabe shouldContain "PDF/A-1b: gültig" }
+            val (pdf, output) = run.generate("rechnung", "hoehe-${logo.fileName}", sellerConfig = sellerConfig)
+            withClue(output.joinToString("\n")) { output shouldContain "PDF/A-1b: gültig" }
 
-            val bild = run.imageOf(pdf, dpi = 300)
-            return (0 until bild.height / 3).count { y ->
-                (0 until bild.width).any { x ->
-                    val rgb = bild.getRGB(x, y)
-                    val rot = (rgb shr 16) and 0xFF
-                    val blau = rgb and 0xFF
-                    blau - rot > 80
+            val image = run.imageOf(pdf, dpi = 300)
+            return (0 until image.height / 3).count { y ->
+                (0 until image.width).any { x ->
+                    val rgb = image.getRGB(x, y)
+                    val red = (rgb shr 16) and 0xFF
+                    val blue = rgb and 0xFF
+                    blue - red > 80
                 }
             }
         }
 
-        val mitFaktor = logoHoehe(skaliert)
-        val ohne = logoHoehe(ohneFaktor)
+        val scaledHeight = logoHeight(scaledLogo)
+        val unscaledHeight = logoHeight(unscaledLogo)
 
-        withClue("$mitFaktor und $ohne Pixel") { mitFaktor.toDouble() / ohne shouldBe (1.2 plusOrMinus 0.03) }
+        withClue("$scaledHeight und $unscaledHeight Pixel") { scaledHeight.toDouble() / unscaledHeight shouldBe (1.2 plusOrMinus 0.03) }
     }
 
     /**
@@ -230,20 +230,20 @@ class ToolchainIntegrationTest : FunSpec({
      * fände `contains` sie nicht, ohne dass etwas falsch gesetzt wäre.
      */
     test("Zeichenfolgen, die TeX zu einem Zeichen zusammenzieht, stehen unverändert im PDF") {
-        val bezeichnungen =
+        val names =
             listOf("Paket A--C", "Paket A---C", "Paket <<A>>", "Paket ``A''", "Paket ,,A''")
-        val positionen =
-            bezeichnungen.joinToString("") {
+        val items =
+            names.joinToString("") {
                 "  - bezeichnung: \"$it\"\n    menge: 1\n    einheit: pauschal\n    einzelpreis: 10.00\n"
             }
-        val beispiel = Path.of("src/test/resources/rechnung.yaml").readText()
-        val eingabe = workDir.resolve("ligaturen.yaml")
-        eingabe.writeText(beispiel.substringBefore("positionen:") + "positionen:\n" + positionen)
+        val example = Path.of("src/test/resources/rechnung.yaml").readText()
+        val input = workDir.resolve("ligaturen.yaml")
+        input.writeText(example.substringBefore("positionen:") + "positionen:\n" + items)
 
-        val (pdf, _) = run.generate("ligaturen", input = eingabe)
+        val (pdf, _) = run.generate("ligaturen", input = input)
 
-        val gesetzt = run.textOf(pdf)
-        bezeichnungen.forEach { gesetzt shouldContain it }
+        val typesetText = run.textOf(pdf)
+        names.forEach { typesetText shouldContain it }
     }
 
     /**
@@ -253,14 +253,14 @@ class ToolchainIntegrationTest : FunSpec({
      * Sonderzeichen, und `escapeLatex` lässt es stehen.
      */
     test("eine Anschriftszeile, die mit eckiger Klammer beginnt, steht unverändert im PDF") {
-        val strasse = "[Hinterhaus] Industriestraße 1"
-        val beispiel = Path.of("src/test/resources/rechnung.yaml").readText()
-        val eingabe = workDir.resolve("klammer.yaml")
-        eingabe.writeText(beispiel.replace("strasse: Industriestraße 1", "strasse: \"$strasse\""))
+        val street = "[Hinterhaus] Industriestraße 1"
+        val example = Path.of("src/test/resources/rechnung.yaml").readText()
+        val input = workDir.resolve("klammer.yaml")
+        input.writeText(example.replace("strasse: Industriestraße 1", "strasse: \"$street\""))
 
-        val (pdf, _) = run.generate("klammer", input = eingabe)
+        val (pdf, _) = run.generate("klammer", input = input)
 
-        run.textOf(pdf) shouldContain strasse
+        run.textOf(pdf) shouldContain street
     }
 
     /**
@@ -287,7 +287,7 @@ class ToolchainIntegrationTest : FunSpec({
      * will, nimmt genau das Netz weg, das die anderen trägt.
      */
     test("ein nicht konformes PDF wird als solches gemeldet, nicht als Fehler")
-        .config(enabledOrReasonIf = { mitVerapdf }) {
+        .config(enabledOrReasonIf = { withVerapdf }) {
             val plain =
                 LatexCompiler(ExternalTool).compile(
                     workingDir = workDir,
@@ -318,7 +318,7 @@ class ToolchainIntegrationTest : FunSpec({
      * Absturz des Generators.
      */
     test("ein PDF, über das veraPDF sich beschwert, wird trotzdem gelesen")
-        .config(enabledOrReasonIf = { mitVerapdf }) {
+        .config(enabledOrReasonIf = { withVerapdf }) {
             val noisy =
                 Path
                     .of("src/test/resources/nicht-konform-mit-warnung.pdf")
@@ -354,30 +354,30 @@ class ToolchainIntegrationTest : FunSpec({
      * – beide werfen [ToolchainException] (#294).
      */
     test("beide Prüfer urteilen über dasselbe PDF gleich")
-        .config(enabledOrReasonIf = { mitVerapdf }) {
-            val (gueltig, _) = run.generate("rechnung", targetName = "zwei-pruefer")
+        .config(enabledOrReasonIf = { withVerapdf }) {
+            val (valid, _) = run.generate("rechnung", targetName = "zwei-pruefer")
             // Ins Arbeitsverzeichnis kopiert: Der externe Prüfer legt seine
             // Ausgabedatei neben das PDF, und das wäre hier der Testbestand.
-            val nichtKonform =
+            val nonCompliant =
                 Path.of("src/test/resources/nicht-konform.pdf").copyTo(workDir.resolve("nicht-konform.pdf"), overwrite = true)
 
-            for (pdf in listOf(gueltig, nichtKonform)) {
-                val eingebaut = BuiltInPdfAValidator.validate(pdf)
-                val extern = ExternalPdfAValidator(ExternalTool).validate(pdf)
+            for (pdf in listOf(valid, nonCompliant)) {
+                val builtIn = BuiltInPdfAValidator.validate(pdf)
+                val external = ExternalPdfAValidator(ExternalTool).validate(pdf)
 
                 // Die Kennung als eine Zeichenkette: So steht im Fehlerfall
                 // "6.3.4-1" im Bericht und nicht ein Paar.
-                fun regeln(result: ValidationResult) =
+                fun rules(result: ValidationResult) =
                     result.violations.map { "${it.clause}-${it.testNumber}" }.sorted()
 
-                withClue("$pdf: Urteil") { eingebaut.valid shouldBe extern.valid }
-                withClue("$pdf: Regeln") { regeln(eingebaut) shouldBe regeln(extern) }
+                withClue("$pdf: Urteil") { builtIn.valid shouldBe external.valid }
+                withClue("$pdf: Regeln") { rules(builtIn) shouldBe rules(external) }
             }
 
-            val keinPdf =
+            val noPdf =
                 Path.of("src/test/resources/kein-pdf.pdf").copyTo(workDir.resolve("kein-pdf.pdf"), overwrite = true)
-            withClue("eingebaut") { shouldThrow<ToolchainException> { BuiltInPdfAValidator.validate(keinPdf) } }
-            withClue("extern") { shouldThrow<ToolchainException> { ExternalPdfAValidator(ExternalTool).validate(keinPdf) } }
+            withClue("eingebaut") { shouldThrow<ToolchainException> { BuiltInPdfAValidator.validate(noPdf) } }
+            withClue("extern") { shouldThrow<ToolchainException> { ExternalPdfAValidator(ExternalTool).validate(noPdf) } }
         }
 
     /**
@@ -386,7 +386,7 @@ class ToolchainIntegrationTest : FunSpec({
      * Annahme, auf der das Auswerten des Protokolls beruht.
      */
     test("ein LaTeX-Fehler kommt als ToolchainException an") {
-        val fehler =
+        val error =
             shouldThrow<ToolchainException> {
                 LatexCompiler(ExternalTool).compile(
                     workingDir = workDir,
@@ -400,7 +400,7 @@ class ToolchainIntegrationTest : FunSpec({
                 )
             }
 
-        fehler.message!! shouldContain "gibtesnicht"
+        error.message!! shouldContain "gibtesnicht"
     }
 })
 

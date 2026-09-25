@@ -40,17 +40,17 @@ import java.nio.file.Path
  */
 class BuiltInPdfAValidatorTest : FunSpec({
 
-    val nichtKonform = Path.of("src/test/resources/nicht-konform.pdf")
+    val nonCompliant = Path.of("src/test/resources/nicht-konform.pdf")
 
     test("ein nicht konformes PDF wird als solches gemeldet") {
-        val result = BuiltInPdfAValidator.validate(nichtKonform)
+        val result = BuiltInPdfAValidator.validate(nonCompliant)
 
         result.valid shouldBe false
         result.describe() shouldContain "PDF/A-1b verletzt"
     }
 
     test("die verletzten Regeln stehen genau so im Ergebnis") {
-        val result = BuiltInPdfAValidator.validate(nichtKonform)
+        val result = BuiltInPdfAValidator.validate(nonCompliant)
 
         // Die Kennung als eine Zeichenkette, wie beim Vergleich der beiden
         // Prüfer: So steht im Fehlerfall "6.3.4-1" im Bericht und nicht ein Paar.
@@ -65,12 +65,12 @@ class BuiltInPdfAValidatorTest : FunSpec({
      * nicht.
      */
     test("jeder Verstoß trägt Beschreibung und Meldung aus dem Profil") {
-        val result = BuiltInPdfAValidator.validate(nichtKonform)
+        val result = BuiltInPdfAValidator.validate(nonCompliant)
 
-        result.violations.forEach { verstoss ->
-            withClue("${verstoss.clause}-${verstoss.testNumber}") {
-                verstoss.description.isNotBlank() shouldBe true
-                verstoss.errorMessage.isNotBlank() shouldBe true
+        result.violations.forEach { violation ->
+            withClue("${violation.clause}-${violation.testNumber}") {
+                violation.description.isNotBlank() shouldBe true
+                violation.errorMessage.isNotBlank() shouldBe true
             }
         }
     }
@@ -85,11 +85,11 @@ class BuiltInPdfAValidatorTest : FunSpec({
      * sagt.
      */
     test("über ein unlesbares PDF urteilt er nicht, sondern wirft ToolchainException") {
-        val keinPdf = Path.of("src/test/resources/kein-pdf.pdf")
+        val noPdf = Path.of("src/test/resources/kein-pdf.pdf")
 
-        val fehler = shouldThrow<ToolchainException> { BuiltInPdfAValidator.validate(keinPdf) }
+        val error = shouldThrow<ToolchainException> { BuiltInPdfAValidator.validate(noPdf) }
 
-        fehler.message!! shouldContain "kein-pdf.pdf"
-        fehler.message!! shouldContain generateSequence(fehler.cause) { it.cause }.last().message!!
+        error.message!! shouldContain "kein-pdf.pdf"
+        error.message!! shouldContain generateSequence(error.cause) { it.cause }.last().message!!
     }
 })

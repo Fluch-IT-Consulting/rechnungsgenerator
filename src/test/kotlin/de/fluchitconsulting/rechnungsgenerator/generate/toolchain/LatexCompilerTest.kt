@@ -31,19 +31,19 @@ import kotlin.io.path.readText
  */
 class LatexCompilerTest : FunSpec({
 
-    fun mitschnitt(name: String) = File("src/test/resources/werkzeugausgaben/$name").readText()
+    fun transcript(name: String) = File("src/test/resources/werkzeugausgaben/$name").readText()
 
-    val fertig = "Output written on rechnung.pdf (1 page, 12345 bytes)."
+    val finished = "Output written on rechnung.pdf (1 page, 12345 bytes)."
 
-    fun arbeitsverzeichnis() = createTempDirectory("latexcompiler-test")
+    fun workDir() = createTempDirectory("latexcompiler-test")
 
     /** Ein Lauf, der ein Protokoll und ein PDF hinterlässt – der Normalfall. */
-    fun erfolgreicherLauf(log: String = fertig) =
+    fun successfulRun(log: String = finished) =
         FakeProcessRunner.Run(files = mapOf("rechnung.log" to log, "rechnung.pdf" to "%PDF-1.7"))
 
-    fun setzen(
+    fun typeset(
         runner: FakeProcessRunner,
-        dir: java.nio.file.Path = arbeitsverzeichnis(),
+        dir: java.nio.file.Path = workDir(),
         tex: String = "\\documentclass{article}",
         files: Map<String, ByteArray> = emptyMap(),
     ) = LatexCompiler(runner).compile(
@@ -53,12 +53,12 @@ class LatexCompilerTest : FunSpec({
     )
 
     /** Die Trailer-ID aus dem Aufruf, mit dem LuaLaTeX gestartet wurde. */
-    fun trailerIdVon(
+    fun trailerIdOf(
         tex: String = "\\documentclass{article}",
         files: Map<String, ByteArray> = emptyMap(),
     ): String =
-        FakeProcessRunner(erfolgreicherLauf())
-            .also { setzen(it, tex = tex, files = files) }
+        FakeProcessRunner(successfulRun())
+            .also { typeset(it, tex = tex, files = files) }
             .commands
             .single()
             .last()
@@ -68,9 +68,9 @@ class LatexCompilerTest : FunSpec({
     test("das Erstellungsdatum ist Mitternacht des Datums, in UTC geschrieben") {
         // 1786665600 ist 2026-08-14T00:00:00Z. Ohne TZ schriebe LuaTeX die
         // Zeitzone des Rechners dahinter, und das PDF hinge am Rechner.
-        val runner = FakeProcessRunner(erfolgreicherLauf())
+        val runner = FakeProcessRunner(successfulRun())
 
-        setzen(runner)
+        typeset(runner)
 
         runner.environments.single() shouldBe mapOf("SOURCE_DATE_EPOCH" to "1786665600", "TZ" to "UTC")
     }
@@ -78,27 +78,27 @@ class LatexCompilerTest : FunSpec({
     test("dieselben Quellen ergeben dieselbe Trailer-ID, andere eine andere") {
         // setzen legt jedes Mal ein neues Arbeitsverzeichnis an – der Pfad
         // darf in die ID also nicht eingehen.
-        fun aufruf(tex: String) =
-            FakeProcessRunner(erfolgreicherLauf())
-                .also { setzen(it, tex = tex) }
+        fun invocation(tex: String) =
+            FakeProcessRunner(successfulRun())
+                .also { typeset(it, tex = tex) }
                 .commands
                 .single()
                 .last()
 
-        val erster = aufruf("\\documentclass{article}")
+        val first = invocation("\\documentclass{article}")
 
-        erster shouldContain "\\pdfvariable trailerid"
-        aufruf("\\documentclass{article}") shouldBe erster
-        aufruf("\\documentclass{letter}") shouldNotBe erster
+        first shouldContain "\\pdfvariable trailerid"
+        invocation("\\documentclass{article}") shouldBe first
+        invocation("\\documentclass{letter}") shouldNotBe first
     }
 
     context("weitere Dateien (#198)") {
         val logo = "\\fill (0,0) circle (1);".toByteArray()
 
         test("liegen unter ihrem Namen im Arbeitsverzeichnis, Byte für Byte") {
-            val dir = arbeitsverzeichnis()
+            val dir = workDir()
 
-            setzen(FakeProcessRunner(erfolgreicherLauf()), dir, files = mapOf("logo.tex" to logo))
+            typeset(FakeProcessRunner(successfulRun()), dir, files = mapOf("logo.tex" to logo))
 
             dir.resolve("logo.tex").readBytes() shouldBe logo
         }
@@ -106,11 +106,11 @@ class LatexCompilerTest : FunSpec({
         test("gehen in die Trailer-ID ein: ein anderes Logo, eine andere ID") {
             // Die .tex nennt das Logo nur per \\input. Ginge es nicht in die ID
             // ein, änderte ein neues Logo das PDF, aber nicht seine ID.
-            val mitLogo = trailerIdVon(files = mapOf("logo.tex" to logo))
+            val withLogo = trailerIdOf(files = mapOf("logo.tex" to logo))
 
-            trailerIdVon(files = mapOf("logo.tex" to logo.copyOf())) shouldBe mitLogo
-            trailerIdVon(files = mapOf("logo.tex" to "\\fill (0,0) circle (2);".toByteArray())) shouldNotBe mitLogo
-            trailerIdVon() shouldNotBe mitLogo
+            trailerIdOf(files = mapOf("logo.tex" to logo.copyOf())) shouldBe withLogo
+            trailerIdOf(files = mapOf("logo.tex" to "\\fill (0,0) circle (2);".toByteArray())) shouldNotBe withLogo
+            trailerIdOf() shouldNotBe withLogo
         }
 
         test("ohne weitere Dateien bleibt die ID, wie sie vor #198 war") {
@@ -119,21 +119,21 @@ class LatexCompilerTest : FunSpec({
             md5.update("\\documentclass{article}".toByteArray())
             md5.update(0.toByte())
             md5.update("\\Title{Test}".toByteArray())
-            val vorher =
+            val before =
                 java.util.HexFormat
                     .of()
                     .withUpperCase()
                     .formatHex(md5.digest())
 
-            trailerIdVon() shouldBe vorher
+            trailerIdOf() shouldBe before
         }
 
         test("ein Name mit Verzeichnis oder der Name der Quelle wird abgelehnt") {
             shouldThrow<IllegalArgumentException> {
-                setzen(FakeProcessRunner(erfolgreicherLauf()), files = mapOf("../logo.tex" to logo))
+                typeset(FakeProcessRunner(successfulRun()), files = mapOf("../logo.tex" to logo))
             }
             shouldThrow<IllegalArgumentException> {
-                setzen(FakeProcessRunner(erfolgreicherLauf()), files = mapOf("rechnung.tex" to logo))
+                typeset(FakeProcessRunner(successfulRun()), files = mapOf("rechnung.tex" to logo))
             }
         }
 
@@ -144,7 +144,7 @@ class LatexCompilerTest : FunSpec({
             listOf(".", "..", "", " ").forEach { name ->
                 withClue("'$name'") {
                     shouldThrow<IllegalArgumentException> {
-                        setzen(FakeProcessRunner(erfolgreicherLauf()), files = mapOf(name to logo))
+                        typeset(FakeProcessRunner(successfulRun()), files = mapOf(name to logo))
                     }
                 }
             }
@@ -152,9 +152,9 @@ class LatexCompilerTest : FunSpec({
     }
 
     test("die Quelldateien liegen neben dem Ergebnis") {
-        val dir = arbeitsverzeichnis()
+        val dir = workDir()
 
-        setzen(FakeProcessRunner(erfolgreicherLauf()), dir)
+        typeset(FakeProcessRunner(successfulRun()), dir)
 
         // Die .xmpdata muss denselben Namen tragen wie die .tex – daraus baut
         // pdfx die Metadaten des PDF/A.
@@ -165,29 +165,29 @@ class LatexCompilerTest : FunSpec({
     // Steht für ein Temp-Verzeichnis, das voll oder schreibgeschützt ist: Der
     // Satz kommt nicht zustande, und die Meldung sagt, wo (#300).
     test("lassen sich die Quellen nicht schreiben, kommt eine ToolchainException mit dem Verzeichnis") {
-        val gibtEsNicht = arbeitsverzeichnis().resolve("gibt-es-nicht")
+        val missing = workDir().resolve("gibt-es-nicht")
 
-        val fehler = shouldThrow<ToolchainException> { setzen(FakeProcessRunner(erfolgreicherLauf()), gibtEsNicht) }
+        val error = shouldThrow<ToolchainException> { typeset(FakeProcessRunner(successfulRun()), missing) }
 
-        fehler.message!! shouldContain gibtEsNicht.toString()
+        error.message!! shouldContain missing.toString()
     }
 
     // Ein Verzeichnis unter dem Namen des Protokolls besteht exists() und
     // scheitert am Lesen – der Fall eines unlesbaren Protokolls, ohne dass
     // Rechte gesetzt werden müssen, die unter root nicht greifen (#336).
     test("lässt sich das Protokoll nicht lesen, kommt eine ToolchainException mit der Datei") {
-        val dir = arbeitsverzeichnis()
-        val protokoll = dir.resolve("rechnung.log").createDirectory()
+        val dir = workDir()
+        val logFile = dir.resolve("rechnung.log").createDirectory()
 
-        val fehler = shouldThrow<ToolchainException> { setzen(FakeProcessRunner(FakeProcessRunner.Run()), dir) }
+        val error = shouldThrow<ToolchainException> { typeset(FakeProcessRunner(FakeProcessRunner.Run()), dir) }
 
-        fehler.message!! shouldContain protokoll.toString()
+        error.message!! shouldContain logFile.toString()
     }
 
     test("ein Lauf genügt, wenn das Protokoll keinen zweiten verlangt") {
-        val runner = FakeProcessRunner(erfolgreicherLauf())
+        val runner = FakeProcessRunner(successfulRun())
 
-        val pdf = setzen(runner)
+        val pdf = typeset(runner)
 
         pdf.exists() shouldBe true
         runner.commands shouldHaveSize 1
@@ -200,11 +200,11 @@ class LatexCompilerTest : FunSpec({
         // Querverweisen. Der zweite Lauf schweigt dazu, also ist Schluss.
         val runner =
             FakeProcessRunner(
-                erfolgreicherLauf(mitschnitt("lualatex-verlangt-zweiten-lauf.log")),
-                erfolgreicherLauf(),
+                successfulRun(transcript("lualatex-verlangt-zweiten-lauf.log")),
+                successfulRun(),
             )
 
-        setzen(runner)
+        typeset(runner)
 
         runner.commands shouldHaveSize 2
         // Beide Läufe mit derselben ID und demselben Datum.
@@ -218,11 +218,11 @@ class LatexCompilerTest : FunSpec({
         // xltabular mit Spaltenkopf, wie die Positionen sie haben (#321).
         val runner =
             FakeProcessRunner(
-                erfolgreicherLauf(mitschnitt("lualatex-tabellenbreite-geaendert.log")),
-                erfolgreicherLauf(),
+                successfulRun(transcript("lualatex-tabellenbreite-geaendert.log")),
+                successfulRun(),
             )
 
-        setzen(runner)
+        typeset(runner)
 
         runner.commands shouldHaveSize 2
     }
@@ -231,15 +231,15 @@ class LatexCompilerTest : FunSpec({
         // Ein Dokument, das nach drei Läufen noch einen vierten fordert,
         // konvergiert nicht – der vierte änderte daran nichts. Die Zahl steht
         // als MAX_PASSES im Code und ist ohne diesen Test unbelegt.
-        val hartnaeckig = mitschnitt("lualatex-verlangt-zweiten-lauf.log")
+        val persistent = transcript("lualatex-verlangt-zweiten-lauf.log")
         val runner =
             FakeProcessRunner(
-                erfolgreicherLauf(hartnaeckig),
-                erfolgreicherLauf(hartnaeckig),
-                erfolgreicherLauf(hartnaeckig),
+                successfulRun(persistent),
+                successfulRun(persistent),
+                successfulRun(persistent),
             )
 
-        setzen(runner)
+        typeset(runner)
 
         runner.commands shouldHaveSize 3
     }
@@ -247,21 +247,21 @@ class LatexCompilerTest : FunSpec({
     test("ein gescheiterter Lauf nennt die Fundstelle statt tausend Zeilen Paketgeplauder") {
         val runner =
             FakeProcessRunner(
-                FakeProcessRunner.Run(exitCode = 1, files = mapOf("rechnung.log" to mitschnitt("lualatex-abbruch.log"))),
+                FakeProcessRunner.Run(exitCode = 1, files = mapOf("rechnung.log" to transcript("lualatex-abbruch.log"))),
             )
 
-        val fehler = shouldThrow<ToolchainException> { setzen(runner) }
+        val error = shouldThrow<ToolchainException> { typeset(runner) }
 
-        fehler.message!! shouldContain "Undefined control sequence"
-        fehler.message!! shouldContain "gibtesnicht"
+        error.message!! shouldContain "Undefined control sequence"
+        error.message!! shouldContain "gibtesnicht"
         // Die Fundstelle kommt mit – dafür stehen die zwei Folgezeilen drin.
-        fehler.message!! shouldContain "l.3"
+        error.message!! shouldContain "l.3"
         // Das Geplauder bleibt draußen: ein Paketname, der im Protokoll steht,
         // aber nicht zu einer Fehlerzeile gehört.
-        fehler.message!! shouldNotContain "geometry"
+        error.message!! shouldNotContain "geometry"
         // Aus 98 Zeilen werden eine Handvoll. Die genaue Zahl ist nicht der
         // Punkt, die Größenordnung schon.
-        fehler.message!!.lines().size shouldBeLessThan 15
+        error.message!!.lines().size shouldBeLessThan 15
     }
 
     test("bei zwei dicht beieinanderliegenden Fehlern steht keine Zeile doppelt") {
@@ -271,16 +271,16 @@ class LatexCompilerTest : FunSpec({
             FakeProcessRunner(
                 FakeProcessRunner.Run(
                     exitCode = 1,
-                    files = mapOf("rechnung.log" to mitschnitt("lualatex-zwei-fehler.log")),
+                    files = mapOf("rechnung.log" to transcript("lualatex-zwei-fehler.log")),
                 ),
             )
 
-        val fehler = shouldThrow<ToolchainException> { setzen(runner) }
+        val error = shouldThrow<ToolchainException> { typeset(runner) }
 
-        val lines = fehler.message!!.lines().filter { it.isNotBlank() }
+        val lines = error.message!!.lines().filter { it.isNotBlank() }
         lines.distinct() shouldHaveSize lines.size
-        fehler.message!! shouldContain "gibtesnicht"
-        fehler.message!! shouldContain "auchnicht"
+        error.message!! shouldContain "gibtesnicht"
+        error.message!! shouldContain "auchnicht"
     }
 
     test("ohne Fehlerzeile bleibt der Schluss des Protokolls übrig") {
@@ -290,9 +290,9 @@ class LatexCompilerTest : FunSpec({
                 FakeProcessRunner.Run(exitCode = 1, files = mapOf("rechnung.log" to "Zeile eins\nZeile zwei\n")),
             )
 
-        val fehler = shouldThrow<ToolchainException> { setzen(runner) }
+        val error = shouldThrow<ToolchainException> { typeset(runner) }
 
-        fehler.message!! shouldContain "Zeile zwei"
+        error.message!! shouldContain "Zeile zwei"
     }
 
     test("stürzt LuaLaTeX ab, bevor es ein Protokoll schreibt, zählt die Prozessausgabe") {
@@ -300,50 +300,50 @@ class LatexCompilerTest : FunSpec({
         // auf die Ausgabe geschrieben hat.
         val runner = FakeProcessRunner(FakeProcessRunner.Run(exitCode = 1, output = "! I can't find file 'rechnung'."))
 
-        val fehler = shouldThrow<ToolchainException> { setzen(runner) }
+        val error = shouldThrow<ToolchainException> { typeset(runner) }
 
-        fehler.message!! shouldContain "can't find file"
+        error.message!! shouldContain "can't find file"
     }
 
     context("Inhalt, der vom Blatt fällt (ADR-0020)") {
         // Eine Tabelle mit 80 Zeilen auf einer Seite: LuaLaTeX meldet Erfolg,
         // Exitcode 0, und schreibt nur ins Protokoll, dass die Seite überläuft.
-        val ueberlauf = mitschnitt("lualatex-seite-laeuft-ueber.log")
+        val overflow = transcript("lualatex-seite-laeuft-ueber.log")
 
         test("bricht ab, obwohl LuaLaTeX Erfolg meldet, und nennt die Zeile aus dem Protokoll") {
-            val runner = FakeProcessRunner(erfolgreicherLauf(ueberlauf))
+            val runner = FakeProcessRunner(successfulRun(overflow))
 
-            val fehler = shouldThrow<ToolchainException> { setzen(runner) }
+            val error = shouldThrow<ToolchainException> { typeset(runner) }
 
-            fehler.message!! shouldContain "mehr, als das Blatt fasst"
-            fehler.message!! shouldContain "Overfull \\vbox (405.0pt too high)"
-            fehler.message!! shouldNotContain "luaotfload"
+            error.message!! shouldContain "mehr, als das Blatt fasst"
+            error.message!! shouldContain "Overfull \\vbox (405.0pt too high)"
+            error.message!! shouldNotContain "luaotfload"
         }
 
         test("eine zu breite Zeile bricht nicht ab: Sie ragt in den Rand, sie fehlt nicht") {
-            val runner = FakeProcessRunner(erfolgreicherLauf(mitschnitt("lualatex-zeile-zu-breit.log")))
+            val runner = FakeProcessRunner(successfulRun(transcript("lualatex-zeile-zu-breit.log")))
 
-            setzen(runner).exists() shouldBe true
+            typeset(runner).exists() shouldBe true
         }
 
         test("es zählt der letzte Lauf, denn aus ihm stammt das PDF") {
             // Zwei Mitschnitte hintereinander stehen für einen ersten Lauf, der
             // überläuft und einen zweiten verlangt. Der zweite läuft nicht über.
-            val zuerst = ueberlauf + mitschnitt("lualatex-verlangt-zweiten-lauf.log")
+            val overflowFirst = overflow + transcript("lualatex-verlangt-zweiten-lauf.log")
 
-            setzen(FakeProcessRunner(erfolgreicherLauf(zuerst), erfolgreicherLauf())).exists() shouldBe true
+            typeset(FakeProcessRunner(successfulRun(overflowFirst), successfulRun())).exists() shouldBe true
 
             shouldThrow<ToolchainException> {
-                setzen(FakeProcessRunner(erfolgreicherLauf(mitschnitt("lualatex-verlangt-zweiten-lauf.log")), erfolgreicherLauf(ueberlauf)))
+                typeset(FakeProcessRunner(successfulRun(transcript("lualatex-verlangt-zweiten-lauf.log")), successfulRun(overflow)))
             }
         }
     }
 
     test("meldet der Lauf Erfolg, ohne ein PDF zu hinterlassen, ist das ein Fehler") {
-        val runner = FakeProcessRunner(FakeProcessRunner.Run(files = mapOf("rechnung.log" to fertig)))
+        val runner = FakeProcessRunner(FakeProcessRunner.Run(files = mapOf("rechnung.log" to finished)))
 
-        val fehler = shouldThrow<ToolchainException> { setzen(runner) }
+        val error = shouldThrow<ToolchainException> { typeset(runner) }
 
-        fehler.message!! shouldContain "meldete Erfolg, hat aber kein PDF geschrieben"
+        error.message!! shouldContain "meldete Erfolg, hat aber kein PDF geschrieben"
     }
 })
