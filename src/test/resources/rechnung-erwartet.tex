@@ -117,14 +117,16 @@
 
 \newcommand{\positionsdetail}[1]{\newline{\footnotesize\color{gedaempft} #1}}
 
-\newcommand{\mitrabatt}[1]{\ifblank{}{}{#1}}
-\ifblank{}{\newcolumntype{R}{}}{\newcolumntype{R}{r}}
+\newtoggle{rabattspalte}
+\ifblank{}{}{\toggletrue{rabattspalte}}
+\newcommand{\mitrabatt}[1]{\iftoggle{rabattspalte}{#1}{}}
+\iftoggle{rabattspalte}{\newcolumntype{R}{r}}{\newcolumntype{R}{}}
 \newcommand{\positionszeile}[7]{#2 & #3 & #4 & #5\mitrabatt{ & #6} & #7}
 
 \newcommand{\positionskopf}{\mbox{\rubrik{Beschreibung}} & \mbox{\rubrik{Menge}} & & \mbox{\rubrik{Einzelpreis}}\mitrabatt{ & \mbox{\rubrik{Rabatt}}} & \mbox{\rubrik{Betrag}} \\[1.5mm]
   \midrule}
 
-\newcommand{\spaltenzahl}{\ifblank{}{5}{6}}
+\newcommand{\spaltenzahl}{\iftoggle{rabattspalte}{6}{5}}
 
 \newcommand{\summenzeile}[2]{#1 & #2}
 

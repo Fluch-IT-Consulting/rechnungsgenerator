@@ -158,8 +158,14 @@
 
 %% Die Rabattspalte steht nur, wenn eine Position einen Rabatt hat (#213).
 %% \mitrabatt setzt sein Argument nur dann, R ist die Spalte oder nichts.
-\newcommand{\mitrabatt}[1]{\ifblank{<<RABATTSPALTE>>}{}{#1}}
-\ifblank{<<RABATTSPALTE>>}{\newcolumntype{R}{}}{\newcolumntype{R}{>{\raggedleft\arraybackslash}p{14mm}|}}
+%%
+%% Gefragt wird einmal, danach nur der Schalter: Zeile, Spaltentyp und
+%% \spaltenzahl müssen dieselbe Antwort bekommen, sonst hat eine Zeile eine
+%% Zelle mehr, als die Tabelle Spalten hat.
+\newtoggle{rabattspalte}
+\ifblank{<<RABATTSPALTE>>}{}{\toggletrue{rabattspalte}}
+\newcommand{\mitrabatt}[1]{\iftoggle{rabattspalte}{#1}{}}
+\iftoggle{rabattspalte}{\newcolumntype{R}{>{\raggedleft\arraybackslash}p{14mm}|}}{\newcolumntype{R}{}}
 
 %% Eine Zeile der Positionstabelle, Spalten wie das Gitter: laufende Nummer,
 %% Bezeichnung (fett, die Beschreibung darunter), Menge, Einheit, Einzelpreis,
@@ -172,7 +178,9 @@
   \hline}
 
 %% Wie viele Spalten die Positionstabelle hat: sechs, mit Rabattspalte sieben.
-\newcommand{\spaltenzahl}{\ifblank{<<RABATTSPALTE>>}{6}{7}}
+%% Es steht im ersten Argument von \multicolumn und muss dort zur Zahl
+%% expandieren; \iftoggle tut das.
+\newcommand{\spaltenzahl}{\iftoggle{rabattspalte}{7}{6}}
 
 \newcommand{\summenzeile}[2]{#1 & #2}
 
