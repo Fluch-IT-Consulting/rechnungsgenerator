@@ -180,9 +180,9 @@ class Template private constructor(
          * darf eine Angabe der Stammdaten weglassen, `helsinki` etwa setzt weder
          * Webseite noch Steuernummer. Ließe es den Pflichtsatz der Art weg, fehlte
          * er dagegen genau auf den Rechnungen, die keines der Beispiele zeigt.
-         * Diese Prüfung deckt ab, was kein Beispiel enthält (Skonto,
-         * Befreiungsgrund); ob die Angaben der Stammdaten dastehen, prüft das
-         * Pflichtangaben-Netz am fertigen PDF.
+         * Das Pflichtangaben-Netz sieht nur die Beispieldateien, diese Prüfung
+         * jede Vorlage beim Bau; ob die Angaben der Stammdaten dastehen, prüft
+         * das Netz am fertigen PDF.
          *
          * Dazu einen aus [TemplateValue.ZAHLUNGSANGABE]: Dass die Vorlage
          * über die Zahlung etwas sagt, verlangt der Bau, welches von beiden

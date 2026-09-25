@@ -189,7 +189,13 @@ Rechnung, die still auf zwei Seiten wüchse, sähe nicht mehr aus wie bisher.
 Vergleichsdatei neu erzeugt wird: erst nachsehen, ob die Änderung gewollt
 ist.
 
-Zwei fachliche Sätze hat das Netz noch nicht, Skonto und den Satz zum
-ausgeglichenen Restbetrag: Keine Beispieldatei erreicht sie, und eine Prüfung
-ohne Beispiel prüfte nichts (#342). Den Pflichtsatz erreicht keine
-mehrseitige Datei; seine Prüfung steht, greift aber erst mit einer.
+Skonto und der Satz zum ausgeglichenen Restbetrag stehen in eigenen
+Beispieldateien, `skonto.yaml` und `schlussrechnung-ausgeglichen.yaml`
+(#342). Beide sind einseitig, ebenso jede Datei mit einem Pflichtsatz: Dass
+diese Sätze nicht über zwei Seiten brechen, prüft das Netz an jeder
+mehrseitigen Rechnung, aber keine der Dateien liegt an einer Seitengrenze.
+Eine eigene Datei an der Grenze bekommen sie bewusst nicht. Den
+Zusammenhalt trägt in jeder Vorlage ein Makro, `\ungeteilt`, und das prüft
+das Netz an zwei Grenzen, beim Schluss und beim Befreiungsgrund; jeder Satz
+in `\hinweisabsatz` bekommt es von dort. Eine Grenzdatei je Satz prüfte
+dasselbe Makro noch einmal und wanderte mit jeder Änderung am Satzbild.
