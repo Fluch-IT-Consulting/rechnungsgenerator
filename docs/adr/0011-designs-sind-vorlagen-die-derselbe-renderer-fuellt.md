@@ -50,8 +50,9 @@ am fertigen Satzbild.
 
 - **Mitgebrachte Designs**, eine Vorlage als Datei neben den Stammdaten. Sie
   bestünde `checkMacros` und `checkPlaceholders`, aber niemand hätte gesehen, ob
-  sie jede Rechnungsart vollständig setzt – das prüft nur das Netz aus #187, und
-  das läuft im Build dieses Projekts, nicht beim Benutzer.
+  sie jede Rechnungsart vollständig setzt – das prüft nur das
+  Pflichtangaben-Netz, und das läuft im Build dieses Projekts, nicht beim
+  Benutzer.
 - **Die Wahl per Schalter oder je Rechnung.** Alle Rechnungen eines
   Rechnungsstellers sehen gleich aus; ein Schalter am Kommando müsste bei jedem
   Aufruf richtig gesetzt werden, und zwei Rechnungen derselben Reihe sähen
@@ -78,11 +79,11 @@ am fertigen Satzbild.
 - **Die Vergleichsdateien sind asymmetrisch.** `helsinki` sichern vier
   `*-erwartet.tex`, eine je Rechnungsart mit eigenem Markup. `prag` sichert
   nur `prag-rechnung-erwartet.tex`. Die übrigen Arten in `prag` schützt
-  bewusst allein das Netz aus #187: Ihre fachlichen Sätze sind dieselben wie in
-  `helsinki` und dort schon gesichert, und eine Datei je Design und Art änderte
-  sich mit jeder Vorlage. Ein Fehler im Satzbild einer Art, den das Netz nicht
-  sieht, fällt in `prag` erst am PDF auf.
-- **Das Netz aus #187 kennt jedes Design.** Ein Test verlangt, dass jedes
+  bewusst allein das Pflichtangaben-Netz: Ihre fachlichen Sätze sind dieselben
+  wie in `helsinki` und dort schon gesichert, und eine Datei je Design und Art
+  änderte sich mit jeder Vorlage. Ein Fehler im Satzbild einer Art, den das
+  Netz nicht sieht, fällt in `prag` erst am PDF auf.
+- **Das Pflichtangaben-Netz kennt jedes Design.** Ein Test verlangt, dass jedes
   `Design` darin steht. Zum Design gehören dort die Wörter, deren Abwesenheit
   geprüft wird; `prag` hat keine Bank-Überschrift.
 - **Ein drittes Design** ist eine Vorlage, ein Eintrag in `Design` und eine Zeile
@@ -117,7 +118,7 @@ bringt genau eine Vergleichsdatei mit. Die übrigen Arten verlieren dafür in
 `helsinki` den zeichengleichen Volltext. Ihr Markup – Absetzungstabelle,
 Pflichtsatz, Bezug – steht als Makroaufrufe in den Werten, und wie ein Design
 diese Makros definiert, steht wortgleich in dessen Volltext. Dass sie auf dem
-Blatt richtig erscheinen, prüft weiter allein das Netz aus #187.
+Blatt richtig erscheinen, prüft weiter allein das Pflichtangaben-Netz.
 
 ## Nachtrag vom 19.09.2026: Die Vorlage beschriftet die Summen
 
@@ -148,7 +149,8 @@ Vorlage, und `prag` setzt ihn bewusst nicht.
 
 Beide schlicht optional zu machen, wie #211 es formuliert hatte, ließe aber
 eine Vorlage durch, die über die Zahlung gar nichts sagt – auffallen würde das
-erst im Netz aus #187, am fertigen PDF und im Lauf mit den echten Werkzeugen.
+erst im Pflichtangaben-Netz, am fertigen PDF und im Lauf mit den echten
+Werkzeugen.
 
 Die Antwort ist eine **benannte Regel** neben der Pflichtliste,
 `TemplateValue.ZAHLUNGSANGABE`: die beiden Platzhalter als Menge, und der Bau
