@@ -3,6 +3,7 @@ package de.fluchitconsulting.rechnungsgenerator.generate.toolchain
 import de.fluchitconsulting.rechnungsgenerator.core.accepted.accepted
 import de.fluchitconsulting.rechnungsgenerator.core.calculation.CalculatedInvoice
 import de.fluchitconsulting.rechnungsgenerator.core.model.YamlLoader
+import de.fluchitconsulting.rechnungsgenerator.core.values.Design
 import de.fluchitconsulting.rechnungsgenerator.generate.render.InvoiceRenderer
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.assertions.withClue
@@ -12,6 +13,7 @@ import io.kotest.core.test.Enabled
 import io.kotest.matchers.collections.shouldContain
 import io.kotest.matchers.collections.shouldNotBeEmpty
 import io.kotest.matchers.doubles.plusOrMinus
+import io.kotest.matchers.ints.shouldBeGreaterThan
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.string.shouldContain
 import io.kotest.matchers.string.shouldNotContain
@@ -65,6 +67,19 @@ class ToolchainIntegrationTest : FunSpec({
 
     val workDir = createTempDirectory("rechnungsgenerator-test")
     val run = ToolchainRun(workDir)
+
+    // Die Stammdaten des Beispiels mit dem Design, dazu auf Wunsch eine
+    // andere Firma.
+    fun sellerConfigFor(
+        design: Design,
+        firm: String? = null,
+    ): Path {
+        val example = Path.of("src/test/resources/stammdaten.yaml").readText()
+        val content = if (firm == null) example else example.replace(Regex("(?m)^firma: .*$"), "firma: $firm")
+        return workDir.resolve("stammdaten-$design${if (firm == null) "" else "-firma"}.yaml").also {
+            it.writeText(content + "design: $design\n")
+        }
+    }
 
     // Der eingebaute Prüfer braucht nichts; verlangt wird hier also LuaLaTeX.
     // Dass der Generator ohne installiertes veraPDF läuft, ist seit #226 eine
@@ -152,19 +167,11 @@ class ToolchainIntegrationTest : FunSpec({
     /**
      * Eine Rechnung hat keine Lesezeichen, und das PDF sagt das auch (#321):
      * Mit Lesezeichen verlangte hyperref ohne Not einen weiteren Lauf, und
-     * `/UseOutlines` öffnete im Viewer eine leere Seitenleiste. Beide Designs,
+     * `/UseOutlines` öffnete im Viewer eine leere Seitenleiste. Jedes Design,
      * weil jede Vorlage pdfx selbst lädt.
      */
     test("das PDF hat keine Lesezeichen und öffnet keine Lesezeichenleiste") {
-        val prag =
-            workDir.resolve("stammdaten-prag.yaml").also {
-                it.writeText(Path.of("src/test/resources/stammdaten.yaml").readText() + "design: prag\n")
-            }
-        val pdfs =
-            listOf(
-                run.generate("rechnung", "lesezeichen-helsinki").first,
-                run.generate("rechnung", "lesezeichen-prag", sellerConfig = prag).first,
-            )
+        val pdfs = Design.entries.map { run.generate("rechnung", "lesezeichen-$it", sellerConfig = sellerConfigFor(it)).first }
 
         pdfs.forEach { pdf ->
             val text = String(pdf.readBytes(), Charsets.ISO_8859_1)
@@ -223,7 +230,8 @@ class ToolchainIntegrationTest : FunSpec({
      * Text aus den Eingabedaten steht im PDF so, wie er in der YAML-Datei
      * steht. Ohne `Ligatures=TeXOff` in der Vorlage zöge die Schrift "A--C" zu
      * "A–C" zusammen und "<<A>>" zu "«A»" (#81) – das LaTeX sähe dabei richtig
-     * aus, deshalb prüft das nur ein echter Lauf.
+     * aus, deshalb prüft das nur ein echter Lauf. Jedes Design, weil jedes
+     * seine Schrift selbst wählt.
      *
      * Jede Folge steht in einer eigenen, kurzen Bezeichnung: In der schmalen
      * Spalte könnte ein Umbruch eine lange Bezeichnung zerteilen, und dann
@@ -240,10 +248,51 @@ class ToolchainIntegrationTest : FunSpec({
         val input = workDir.resolve("ligaturen.yaml")
         input.writeText(example.substringBefore("positionen:") + "positionen:\n" + items)
 
-        val (pdf, _) = run.generate("ligaturen", input = input)
+        for (design in Design.entries) {
+            val (pdf, _) = run.generate("ligaturen-$design", input = input, sellerConfig = sellerConfigFor(design))
 
-        val typesetText = run.textOf(pdf)
-        names.forEach { typesetText shouldContain it }
+            val typesetText = run.textOf(pdf)
+            withClue(design) { names.forEach { typesetText shouldContain it } }
+        }
+    }
+
+    /**
+     * Nach einem Punkt, der kein Satzende ist, steht der gewöhnliche
+     * Wortzwischenraum (#143): "Dr. Erika" wie "Erika Muster". Von sich aus
+     * setzte TeX nach "Dr." den breiteren Abstand eines Satzendes. Im
+     * Seitenfuß ebenso, den LaTeX in der Ausgaberoutine mit `\normalsfcodes`
+     * setzt und nicht mit dem `\frenchspacing` des Textes (#353).
+     *
+     * Gemessen wird innerhalb einer Zeile, wo Schrift und Grad gleich sind:
+     * der Abstand nach "Dr." gegen den nach "Erika". Die Firma trägt das "Dr."
+     * in den Fuß, die Position in den Text. Wie das LaTeX aussieht, sagt dazu
+     * nichts, deshalb ein echter Lauf – je Design, weil jedes seinen Fuß
+     * selbst setzt.
+     */
+    test("nach einer Abkürzung steht der gewöhnliche Wortabstand, auch im Seitenfuß") {
+        val example = Path.of("src/test/resources/rechnung.yaml").readText()
+        val input = workDir.resolve("abkuerzung.yaml")
+        input.writeText(
+            example.substringBefore("positionen:") + "positionen:\n" +
+                "  - bezeichnung: \"Termin mit Dr. Erika Muster\"\n    menge: 1\n    einheit: pauschal\n    einzelpreis: 10.00\n",
+        )
+
+        for (design in Design.entries) {
+            val (pdf, _) =
+                run.generate("abkuerzung-$design", input = input, sellerConfig = sellerConfigFor(design, firm = "Praxis Dr. Erika Muster"))
+            val page = run.wordsOf(pdf)
+
+            // Je Fundstelle: "Dr.", "Erika" und das Wort danach, in einer Zeile.
+            val measured =
+                page.words.windowed(3).filter { (dr, erika, next) ->
+                    dr.text == "Dr." && erika.text == "Erika" && dr.yMin == erika.yMin && erika.yMin == next.yMin
+                }
+            withClue("$design: Fundstellen im Fuß") { measured.count { (dr) -> dr.yMin > 0.85 * page.height } shouldBeGreaterThan 0 }
+            withClue("$design: Fundstellen im Text") { measured.count { (dr) -> dr.yMin < 0.5 * page.height } shouldBeGreaterThan 0 }
+            measured.forEach { (dr, erika, next) ->
+                withClue("$design, Zeile bei ${dr.yMin} pt") { erika.xMin - dr.xMax shouldBe (next.xMin - erika.xMax plusOrMinus 0.05) }
+            }
+        }
     }
 
     /**
