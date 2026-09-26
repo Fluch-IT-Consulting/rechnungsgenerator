@@ -1,10 +1,12 @@
 package de.fluchitconsulting.rechnungsgenerator.generate.einvoice
 
 import de.fluchitconsulting.rechnungsgenerator.core.accepted.AcceptedInvoice
+import de.fluchitconsulting.rechnungsgenerator.core.accepted.InvoiceVariableResolver
 import de.fluchitconsulting.rechnungsgenerator.core.calculation.CalculatedInvoice
 import de.fluchitconsulting.rechnungsgenerator.core.calculation.CalculatedLine
 import de.fluchitconsulting.rechnungsgenerator.core.calculation.VatGroup
 import de.fluchitconsulting.rechnungsgenerator.core.model.Address
+import de.fluchitconsulting.rechnungsgenerator.core.model.CancelledInvoice
 import de.fluchitconsulting.rechnungsgenerator.core.model.ServicePeriod
 import de.fluchitconsulting.rechnungsgenerator.core.model.TaxCategory
 import de.fluchitconsulting.rechnungsgenerator.core.rules.Finding
@@ -34,13 +36,14 @@ object CiiWriter {
         mapOf(
             "rsm" to "urn:un:unece:uncefact:data:standard:CrossIndustryInvoice:100",
             "ram" to "urn:un:unece:uncefact:data:standard:ReusableAggregateBusinessInformationEntity:100",
+            "qdt" to "urn:un:unece:uncefact:data:standard:QualifiedDataType:100",
             "udt" to "urn:un:unece:uncefact:data:standard:UnqualifiedDataType:100",
         )
 
     fun write(acceptedInvoice: AcceptedInvoice): CiiResult {
         val missing = notYetPossible(acceptedInvoice)
         return if (missing.isEmpty()) {
-            CiiResult.Written(xml(acceptedInvoice.calculated))
+            CiiResult.Written(xml(acceptedInvoice))
         } else {
             CiiResult.NotYetPossible(missing)
         }
@@ -54,10 +57,10 @@ object CiiWriter {
      */
     private fun notYetPossible(acceptedInvoice: AcceptedInvoice): List<Finding> =
         when (acceptedInvoice.kind) {
-            is InvoiceKind.Ordinary -> {
+            is InvoiceKind.Ordinary, is InvoiceKind.PrepaymentInvoice, is InvoiceKind.Cancellation -> {
                 emptyList()
             }
-            is InvoiceKind.PrepaymentInvoice, is InvoiceKind.FinalInvoice, is InvoiceKind.Cancellation -> {
+            is InvoiceKind.FinalInvoice -> {
                 val documentName = acceptedInvoice.calculated.invoice.type.documentName
                 listOf(
                     Finding(
@@ -69,8 +72,9 @@ object CiiWriter {
             }
         }
 
-    private fun xml(calculated: CalculatedInvoice): String =
-        indentedXml("rsm:CrossIndustryInvoice", namespaces) {
+    private fun xml(acceptedInvoice: AcceptedInvoice): String {
+        val calculated = acceptedInvoice.calculated
+        return indentedXml("rsm:CrossIndustryInvoice", namespaces) {
             element("rsm:ExchangedDocumentContext") {
                 element("ram:GuidelineSpecifiedDocumentContextParameter") {
                     element("ram:ID", EXTENDED)
@@ -84,7 +88,15 @@ object CiiWriter {
                 // Schlusssatz aus den Stammdaten, den die Bemerkung auf dem
                 // Blatt ersetzt: Er ist eine Höflichkeit und keine Angabe zur
                 // Rechnung.
-                listOfNotNull(calculated.invoice.introduction, calculated.invoice.note).forEach { note ->
+                //
+                // Dazu der Pflichtsatz der Rechnungsart, der erst das Dokument
+                // zu dem macht, was es ist: Ohne ihn stünde der Abschlag wie
+                // eine Rechnung über die Leistung da und das Storno ohne den
+                // Satz, dass es die Ursprungsrechnung aufhebt.
+                val mandatoryNote =
+                    calculated.invoice.type.mandatoryNote
+                        ?.toPlainText(InvoiceVariableResolver(acceptedInvoice))
+                listOfNotNull(calculated.invoice.introduction, calculated.invoice.note, mandatoryNote).forEach { note ->
                     element("ram:IncludedNote") { element("ram:Content", note) }
                 }
             }
@@ -92,9 +104,10 @@ object CiiWriter {
                 calculated.lines.forEachIndexed { index, line -> lineItem(index, line, calculated.vatGroupOf(line)) }
                 agreement(calculated)
                 delivery(calculated)
-                settlement(calculated)
+                settlement(acceptedInvoice)
             }
         }
+    }
 
     /**
      * Meist leer, weil hier nur ein Lieferdatum (BT-72) stünde, und bei einem
@@ -255,7 +268,8 @@ object CiiWriter {
         }
     }
 
-    private fun XmlElements.settlement(calculated: CalculatedInvoice) {
+    private fun XmlElements.settlement(acceptedInvoice: AcceptedInvoice) {
+        val calculated = acceptedInvoice.calculated
         val bank = calculated.config.bank
         val servicePeriod = calculated.invoice.servicePeriod
         element("ram:ApplicableHeaderTradeSettlement") {
@@ -280,6 +294,7 @@ object CiiWriter {
                     group.exemptionReason?.let { element("ram:ExemptionReason", it) }
                     element("ram:BasisAmount", amount(group.base))
                     element("ram:CategoryCode", group.category.code)
+                    receivedOn(acceptedInvoice)?.let { date("ram:TaxPointDate", it, "udt:DateString") }
                     element("ram:RateApplicablePercent", percent(group.rate))
                 }
             }
@@ -309,8 +324,36 @@ object CiiWriter {
                 element("ram:GrandTotalAmount", amount(calculated.grossTotal))
                 element("ram:DuePayableAmount", amount(calculated.remainingAmount))
             }
+            cancelled(acceptedInvoice)?.let { cancelled ->
+                element("ram:InvoiceReferencedDocument") {
+                    element("ram:IssuerAssignedID", cancelled.invoiceNumber)
+                    date("ram:FormattedIssueDateTime", cancelled.issueDate, "qdt:DateTimeString")
+                }
+            }
         }
     }
+
+    /**
+     * Der Tag der Vereinnahmung eines Abschlags (§14 Abs. 4 Nr. 6 UStG). Im
+     * XML ist das der Steuerzeitpunkt (BT-7): Die Steuer auf eine Anzahlung
+     * entsteht mit ihrem Eingang. Steht er noch nicht fest, fehlt er auch
+     * hier, wie auf dem Blatt.
+     *
+     * Die `when` hier und in [cancelled] haben kein `else`: Eine neue Art
+     * entscheidet, ob sie das trägt (ADR-0008).
+     */
+    private fun receivedOn(acceptedInvoice: AcceptedInvoice): LocalDate? =
+        when (val kind = acceptedInvoice.kind) {
+            is InvoiceKind.PrepaymentInvoice -> kind.receivedOn
+            is InvoiceKind.Ordinary, is InvoiceKind.FinalInvoice, is InvoiceKind.Cancellation -> null
+        }
+
+    /** Die Rechnung, die ein Storno aufhebt (BG-3, ADR-0006). */
+    private fun cancelled(acceptedInvoice: AcceptedInvoice): CancelledInvoice? =
+        when (val kind = acceptedInvoice.kind) {
+            is InvoiceKind.Cancellation -> kind.cancelled
+            is InvoiceKind.Ordinary, is InvoiceKind.PrepaymentInvoice, is InvoiceKind.FinalInvoice -> null
+        }
 
     private fun XmlElements.period(period: ServicePeriod) {
         element("ram:BillingSpecifiedPeriod") {
@@ -319,13 +362,17 @@ object CiiWriter {
         }
     }
 
-    /** Ein Datum im Format 102 der Codeliste UNTDID 2379: JJJJMMTT. */
+    /**
+     * Ein Datum im Format 102 der Codeliste UNTDID 2379: JJJJMMTT. Das
+     * innere Element hängt am Typ, den das Schema für [name] vorsieht.
+     */
     private fun XmlElements.date(
         name: String,
         date: LocalDate,
+        inner: String = "udt:DateTimeString",
     ) {
         element(name) {
-            element("udt:DateTimeString", date.format(DateTimeFormatter.BASIC_ISO_DATE), "format" to "102")
+            element(inner, date.format(DateTimeFormatter.BASIC_ISO_DATE), "format" to "102")
         }
     }
 

@@ -3,6 +3,7 @@ package de.fluchitconsulting.rechnungsgenerator.generate.einvoice
 import de.fluchitconsulting.rechnungsgenerator.core.accepted.AcceptedInvoice
 import de.fluchitconsulting.rechnungsgenerator.core.accepted.accepted
 import de.fluchitconsulting.rechnungsgenerator.core.calculation.CalculatedInvoice
+import de.fluchitconsulting.rechnungsgenerator.core.model.CancelledInvoice
 import de.fluchitconsulting.rechnungsgenerator.core.model.CheckMethod
 import de.fluchitconsulting.rechnungsgenerator.core.model.InvoiceType
 import de.fluchitconsulting.rechnungsgenerator.core.model.ServicePeriod
@@ -52,12 +53,17 @@ private fun AcceptedInvoice.xml(): String = CiiWriter.write(this).shouldBeInstan
  */
 class CiiWriterTest : FunSpec({
 
-    test("die Beispielrechnung ergibt das erwartete XML") {
-        example("rechnung").xml() shouldBe resource("rechnung-erwartet.xml")
-    }
+    // Je Art, die der Writer schreibt, eine Vergleichsdatei. Die Teilrechnung
+    // unterscheidet sich von der Rechnung im XML nur im Code, sie prüft der
+    // Test darunter.
+    listOf("rechnung", "abschlagsrechnung", "stornorechnung").forEach { name ->
+        test("$name.yaml ergibt das erwartete XML") {
+            example(name).xml() shouldBe resource("$name-erwartet.xml")
+        }
 
-    test("das XML ist gültig, mit keiner Warnung außer PEPPOL-EN16931-R008") {
-        example("rechnung").xml().shouldBeValidExtended()
+        test("das XML aus $name.yaml ist gültig, mit keiner Warnung außer PEPPOL-EN16931-R008") {
+            example(name).xml().shouldBeValidExtended()
+        }
     }
 
     // Nicht teilrechnung.yaml: Die trägt Rabatte, und die gehen noch nicht.
@@ -273,14 +279,83 @@ class CiiWriterTest : FunSpec({
         }
     }
 
-    context("was noch nicht geht, bricht ab statt still zu fehlen") {
-        listOf(InvoiceType.PREPAYMENT, InvoiceType.FINAL, InvoiceType.CANCELLATION).forEach { type ->
-            test("eine ${type.documentName}") {
-                val result = CiiWriter.write(example(exampleInvoices.getValue(type)))
+    context("Abschlag und Storno") {
+        // Die Vergleichsdateien tragen den Wortlaut; hier steht, worauf es
+        // bei der Art ankommt.
+        test("der Abschlag nennt seinen Pflichtsatz und den Tag der Vereinnahmung") {
+            val xml = example("abschlagsrechnung").xml()
 
-                val findings = result.shouldBeInstanceOf<CiiResult.NotYetPossible>().findings
-                findings.map { it.rule to it.subject } shouldBe listOf(Rule.ZUGFERD_NOCH_NICHT_MOEGLICH to Subject.WholeInvoice)
-            }
+            xml shouldContain "<ram:TypeCode>386</ram:TypeCode>"
+            xml shouldContain "<ram:Content>Die Leistung ist noch nicht erbracht."
+            xml shouldContain
+                """
+                |        <ram:TaxPointDate>
+                |          <udt:DateString format="102">20260610</udt:DateString>
+                |        </ram:TaxPointDate>
+                """.trimMargin()
+        }
+
+        test("ohne Vereinnahmung fehlt der Steuerzeitpunkt, wie auf dem Blatt") {
+            val invoice = example("abschlagsrechnung").calculated.invoice.copy(receivedOn = null)
+            val xml = CalculatedInvoice(invoice, testSellerConfig()).accepted().xml()
+
+            xml shouldNotContain "ram:TaxPointDate"
+            xml.shouldBeValidExtended()
+        }
+
+        test("das Storno nennt die Ursprungsrechnung, im Pflichtsatz und als Bezug") {
+            val xml = example("stornorechnung").xml()
+
+            xml shouldContain "<ram:TypeCode>384</ram:TypeCode>"
+            xml shouldContain "hebt die Rechnung R26-042 vom 14. August 2026 vollständig auf."
+            xml shouldContain
+                """
+                |      <ram:InvoiceReferencedDocument>
+                |        <ram:IssuerAssignedID>R26-042</ram:IssuerAssignedID>
+                |        <ram:FormattedIssueDateTime>
+                |          <qdt:DateTimeString format="102">20260814</qdt:DateTimeString>
+                |        </ram:FormattedIssueDateTime>
+                |      </ram:InvoiceReferencedDocument>
+                """.trimMargin()
+        }
+
+        // Ein Storno fordert kein Geld (requestsPayment): keine Bankverbindung,
+        // kein Zahlungsziel, und der Betrag steht negativ da (ADR-0006).
+        test("das Storno fordert nichts") {
+            val xml = example("stornorechnung").xml()
+
+            xml shouldNotContain "ram:SpecifiedTradeSettlementPaymentMeans"
+            xml shouldNotContain "ram:SpecifiedTradePaymentTerms"
+            xml shouldContain "<ram:DuePayableAmount>-9921.63</ram:DuePayableAmount>"
+        }
+
+        // Der Rabatt bekommt das Vorzeichen der Basis (ADR-0013), im XML
+        // also einen negativen Abschlag auf eine negative Position.
+        test("ein Storno mit Rabatt ist gültig") {
+            val items =
+                listOf(
+                    testItem(quantity = "-2", discount = "10"),
+                    testItem(quantity = "-1", discountAmount = "20.00"),
+                )
+            val invoice =
+                testInvoice(
+                    type = InvoiceType.CANCELLATION,
+                    items = items,
+                    cancelled = CancelledInvoice("R26-000", LocalDate.of(2026, 8, 1)),
+                )
+            val xml = CalculatedInvoice(invoice, testSellerConfig()).accepted().xml()
+
+            xml shouldContain "<ram:ActualAmount>-20.00</ram:ActualAmount>"
+            xml.shouldBeValidExtended()
+        }
+    }
+
+    context("was noch nicht geht, bricht ab statt still zu fehlen") {
+        test("eine Schlussrechnung") {
+            val result = CiiWriter.write(example(exampleInvoices.getValue(InvoiceType.FINAL)))
+
+            val findings = result.shouldBeInstanceOf<CiiResult.NotYetPossible>().findings
+            findings.map { it.rule to it.subject } shouldBe listOf(Rule.ZUGFERD_NOCH_NICHT_MOEGLICH to Subject.WholeInvoice)
         }
     }
 })

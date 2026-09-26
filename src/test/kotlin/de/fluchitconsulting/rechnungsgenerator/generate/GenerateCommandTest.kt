@@ -149,13 +149,13 @@ class GenerateCommandTest : FunSpec({
         }
 
         test("was der Writer noch nicht schreibt, bricht vor dem Satz ab, mit ZUGFERD_NOCH_NICHT_MOEGLICH") {
-            val prepayment = inputDir.resolve("abschlagsrechnung.yaml").also { it.writeText(resource("abschlagsrechnung.yaml")) }
+            val finalInvoice = inputDir.resolve("schlussrechnung.yaml").also { it.writeText(resource("schlussrechnung.yaml")) }
             val typesetter = FakeTypesetter()
-            val target = inputDir.resolve("abschlag-zugferd.pdf")
+            val target = inputDir.resolve("schluss-zugferd.pdf")
 
             val error =
                 shouldThrow<RejectedException> {
-                    generate(typesetter, "-o", target.toString(), "--zugferd", invoiceFile = prepayment)
+                    generate(typesetter, "-o", target.toString(), "--zugferd", invoiceFile = finalInvoice)
                 }
 
             error.aborts.map { it.rule } shouldBe listOf(Rule.ZUGFERD_NOCH_NICHT_MOEGLICH)

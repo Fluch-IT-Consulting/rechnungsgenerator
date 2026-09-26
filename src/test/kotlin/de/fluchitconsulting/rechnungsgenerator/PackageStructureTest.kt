@@ -70,7 +70,8 @@ class PackageStructureTest : FunSpec({
                 ),
             // Das XML der E-Rechnung liest dieselbe angenommene Rechnung wie
             // der LaTeX-Renderer, kennt aber weder ihn noch die Werkzeuge
-            // (ADR-0023).
+            // (ADR-0023). core.text für den Pflichtsatz, den es im eigenen
+            // Format setzt (ADR-0019).
             "$root.generate.einvoice" to
                 setOf(
                     "$core.accepted",
@@ -78,6 +79,7 @@ class PackageStructureTest : FunSpec({
                     "$core.calculation",
                     "$core.model",
                     "$core.values",
+                    "$core.text",
                 ),
             "$root.generate.toolchain" to emptySet(),
             "$root.prepayments" to setOf("$core.accepted", "$core.rules", "$core.calculation", "$core.model", "$core.values"),
