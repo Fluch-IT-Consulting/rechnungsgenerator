@@ -230,9 +230,10 @@ Hinweise kann sie tragen.
 _Vermeiden_: gültig (das sagt veraPDF über das PDF), korrekt, freigegeben
 
 **PDF/A-Prüfung**:
-Die Frage, ob das gesetzte Dokument dem Archivformat PDF/A-1b genügt. Ihr
-Ergebnis ist *gültig* oder nicht, sie betrifft das Dokument und nicht die
-Rechnung, und sie kommt nach dem Satz – während die *Prüfung* der Rechnung ihr
+Die Frage, ob ein Dokument dem Archivformat PDF/A genügt – eine gesetzte
+Rechnung dem PDF/A-1b, eine E-Rechnung dem PDF/A-3. Ihr Ergebnis ist *gültig*
+oder nicht, und sie betrifft das Dokument und nicht die Rechnung. Beim
+Erzeugen kommt sie nach dem Satz, während die *Prüfung* der Rechnung ihr
 vorausgeht und über *angenommen* oder *abgelehnt* entscheidet. Ohne gültiges
 PDF/A entsteht keine Datei am Ziel.
 _Vermeiden_: Prüfung (ohne Zusatz – das ist die der Rechnung), Validierung,

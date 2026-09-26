@@ -266,3 +266,71 @@ Zusage, dass nichts still fehlt, hält jetzt das `when` ohne `else` über die
 `InvoiceKind`: Eine neue Art muss dort entscheiden, was sie trägt. Kommt
 einmal eine Angabe, die der Writer nicht schreiben kann, kehrt der Abbruch
 zurück, mit einer Kennung für genau diese Angabe.
+
+## Nachtrag vom 26.09.2026: Das XML lässt sich wieder auslesen
+
+Seit #380 prüft `rechnungsgenerator xml rechnung.pdf`, ob ein PDF eine gültige
+E-Rechnung nach ZUGFeRD ist, und gibt dann ihr XML auf stdout aus. Angenommen
+wird jede E-Rechnung nach ZUGFeRD oder Factur-X, nicht nur die eigene. Das
+Kommando heißt nach dem, was auf stdout steht, wie `abschlaege`; ein Schalter
+an `erzeuge` wäre ein Aufruf, der mal ein PDF und mal etwas anderes ausgibt
+(ADR-0003).
+
+**Jeder Prüfer behält seine Aufgabe.** veraPDF urteilt über das PDF/A, und
+zwar gegen das Profil, als das sich die Datei in ihrem XMP ausgibt
+(`pdfaid:part`, `pdfaid:conformance`). Verlangt ist ein PDF/A-3, ob a, b oder
+u, und `PdfAProfile` kennt dafür auch 3a und 3b. Ein PDF/A-1 oder ein PDF ohne
+diese Angabe bricht ab. Mustang urteilt über das XML wie beim Erzeugen und
+erkennt das Profil am XML selbst. Scheitert eine Prüfung, bleibt stdout leer,
+und auf stderr stehen die Gründe beider Prüfer auf einmal. Eine Warnung ist
+ein Hinweis auf stderr, und das XML kommt trotzdem.
+
+**Die Prüfer ziehen in einen gemeinsamen Rand.** Sie lagen in
+`generate.toolchain`, und ein Kommando importiert nicht aus dem Paket eines
+anderen. Im Wurzelpaket `toolchain` liegen jetzt `PdfAValidator` samt
+Adaptern, `EInvoiceValidator` und der Prozessläufer, auf dem der externe
+Prüfer aufbaut. Satz und Einbetten braucht nur `erzeuge`: `Typesetter`,
+`LatexCompiler`, `PdfSources` und `EInvoiceEmbedder` bleiben in
+`generate.toolchain`, das jetzt aus `toolchain` importiert. Frei vom Projekt
+ist damit der Rand, nicht mehr `generate.toolchain`. `xml` braucht nichts aus
+dem Kern, weil es keine Rechnungsdatei liest. Der Kern bekommt also keinen
+Verbraucher dazu, und für den Modulschnitt gilt weiter, was unter „Was
+ZUGFeRD nicht auslöst“ steht.
+
+**`EInvoiceValidator` liefert ein Ergebnis, statt zu werfen.** Dass ein
+Verstoß eine Lücke im Generator ist, stimmt nur beim Erzeugen; bei `xml` ist
+das XML die Eingabe. Der Prüfer liefert deshalb Fehler und Warnungen, wie
+`PdfAValidator` ein `ValidationResult` liefert, und jedes Kommando
+entscheidet selbst: `erzeuge` wirft wie bisher, jetzt in `LuaLatexTypesetter`,
+und `xml` nennt den Grund zur Datei.
+
+**Ausgepackt wird mit PDFBox.** Gesucht wird im Namensbaum der Anhänge samt
+Kindknoten, nach den Namen der Fassungen: `factur-x.xml`,
+`zugferd-invoice.xml`, `xrechnung.xml` und `ZUGFeRD-invoice.xml` aus
+ZUGFeRD 1. Verglichen wird genau, denn 2.0 und 1 unterscheiden sich nur in
+der Schreibweise. Keiner oder mehr als einer ist ein Grund zum Abbruch. Das
+XML geht als Bytes auf den Ausgabestrom und nicht über `echo`, das Text
+schreibt: Ein XML in einer anderen Kodierung als UTF-8 käme sonst verändert
+heraus.
+
+Verworfen:
+
+- **Das ganze Paket `generate.toolchain` als Rand.** Es wäre ein rein
+  mechanischer Umzug gewesen. Dann lägen aber Satz und Einbetten, die nur
+  `erzeuge` braucht, dort, wo jedes Kommando sie sieht.
+- **Mustangs `ZUGFeRDInvoiceImporter`.** Er kennt die Namen der Fassungen.
+  Einen Fehler beim Lesen schreibt er aber nur ins Protokoll, das `slf4j-nop`
+  stumm schaltet, von mehreren Anhängen nimmt er still den letzten, und eine
+  Datei, die kein PDF ist, liest er als XML. Die Bytes holt er mit demselben
+  Aufruf wie PDFBox.
+- **Ein Schalter, der ohne Prüfung auspackt.** Er hätte einen Grund:
+  nachzusehen, warum eine empfangene Rechnung scheitert. Er kommt, wenn der
+  Fall eintritt; bis dahin tut es `pdfdetach`.
+- **`--externe-pdfa-pruefung` für `xml`.** Die Naht erlaubt ihn jederzeit,
+  gefragt hat bisher niemand.
+- **Eine Kennung in `Rule`.** Gültig oder nicht sagen veraPDF und Mustang mit
+  eigenen Kennungen, der Klausel der Norm und `BR-…`. Befunde betreffen eine
+  Rechnungsdatei (ADR-0004), und eine solche liest `xml` nicht.
+- **Das XML einlesen oder zeigen.** Aus ihm entsteht weder eine
+  Rechnungsdatei noch ein Modell noch eine Sichtfassung; das Kommando reicht
+  die Bytes durch.
