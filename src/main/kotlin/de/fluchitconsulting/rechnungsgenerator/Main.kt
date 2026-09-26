@@ -18,6 +18,8 @@ import de.fluchitconsulting.rechnungsgenerator.generate.toolchain.TypesetterFact
 import de.fluchitconsulting.rechnungsgenerator.prepayments.PrepaymentsCommand
 import de.fluchitconsulting.rechnungsgenerator.setup.SetupCommand
 import de.fluchitconsulting.rechnungsgenerator.toolchain.ToolchainException
+import de.fluchitconsulting.rechnungsgenerator.xml.XmlCommand
+import java.io.OutputStream
 import java.io.PrintStream
 import kotlin.system.exitProcess
 
@@ -62,7 +64,7 @@ fun execute(
     // Hinweis auf stdout steht.
     viewer: PdfViewer = SystemPdfViewer,
 ): Int {
-    val command = RechnungsgeneratorCommand(typesetter, viewer)
+    val command = RechnungsgeneratorCommand(typesetter, viewer, out)
     command.context {
         // Unterkommandos erben den Ausgeber, er gilt also für das ganze Programm.
         echoMessage = { _, message, trailingNewline, toErr ->
@@ -136,11 +138,13 @@ private fun programVersion(): String {
 class RechnungsgeneratorCommand(
     typesetter: TypesetterFactory = ::LuaLatexTypesetter,
     viewer: PdfViewer = SystemPdfViewer,
+    // Für xml, das Bytes schreibt und nicht Text über echo.
+    standardOutput: OutputStream = System.out,
 ) : CoreCliktCommand(name = "rechnungsgenerator") {
     override val invokeWithoutSubcommand = true
 
     init {
-        subcommands(GenerateCommand(typesetter, viewer), PrepaymentsCommand(), SetupCommand())
+        subcommands(GenerateCommand(typesetter, viewer), PrepaymentsCommand(), SetupCommand(), XmlCommand(standardOutput))
         // Eager: Clikt gibt die Fassung schon beim Parsen aus und wirft
         // PrintMessage mit Exitcode 0. Damit greift run() unten gar nicht erst,
         // und --version endet nicht als "kein Unterkommando" mit Code 1.
@@ -151,7 +155,8 @@ class RechnungsgeneratorCommand(
         )
     }
 
-    override fun help(context: Context) = "Erzeugt deutsche Rechnungen als geprüftes PDF/A-1b oder als E-Rechnung nach ZUGFeRD."
+    override fun help(context: Context) =
+        "Erzeugt deutsche Rechnungen als geprüftes PDF/A-1b oder als E-Rechnung nach ZUGFeRD und liest das XML einer E-Rechnung aus."
 
     override fun run() {
         if (currentContext.invokedSubcommand == null) {
