@@ -2,8 +2,9 @@
 
 Kotlin/Gradle-Lernprojekt: erzeugt aus einer YAML-Rechnungsdatei plus
 YAML-Stammdaten-Konfiguration eine deutsche Rechnung als valides
-PDF/A-1b-Dokument. Satz über LuaLaTeX (Schrift: TeX Gyre Heros, passend zum
-CV/Web-Auftritt des Autors), PDF/A-Prüfung über veraPDF.
+PDF/A-1b-Dokument, mit `--zugferd` als E-Rechnung (PDF/A-3u mit XML). Satz über
+LuaLaTeX (Schrift: TeX Gyre Heros, passend zum CV/Web-Auftritt des Autors),
+PDF/A-Prüfung über veraPDF.
 
 ## Befehle
 
@@ -84,7 +85,8 @@ CV/Web-Auftritt des Autors), PDF/A-Prüfung über veraPDF.
   ADR-0013 und gehalten von einem Test über Rechnung und Storno.
 
   Berechnungen (Summen, USt., Fälligkeit) im Kotlin-Code, nie im Template.
-- **Ausgabe**: PDF/A-1b via LuaLaTeX + `pdfx`-Paket. `lualatex` wird im PATH
+- **Ausgabe**: PDF/A-1b via LuaLaTeX + `pdfx`-Paket, mit `--zugferd` danach
+  PDF/A-3u samt XML über Mustang (siehe ZUGFeRD). `lualatex` wird im PATH
   erwartet; `LuaLatexTypesetter.checkAvailable()` prüft das beim Start und
   nennt Fehlendes mit Installationshinweis.
 - **PDF/A-Prüfung** (ADR-0014): zwei Prüfer hinter der Naht `PdfAValidator` –
@@ -99,7 +101,9 @@ CV/Web-Auftritt des Autors), PDF/A-Prüfung über veraPDF.
   Deshalb ist `LuaLatexTypesetter` eine Klasse und das Kommando bekommt eine
   `TypesetterFactory`: Welcher Prüfer es ist, steht erst mit dem Schalter fest.
   Lizenz von veraPDF: gewählt ist **MPL-2.0** und nicht GPLv3+, die auf das
-  Ganze durchschlüge.
+  Ganze durchschlüge. Das Profil – PDF/A-1b, mit E-Rechnung PDF/A-3u – folgt
+  allein aus `PdfSources.pdfaProfile`, und der Vergleich der beiden Prüfer
+  deckt beide.
 
 - **Naht zu den Werkzeugen**: `Typesetter` – "aus Quelltext wird ein geprüftes
   PDF". Dahinter im Betrieb LuaLaTeX und veraPDF, im Test ein vorbereitetes
@@ -451,11 +455,38 @@ CV/Web-Auftritt des Autors), PDF/A-Prüfung über veraPDF.
   ohne `else`. In der Spalte steht, was vereinbart wurde – Satz oder Betrag,
   nicht stets der Rabattbetrag.
 
-- **ZUGFeRD-Vorbereitung**: Datenmodell enthält von Anfang an alle
-  EN-16931-Pflichtfelder (Leistungsdatum, Steuerkategorie, Kennungen), damit
-  ZUGFeRD (PDF/A-3 + XML) später ein zusätzlicher Ausgabemodus wird, kein Umbau.
-  Bis dahin bewusst nur PDF/A-1b (Archivierungsanforderungen der E-Rechnung
-  noch offen).
+- **ZUGFeRD** (ADR-0023): `erzeuge --zugferd` erzeugt eine E-Rechnung im
+  Profil EXTENDED, für alle Arten dasselbe (ADR-0002). Das XML schreibt
+  `CiiWriter` in `generate.einvoice`, aus derselben `AcceptedInvoice` wie der
+  Renderer und wie er ohne eigene Rechnung – jede Zahl kommt aus der
+  `CalculatedInvoice`, denn Mustangs Modell rundet anders als ADR-0013 und
+  kennt `SpecifiedAdvancePayment` nicht. `rechnung-erwartet.xml` ist die
+  Vergleichsdatei, eine Frage und keine Aufgabe wie die `.tex`-Dateien; daneben
+  prüft Mustang das XML, und erlaubt ist allein die Warnung
+  `PEPPOL-EN16931-R008` zum leeren `ApplicableHeaderTradeDelivery`.
+
+  Was der Writer noch nicht schreibt – bisher alles außer Rechnung und
+  Teilrechnung mit Kategorie S ohne Rabatt und Skonto –, liefert er als
+  `CiiResult.NotYetPossible` mit `ZUGFERD_NOCH_NICHT_MOEGLICH`, und `erzeuge`
+  bricht ab wie bei einer Ablehnung. Das XML ist die maßgebliche Fassung;
+  eine Angabe fehlt dort nie still. Jeder weitere Schritt macht aus einem
+  solchen Befund einen geschriebenen Block.
+
+  Mustang wirkt nur hinter der Naht `Typesetter`: `EInvoiceValidator` prüft
+  das XML vor dem Satz – ein Verstoß ist eine Lücke im Generator, deshalb
+  `ToolchainException` und kein PDF –, `EInvoiceEmbedder` bettet es danach
+  ein. Mustang setzt dabei die Uhr ein und schreibt das XMP neu; der Embedder
+  übernimmt vor dem Speichern XMP, Info-Dictionary und Datum aus dem
+  PDF/A-1b. Das hängt an zwei Eigenheiten, die Mustang nirgends zusagt: Das
+  Dokument ist nur über das `protected`-Feld `doc` erreichbar, und `setXML`
+  ruft selbst `prepare()` – ein zweiter Aufruf hinge das XML zweimal an.
+  `EInvoiceEmbedderTest` hält Bytegleichheit, genau einen Anhang und die
+  Metadaten fest; bei einem Versionssprung von Mustang zuerst dort lesen.
+
+  Im Klassenpfad: veraPDF als `-jakarta`-Familie, weil Mustang sie nachzieht
+  (Nachtrag zu ADR-0014); FOP und `en16931-cii2ubl` ausgeschlossen, an
+  `implementation`, damit die Tests mit dem ausgelieferten Klassenpfad laufen;
+  `slf4j-nop`, sonst schriebe SLF4J bei jedem ZUGFeRD-Lauf auf stderr.
 - **Befunde statt Abbruch beim ersten Fehler** (ADR-0004): Die Prüfung wirft
   nicht, sondern liefert eine Liste von Befunden – Kennung, Schwere (Abbruch
   oder Hinweis), Gegenstand und Meldung; den Gegenstand nennt die Ausgabe und
@@ -479,7 +510,8 @@ CV/Web-Auftritt des Autors), PDF/A-Prüfung über veraPDF.
   Die Kennungen sind deutsch benannt wie die Regeln und **nicht** nummeriert.
   Tests prüfen die Kennung statt des Wortlauts (`aborts().shouldBeEmpty()`).
   Alle stehen in `Rule` im Kern, auch die drei, die allein `abschlaege`
-  vergibt – die eine bewusste Ausnahme vom Schnitt der Paketstruktur (#314).
+  vergibt, und `ZUGFERD_NOCH_NICHT_MOEGLICH` aus `einvoice` – die bewusste
+  Ausnahme vom Schnitt der Paketstruktur (#314).
   Was das Programm ablehnt, steht so an einer Stelle, und `abschlaege` meldet
   die Abbrüche der gelesenen Abschlagsrechnungen in derselben Liste wie seine
   eigenen. `PackageStructureTest` sieht die Ausnahme nicht: Kein Import verrät
@@ -494,7 +526,8 @@ CV/Web-Auftritt des Autors), PDF/A-Prüfung über veraPDF.
   fehlt, soll nicht aussehen wie eines, das hält.
 - **Paketstruktur**: Ein vertikales Paket je Kommando, mit allem, was
   nur dieses Kommando braucht: `generate` mit dem LaTeX-Satz
-  (`generate.render`) und der Naht zu den Werkzeugen (`generate.toolchain`),
+  (`generate.render`), dem XML der E-Rechnung (`generate.einvoice`) und der
+  Naht zu den Werkzeugen (`generate.toolchain`),
   `prepayments` mit dem Zusammentragen der Abschläge und dem YAML-Block,
   `setup` mit der Vorlage der Stammdaten (#276) – es kennt aus dem Kern nur
   `model`, weil `einrichten` den Namen des Wurzelordners braucht und die Frage,
@@ -538,8 +571,9 @@ CV/Web-Auftritt des Autors), PDF/A-Prüfung über veraPDF.
   dessen, was sie bauen oder prüfen (`core/model/TestFixtures.kt`,
   `core/rules/CheckHelpers.kt`, `core/accepted/AcceptedHelpers.kt`); ein Test
   darf aber jedes Paket sehen. Kein ADR:
-  Die Alternative war "so lassen", der Grund sind die Zyklen. Kommt ZUGFeRD als
-  weiterer Ausgabemodus, ist das der Moment für eines.
+  Die Alternative war "so lassen", der Grund sind die Zyklen. ZUGFeRD hat den
+  Schnitt nicht geändert, `einvoice` ist ein Randpaket neben `render`
+  (ADR-0023).
 
 ## Konventionen
 

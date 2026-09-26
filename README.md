@@ -1,17 +1,21 @@
 # Rechnungsgenerator
 
 Erzeugt aus einer YAML-Beschreibung eine deutsche Rechnung als valides
-PDF/A-1b-Dokument – gesetzt mit LuaLaTeX, geprüft mit veraPDF.
+PDF/A-1b-Dokument – gesetzt mit LuaLaTeX, geprüft mit veraPDF. Auf Wunsch
+entsteht eine E-Rechnung nach ZUGFeRD: ein PDF/A-3u, das die Rechnung
+zusätzlich als XML trägt.
 
 Ein Kotlin/Gradle-Lernprojekt.
 
 ## Voraussetzungen
 
-Beide Werkzeuge müssen im PATH liegen; das Programm prüft das beim Start und
-sagt, welches fehlt.
+`lualatex` muss im PATH liegen; das Programm prüft das beim Start und sagt es,
+wenn es fehlt.
 
 - TeX Live mit `lualatex` – <https://tug.org/texlive/>
-- [veraPDF](https://verapdf.org/) – `brew install verapdf`
+- nur für `--externe-pdfa-pruefung`: [veraPDF](https://verapdf.org/) –
+  `brew install verapdf`. Ohne den Schalter prüft eine eingebaute Fassung
+  derselben Bibliothek (ADR-0014).
 - Zum Bauen ein JDK 17+; Gradle lädt das Build-JDK bei Bedarf selbst.
 
 Nur für den `rechnung`-Skill in `.claude/skills/`: Python 3 mit
@@ -60,6 +64,8 @@ rechnungsgenerator erzeuge [OPTIONEN] <rechnung.yaml>
   --ueberschreiben           Eine vorhandene Zieldatei ersetzen
   --arbeitsdateien-behalten  Das .tex und die LaTeX-Hilfsdateien nicht löschen
   --oeffnen                  Die fertige Rechnung im PDF-Viewer des Systems öffnen
+  --zugferd                  Eine E-Rechnung erzeugen (siehe unten)
+  --externe-pdfa-pruefung    Das installierte Programm verapdf prüfen lassen
 ```
 
 Ohne `-o` entsteht das PDF neben der Rechnungsdatei und heißt wie sie, mit
@@ -98,6 +104,31 @@ oder ein PDF, das die PDF/A-Prüfung nicht besteht, führen zu Exitcode 1 –
 ebenso ein Aufruf ohne Unterkommando, der nur die Hilfe zeigt. Die
 Fehlermeldung steht dann auf stderr; stdout trägt nur das Ergebnis und lässt
 sich gefahrlos umleiten.
+
+### E-Rechnung (ZUGFeRD)
+
+Mit `--zugferd` entsteht statt des PDF/A-1b eine E-Rechnung nach ZUGFeRD im
+Profil EXTENDED: ein PDF/A-3u, das die Rechnung zusätzlich als XML
+(`factur-x.xml`) trägt. Das Blatt sieht aus wie ohne den Schalter; Zieldatei
+und Überschreibschutz sind dieselben, und die Ausgabe nennt das Profil:
+
+```
+Rechnungen/2026/R26-042.pdf
+PDF/A-3u: gültig
+```
+
+Im XML stehen dieselben Zahlen wie auf dem Blatt, denn beide kommen aus
+derselben Rechnung und keines rechnet selbst. Geprüft wird beides: das XML
+gegen Schema und Regeln des Profils, bevor es eingebettet wird, das Ergebnis
+gegen PDF/A-3u. Ein ungültiges XML ist ein Fehler des Generators und nicht der
+Rechnung; es entsteht dann kein PDF. Ein Lauf dauert mit dem Schalter einige
+Sekunden länger, fast alles für die Prüfung des XML.
+
+Bisher gehen Rechnung und Teilrechnung mit Regelsteuersatz (Kategorie S),
+ohne Rabatt und ohne Skonto. Alles andere bricht mit
+`ZUGFERD_NOCH_NICHT_MOEGLICH` ab, statt im XML still zu fehlen; ohne den
+Schalter entsteht das PDF wie gewohnt. Warum ZUGFeRD und nicht XRechnung und
+warum EXTENDED, steht in ADR-0002 und ADR-0023.
 
 ### Abschläge für die Schlussrechnung vorbereiten
 
@@ -217,7 +248,7 @@ Rechnung, und bestehende Dateien bleiben unverändert gültig.
 | `rechnung` | über eine erbrachte Leistung | Vorgabe |
 | `abschlagsrechnung` | über einen Teil des Entgelts, bevor geleistet wurde | Zeitraum gilt als voraussichtlich, optional `vereinnahmt-am` |
 | `schlussrechnung` | über die Gesamtleistung | setzt unter `abschlaege` die vereinnahmten Abschläge ab |
-| `teilrechnung` | über eine abgeschlossene Teilleistung | wie eine Rechnung; eigener Code fürs spätere ZUGFeRD |
+| `teilrechnung` | über eine abgeschlossene Teilleistung | wie eine Rechnung; in der E-Rechnung ein eigener Code (326) |
 | `stornorechnung` | hebt eine ausgestellte Rechnung auf | nennt sie unter `storniert`, Positionen mit negativer Menge |
 
 Der Unterschied ist nicht kosmetisch: Wer einen Abschlag wie eine gewöhnliche
@@ -315,16 +346,18 @@ er liest beim Erzeugen eine einzige Datei.
 ```
 
 Der Build ruft LuaLaTeX und veraPDF wirklich auf: Ein Integrationstest erzeugt
-aus den Beispieldaten ein PDF und prüft es gegen PDF/A-1b. Ohne gültiges PDF/A
-ist der Build rot.
+aus den Beispieldaten ein PDF und prüft es gegen PDF/A-1b, als E-Rechnung
+gegen PDF/A-3u. Ohne gültiges PDF/A ist der Build rot.
 
 ## Stand
 
 Layout und Toolchain stehen, ebenso Reverse Charge (§13b UStG), die Abschlags-
 und Schlussrechnung, das Storno, das Skonto und der Rabatt auf eine Position –
-als Satz oder als Betrag. Offen sind ein Nachlass auf die ganze Rechnung, die
-Rechnungskorrektur – also das Berichtigen einzelner Positionen, statt ganz zu
-stornieren – und später ZUGFeRD.
+als Satz oder als Betrag. Als E-Rechnung nach ZUGFeRD gehen bisher Rechnung und
+Teilrechnung mit Regelsteuersatz, ohne Rabatt und Skonto; die übrigen Arten und
+Merkmale folgen (#363). Offen sind außerdem ein Nachlass auf die ganze
+Rechnung und die Rechnungskorrektur – also das Berichtigen einzelner
+Positionen, statt ganz zu stornieren.
 
 ## Lizenz
 
