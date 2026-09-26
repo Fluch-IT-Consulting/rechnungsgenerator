@@ -479,12 +479,14 @@ PDF/A-Prüfung über veraPDF.
   neben anderen Kategorien lehnt keine Regel ab, weil EXTENDED BR-O-11 bis
   BR-O-14 nicht prüft (Nachtrag zu ADR-0023).
 
-  Was der Writer noch nicht schreibt – bisher die Schlussrechnung –, liefert
-  er als
-  `CiiResult.NotYetPossible` mit `ZUGFERD_NOCH_NICHT_MOEGLICH`, und `erzeuge`
-  bricht ab wie bei einer Ablehnung. Das XML ist die maßgebliche Fassung;
-  eine Angabe fehlt dort nie still. Jeder weitere Schritt macht aus einem
-  solchen Befund einen geschriebenen Block.
+  Der Writer schreibt jede Rechnungsart; was eine Art zusätzlich trägt –
+  Vereinnahmung, Ursprungsrechnung, abgesetzte Abschläge als
+  `SpecifiedAdvancePayment` –, fragt er die `InvoiceKind` in einem `when` ohne
+  `else`. Das XML ist die maßgebliche Fassung, eine Angabe fehlt dort nie
+  still: Eine neue Art muss in diesem `when` entscheiden, was sie trägt, und
+  kommt eine Angabe, die der Writer nicht schreiben kann, bricht `erzeuge
+  --zugferd` mit einer Kennung für genau sie ab, statt sie wegzulassen
+  (Nachtrag zu ADR-0023).
 
   Mustang wirkt nur hinter der Naht `Typesetter`: `EInvoiceValidator` prüft
   das XML vor dem Satz – ein Verstoß ist eine Lücke im Generator, deshalb
@@ -524,8 +526,7 @@ PDF/A-Prüfung über veraPDF.
   Die Kennungen sind deutsch benannt wie die Regeln und **nicht** nummeriert.
   Tests prüfen die Kennung statt des Wortlauts (`aborts().shouldBeEmpty()`).
   Alle stehen in `Rule` im Kern, auch die drei, die allein `abschlaege`
-  vergibt, und `ZUGFERD_NOCH_NICHT_MOEGLICH` aus `einvoice` – die bewusste
-  Ausnahme vom Schnitt der Paketstruktur (#314).
+  vergibt – die bewusste Ausnahme vom Schnitt der Paketstruktur (#314).
   Was das Programm ablehnt, steht so an einer Stelle, und `abschlaege` meldet
   die Abbrüche der gelesenen Abschlagsrechnungen in derselben Liste wie seine
   eigenen. `PackageStructureTest` sieht die Ausnahme nicht: Kein Import verrät

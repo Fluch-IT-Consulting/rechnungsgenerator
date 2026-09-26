@@ -169,10 +169,8 @@ die falsch ist, wird storniert, nicht überschrieben (siehe *Stornorechnung*).
 
 `--zugferd` setzt du, wenn der Nutzer eine E-Rechnung oder ZUGFeRD verlangt
 oder der Kunde sie fordert; sonst bleibt es beim PDF/A-1b. Das PDF sieht gleich
-aus und trägt zusätzlich das XML. Bricht der Lauf mit
-`ZUGFERD_NOCH_NICHT_MOEGLICH` ab, kann der Generator diese Rechnung noch nicht
-als E-Rechnung ausgeben: Nenne dem Nutzer den Grund aus der Meldung und frag,
-ob das PDF ohne den Schalter genügt.
+aus und trägt zusätzlich das XML. Das geht mit jeder Rechnungsart, auch mit
+der Schlussrechnung samt ihrer Abschläge.
 
 Fehlt das Programm, baue es mit `./gradlew installDist` im Projektverzeichnis.
 Dasselbe, wenn es `got unexpected extra argument` meldet und dazu, eine Datei
