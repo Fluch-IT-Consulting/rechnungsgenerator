@@ -182,6 +182,97 @@ class CiiWriterTest : FunSpec({
         }
     }
 
+    context("Rabatt und Skonto") {
+        // Satz und Basis prüft der Validator nicht nach, nur die Summen: Ein
+        // falscher Satz neben dem richtigen Betrag ginge durch. Deshalb stehen
+        // beide Abschläge hier wörtlich.
+        test("ein Rabatt als Satz trägt seine Basis, einer als Betrag nicht") {
+            val xml = example("teilrechnung").xml()
+
+            xml shouldContain
+                """
+                |        <ram:SpecifiedTradeAllowanceCharge>
+                |          <ram:ChargeIndicator>
+                |            <udt:Indicator>false</udt:Indicator>
+                |          </ram:ChargeIndicator>
+                |          <ram:CalculationPercent>30</ram:CalculationPercent>
+                |          <ram:BasisAmount>800.00</ram:BasisAmount>
+                |          <ram:ActualAmount>240.00</ram:ActualAmount>
+                |          <ram:ReasonCode>95</ram:ReasonCode>
+                |        </ram:SpecifiedTradeAllowanceCharge>
+                |        <ram:SpecifiedTradeSettlementLineMonetarySummation>
+                |          <ram:LineTotalAmount>560.00</ram:LineTotalAmount>
+                """.trimMargin()
+            xml shouldContain
+                """
+                |        <ram:SpecifiedTradeAllowanceCharge>
+                |          <ram:ChargeIndicator>
+                |            <udt:Indicator>false</udt:Indicator>
+                |          </ram:ChargeIndicator>
+                |          <ram:ActualAmount>100.00</ram:ActualAmount>
+                |          <ram:ReasonCode>95</ram:ReasonCode>
+                |        </ram:SpecifiedTradeAllowanceCharge>
+                |        <ram:SpecifiedTradeSettlementLineMonetarySummation>
+                |          <ram:LineTotalAmount>400.00</ram:LineTotalAmount>
+                """.trimMargin()
+            xml.occurrencesOf("<ram:SpecifiedTradeAllowanceCharge>") shouldBe 2
+            xml.shouldBeValidExtended()
+        }
+
+        // Mustangs eigenes Modell rundet hier auf 6.208,78 € und bekäme von
+        // seinem Validator eine Rechenwarnung (#363). Nach ADR-0013 sind es
+        // 6.208,77 €, wie auf dem Blatt, und das nimmt er ohne Warnung an.
+        test("die Beträge sind die nach ADR-0013, und der Validator rechnet sie nach") {
+            val item = testItem(quantity = "42.09", unitPrice = "273.17", discount = "46")
+            val xml = CalculatedInvoice(testInvoice(items = listOf(item)), testSellerConfig()).accepted().xml()
+
+            xml shouldContain "<ram:LineTotalAmount>6208.77</ram:LineTotalAmount>"
+            xml.shouldBeValidExtended()
+        }
+
+        // Nach der Frist sortiert und nicht wie in der Datei, wie auf dem
+        // Blatt; das Zahlungsziel bleibt eigene Zahlungsbedingung davor.
+        test("mehrere Skontostufen stehen je als eigene Zahlungsbedingung da") {
+            val xml = example("skonto").xml()
+
+            xml shouldContain
+                """
+                |      <ram:SpecifiedTradePaymentTerms>
+                |        <ram:DueDateDateTime>
+                |          <udt:DateTimeString format="102">20260828</udt:DateTimeString>
+                |        </ram:DueDateDateTime>
+                |      </ram:SpecifiedTradePaymentTerms>
+                |      <ram:SpecifiedTradePaymentTerms>
+                |        <ram:ApplicableTradePaymentDiscountTerms>
+                |          <ram:BasisDateTime>
+                |            <udt:DateTimeString format="102">20260814</udt:DateTimeString>
+                |          </ram:BasisDateTime>
+                |          <ram:BasisPeriodMeasure unitCode="DAY">7</ram:BasisPeriodMeasure>
+                |          <ram:CalculationPercent>2</ram:CalculationPercent>
+                |        </ram:ApplicableTradePaymentDiscountTerms>
+                |      </ram:SpecifiedTradePaymentTerms>
+                |      <ram:SpecifiedTradePaymentTerms>
+                |        <ram:ApplicableTradePaymentDiscountTerms>
+                |          <ram:BasisDateTime>
+                |            <udt:DateTimeString format="102">20260814</udt:DateTimeString>
+                |          </ram:BasisDateTime>
+                |          <ram:BasisPeriodMeasure unitCode="DAY">10</ram:BasisPeriodMeasure>
+                |          <ram:CalculationPercent>1.5</ram:CalculationPercent>
+                |        </ram:ApplicableTradePaymentDiscountTerms>
+                |      </ram:SpecifiedTradePaymentTerms>
+                """.trimMargin()
+            xml.shouldBeValidExtended()
+        }
+
+        test("eine Skontostufe ist gültig") {
+            val invoice = testInvoice(skonto = listOf(SkontoTier(Percent("2"), 7)))
+            val xml = CalculatedInvoice(invoice, testSellerConfig()).accepted().xml()
+
+            xml.occurrencesOf("<ram:ApplicableTradePaymentDiscountTerms>") shouldBe 1
+            xml.shouldBeValidExtended()
+        }
+    }
+
     context("was noch nicht geht, bricht ab statt still zu fehlen") {
         listOf(InvoiceType.PREPAYMENT, InvoiceType.FINAL, InvoiceType.CANCELLATION).forEach { type ->
             test("eine ${type.documentName}") {
@@ -190,24 +281,6 @@ class CiiWriterTest : FunSpec({
                 val findings = result.shouldBeInstanceOf<CiiResult.NotYetPossible>().findings
                 findings.map { it.rule to it.subject } shouldBe listOf(Rule.ZUGFERD_NOCH_NICHT_MOEGLICH to Subject.WholeInvoice)
             }
-        }
-
-        test("Rabatt und Skonto, alle auf einmal") {
-            val invoice =
-                testInvoice(
-                    items = listOf(testItem(discount = "10"), testItem(), testItem(discount = "5")),
-                    skonto = listOf(SkontoTier(Percent("2"), 7)),
-                )
-            val result = CiiWriter.write(CalculatedInvoice(invoice, testSellerConfig()).accepted())
-
-            val findings = result.shouldBeInstanceOf<CiiResult.NotYetPossible>().findings
-            findings.map { it.rule }.toSet() shouldBe setOf(Rule.ZUGFERD_NOCH_NICHT_MOEGLICH)
-            findings.map { it.subject } shouldBe
-                listOf(
-                    Subject.Item(0, "Testposition"),
-                    Subject.Item(2, "Testposition"),
-                    Subject.WholeInvoice,
-                )
         }
     }
 })
@@ -241,6 +314,10 @@ private fun String.occurrencesOf(text: String): Int = split(text).size - 1
  * zum leeren `ApplicableHeaderTradeDelivery` (siehe `CiiWriter`), und die
  * fehlt, sobald der Block ein Lieferland trägt. Jede andere wäre ein Befund,
  * der sonst unbemerkt durchginge.
+ *
+ * Gezählt wird jede Warnung und nicht nur die mit Kennung: Mustangs eigene
+ * Rechenprüfung meldet eine abweichende Summe als Warnung ohne `[ID …]`, und
+ * gerade sie hält die Beträge des XML an denen des Blatts.
  */
 private fun String.shouldBeValidExtended() {
     val validator = ZUGFeRDValidator()
@@ -248,10 +325,9 @@ private fun String.shouldBeValidExtended() {
 
     withClue(report) {
         validator.wasCompletelyValid() shouldBe true
-        warningIds(report).filterNot { it == "PEPPOL-EN16931-R008" }.shouldBeEmpty()
+        warnings(report).filterNot { "[ID PEPPOL-EN16931-R008]" in it }.shouldBeEmpty()
     }
 }
 
-/** Die Kennungen der Warnungen im Bericht, etwa `[ID PEPPOL-EN16931-R008]`. */
-private fun warningIds(report: String): List<String> =
-    Regex("""<warning[^>]*>[^<]*\[ID ([^\]]+)]""").findAll(report).map { it.groupValues[1] }.toList()
+private fun warnings(report: String): List<String> =
+    Regex("""<warning[^>]*>([^<]*)""").findAll(report).map { it.groupValues[1].trim() }.toList()

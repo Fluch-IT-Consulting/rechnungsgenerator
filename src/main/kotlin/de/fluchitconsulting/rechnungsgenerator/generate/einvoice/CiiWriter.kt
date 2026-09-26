@@ -11,6 +11,7 @@ import de.fluchitconsulting.rechnungsgenerator.core.rules.Finding
 import de.fluchitconsulting.rechnungsgenerator.core.rules.InvoiceKind
 import de.fluchitconsulting.rechnungsgenerator.core.rules.Rule
 import de.fluchitconsulting.rechnungsgenerator.core.rules.Subject
+import de.fluchitconsulting.rechnungsgenerator.core.values.Discount
 import de.fluchitconsulting.rechnungsgenerator.core.values.Money
 import de.fluchitconsulting.rechnungsgenerator.core.values.Percent
 import java.time.LocalDate
@@ -51,34 +52,22 @@ object CiiWriter {
      * Das `when` über die Rechnungsart hat kein `else`, wie im Renderer: Eine
      * neue Art muss hier entscheiden, ob der Writer sie kann (ADR-0008).
      */
-    private fun notYetPossible(acceptedInvoice: AcceptedInvoice): List<Finding> {
-        val calculated = acceptedInvoice.calculated
-        val invoice = calculated.invoice
-        return buildList {
-            when (acceptedInvoice.kind) {
-                is InvoiceKind.Ordinary -> {
-                    Unit
-                }
-                is InvoiceKind.PrepaymentInvoice, is InvoiceKind.FinalInvoice, is InvoiceKind.Cancellation -> {
-                    add(notYet(Subject.WholeInvoice, "Eine ${invoice.type.documentName} lässt sich noch nicht als ZUGFeRD erzeugen."))
-                }
+    private fun notYetPossible(acceptedInvoice: AcceptedInvoice): List<Finding> =
+        when (acceptedInvoice.kind) {
+            is InvoiceKind.Ordinary -> {
+                emptyList()
             }
-            calculated.lines.forEachIndexed { index, line ->
-                val subject = Subject.Item(index, line.item.name)
-                if (line.item.discount != null) {
-                    add(notYet(subject, "Ein Rabatt lässt sich noch nicht als ZUGFeRD erzeugen."))
-                }
-            }
-            if (calculated.skonto.isNotEmpty()) {
-                add(notYet(Subject.WholeInvoice, "Ein Skonto lässt sich noch nicht als ZUGFeRD erzeugen."))
+            is InvoiceKind.PrepaymentInvoice, is InvoiceKind.FinalInvoice, is InvoiceKind.Cancellation -> {
+                val documentName = acceptedInvoice.calculated.invoice.type.documentName
+                listOf(
+                    Finding(
+                        Rule.ZUGFERD_NOCH_NICHT_MOEGLICH,
+                        Subject.WholeInvoice,
+                        "Eine $documentName lässt sich noch nicht als ZUGFeRD erzeugen.",
+                    ),
+                )
             }
         }
-    }
-
-    private fun notYet(
-        subject: Subject,
-        message: String,
-    ) = Finding(Rule.ZUGFERD_NOCH_NICHT_MOEGLICH, subject, message)
 
     private fun xml(calculated: CalculatedInvoice): String =
         indentedXml("rsm:CrossIndustryInvoice", namespaces) {
@@ -171,10 +160,38 @@ object CiiWriter {
                     }
                 }
                 item.servicePeriod?.let { period(it) }
+                discount(line)
                 element("ram:SpecifiedTradeSettlementLineMonetarySummation") {
                     element("ram:LineTotalAmount", amount(line.net))
                 }
             }
+        }
+    }
+
+    /**
+     * Der Rabatt als Abschlag auf die Position (BG-27, ADR-0013). Ein Satz
+     * steht mit seiner Basis da, ein vereinbarter Betrag allein: Eine Basis
+     * ohne Satz sagte nichts, woraus der Betrag folgt.
+     *
+     * Nur der Code 95 (Discount, UNTDID 5189) und kein Text: BR-42 verlangt
+     * eines von beiden, und ein Text müsste nach BR-CO-07 dasselbe sagen wie
+     * der Code.
+     */
+    private fun XmlElements.discount(line: CalculatedLine) {
+        val discount = line.item.discount ?: return
+        element("ram:SpecifiedTradeAllowanceCharge") {
+            element("ram:ChargeIndicator") { element("udt:Indicator", "false") }
+            when (discount) {
+                is Discount.Rate -> {
+                    element("ram:CalculationPercent", percent(discount.rate))
+                    element("ram:BasisAmount", amount(line.base))
+                }
+                is Discount.Amount -> {
+                    Unit
+                }
+            }
+            element("ram:ActualAmount", amount(checkNotNull(line.discountAmount)))
+            element("ram:ReasonCode", "95")
         }
     }
 
@@ -270,6 +287,19 @@ object CiiWriter {
             calculated.dueDate?.let { dueDate ->
                 element("ram:SpecifiedTradePaymentTerms") {
                     date("ram:DueDateDateTime", dueDate)
+                }
+            }
+            // Je Skontostufe eigene Zahlungsbedingungen, weil jede nur eine
+            // Stufe trägt; die Frist zählt ab dem Rechnungsdatum, wie auf dem
+            // Blatt. Kein Skontobetrag, aus demselben Grund wie dort: Bei
+            // mehreren Steuersätzen müsste er aufgeteilt werden.
+            calculated.skonto.forEach { stufe ->
+                element("ram:SpecifiedTradePaymentTerms") {
+                    element("ram:ApplicableTradePaymentDiscountTerms") {
+                        date("ram:BasisDateTime", calculated.invoice.issueDate)
+                        element("ram:BasisPeriodMeasure", "${stufe.days}", "unitCode" to "DAY")
+                        element("ram:CalculationPercent", percent(stufe.rate))
+                    }
                 }
             }
             element("ram:SpecifiedTradeSettlementHeaderMonetarySummation") {
