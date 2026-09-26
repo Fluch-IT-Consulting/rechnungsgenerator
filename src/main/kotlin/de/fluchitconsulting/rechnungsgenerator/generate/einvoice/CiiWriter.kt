@@ -172,7 +172,8 @@ object CiiWriter {
                     element("ram:BasisAmount", amount(line.base))
                 }
                 is Discount.Amount -> {
-                    Unit
+                    // Vereinbart ist nur der Betrag; Satz und Basis kämen
+                    // aus einer Rechnung, die niemand vereinbart hat.
                 }
             }
             element("ram:ActualAmount", amount(checkNotNull(line.discountAmount)))
