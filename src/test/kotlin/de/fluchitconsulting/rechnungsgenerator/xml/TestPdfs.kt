@@ -9,15 +9,18 @@ import org.apache.pdfbox.pdmodel.common.filespecification.PDComplexFileSpecifica
 import org.apache.pdfbox.pdmodel.common.filespecification.PDEmbeddedFile
 import java.nio.file.Path
 
-/** Ein XMP, das sich als PDF/A mit Teil [part] und Stufe [conformance] ausgibt. */
+/**
+ * Ein XMP, das sich als PDF/A mit Teil [part] und Stufe [conformance] ausgibt,
+ * ohne [conformance] nur mit dem Teil.
+ */
 fun xmpClaiming(
     part: Int,
-    conformance: String,
+    conformance: String?,
 ) = """
     <x:xmpmeta xmlns:x="adobe:ns:meta/">
       <rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#">
         <rdf:Description rdf:about="" xmlns:pdfaid="http://www.aiim.org/pdfa/ns/id/"
-          pdfaid:part="$part" pdfaid:conformance="$conformance"/>
+          pdfaid:part="$part"${conformance?.let { " pdfaid:conformance=\"$it\"" }.orEmpty()}/>
       </rdf:RDF>
     </x:xmpmeta>
     """.trimIndent()
