@@ -74,7 +74,7 @@ Länderkennungen und mit falschem Gesamtbetrag klaglos ein.
 Mustangs Validator nimmt ein XML ohne PDF an (`validate(byte[], String)`),
 auch wenn seine Dokumentation das nicht sagt. Er läuft dann Schema und
 Schematron des Profils durch und lässt die PDF-Prüfung weg.
-`MustangValidatorTest` hält das fest, samt einer Gegenprobe, die BR-09
+`EInvoiceValidatorTest` hält das fest, samt einer Gegenprobe, die BR-09
 verletzt.
 
 **Der Schnitt folgt den bestehenden Nähten.** Der Writer liest die

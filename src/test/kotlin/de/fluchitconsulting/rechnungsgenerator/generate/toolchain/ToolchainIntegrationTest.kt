@@ -4,6 +4,8 @@ import de.fluchitconsulting.rechnungsgenerator.core.accepted.accepted
 import de.fluchitconsulting.rechnungsgenerator.core.calculation.CalculatedInvoice
 import de.fluchitconsulting.rechnungsgenerator.core.model.YamlLoader
 import de.fluchitconsulting.rechnungsgenerator.core.values.Design
+import de.fluchitconsulting.rechnungsgenerator.generate.einvoice.CiiResult
+import de.fluchitconsulting.rechnungsgenerator.generate.einvoice.CiiWriter
 import de.fluchitconsulting.rechnungsgenerator.generate.render.InvoiceRenderer
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.assertions.withClue
@@ -17,6 +19,7 @@ import io.kotest.matchers.ints.shouldBeGreaterThan
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.string.shouldContain
 import io.kotest.matchers.string.shouldNotContain
+import org.apache.pdfbox.Loader
 import java.nio.file.Path
 import java.security.MessageDigest
 import java.time.LocalDate
@@ -81,6 +84,19 @@ class ToolchainIntegrationTest : FunSpec({
         }
     }
 
+    // Die Beispielrechnung mit ihrem XML als E-Rechnung, über den Adapter des
+    // Betriebs gesetzt. Das XML kommt mit, damit ein Test es im PDF suchen kann.
+    fun typesetWithEInvoice(name: String): Pair<TypesetPdf, ByteArray> {
+        val invoice = YamlLoader.loadInvoice(Path.of("src/test/resources/rechnung.yaml"))
+        val config = YamlLoader.loadSellerConfig(Path.of("src/test/resources/stammdaten.yaml"))
+        val accepted = CalculatedInvoice(invoice, config).accepted()
+        val xml = (CiiWriter.write(accepted) as CiiResult.Written).xml.toByteArray()
+        val rendered = InvoiceRenderer.render(accepted).sources
+        val sources = PdfSources(rendered.tex, rendered.xmpMetadata, rendered.creationDate, rendered.files, xml)
+        val typeset = LuaLatexTypesetter(BuiltInPdfAValidator).typeset(createTempDirectory(workDir, name), accepted.fileBaseName, sources)
+        return typeset to xml
+    }
+
     // Der eingebaute Prüfer braucht nichts; verlangt wird hier also LuaLaTeX.
     // Dass der Generator ohne installiertes veraPDF läuft, ist seit #226 eine
     // Zusage – und sie gilt auch für seinen Build.
@@ -112,6 +128,25 @@ class ToolchainIntegrationTest : FunSpec({
         // PDF nach Text suchen, ohne dass der Binärteil beim Dekodieren stört.
         // Die Rechnung ist auf den 14.08.2026 datiert.
         String(bytes, Charsets.ISO_8859_1) shouldContain "/CreationDate(D:20260814000000+00'00')"
+    }
+
+    /**
+     * Der ganze Weg mit E-Rechnung (ADR-0023): Mustang prüft das XML, LuaLaTeX
+     * setzt, Mustang bettet ein, und geurteilt wird nach PDF/A-3u. Dass die
+     * Metadaten dabei erhalten bleiben, prüft `EInvoiceEmbedderTest` ohne
+     * LuaLaTeX; hier geht es darum, dass die Teile zusammenpassen.
+     */
+    test("mit E-Rechnung entsteht ein gültiges PDF/A-3u, das ihr XML trägt") {
+        val (typeset, xml) = typesetWithEInvoice("e-rechnung")
+
+        typeset.validation.profile shouldBe PdfAProfile.PDFA_3U
+        withClue(typeset.validation.describe()) { typeset.validation.valid shouldBe true }
+        Loader.loadPDF(typeset.pdf.toFile()).use { document ->
+            val attachment =
+                document.documentCatalog.names.embeddedFiles.names
+                    .getValue("factur-x.xml")
+            attachment.embeddedFile.toByteArray().contentEquals(xml) shouldBe true
+        }
     }
 
     /**
@@ -411,9 +446,19 @@ class ToolchainIntegrationTest : FunSpec({
             val nonCompliant =
                 Path.of("src/test/resources/nicht-konform.pdf").copyTo(workDir.resolve("nicht-konform.pdf"), overwrite = true)
 
-            for (pdf in listOf(valid, nonCompliant)) {
-                val builtIn = BuiltInPdfAValidator.validate(pdf, PdfAProfile.PDFA_1B)
-                val external = ExternalPdfAValidator(ExternalTool).validate(pdf, PdfAProfile.PDFA_1B)
+            // Dazu das PDF/A-3u einer E-Rechnung: Für das zweite Profil gilt
+            // dieselbe Zusage (ADR-0023).
+            val (einvoice, _) = typesetWithEInvoice("zwei-pruefer-e-rechnung")
+            val cases =
+                listOf(
+                    valid to PdfAProfile.PDFA_1B,
+                    nonCompliant to PdfAProfile.PDFA_1B,
+                    einvoice.pdf to PdfAProfile.PDFA_3U,
+                )
+
+            for ((pdf, profile) in cases) {
+                val builtIn = BuiltInPdfAValidator.validate(pdf, profile)
+                val external = ExternalPdfAValidator(ExternalTool).validate(pdf, profile)
 
                 // Die Kennung als eine Zeichenkette: So steht im Fehlerfall
                 // "ISO 19005-1:2005 6.3.4-1" im Bericht und nicht ein Tupel.

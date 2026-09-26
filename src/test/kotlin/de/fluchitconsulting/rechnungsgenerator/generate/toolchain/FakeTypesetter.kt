@@ -47,6 +47,6 @@ class FakeTypesetter(
             } else {
                 listOf(PdfAViolation("ISO 19005-1:2005", "6.1.2", "1", "Datei ist keine PDF/A", "so nicht"))
             }
-        return TypesetPdf(pdf, ValidationResult(PdfAProfile.PDFA_1B, valid, violations))
+        return TypesetPdf(pdf, ValidationResult(sources.pdfaProfile, valid, violations))
     }
 }

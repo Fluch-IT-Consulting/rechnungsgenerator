@@ -16,6 +16,10 @@ import java.time.LocalDate
  * `grundlage.sty` und `logo.tex` (ADR-0022, #198). Bytes und nicht Text,
  * weil ein Bild später auch welche ist.
  *
+ * [einvoice] ist das XML der E-Rechnung, das in das gesetzte PDF eingebettet
+ * wird (ADR-0023). Mit ihm entsteht ein PDF/A-3u statt eines PDF/A-1b, und
+ * das steht an einer Stelle: [pdfaProfile].
+ *
  * Nicht dabei: Arbeitsverzeichnis und Jobname. Beide sagen, *wohin* gesetzt
  * wird, nicht *woraus*, und sie bleiben Sache des Kommandos – es legt das
  * Verzeichnis an und räumt es auf. Der Jobname geht trotzdem in die Bytes
@@ -31,4 +35,7 @@ class PdfSources(
     val xmpMetadata: String,
     val creationDate: LocalDate,
     val files: Map<String, ByteArray> = emptyMap(),
-)
+    val einvoice: ByteArray? = null,
+) {
+    val pdfaProfile: PdfAProfile get() = if (einvoice == null) PdfAProfile.PDFA_1B else PdfAProfile.PDFA_3U
+}
