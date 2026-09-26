@@ -172,6 +172,22 @@ PDF/A-Prüfung über veraPDF.
   weitere“ hält der `PflichtangabenTest` je Design am fertigen PDF, samt
   `schreibweise-der-zahlen.yaml`.
 
+- **Landzeile** (#374): Eine Auslandsrechnung nennt unter dem Ort das Land
+  ausgeschrieben, auf Deutsch und in Versalien nach DIN 5008 – `ÖSTERREICH`,
+  nicht `AT`. Derselbe Schnitt wie bei den Zahlen: `MetadataBlocks` liefert
+  `\landzeile{Österreich}` im Block `EMPFAENGER`, die Vorlage setzt die
+  Versalien (Nachtrag zu ADR-0017). Der Name kommt aus dem JDK
+  (`Locale.getDisplayCountry`), nicht aus einer eigenen Liste – `CountryCode`
+  prüft bewusst nur die Form –, und nur für einen Code aus
+  `Locale.getISOCountries()`. Jeder andere steht als Code da, ohne Abbruch:
+  `EL`, weil in einer Anschrift ohnehin `GR` verlangt ist, und `ZZ`, das das
+  JDK sonst „Unbekannte Region“ nennte. Der Preis: Der Name folgt dem JDK, auf
+  dem das Programm läuft, und ein neueres kann ein Land umbenennen. Die
+  Vergleichsdateien sehen das nicht, sie sind Inlandsrechnungen; das Netz
+  hält „ÖSTERREICH“ wörtlich an `auslandsrechnung.yaml`. Das XML behält den
+  Code (BT-55). Kommen Rechnungen in anderen Sprachen, folgt der Name der
+  Sprache der Rechnung (`docs/notizen/2026-09-26-rechnungen-in-anderen-sprachen.md`).
+
 - **Texte mit Platzhaltern** (ADR-0010, ADR-0019): Der Pflichtsatz ist ein
   `TextTemplate<InvoiceVariable>`, beim Bau zerlegt – ein vertippter Name wirft,
   sobald `InvoiceType` geladen wird. Das `TextTemplate` kennt weder Format noch

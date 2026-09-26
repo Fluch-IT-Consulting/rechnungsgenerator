@@ -138,3 +138,28 @@ beiden, und geprüft wird das beim Bau der Vorlage statt am fertigen PDF.
 Nachträglich festgehalten am 22.09.2026 aus #284. Entschieden wurde es in #76,
 #143, #147, #187, #188, #201, #209, #244, #248 und #249 – bis dahin stand die
 Begründung allein in `CLAUDE.md`.
+
+## Nachtrag vom 26.09.2026: Die Landzeile ist ein Makro im Block
+
+Seit #374 nennt die Landzeile einer Auslandsrechnung das Land ausgeschrieben
+und in Versalien, `ÖSTERREICH` statt `AT`, wie DIN 5008 es für die Anschrift
+vorsieht. Damit steht in `EMPFAENGER` zum ersten Mal etwas, dessen
+Schreibweise ein Design entscheiden könnte, und die Grenze oben verlangt eine
+Antwort, wer sie trifft.
+
+Der Renderer liefert die Zeile als `\landzeile{Österreich}`, den Namen, wie er
+geschrieben wird; die Vorlage definiert das Makro und setzt die Versalien mit
+`\MakeUppercase`. Es ist der Schnitt aus ADR-0021: Kotlin bestimmt, *was*
+dasteht, die Vorlage, *wie* es aussieht. `EMPFAENGER` bleibt ein Block, und
+aus demselben Grund wie zuvor: Ob die Zeile dasteht, hängt an `isDomestic`, und
+dass sie unter dem Ort steht, ist Postkonvention und kein Satzbild.
+
+Verworfen:
+
+- **Ein eigener Platzhalter `LAND`**, leer auf einer Inlandsrechnung, den die
+  Vorlage mit `\ifblank` anhängt. Er folgte der Regel für eine einzelne
+  Angabe, gäbe der Vorlage aber auch den Ort der Zeile – und den schreibt die
+  Post vor, nicht das Design.
+- **Die Versalien in Kotlin**, mit `uppercase()` auf dem Namen. Dann läge
+  eine Schreibweise im Renderer, und ein Design, das das Land anders setzen
+  will, müsste dort ansetzen statt in seiner Vorlage.
