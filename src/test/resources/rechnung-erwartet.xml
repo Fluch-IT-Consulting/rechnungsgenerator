@@ -73,6 +73,19 @@
       <ram:BuyerReference>BST-2026-0815</ram:BuyerReference>
       <ram:SellerTradeParty>
         <ram:Name>Muster IT-Consulting UG (haftungsbeschränkt)</ram:Name>
+        <ram:Description>Registergericht Würzburg</ram:Description>
+        <ram:SpecifiedLegalOrganization>
+          <ram:ID>HRB 12345</ram:ID>
+        </ram:SpecifiedLegalOrganization>
+        <ram:DefinedTradeContact>
+          <ram:PersonName>Dr. Erika Musterfrau</ram:PersonName>
+          <ram:TelephoneUniversalCommunication>
+            <ram:CompleteNumber>+49 931 1234567</ram:CompleteNumber>
+          </ram:TelephoneUniversalCommunication>
+          <ram:EmailURIUniversalCommunication>
+            <ram:URIID>rechnung@muster-it-consulting.example</ram:URIID>
+          </ram:EmailURIUniversalCommunication>
+        </ram:DefinedTradeContact>
         <ram:PostalTradeAddress>
           <ram:PostcodeCode>97070</ram:PostcodeCode>
           <ram:LineOne>Beispielweg 42</ram:LineOne>
