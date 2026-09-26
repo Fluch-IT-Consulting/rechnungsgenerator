@@ -53,12 +53,15 @@
   BoldItalicFont = *-bolditalic,
 ]
 
-%% Farben von fluch-it-consulting.de
-%% Mittelweg zwischen dem Rot der Webseite (#8B1A2B) und dem gedämpften Ton
-%% der Rechnung vor dem Generator (#8E4848): kanalweise das arithmetische
-%% Mittel.
-%% Beide Ausgangsfarben stehen daneben, das Umschalten ist eine Zeile.
-\definecolor{akzent}{HTML}{8D313A}
+%% Die Akzentfarbe, die des Titelbalkens, nennen die Stammdaten
+%% (akzentfarbe, #371). Ohne Eintrag gilt die von fluch-it-consulting.de:
+%% der Mittelweg zwischen dem Rot der Webseite (#8B1A2B) und dem gedämpften
+%% Ton der Rechnung vor dem Generator (#8E4848), kanalweise das arithmetische
+%% Mittel. Beide Ausgangsfarben stehen daneben, das Umschalten ist eine Zeile.
+%%
+%% Die Vorgabe steht hier und nicht in Kotlin: Farbe ist Satzbild (ADR-0017),
+%% und ein anderes Design hat eine andere oder keine.
+\ifblank{<<AKZENTFARBE>>}{\definecolor{akzent}{HTML}{8D313A}}{\definecolor{akzent}{HTML}{<<AKZENTFARBE>>}}
 \definecolor{akzentweb}{HTML}{8B1A2B}
 \definecolor{akzentalt}{HTML}{8E4848}
 \definecolor{haupttext}{HTML}{1C1C1E}

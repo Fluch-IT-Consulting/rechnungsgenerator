@@ -68,6 +68,12 @@ bank:
 # Das Satzbild: helsinki oder prag (ADR-0011).
 #design: helsinki
 
+# Die Farbe des Titelbalkens in helsinki, sechs Hexadezimalziffern ohne # –
+# in YAML beginnt mit # ein Kommentar. Ohne Eintrag gilt die des Designs,
+# 8D313A; prag hat keine Akzentfarbe.
+# Beispiel: 31AE34
+#akzentfarbe:
+
 # Ein Logo als TikZ-Fragment, sein Pfad relativ zu dieser Datei (ADR-0012).
 # Ohne Eintrag keines; beide Designs setzen es oben links.
 # Beispiel: logo.tex
