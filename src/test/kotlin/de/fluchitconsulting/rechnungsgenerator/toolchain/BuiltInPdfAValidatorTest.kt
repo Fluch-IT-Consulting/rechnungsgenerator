@@ -1,11 +1,14 @@
 package de.fluchitconsulting.rechnungsgenerator.toolchain
 
+import de.fluchitconsulting.rechnungsgenerator.generate.toolchain.EInvoiceEmbedder
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.assertions.withClue
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.string.shouldContain
 import java.nio.file.Path
+import kotlin.io.path.createTempDirectory
+import kotlin.io.path.readBytes
 
 /**
  * Was der eingebaute Prüfer über ein nicht konformes PDF sagt – ohne Werkzeug.
@@ -55,6 +58,28 @@ class BuiltInPdfAValidatorTest : FunSpec({
         result.valid shouldBe false
         result.describe() shouldContain "PDF/A-3u verletzt"
         result.violations.map { it.specification }.toSet() shouldBe setOf("ISO 19005-3:2012")
+    }
+
+    /**
+     * Dass 3a und 3b wirklich eigene Profile laden und nicht still das von 3u:
+     * 3u verlangt mehr als 3b, 3a verlangt dazu eine logische Struktur, und
+     * die setzt LuaLaTeX nicht. Das PDF/A-3u entsteht über den Embedder aus
+     * `rechnung-a1b.pdf`, also ohne Werkzeug.
+     */
+    test("die E-Rechnung aus erzeuge genügt PDF/A-3b, aber nicht PDF/A-3a") {
+        val einvoice = createTempDirectory("builtin-validator-test").resolve("e-rechnung.pdf")
+        EInvoiceEmbedder.embed(
+            Path.of("src/test/resources/rechnung-a1b.pdf"),
+            Path.of("src/test/resources/rechnung-erwartet.xml").readBytes(),
+            einvoice,
+        )
+
+        val asB = BuiltInPdfAValidator.validate(einvoice, PdfAProfile.PDFA_3B)
+        val asA = BuiltInPdfAValidator.validate(einvoice, PdfAProfile.PDFA_3A)
+
+        withClue(asB.describe()) { asB.valid shouldBe true }
+        asA.valid shouldBe false
+        asA.describe() shouldContain "PDF/A-3a verletzt"
     }
 
     test("die verletzten Regeln stehen genau so im Ergebnis") {

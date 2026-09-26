@@ -15,18 +15,29 @@ import javax.xml.parsers.DocumentBuilderFactory
 import kotlin.io.path.absolutePathString
 
 /**
- * Wogegen geprüft wird: PDF/A-1b ohne E-Rechnung, PDF/A-3u mit ihr (ADR-0023).
+ * Wogegen geprüft wird. `erzeuge` setzt PDF/A-1b, mit E-Rechnung PDF/A-3u
+ * (ADR-0023). `xml` nimmt jedes PDF/A-3 an, ob a, b oder u, und prüft es
+ * gegen das Profil, als das es sich ausgibt (#380).
  *
- * [flavour] und [cliFlag] nennen dasselbe Profil für die beiden Wege zu
- * veraPDF, die Bibliothek und das Programm.
+ * [part] und [conformance] sind die Werte, die ein PDF/A in seinem XMP über
+ * sich angibt (`pdfaid:part`, `pdfaid:conformance`). [flavour] und [cliFlag]
+ * nennen dasselbe Profil für die beiden Wege zu veraPDF, die Bibliothek und
+ * das Programm.
  */
 enum class PdfAProfile(
-    val label: String,
+    val part: Int,
+    val conformance: String,
     val flavour: PDFAFlavour,
-    val cliFlag: String,
 ) {
-    PDFA_1B("PDF/A-1b", PDFAFlavour.PDFA_1_B, "1b"),
-    PDFA_3U("PDF/A-3u", PDFAFlavour.PDFA_3_U, "3u"),
+    PDFA_1B(1, "B", PDFAFlavour.PDFA_1_B),
+    PDFA_3A(3, "A", PDFAFlavour.PDFA_3_A),
+    PDFA_3B(3, "B", PDFAFlavour.PDFA_3_B),
+    PDFA_3U(3, "U", PDFAFlavour.PDFA_3_U),
+    ;
+
+    val label: String get() = "PDF/A-$part${conformance.lowercase()}"
+
+    val cliFlag: String get() = "$part${conformance.lowercase()}"
 }
 
 /**
