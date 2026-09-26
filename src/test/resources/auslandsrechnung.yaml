@@ -1,0 +1,26 @@
+# Fiktive Rechnung an einen Kunden in Österreich (#374): Die Anschrift endet
+# mit dem Land, ausgeschrieben. Keine Rechnung einer Art geht ins Ausland,
+# deshalb eine eigene Datei.
+#
+# Der Kunde ist eine Privatperson, und die Leistung ist mit 19 % besteuert:
+# Eine sonstige Leistung an einen Nichtunternehmer in der EU wird am Sitz des
+# Leistenden ausgeführt (§3a Abs. 1 UStG). So braucht die Datei weder
+# USt-IdNr. noch Bestätigungsabfrage, und das Land ist das Einzige, was sie
+# von einer Inlandsrechnung unterscheidet.
+nummer: R26-050
+datum: 2026-08-14
+leistungszeitraum:
+  von: 2026-07-01
+  bis: 2026-07-31
+kunde:
+  name: Max Mustermann
+  anschrift:
+    strasse: Beispielgasse 7
+    plz: "1010"
+    ort: Wien
+    land: AT
+positionen:
+  - bezeichnung: IT-Beratungsleistungen
+    menge: 4
+    einheit: Std.
+    einzelpreis: 95.00

@@ -4,6 +4,8 @@ import de.fluchitconsulting.rechnungsgenerator.core.accepted.AcceptedInvoice
 import de.fluchitconsulting.rechnungsgenerator.core.calculation.CalculatedInvoice
 import de.fluchitconsulting.rechnungsgenerator.core.model.Address
 import de.fluchitconsulting.rechnungsgenerator.core.rules.InvoiceKind
+import de.fluchitconsulting.rechnungsgenerator.core.values.CountryCode
+import java.util.Locale
 
 /**
  * Die Angaben um den Empfänger, die mehr sind als der Pfad zu einem Wert: die
@@ -52,8 +54,35 @@ internal object MetadataBlocks {
             add(address.street.escapeLatex())
             add("${address.postalCode} ${address.city}".escapeLatex())
             // Auf einer Inlandsrechnung wäre die Landzeile überflüssig.
-            if (showCountry) add(address.countryCode.value.escapeLatex())
+            if (showCountry) add(Latex.macro(TemplateMacro.LANDZEILE, listOf(countryName(address.countryCode).escapeLatex())))
         }
+
+    /**
+     * Der deutsche Name des Landes, so wie das JDK ihn führt – und der Code
+     * selbst, wo es keinen führt (#374).
+     *
+     * Aus dem JDK und nicht aus einer eigenen Liste: [CountryCode] prüft
+     * bewusst nur die Form, weil ein Verzeichnis der Staaten still veraltet.
+     * Das JDK bringt eines mit, das mit ihm gepflegt wird.
+     *
+     * Gefragt wird nur für einen Staat nach ISO 3166, den das JDK in
+     * [Locale.getISOCountries] führt. Für jeden anderen Code liefert
+     * [Locale.getDisplayCountry] nicht verlässlich etwas Erkennbares – meist
+     * den Code zurück, für `ZZ` aber "Unbekannte Region", und das stünde dann
+     * als Land auf dem Blatt. Kein Abbruch: Die Form ist geprüft, und ein
+     * Code, den der Generator nicht ausschreiben kann, ist auf dem Blatt ein
+     * Schönheitsfehler und keine falsche Angabe. Auch `EL` bleibt so stehen,
+     * statt als Griechenland gelesen zu werden – in einer Anschrift verlangt
+     * EN 16931 ohnehin `GR` (BT-55).
+     *
+     * Der Preis: Der Name folgt den Länderdaten des JDK, auf dem das Programm
+     * läuft. Benennt ein neueres eines ein Land um, ergibt dieselbe
+     * Rechnungsdatei dort ein anderes Blatt.
+     */
+    private fun countryName(code: CountryCode): String =
+        if (code.value in ISO_COUNTRIES) Locale.of("", code.value).getDisplayCountry(Locale.GERMAN) else code.value
+
+    private val ISO_COUNTRIES: Set<String> = Locale.getISOCountries().toSet()
 
     /**
      * BT-7: Steht der Zeitpunkt der Vereinnahmung fest, gehört er zu den

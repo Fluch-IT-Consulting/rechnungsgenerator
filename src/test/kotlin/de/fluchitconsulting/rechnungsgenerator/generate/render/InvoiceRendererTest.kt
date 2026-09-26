@@ -28,6 +28,7 @@ import io.kotest.matchers.collections.shouldBeEmpty
 import io.kotest.matchers.ints.shouldBeGreaterThan
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.string.shouldContain
+import io.kotest.matchers.string.shouldEndWith
 import io.kotest.matchers.string.shouldNotContain
 import java.nio.file.Path
 import java.time.LocalDate
@@ -301,12 +302,23 @@ class InvoiceRendererTest : FunSpec({
             // für ihn Ausland – und bekommt sein Land genannt. Stünde "DE"
             // fest im Code, verschwiege diese Rechnung es.
             address(customerCountry = "DE", sellerCountry = "AT") shouldBe
-                """Beispiel Software GmbH\zeilenwechsel{}Industriestraße 1\zeilenwechsel{}90402 Nürnberg\zeilenwechsel{}DE"""
+                """Beispiel Software GmbH\zeilenwechsel{}Industriestraße 1\zeilenwechsel{}90402 Nürnberg\zeilenwechsel{}\landzeile{Deutschland}"""
         }
 
-        test("das Land des Kunden wird genannt, wenn es ein anderes ist") {
+        test("das Land des Kunden wird genannt, wenn es ein anderes ist, mit seinem Namen und nicht dem Code") {
             address(customerCountry = "at", sellerCountry = "DE") shouldBe
-                """Beispiel Software GmbH\zeilenwechsel{}Industriestraße 1\zeilenwechsel{}90402 Nürnberg\zeilenwechsel{}AT"""
+                """Beispiel Software GmbH\zeilenwechsel{}Industriestraße 1\zeilenwechsel{}90402 Nürnberg\zeilenwechsel{}\landzeile{Österreich}"""
+        }
+
+        // Ein Code, den das JDK nicht als Staat nach ISO 3166 führt, bricht
+        // nicht ab: Die Form hat CountryCode geprüft, und auf dem Blatt steht
+        // er, wie er in der Datei steht.
+        // EL: Griechenland in der Umsatzsteuer der EU, in ISO 3166 GR.
+        // ZZ: Das JDK nennt es "Unbekannte Region" – das darf nicht aufs Blatt.
+        for (code in listOf("EL", "ZZ", "XX")) {
+            test("der Code $code ohne Namen steht als Code da") {
+                address(customerCountry = code, sellerCountry = "DE") shouldEndWith """\zeilenwechsel{}\landzeile{$code}"""
+            }
         }
     }
 
