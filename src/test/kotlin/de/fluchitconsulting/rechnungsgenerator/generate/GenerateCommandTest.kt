@@ -17,6 +17,7 @@ import de.fluchitconsulting.rechnungsgenerator.generate.toolchain.Typesetter
 import de.fluchitconsulting.rechnungsgenerator.runCli
 import de.fluchitconsulting.rechnungsgenerator.setup.SetupCommand
 import io.kotest.assertions.throwables.shouldThrow
+import io.kotest.assertions.withClue
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.collections.shouldContain
 import io.kotest.matchers.collections.shouldContainInOrder
@@ -520,24 +521,20 @@ class GenerateCommandTest : FunSpec({
 
         fun target(name: String) = inputDir.resolve("$name.pdf").toString()
 
-        test("prag bekommt das Logo als weitere Datei mit") {
-            val fake = FakeTypesetter()
+        test("jedes Design bekommt das Logo als weitere Datei mit") {
+            listOf("helsinki", "prag").forEach { design ->
+                withClue(design) {
+                    val fake = FakeTypesetter()
 
-            generate(fake, "-o", target("logo-prag"), sellerConfigFile = sellerConfigWithLogo("prag"))
+                    generate(fake, "-o", target("logo-$design"), sellerConfigFile = sellerConfigWithLogo(design))
 
-            fake.sources!!.files.keys shouldBe setOf(Foundation.FILE_NAME, "logo.tex")
-            fake.sources!!
-                .files
-                .getValue("logo.tex")
-                .decodeToString() shouldBe logo.readText()
-        }
-
-        test("helsinki übergeht das Logo und reicht keine Datei dafür weiter") {
-            val fake = FakeTypesetter()
-
-            generate(fake, "-o", target("logo-helsinki"), sellerConfigFile = sellerConfigWithLogo("helsinki"))
-
-            fake.sources!!.files.keys shouldBe setOf(Foundation.FILE_NAME)
+                    fake.sources!!.files.keys shouldBe setOf(Foundation.FILE_NAME, "logo.tex")
+                    fake.sources!!
+                        .files
+                        .getValue("logo.tex")
+                        .decodeToString() shouldBe logo.readText()
+                }
+            }
         }
 
         test("scheitert der Satz, nennt die Meldung das Logo mit seinem Pfad") {
@@ -568,14 +565,13 @@ class GenerateCommandTest : FunSpec({
             error.message!! shouldContain "Die Stammdaten nennen ein Logo"
         }
 
-        test("setzt das Design das Logo nicht, nennt die Meldung es auch nicht") {
+        test("ohne Logo in den Stammdaten nennt die Meldung keines") {
             val error =
                 shouldThrow<ToolchainException> {
                     generate(
                         FakeTypesetter(failure = "lualatex konnte Rechnung-R26-042.tex nicht übersetzen"),
                         "-o",
-                        target("logo-helsinki-kaputt"),
-                        sellerConfigFile = sellerConfigWithLogo("helsinki"),
+                        target("ohne-logo-kaputt"),
                     )
                 }
 

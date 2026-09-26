@@ -206,21 +206,16 @@ class InvoiceRendererTest : FunSpec({
             valueOf(TemplateValue.LOGO) shouldBe ""
         }
 
-        test("prag bindet das Logo ein und bekommt es als logo.tex mit") {
-            val rendered = typeset(Design.PRAG, exampleLogo)
+        test("jedes Design bindet das Logo ein und bekommt es als logo.tex mit") {
+            Design.entries.forEach { design ->
+                withClue(design) {
+                    val rendered = typeset(design, exampleLogo)
 
-            rendered.sources.tex shouldContain "\\input{logo}"
-            rendered.sources.files.keys shouldBe setOf(Foundation.FILE_NAME, "logo.tex")
-            rendered.sources.files.getValue("logo.tex") shouldBe exampleLogo.content
-        }
-
-        test("helsinki übergeht das Logo und bekommt keine Datei dafür") {
-            // Sonst ginge die Datei in die Trailer-ID ein, und dieselbe
-            // Rechnung ergäbe mit und ohne Eintrag verschiedene PDFs.
-            val withLogo = typeset(Design.HELSINKI, exampleLogo)
-
-            withLogo.sources.files.keys shouldBe setOf(Foundation.FILE_NAME)
-            withLogo.sources.tex shouldBe typeset(Design.HELSINKI, null).sources.tex
+                    rendered.sources.tex shouldContain "\\input{logo}"
+                    rendered.sources.files.keys shouldBe setOf(Foundation.FILE_NAME, "logo.tex")
+                    rendered.sources.files.getValue("logo.tex") shouldBe exampleLogo.content
+                }
+            }
         }
 
         test("ohne Logo gibt es in keinem Design eine Datei dafür, nur die Grundlage") {
@@ -231,12 +226,10 @@ class InvoiceRendererTest : FunSpec({
 
         // Ob das Blatt das Logo zeigt, sagt der Renderer ausdrücklich – das
         // Kommando nennt es danach in einer Fehlermeldung (#203).
-        test("prag mit Logo zeigt es") {
-            typeset(Design.PRAG, exampleLogo).includesLogo shouldBe true
-        }
-
-        test("helsinki mit Logo zeigt es nicht") {
-            typeset(Design.HELSINKI, exampleLogo).includesLogo shouldBe false
+        test("mit Logo zeigt es jedes Design") {
+            Design.entries.forEach { design ->
+                withClue(design) { typeset(design, exampleLogo).includesLogo shouldBe true }
+            }
         }
 
         test("ohne Logo in den Stammdaten zeigt es kein Design, auch wenn die Vorlage den Platzhalter trägt") {
