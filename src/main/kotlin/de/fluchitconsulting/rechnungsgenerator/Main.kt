@@ -151,7 +151,7 @@ class RechnungsgeneratorCommand(
         )
     }
 
-    override fun help(context: Context) = "Erzeugt deutsche Rechnungen als geprüftes PDF/A-1b."
+    override fun help(context: Context) = "Erzeugt deutsche Rechnungen als geprüftes PDF/A-1b oder als E-Rechnung nach ZUGFeRD."
 
     override fun run() {
         if (currentContext.invokedSubcommand == null) {

@@ -5,6 +5,8 @@ import com.github.ajalt.clikt.core.context
 import com.github.ajalt.clikt.core.parse
 import de.fluchitconsulting.rechnungsgenerator.RechnungsgeneratorCommand
 import de.fluchitconsulting.rechnungsgenerator.core.model.Root
+import de.fluchitconsulting.rechnungsgenerator.core.rules.RejectedException
+import de.fluchitconsulting.rechnungsgenerator.core.rules.Rule
 import de.fluchitconsulting.rechnungsgenerator.generate.render.Foundation
 import de.fluchitconsulting.rechnungsgenerator.generate.toolchain.BuiltInPdfAValidator
 import de.fluchitconsulting.rechnungsgenerator.generate.toolchain.ExternalPdfAValidator
@@ -108,6 +110,56 @@ class GenerateCommandTest : FunSpec({
         // Programm auf, und genau das ist der Sinn des Schalters.
         test("mit --externe-pdfa-pruefung prüft das Programm verapdf") {
             chosen("--externe-pdfa-pruefung").shouldBeInstanceOf<ExternalPdfAValidator>()
+        }
+    }
+
+    /**
+     * Der Schalter ändert die Quellen und mit ihnen das Profil, sonst nichts
+     * (ADR-0023): dasselbe Ziel, derselbe Überschreibschutz, dieselben
+     * Ausgaben. Was der Writer noch nicht schreibt, bricht ab wie ein Befund
+     * der Prüfung und vor dem Satz.
+     */
+    context("--zugferd") {
+        test("die Quellen tragen das XML der Rechnung, und das Urteil nennt PDF/A-3u") {
+            val typesetter = FakeTypesetter()
+            val target = inputDir.resolve("zugferd.pdf")
+
+            val output = generate(typesetter, "-o", target.toString(), "--zugferd")
+
+            String(checkNotNull(typesetter.sources?.einvoice)) shouldBe resource("rechnung-erwartet.xml")
+            output shouldContainInOrder listOf(target.toString(), "PDF/A-3u: gültig")
+        }
+
+        test("ohne den Schalter tragen die Quellen kein XML") {
+            val typesetter = FakeTypesetter()
+
+            generate(typesetter, "-o", inputDir.resolve("ohne-zugferd.pdf").toString())
+
+            checkNotNull(typesetter.sources).einvoice shouldBe null
+        }
+
+        test("ein ungültiges PDF/A-3u heißt auch so") {
+            val error =
+                shouldThrow<ToolchainException> {
+                    generate(FakeTypesetter(valid = false), "-o", inputDir.resolve("zugferd-ungueltig.pdf").toString(), "--zugferd")
+                }
+
+            error.message!! shouldContain "kein gültiges PDF/A-3u"
+        }
+
+        test("was der Writer noch nicht schreibt, bricht vor dem Satz ab, mit ZUGFERD_NOCH_NICHT_MOEGLICH") {
+            val prepayment = inputDir.resolve("abschlagsrechnung.yaml").also { it.writeText(resource("abschlagsrechnung.yaml")) }
+            val typesetter = FakeTypesetter()
+            val target = inputDir.resolve("abschlag-zugferd.pdf")
+
+            val error =
+                shouldThrow<RejectedException> {
+                    generate(typesetter, "-o", target.toString(), "--zugferd", invoiceFile = prepayment)
+                }
+
+            error.aborts.map { it.rule } shouldBe listOf(Rule.ZUGFERD_NOCH_NICHT_MOEGLICH)
+            typesetter.sources shouldBe null
+            target.exists() shouldBe false
         }
     }
 

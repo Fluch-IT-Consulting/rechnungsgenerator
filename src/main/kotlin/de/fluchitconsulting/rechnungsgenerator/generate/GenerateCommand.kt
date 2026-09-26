@@ -13,6 +13,8 @@ import de.fluchitconsulting.rechnungsgenerator.core.calculation.CalculatedInvoic
 import de.fluchitconsulting.rechnungsgenerator.core.model.Root
 import de.fluchitconsulting.rechnungsgenerator.core.model.YamlLoader
 import de.fluchitconsulting.rechnungsgenerator.core.rules.RejectedException
+import de.fluchitconsulting.rechnungsgenerator.generate.einvoice.CiiResult
+import de.fluchitconsulting.rechnungsgenerator.generate.einvoice.CiiWriter
 import de.fluchitconsulting.rechnungsgenerator.generate.render.InvoiceRenderer
 import de.fluchitconsulting.rechnungsgenerator.generate.toolchain.BuiltInPdfAValidator
 import de.fluchitconsulting.rechnungsgenerator.generate.toolchain.ExternalPdfAValidator
@@ -48,7 +50,7 @@ class GenerateCommand(
     private val viewer: PdfViewer = SystemPdfViewer,
 ) : CoreCliktCommand(name = "erzeuge") {
     override fun help(context: Context) =
-        "Erzeugt aus einer YAML-Rechnung ein geprüftes PDF/A-1b."
+        "Erzeugt aus einer YAML-Rechnung ein geprüftes PDF/A-1b, mit --zugferd eine E-Rechnung als PDF/A-3u."
 
     private val invoiceFile by argument("rechnung.yaml", help = "Die Rechnungsdatei").path(mustExist = true, canBeDir = false)
 
@@ -78,6 +80,11 @@ class GenerateCommand(
     private val openAfterwards by option("--oeffnen", help = "Die fertige Rechnung im PDF-Viewer des Systems öffnen")
         .flag()
 
+    private val zugferd by option(
+        "--zugferd",
+        help = "Eine E-Rechnung erzeugen: ZUGFeRD im Profil EXTENDED, das XML eingebettet in ein PDF/A-3u",
+    ).flag()
+
     private val externalPdfACheck by option(
         "--externe-pdfa-pruefung",
         help = "Das installierte Programm verapdf prüfen lassen statt der eingebauten Bibliothek",
@@ -88,10 +95,11 @@ class GenerateCommand(
     // Regeln der Rechnung und keine Bedienung. Trotzdem stehen sie hier: Es
     // gibt genau einen Weg zu einer Rechnungsdatei, ein Ablauf ohne Clikt
     // hätte keinen zweiten Aufrufer, und prüfbar sind sie über den gereichten
-    // Typesetter auch so. Heraus müssen sie mit dem zweiten Weg, etwa für
-    // ZUGFeRD – ob als eigenes Kommando oder als Zweig in diesem –, sonst
-    // stünden sie zweimal da oder zwischen zwei Zweigen (#359). Das Urteil
-    // über das PDF/A zieht dann mit.
+    // Typesetter auch so. Heraus müssen sie mit dem zweiten Weg, sonst
+    // stünden sie zweimal da oder zwischen zwei Zweigen (#359); das Urteil
+    // über das PDF/A zöge dann mit. --zugferd ist kein solcher Weg: Der
+    // Schalter ändert nur die Quellen und mit ihnen das Profil, nach dem
+    // geurteilt wird, und das Ziel bleibt dasselbe (ADR-0023).
     //
     // Fehler beim Lesen, der Werkzeuge und die Ablehnung gehen durch: Zur
     // Meldung ohne Stacktrace macht sie execute(), für alle Kommandos an einer
@@ -119,6 +127,18 @@ class GenerateCommand(
             when (val verdict = AcceptedInvoice.check(CalculatedInvoice(invoice, config))) {
                 is Verdict.Accepted -> verdict.invoice
                 is Verdict.Rejected -> throw RejectedException(verdict.aborts)
+            }
+        // Vor dem Ziel und vor dem Satz, wie die Ablehnung: Was der Writer
+        // noch nicht schreibt, bricht mit denselben Worten ab wie ein Befund
+        // der Prüfung, statt im XML still zu fehlen.
+        val einvoice =
+            if (zugferd) {
+                when (val result = CiiWriter.write(acceptedInvoice)) {
+                    is CiiResult.Written -> result.xml.toByteArray()
+                    is CiiResult.NotYetPossible -> throw RejectedException(result.findings)
+                }
+            } else {
+                null
             }
 
         // Ob die Nummer einen Jobnamen ergibt, hat die Prüfung schon gesagt
@@ -174,7 +194,8 @@ class GenerateCommand(
                     // Die Quellen kommen vollständig vom Renderer (#202),
                     // statt dass das Kommando sie aus vier Stellen
                     // zusammensetzt; es sagt nur, wohin gesetzt wird.
-                    typesetter.typeset(workingDir = workDir, jobName = jobName, sources = rendered.sources)
+                    val sources = einvoice?.let(rendered.sources::withEInvoice) ?: rendered.sources
+                    typesetter.typeset(workingDir = workDir, jobName = jobName, sources = sources)
                 } catch (e: ToolchainException) {
                     throw ToolchainException(e.message + logoNote, e)
                 }
