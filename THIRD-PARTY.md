@@ -1,9 +1,9 @@
 # Mitgelieferte Bibliotheken
 
-Das Release-Archiv enthält neben `rechnungsgenerator-<version>.jar` 30 fremde
+Das Release-Archiv enthält neben `rechnungsgenerator-<version>.jar` 48 fremde
 JAR-Dateien. Diese Datei nennt sie mit ihrer Lizenz – Apache-2.0 §4,
-BSD-3-Clause und MPL-2.0 §3.3 verlangen, dass die Vermerke mit der
-Binärfassung weitergegeben werden, und nur 10 der 30 tragen selbst einen.
+BSD-3-Clause, MIT und MPL-2.0 §3.3 verlangen, dass die Vermerke mit der
+Binärfassung weitergegeben werden, und nur 24 der 48 tragen selbst einen.
 
 Keine dieser Bibliotheken ist verändert. Wo eine Lizenz den Quelltext
 verlangt, genügt deshalb der Verweis auf den Upstream.
@@ -23,15 +23,31 @@ fällt eines weg, wird er rot.
 
 - `annotations-13.0.jar` – JetBrains Java Annotations
 - `clikt-jvm.jar` – Clikt
+- `commons-io-2.22.0.jar` – Apache Commons IO
+- `commons-logging-1.4.0.jar` – Apache Commons Logging
+- `fontbox-3.0.8.jar` – Apache PDFBox FontBox
 - `jackson-annotations-2.22.jar` – Jackson
-- `jackson-core-2.22.1.jar` – Jackson
-- `jackson-databind-2.22.1.jar` – Jackson
+- `jackson-core-2.22.2.jar` – Jackson
+- `jackson-databind-2.22.2.jar` – Jackson
+- `jsr305-3.0.2.jar` – JSR 305 Annotations
 - `kaml-jvm-0.104.0.jar` – kaml
 - `kotlin-stdlib-2.4.20.jar` – Kotlin Standard Library
 - `kotlinx-serialization-core-jvm-1.9.0.jar` – kotlinx.serialization
+- `library-2.26.0.jar` – Mustang, <https://www.mustangproject.org/>
 - `okio-jvm-3.16.4.jar` – Okio
+- `pdfbox-3.0.8.jar` – Apache PDFBox
+- `pdfbox-io-3.0.8.jar` – Apache PDFBox IO
+- `ph-commons-11.2.0.jar` – ph-commons
+- `ph-jaxb-11.2.0.jar` – ph-commons (JAXB)
+- `ph-schematron-api-8.0.6.jar` – ph-schematron
+- `ph-schematron-xslt-8.0.6.jar` – ph-schematron (XSLT)
+- `ph-xml-11.2.0.jar` – ph-commons (XML)
+- `ph-xsds-xml-3.0.0.jar` – ph-xsds
+- `preflight-3.0.8.jar` – Apache PDFBox Preflight
 - `snakeyaml-engine-kmp-jvm-4.0.1.jar` – snakeyaml-engine-kmp
 - `urlencoder-lib-jvm-1.6.0.jar` – UrlEncoder
+- `validator-2.26.0.jar` – Mustang Validator, <https://www.mustangproject.org/>
+- `xmpbox-3.0.8.jar` – Apache PDFBox XmpBox
 - `xmlresolver-5.3.3.jar` – XML Resolver
 - `xmlresolver-5.3.3-data.jar` – XML Resolver (Daten)
 
@@ -42,7 +58,7 @@ fällt eines weg, wird er rot.
 Das Copyleft der MPL bindet je Datei. Keine dieser Dateien ist hier geändert;
 der Quelltext ist beim jeweiligen Projekt zu beziehen.
 
-- `Saxon-HE-12.8.jar` – Saxon-HE, <https://github.com/Saxonica/Saxon-HE>
+- `Saxon-HE-12.10.jar` – Saxon-HE, <https://github.com/Saxonica/Saxon-HE>
 - `rhino-1.7.15.1.jar` – Mozilla Rhino, <https://github.com/mozilla/rhino>
 
 ## BSD 3-Clause License
@@ -52,6 +68,7 @@ der Quelltext ist beim jeweiligen Projekt zu beziehen.
 - `verapdf-xmp-core-jakarta-1.30.2.jar` – veraPDF XMP Core, abgeleitet von
   Adobe XMP Core
 - `stax-utils-20070216.jar` – stax-utils
+- `dom4j-2.2.0.jar` – dom4j
 
 Die folgenden stehen unter der Eclipse Distribution License 1.0
 (<https://www.eclipse.org/org/documents/edl-v10.php>). Ihr Text ist die
@@ -62,11 +79,18 @@ Lizenz vom Eltern-POM `istack-commons`.
 
 - `angus-activation-2.0.0.jar` – Eclipse Angus Activation
 - `istack-commons-runtime-4.1.1.jar` – istack common utility code
-- `jakarta.activation-api-2.1.1.jar` – Jakarta Activation (API)
-- `jakarta.xml.bind-api-4.0.0.jar` – Jakarta XML Binding (API)
+- `jakarta.activation-api-2.1.4.jar` – Jakarta Activation (API)
+- `jakarta.xml.bind-api-4.0.5.jar` – Jakarta XML Binding (API)
 - `jaxb-core-4.0.2.jar` – JAXB Core
 - `jaxb-runtime-4.0.2.jar` – JAXB Runtime
 - `txw2-4.0.2.jar` – TXW2 Runtime
+
+## MIT License
+
+<https://opensource.org/licenses/MIT>
+
+- `slf4j-api-2.0.18.jar` – SLF4J API (Copyright (c) 2004-2022 QOS.ch Sarl; der
+  Lizenztext liegt dem JAR als `META-INF/LICENSE.txt` bei)
 
 ## GPL v3 oder höher **oder** MPL 2.0 oder höher
 
