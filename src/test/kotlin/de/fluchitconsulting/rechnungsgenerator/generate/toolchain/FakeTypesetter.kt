@@ -22,6 +22,8 @@ class FakeTypesetter(
     // ToolchainException zusagt – für den Test, dass das Kommando eine
     // IOException aus dem Satz nicht als Schreibfehler ausgibt (#300).
     private val ioFailure: String? = null,
+    // Lehnt Mustang das XML ab, wirft er, was LuaLatexTypesetter würfe.
+    private val einvoiceFailure: String? = null,
 ) : Typesetter {
     var workingDir: Path? = null
     var jobName: String? = null
@@ -41,6 +43,7 @@ class FakeTypesetter(
         this.workingDir = workingDir
         this.jobName = jobName
         this.sources = sources
+        if (einvoiceFailure != null) throw InvalidEInvoiceException(einvoiceFailure)
         if (failure != null) throw ToolchainException(failure)
         if (ioFailure != null) throw IOException(ioFailure)
         val pdf = workingDir.resolve("$jobName.pdf").also { it.writeText("%PDF-1.7 kein echtes PDF") }

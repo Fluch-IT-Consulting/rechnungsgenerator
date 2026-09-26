@@ -15,6 +15,7 @@ import de.fluchitconsulting.rechnungsgenerator.core.model.YamlLoader
 import de.fluchitconsulting.rechnungsgenerator.core.rules.RejectedException
 import de.fluchitconsulting.rechnungsgenerator.generate.einvoice.CiiWriter
 import de.fluchitconsulting.rechnungsgenerator.generate.render.InvoiceRenderer
+import de.fluchitconsulting.rechnungsgenerator.generate.toolchain.InvalidEInvoiceException
 import de.fluchitconsulting.rechnungsgenerator.generate.toolchain.LuaLatexTypesetter
 import de.fluchitconsulting.rechnungsgenerator.generate.toolchain.TypesetterFactory
 import de.fluchitconsulting.rechnungsgenerator.toolchain.BuiltInPdfAValidator
@@ -184,6 +185,10 @@ class GenerateCommand(
                     // zusammensetzt; es sagt nur, wohin gesetzt wird.
                     val sources = einvoice?.let(rendered.sources::withEInvoice) ?: rendered.sources
                     typesetter.typeset(workingDir = workDir, jobName = jobName, sources = sources)
+                } catch (e: InvalidEInvoiceException) {
+                    // Das XML schreibt der Generator, am Logo kann es nicht
+                    // liegen (#386).
+                    throw e
                 } catch (e: ToolchainException) {
                     throw ToolchainException(e.message + logoNote, e)
                 }
