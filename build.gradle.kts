@@ -154,6 +154,7 @@ dependencies {
     implementation(libs.verapdf) // PDF/A-Prüfung in derselben JVM statt als Unterprozess (#226)
     implementation(libs.mustang.library) // ZUGFeRD: XML ins PDF/A-3u einbetten (ADR-0023)
     implementation(libs.mustang.validator) // ZUGFeRD: das XML gegen Schema und Schematron prüfen
+    runtimeOnly(libs.slf4j.nop) // Mustangs Protokoll verschlucken, statt stderr zu füllen
 
     // veraPDF und Mustang bringen Jackson mit, veraPDF in einer Fassung mit
     // elf Advisories (#230). Die Plattform hebt alle Teile gemeinsam auf die
