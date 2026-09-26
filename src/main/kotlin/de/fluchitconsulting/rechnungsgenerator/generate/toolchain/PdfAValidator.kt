@@ -63,7 +63,7 @@ interface PdfAValidator {
 }
 
 /**
- * Prüft in derselben JVM, über `org.verapdf:validation-model`.
+ * Prüft in derselben JVM, über `org.verapdf:validation-model-jakarta`.
  *
  * Der Grund ist die Startzeit: Das Programm `verapdf` braucht für ein einzelnes
  * Dokument rund 6,4 s, davon 6,2 s für den Start seines CLI-Wrappers. Die

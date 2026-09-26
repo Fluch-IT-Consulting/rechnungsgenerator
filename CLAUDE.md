@@ -88,7 +88,7 @@ CV/Web-Auftritt des Autors), PDF/A-Prüfung über veraPDF.
   erwartet; `LuaLatexTypesetter.checkAvailable()` prüft das beim Start und
   nennt Fehlendes mit Installationshinweis.
 - **PDF/A-Prüfung** (ADR-0014): zwei Prüfer hinter der Naht `PdfAValidator` –
-  eingebaut (`org.verapdf:validation-model` in derselben JVM, die Vorgabe) und
+  eingebaut (`org.verapdf:validation-model-jakarta` in derselben JVM, die Vorgabe) und
   extern (`erzeuge --externe-pdfa-pruefung` ruft das installierte Programm
   `verapdf`). Der eingebaute ist die Vorgabe wegen der Startzeit, der externe
   bleibt, weil er unabhängig urteilt; dass die beiden nicht unbemerkt
