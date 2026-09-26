@@ -124,8 +124,8 @@ gegen PDF/A-3u. Ein ungültiges XML ist ein Fehler des Generators und nicht der
 Rechnung; es entsteht dann kein PDF. Ein Lauf dauert mit dem Schalter einige
 Sekunden länger, fast alles für die Prüfung des XML.
 
-Bisher gehen Rechnung und Teilrechnung, in jeder Steuerkategorie und samt
-Rabatt und Skonto. Alles andere bricht mit
+Bisher geht jede Rechnungsart außer der Schlussrechnung, in jeder
+Steuerkategorie und samt Rabatt und Skonto. Die Schlussrechnung bricht mit
 `ZUGFERD_NOCH_NICHT_MOEGLICH` ab, statt im XML still zu fehlen; ohne den
 Schalter entsteht das PDF wie gewohnt. Warum ZUGFeRD und nicht XRechnung und
 warum EXTENDED, steht in ADR-0002 und ADR-0023.
