@@ -56,7 +56,7 @@ Wie die Rechnung aussieht, wählen die Stammdaten mit `design: helsinki` oder
 Rechnungen gleich: In einer Rechnungsdatei gibt es den Schlüssel nicht, und
 ändere ihn nicht in den Stammdaten, nur weil eine einzelne Rechnung anders
 aussehen soll – frag dann nach. Dasselbe gilt für `logo:` (ADR-0012), die
-Datei eines Logos neben den Stammdaten; nur `prag` setzt es.
+Datei eines Logos neben den Stammdaten; beide Designs setzen es.
 
 ## Ablauf
 

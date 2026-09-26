@@ -135,3 +135,26 @@ den Umweg.
 
 Umgesetzt in #198, vorbereitet in #197; der Vertrag mit Makro und Faktor
 seit #199.
+
+## Nachtrag vom 26.09.2026: Auch helsinki setzt das Logo
+
+Seit #370 setzt auch `helsinki` das Logo, oben links auf der Höhe der
+Firmierung, nur auf der ersten Seite. Zwei Sätze oben gelten damit nicht mehr:
+dass `helsinki` es übergeht, und dass `helsinki` mit und ohne Logo-Eintrag
+dasselbe PDF ergibt.
+
+Der Vertrag des Fragments bleibt, wie er ist, samt `\logoskalierung` und
+derselben Grundhöhe von 12 mm wie in `prag`. Ein Logo, dessen Faktor für
+`prag` gewählt ist, passt so auch in `helsinki`; ein Faktor je Design hätte
+den Vertrag zweigeteilt, für eine Frage, die das Blatt beantwortet.
+
+Die Richtung bleibt ebenfalls: Der Renderer fragt den Platzhalter und nicht
+das Design. Nur übergeht heute keines der Designs das Logo. Dass eine Vorlage
+ohne `<<LOGO>>` keine Datei bekommt, prüft deshalb kein Test mehr am Renderer,
+nur noch `TemplateTest` an `uses`.
+
+Ohne Logo ist `helsinki` bei 300 dpi pixelgleich mit dem Stand davor, aber
+nicht byte-gleich: Die `.tex` ist eine andere, und mit ihr die Trailer-ID. Das
+Pflichtangaben-Netz setzt jetzt beide Designs mit Logo, bei jeder
+Rechnungsart. Den Fall ohne Logo trägt dort der Lauf für das
+Einzelunternehmen.
