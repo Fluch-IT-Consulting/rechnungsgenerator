@@ -73,6 +73,7 @@ class PackageStructureTest : FunSpec({
             "$root.generate.einvoice" to
                 setOf(
                     "$core.accepted",
+                    "$core.rules",
                     "$core.calculation",
                     "$core.model",
                     "$core.values",

@@ -176,6 +176,9 @@ enum class Rule(val severity: Severity) {
     ABSCHLAGSRECHNUNG_DOPPELT(Severity.ABORT),
     KEINE_ABSCHLAGSRECHNUNG(Severity.ABORT),
 
+    // Was `erzeuge --zugferd` noch nicht ausgibt (ADR-0023)
+    ZUGFERD_NOCH_NICHT_MOEGLICH(Severity.ABORT),
+
     // Hinweise: Die Rechnung entsteht trotzdem.
     MENGE_NULL(Severity.HINT),
     GESAMTBETRAG_NULL(Severity.HINT),
