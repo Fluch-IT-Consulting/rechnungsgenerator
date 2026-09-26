@@ -148,7 +148,7 @@ data class CalculatedInvoice(
     // SATZ_MUSS_NULL_SEIN).
     val vatGroups: List<VatGroup> =
         lines
-            .groupBy { it.item.taxCategory to it.item.vatRate }
+            .groupBy(::vatGroupKey)
             .map { (key, group) ->
                 val (category, rate) = key
                 val base = group.sumOf { it.net }
@@ -160,6 +160,14 @@ data class CalculatedInvoice(
                     reasons = group.mapNotNull { it.item.taxExemptionReason }.toSet(),
                 )
             }.sortedWith(compareBy<VatGroup> { it.category }.thenByDescending { it.rate.valueAsPercentage })
+
+    /**
+     * Die Gruppe, zu der eine Position gehört, über denselben Schlüssel wie
+     * [vatGroups]. Wer die Zuordnung braucht, fragt hier, statt den Schlüssel
+     * nachzubauen: Änderte sich die Gruppierung, ordnete er sonst still falsch
+     * zu (#148).
+     */
+    fun vatGroupOf(line: CalculatedLine): VatGroup = vatGroups.single { (it.category to it.rate) == vatGroupKey(line) }
 
     /** Die Summe der Umsatzsteuer, BT-110. */
     val vatTotal: Money = vatGroups.sumOf { it.amount }
@@ -308,3 +316,5 @@ data class CalculatedInvoice(
             .takeIf { it.isNotEmpty() }
             ?.let { "${invoice.type.documentName}-$it" }
 }
+
+private fun vatGroupKey(line: CalculatedLine) = line.item.taxCategory to line.item.vatRate

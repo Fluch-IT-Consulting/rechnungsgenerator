@@ -223,6 +223,25 @@ class CalculatedInvoiceTest : FunSpec({
                     listOf(TaxCategory.EXEMPT, TaxCategory.OUT_OF_SCOPE)
             }
         }
+
+        // Dieselbe Kategorie mit zwei Sätzen und derselbe Satz in zwei
+        // Kategorien: Ein Schlüssel aus nur einem der beiden ordnete falsch zu.
+        test("jede Position findet ihre Gruppe") {
+            val invoice =
+                testInvoice(
+                    items =
+                        listOf(
+                            testItem(vatRate = "7"),
+                            testItem(vatRate = "0", taxCategory = TaxCategory.EXEMPT, taxExemptionReason = "§4 Nr. 21 UStG"),
+                            testItem(vatRate = "19"),
+                            testItem(vatRate = "0", taxCategory = TaxCategory.ZERO_RATED),
+                        ),
+                )
+            val calculated = CalculatedInvoice(invoice, config)
+
+            calculated.lines.map { calculated.vatGroupOf(it).category to calculated.vatGroupOf(it).rate } shouldBe
+                calculated.lines.map { it.item.taxCategory to it.item.vatRate }
+        }
     }
 
     context("Fälligkeit") {
