@@ -66,28 +66,32 @@ object EInvoiceEmbedder {
                     COSDictionary(original.documentInformation.cosObject) to
                         original.documentCatalog.metadata.toByteArray()
                 }
-            val exporter = Exporter()
-            exporter.setProfile("EXTENDED")
-            // Fassung 2 ausdrücklich: Sie bestimmt den Namensraum fx: und den
-            // Namen factur-x.xml, auf die mergeXmp und die Tests bauen.
-            exporter.setZUGFeRDVersion(2)
-            exporter.setConformanceLevel(PDFAConformanceLevel.UNICODE)
-            exporter.load(pdf.toString())
-            // setXML bereitet das Dokument schon vollständig vor, es ruft
-            // selbst prepare(). Ein zweiter Aufruf hinge das XML ein zweites
-            // Mal an, und veraPDF bemerkte das nicht.
-            exporter.setXML(xml)
+            // use, weil export() das Dokument nur nach gelungenem Speichern
+            // schließt; scheitert es vorher, bliebe es samt Dateihandle offen
+            // (#390). Ein zweites Schließen nach export() ist folgenlos.
+            Exporter().use { exporter ->
+                exporter.setProfile("EXTENDED")
+                // Fassung 2 ausdrücklich: Sie bestimmt den Namensraum fx: und den
+                // Namen factur-x.xml, auf die mergeXmp und die Tests bauen.
+                exporter.setZUGFeRDVersion(2)
+                exporter.setConformanceLevel(PDFAConformanceLevel.UNICODE)
+                exporter.load(pdf.toString())
+                // setXML bereitet das Dokument schon vollständig vor, es ruft
+                // selbst prepare(). Ein zweiter Aufruf hinge das XML ein zweites
+                // Mal an, und veraPDF bemerkte das nicht.
+                exporter.setXML(xml)
 
-            val document = exporter.document()
-            val xmp = mergeXmp(originalXmp, document.documentCatalog.metadata.toByteArray())
-            document.documentCatalog.metadata = PDMetadata(document, ByteArrayInputStream(xmp))
-            val info = PDDocumentInformation(originalInfo)
-            document.documentInformation = info
-            document.documentCatalog.names.embeddedFiles.names.values.forEach { attachment ->
-                attachment.embeddedFile.creationDate = info.creationDate
-                attachment.embeddedFile.modDate = info.modificationDate
+                val document = exporter.document()
+                val xmp = mergeXmp(originalXmp, document.documentCatalog.metadata.toByteArray())
+                document.documentCatalog.metadata = PDMetadata(document, ByteArrayInputStream(xmp))
+                val info = PDDocumentInformation(originalInfo)
+                document.documentInformation = info
+                document.documentCatalog.names.embeddedFiles.names.values.forEach { attachment ->
+                    attachment.embeddedFile.creationDate = info.creationDate
+                    attachment.embeddedFile.modDate = info.modificationDate
+                }
+                exporter.export(target.toString())
             }
-            exporter.export(target.toString())
         } catch (e: IOException) {
             throw ToolchainException("Die E-Rechnung ließ sich nicht in $pdf einbetten: ${e.message}", e)
         }
