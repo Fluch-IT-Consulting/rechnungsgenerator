@@ -92,10 +92,10 @@ sealed interface Subject {
  * Kommentaren und Testnamen steht, hält niemand gegen die Regeln, und sie
  * läuft dort auseinander.
  *
- * Auch die Kennungen, die allein `abschlaege` vergibt, stehen hier und nicht
- * in `prepayments` (#314): Was das Programm ablehnt, steht so an einer Stelle,
- * und `abschlaege` meldet die Abbrüche der gelesenen Abschlagsrechnungen in
- * derselben Liste wie seine eigenen. Getrennt bräuchte [Finding] statt dieses
+ * Auch die Kennungen, die allein ein Randpaket vergibt – `abschlaege` oder der
+ * Writer der E-Rechnung –, stehen hier und nicht dort (#314): Was das Programm
+ * ablehnt, steht so an einer Stelle, und `abschlaege` meldet die Abbrüche der
+ * gelesenen Abschlagsrechnungen in derselben Liste wie seine eigenen. Getrennt bräuchte [Finding] statt dieses
  * Enums ein offenes Interface.
  */
 enum class Rule(val severity: Severity) {

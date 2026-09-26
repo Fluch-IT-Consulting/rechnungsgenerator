@@ -166,12 +166,20 @@ Stammt die vorhandene Datei aus einer früheren Sitzung, kann sie schon beim
 Kunden liegen – dann frag, bevor du etwas ersetzt. Eine verschickte Rechnung,
 die falsch ist, wird storniert, nicht überschrieben (siehe *Stornorechnung*).
 
+`--zugferd` setzt du, wenn der Nutzer eine E-Rechnung oder ZUGFeRD verlangt
+oder der Kunde sie fordert; sonst bleibt es beim PDF/A-1b. Das PDF sieht gleich
+aus und trägt zusätzlich das XML. Bricht der Lauf mit
+`ZUGFERD_NOCH_NICHT_MOEGLICH` ab, kann der Generator diese Rechnung noch nicht
+als E-Rechnung ausgeben: Nenne dem Nutzer den Grund aus der Meldung und frag,
+ob das PDF ohne den Schalter genügt.
+
 Fehlt das Programm, baue es mit `./gradlew installDist` im Projektverzeichnis.
 Dasselbe, wenn es `got unexpected extra argument` meldet und dazu, eine Datei
 `erzeuge` gebe es nicht: Dann ist das installierte Programm älter als diese
 Anleitung und kennt das Unterkommando noch nicht.
 
-Das Kommando gibt `PDF/A-1b: gültig` aus und endet mit Exitcode 0. Bei jedem
+Das Kommando gibt `PDF/A-1b: gültig` aus, mit `--zugferd` `PDF/A-3u: gültig`,
+und endet mit Exitcode 0. Bei jedem
 anderen Ergebnis ist die Rechnung **nicht** fertig: Melde den Fehler, statt ihn
 zu übergehen – ein ungültiges PDF/A fällt sonst erst beim Finanzamt auf.
 
