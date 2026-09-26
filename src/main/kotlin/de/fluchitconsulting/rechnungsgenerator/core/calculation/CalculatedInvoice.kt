@@ -161,7 +161,10 @@ data class CalculatedInvoice(
                 )
             }.sortedWith(compareBy<VatGroup> { it.category }.thenByDescending { it.rate.valueAsPercentage })
 
-    val grossTotal: Money = netTotal + vatGroups.sumOf { it.amount }
+    /** Die Summe der Umsatzsteuer, BT-110. */
+    val vatTotal: Money = vatGroups.sumOf { it.amount }
+
+    val grossTotal: Money = netTotal + vatTotal
 
     /** Die abgesetzten Abschläge, in der Reihenfolge der Rechnungsdatei. */
     val prepayments: List<DeductedPrepayment> =

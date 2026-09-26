@@ -67,6 +67,16 @@ class PackageStructureTest : FunSpec({
                     "$core.values",
                     "$core.text",
                 ),
+            // Das XML der E-Rechnung liest dieselbe angenommene Rechnung wie
+            // der LaTeX-Renderer, kennt aber weder ihn noch die Werkzeuge
+            // (ADR-0023).
+            "$root.generate.einvoice" to
+                setOf(
+                    "$core.accepted",
+                    "$core.calculation",
+                    "$core.model",
+                    "$core.values",
+                ),
             "$root.generate.toolchain" to emptySet(),
             "$root.prepayments" to setOf("$core.accepted", "$core.rules", "$core.calculation", "$core.model", "$core.values"),
             // setup kennt aus dem Kern nur die Wurzel: den Namen ihres
