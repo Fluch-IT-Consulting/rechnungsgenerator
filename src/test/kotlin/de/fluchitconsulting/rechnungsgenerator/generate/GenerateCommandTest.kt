@@ -5,8 +5,6 @@ import com.github.ajalt.clikt.core.context
 import com.github.ajalt.clikt.core.parse
 import de.fluchitconsulting.rechnungsgenerator.RechnungsgeneratorCommand
 import de.fluchitconsulting.rechnungsgenerator.core.model.Root
-import de.fluchitconsulting.rechnungsgenerator.core.rules.RejectedException
-import de.fluchitconsulting.rechnungsgenerator.core.rules.Rule
 import de.fluchitconsulting.rechnungsgenerator.generate.render.Foundation
 import de.fluchitconsulting.rechnungsgenerator.generate.toolchain.BuiltInPdfAValidator
 import de.fluchitconsulting.rechnungsgenerator.generate.toolchain.ExternalPdfAValidator
@@ -117,8 +115,7 @@ class GenerateCommandTest : FunSpec({
     /**
      * Der Schalter ändert die Quellen und mit ihnen das Profil, sonst nichts
      * (ADR-0023): dasselbe Ziel, derselbe Überschreibschutz, dieselben
-     * Ausgaben. Was der Writer noch nicht schreibt, bricht ab wie ein Befund
-     * der Prüfung und vor dem Satz.
+     * Ausgaben.
      */
     context("--zugferd") {
         test("die Quellen tragen das XML der Rechnung, und das Urteil nennt PDF/A-3u") {
@@ -148,19 +145,15 @@ class GenerateCommandTest : FunSpec({
             error.message!! shouldContain "kein gültiges PDF/A-3u"
         }
 
-        test("was der Writer noch nicht schreibt, bricht vor dem Satz ab, mit ZUGFERD_NOCH_NICHT_MOEGLICH") {
+        // Die Schlussrechnung stand als letzte Art aus; seitdem kennt der
+        // Writer keinen Abbruch mehr.
+        test("auch die Schlussrechnung geht als E-Rechnung, samt ihrer Abschläge") {
             val finalInvoice = inputDir.resolve("schlussrechnung.yaml").also { it.writeText(resource("schlussrechnung.yaml")) }
             val typesetter = FakeTypesetter()
-            val target = inputDir.resolve("schluss-zugferd.pdf")
 
-            val error =
-                shouldThrow<RejectedException> {
-                    generate(typesetter, "-o", target.toString(), "--zugferd", invoiceFile = finalInvoice)
-                }
+            generate(typesetter, "-o", inputDir.resolve("schluss-zugferd.pdf").toString(), "--zugferd", invoiceFile = finalInvoice)
 
-            error.aborts.map { it.rule } shouldBe listOf(Rule.ZUGFERD_NOCH_NICHT_MOEGLICH)
-            typesetter.sources shouldBe null
-            target.exists() shouldBe false
+            String(checkNotNull(typesetter.sources?.einvoice)) shouldBe resource("schlussrechnung-erwartet.xml")
         }
     }
 

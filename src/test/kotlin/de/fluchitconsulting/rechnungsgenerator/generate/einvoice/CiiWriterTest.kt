@@ -9,15 +9,14 @@ import de.fluchitconsulting.rechnungsgenerator.core.model.InvoiceType
 import de.fluchitconsulting.rechnungsgenerator.core.model.ServicePeriod
 import de.fluchitconsulting.rechnungsgenerator.core.model.SkontoTier
 import de.fluchitconsulting.rechnungsgenerator.core.model.TaxCategory
+import de.fluchitconsulting.rechnungsgenerator.core.model.TaxShare
 import de.fluchitconsulting.rechnungsgenerator.core.model.VatIdCheck
 import de.fluchitconsulting.rechnungsgenerator.core.model.YamlLoader
-import de.fluchitconsulting.rechnungsgenerator.core.model.exampleInvoices
 import de.fluchitconsulting.rechnungsgenerator.core.model.testInvoice
 import de.fluchitconsulting.rechnungsgenerator.core.model.testItem
 import de.fluchitconsulting.rechnungsgenerator.core.model.testSellerConfig
-import de.fluchitconsulting.rechnungsgenerator.core.rules.Rule
-import de.fluchitconsulting.rechnungsgenerator.core.rules.Subject
 import de.fluchitconsulting.rechnungsgenerator.core.values.CountryCode
+import de.fluchitconsulting.rechnungsgenerator.core.values.Money
 import de.fluchitconsulting.rechnungsgenerator.core.values.Percent
 import de.fluchitconsulting.rechnungsgenerator.core.values.VatId
 import io.kotest.assertions.withClue
@@ -26,7 +25,6 @@ import io.kotest.matchers.collections.shouldBeEmpty
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.string.shouldContain
 import io.kotest.matchers.string.shouldNotContain
-import io.kotest.matchers.types.shouldBeInstanceOf
 import org.mustangproject.validator.ZUGFeRDValidator
 import java.nio.file.Path
 import java.time.LocalDate
@@ -40,7 +38,7 @@ private fun example(name: String): AcceptedInvoice {
     return CalculatedInvoice(invoice, seller).accepted()
 }
 
-private fun AcceptedInvoice.xml(): String = CiiWriter.write(this).shouldBeInstanceOf<CiiResult.Written>().xml
+private fun AcceptedInvoice.xml(): String = CiiWriter.write(this)
 
 /**
  * Das XML einer Rechnung, zeichengleich und geprüft – und was der Writer noch
@@ -56,7 +54,7 @@ class CiiWriterTest : FunSpec({
     // Je Art, die der Writer schreibt, eine Vergleichsdatei. Die Teilrechnung
     // unterscheidet sich von der Rechnung im XML nur im Code, sie prüft der
     // Test darunter.
-    listOf("rechnung", "abschlagsrechnung", "stornorechnung").forEach { name ->
+    listOf("rechnung", "abschlagsrechnung", "schlussrechnung", "stornorechnung").forEach { name ->
         test("$name.yaml ergibt das erwartete XML") {
             example(name).xml() shouldBe resource("$name-erwartet.xml")
         }
@@ -350,12 +348,85 @@ class CiiWriterTest : FunSpec({
         }
     }
 
-    context("was noch nicht geht, bricht ab statt still zu fehlen") {
-        test("eine Schlussrechnung") {
-            val result = CiiWriter.write(example(exampleInvoices.getValue(InvoiceType.FINAL)))
+    context("die Schlussrechnung") {
+        // Mustang rechnet nur die Summe der Abschläge gegen den Restbetrag
+        // nach (BR-FXEXT-CO-16), nicht den einzelnen Abschlag. Deshalb steht
+        // einer hier wörtlich, Feld für Feld wie im Block abschlaege.
+        test("jeder abgesetzte Abschlag steht mit Betrag, Vereinnahmung, Steueranteil und Rechnung da") {
+            val xml = example("schlussrechnung").xml()
 
-            val findings = result.shouldBeInstanceOf<CiiResult.NotYetPossible>().findings
-            findings.map { it.rule to it.subject } shouldBe listOf(Rule.ZUGFERD_NOCH_NICHT_MOEGLICH to Subject.WholeInvoice)
+            xml shouldContain
+                """
+                |      <ram:SpecifiedAdvancePayment>
+                |        <ram:PaidAmount>4760.00</ram:PaidAmount>
+                |        <ram:FormattedReceivedDateTime>
+                |          <qdt:DateTimeString format="102">20260610</qdt:DateTimeString>
+                |        </ram:FormattedReceivedDateTime>
+                |        <ram:IncludedTradeTax>
+                |          <ram:CalculatedAmount>760.00</ram:CalculatedAmount>
+                |          <ram:TypeCode>VAT</ram:TypeCode>
+                |          <ram:BasisAmount>4000.00</ram:BasisAmount>
+                |          <ram:CategoryCode>S</ram:CategoryCode>
+                |          <ram:RateApplicablePercent>19</ram:RateApplicablePercent>
+                |        </ram:IncludedTradeTax>
+                |        <ram:InvoiceSpecifiedReferencedDocument>
+                |          <ram:IssuerAssignedID>R26-009</ram:IssuerAssignedID>
+                |          <ram:TypeCode>386</ram:TypeCode>
+                |          <ram:FormattedIssueDateTime>
+                |            <qdt:DateTimeString format="102">20260615</qdt:DateTimeString>
+                |          </ram:FormattedIssueDateTime>
+                |        </ram:InvoiceSpecifiedReferencedDocument>
+                |      </ram:SpecifiedAdvancePayment>
+                """.trimMargin()
+            xml.occurrencesOf("<ram:SpecifiedAdvancePayment>") shouldBe 2
+        }
+
+        test("die Summen setzen die Abschläge ab, die Steuer bleibt die der Gesamtleistung") {
+            val xml = example("schlussrechnung").xml()
+
+            listOf(
+                "<ram:TaxTotalAmount currencyID=\"EUR\">3800.00</ram:TaxTotalAmount>",
+                "<ram:GrandTotalAmount>23800.00</ram:GrandTotalAmount>",
+                "<ram:TotalPrepaidAmount>9520.00</ram:TotalPrepaidAmount>",
+                "<ram:DuePayableAmount>14280.00</ram:DuePayableAmount>",
+            ).forEach { xml shouldContain it }
+        }
+
+        // Je Kombination aus Kategorie und Satz ein Steueranteil, wie in
+        // steueranteile (ADR-0002).
+        test("ein Abschlag mit zwei Steuersätzen trägt zwei Steueranteile und bleibt gültig") {
+            val invoice =
+                example("schlussrechnung").calculated.invoice.let { invoice ->
+                    val first = invoice.prepayments.first()
+                    val split =
+                        first.copy(
+                            taxShares =
+                                listOf(
+                                    TaxShare(vatRate = Percent("19"), net = Money("3000.00"), vat = Money("570.00")),
+                                    TaxShare(vatRate = Percent("7"), net = Money("1000.00"), vat = Money("70.00")),
+                                ),
+                        )
+                    invoice.copy(
+                        items = listOf(testItem(unitPrice = "18000.00"), testItem(unitPrice = "2000.00", vatRate = "7")),
+                        prepayments = listOf(split) + invoice.prepayments.drop(1),
+                    )
+                }
+            val xml = CalculatedInvoice(invoice, testSellerConfig()).accepted().xml()
+
+            xml.occurrencesOf("<ram:IncludedTradeTax>") shouldBe 3
+            xml shouldContain "<ram:PaidAmount>4640.00</ram:PaidAmount>"
+            xml.shouldBeValidExtended()
+        }
+
+        // Wie auf dem Blatt: Wer nichts mehr fordert, nennt weder Konto noch
+        // Frist (requestsPayment).
+        test("ausgeglichen fordert sie nichts mehr") {
+            val xml = example("schlussrechnung-ausgeglichen").xml()
+
+            xml shouldContain "<ram:DuePayableAmount>0.00</ram:DuePayableAmount>"
+            xml shouldNotContain "ram:SpecifiedTradeSettlementPaymentMeans"
+            xml shouldNotContain "ram:SpecifiedTradePaymentTerms"
+            xml.shouldBeValidExtended()
         }
     }
 })
