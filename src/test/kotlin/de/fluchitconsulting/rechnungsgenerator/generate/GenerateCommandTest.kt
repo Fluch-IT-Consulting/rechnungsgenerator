@@ -145,6 +145,23 @@ class GenerateCommandTest : FunSpec({
             error.message!! shouldContain "kein gültiges PDF/A-3u"
         }
 
+        test("ein ungültiges PDF/A-3u nennt zum Ansehen die geprüfte Datei und nicht nur das Verzeichnis") {
+            val fake = FakeTypesetter(valid = false)
+
+            val error =
+                shouldThrow<ToolchainException> {
+                    generate(
+                        fake,
+                        "-o",
+                        inputDir.resolve("zugferd-ansehen.pdf").toString(),
+                        "--zugferd",
+                        "--arbeitsdateien-behalten",
+                    )
+                }
+
+            error.message!! shouldContain "Das PDF liegt zum Ansehen unter ${fake.workingDir!!.resolve("${fake.jobName}-zugferd.pdf")}."
+        }
+
         // Die Schlussrechnung stand als letzte Art aus; seitdem kennt der
         // Writer keinen Abbruch mehr.
         test("auch die Schlussrechnung geht als E-Rechnung, samt ihrer Abschläge") {

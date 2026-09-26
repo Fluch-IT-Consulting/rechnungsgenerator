@@ -46,7 +46,11 @@ class FakeTypesetter(
         if (einvoiceFailure != null) throw InvalidEInvoiceException(einvoiceFailure)
         if (failure != null) throw ToolchainException(failure)
         if (ioFailure != null) throw IOException(ioFailure)
-        val pdf = workingDir.resolve("$jobName.pdf").also { it.writeText("%PDF-1.7 kein echtes PDF") }
+        // Mit E-Rechnung unter dem Namen, den LuaLatexTypesetter dem
+        // eingebetteten PDF gibt: Daneben läge dort das PDF/A-1b, und eine
+        // Meldung muss sagen, welches der beiden geprüft wurde (#390).
+        val name = if (sources.einvoice == null) "$jobName.pdf" else "$jobName-zugferd.pdf"
+        val pdf = workingDir.resolve(name).also { it.writeText("%PDF-1.7 kein echtes PDF") }
         val violations =
             if (valid) {
                 emptyList()
