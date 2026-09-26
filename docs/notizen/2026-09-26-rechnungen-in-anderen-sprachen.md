@@ -46,6 +46,13 @@ eigenen Abschnitt.
   Abbruch: „Leer scheitert laut“ gilt in den Stammdaten für Angaben, die
   falsch schaden, etwa die Bankverbindung. Ein allgemeiner Dank schadet nicht,
   und in der falschen Sprache steht er so nie da.
+- **Das kurze Datum ist im Englischen ISO 8601**, `2026-07-01`. Britisch wäre
+  `01/07/2026`, und das liest ein amerikanischer Leser als 7. Januar. Das
+  lange Datum bleibt britisch, `14 August 2026`: Mit ausgeschriebenem Monat
+  versteht es jeder.
+- **Das € steht vor dem Betrag**, `€8,217.50`, wie es im Britischen üblich
+  ist. Die übrigen Schreibweisen des ersten Schritts – `19%`, `−€200.00`, die
+  Einheiten `hrs`, `days`, `pcs`, `flat rate` – stehen in #377.
 
 ## Was die Sprache berührt
 
@@ -101,11 +108,17 @@ eigenen Abschnitt.
   jeder Satz einen Wortlaut hat – derselbe Zug wie `InvoiceType` ohne
   Vorgabewerte (ADR-0009).
 - **`GermanFormat` wird ein Format je Sprache.**
-- **Erster Schritt wie bei ZUGFeRD (ADR-0023)**: Englisch zuerst nur für
-  `rechnung` mit Kategorie S. Alles andere lehnt ein Befund ab, etwa
-  `SPRACHE_NOCH_NICHT_MOEGLICH`, bis sein englischer Wortlaut entschieden ist.
-  So bekommen die heiklen Sätze – Storno, Abschlag, Absetzung, Reverse Charge
-  – je einen eigenen Schritt, statt nebenbei übersetzt zu werden.
+- **Erster Schritt wie bei ZUGFeRD (ADR-0023)** (#377): Englisch zuerst nur
+  für `rechnung`, und ohne die Kategorien AE, K und G und ohne Skonto. Alles
+  andere lehnt ein Befund ab, etwa `SPRACHE_NOCH_NICHT_MOEGLICH`, bis sein
+  englischer Wortlaut entschieden ist. So bekommen die heiklen Sätze – Storno,
+  Abschlag, Absetzung, Reverse Charge – je einen eigenen Schritt, statt
+  nebenbei übersetzt zu werden. Nicht allein Kategorie S: Eine englische
+  Rechnung geht fast immer ins Ausland, und mit S allein deckte der Schritt
+  kaum eine ab. O, die Leistung an einen Unternehmer im Drittland, kostet nur
+  einen Satz, denn den Grund schreibt der Rechnungssteller selbst. AE, K und G
+  bleiben draußen, weil ihr Befreiungsgrund eine Vorgabe mit gesetzlichem
+  Wortlaut hat.
 
 ## Offen
 
@@ -118,13 +131,6 @@ eigenen Abschnitt.
   - Für die Abschlagsrechnung kommen „Prepayment invoice“ (so heißt Code 386)
     und „Advance payment invoice“ in Frage.
   - Dazu die Wörter des Absetzungsblocks: Abschlag, vereinnahmt, Restbetrag.
-- **Das kurze Datum.** Britisch wäre `01/07/2026`, das ein amerikanischer
-  Leser als 7. Januar liest. Die Alternativen sind ISO 8601 (`2026-07-01`) oder
-  ausgeschrieben (`1 Jul 2026`). Das lange Datum ist britisch
-  `14 August 2026`.
-- **Die Stellung des €.** Britisch üblich ist `€8,217.50`, im
-  Geschäftsverkehr auch `8,217.50 EUR`.
-- **Die Einheiten auf dem Blatt**: `h` oder `hrs`, `days`, `pcs`, `flat rate`.
 
 ## Rechtslage, vor dem Umsetzen nachzulesen
 
