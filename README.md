@@ -3,14 +3,15 @@
 Erzeugt aus einer YAML-Beschreibung eine deutsche Rechnung als valides
 PDF/A-1b-Dokument – gesetzt mit LuaLaTeX, geprüft mit veraPDF. Auf Wunsch
 entsteht eine E-Rechnung nach ZUGFeRD: ein PDF/A-3u, das die Rechnung
-zusätzlich als XML trägt.
+zusätzlich als XML trägt. Aus einer E-Rechnung, auch einer fremden, liest das
+Programm das XML wieder aus, sobald sie ihre Prüfung besteht.
 
 Ein Kotlin/Gradle-Lernprojekt.
 
 ## Voraussetzungen
 
-`lualatex` muss im PATH liegen; das Programm prüft das beim Start und sagt es,
-wenn es fehlt.
+Zum Erzeugen muss `lualatex` im PATH liegen; das Programm prüft das beim Start
+und sagt es, wenn es fehlt.
 
 - TeX Live mit `lualatex` – <https://tug.org/texlive/>
 - nur für `--externe-pdfa-pruefung`: [veraPDF](https://verapdf.org/) –
@@ -129,6 +130,40 @@ und Skonto. Die Schlussrechnung setzt ihre Abschläge im XML strukturiert ab,
 je Abschlag mit Betrag, Tag der Vereinnahmung und Steueranteilen. Warum
 ZUGFeRD und nicht XRechnung und warum EXTENDED, steht in ADR-0002 und
 ADR-0023.
+
+### Das XML einer E-Rechnung auslesen
+
+```
+rechnungsgenerator xml <rechnung.pdf>
+```
+
+Prüft, ob das PDF eine gültige E-Rechnung nach ZUGFeRD ist, und gibt dann ihr
+XML auf stdout aus, Byte für Byte, wie es eingebettet ist:
+
+```
+rechnungsgenerator xml Rechnungen/2026/R26-042.pdf > R26-042.xml
+```
+
+Das geht mit jeder E-Rechnung nach ZUGFeRD oder Factur-X, nicht nur mit den
+eigenen: in jedem Profil, das der Prüfer kennt, von MINIMUM bis EXTENDED, und
+mit dem Anhang unter jedem Namen, den die Fassungen vorsehen (`factur-x.xml`,
+`zugferd-invoice.xml`, `xrechnung.xml`, `ZUGFeRD-invoice.xml`). Geprüft wird
+das PDF gegen das PDF/A-3, als das es sich ausgibt (a, b oder u), und das XML
+gegen Schema und Regeln seines Profils.
+
+Besteht die Datei eine Prüfung nicht, bleibt stdout leer, der Exitcode ist 1,
+und auf stderr stehen alle Gründe auf einmal:
+
+```
+R26-042.pdf ist keine gültige E-Rechnung nach ZUGFeRD.
+Es gibt sich als PDF/A-1b aus. Eine E-Rechnung nach ZUGFeRD ist ein PDF/A-3.
+Es trägt kein XML einer E-Rechnung, gesucht unter factur-x.xml, zugferd-invoice.xml, xrechnung.xml, ZUGFeRD-invoice.xml.
+```
+
+Eine Warnung macht das XML nicht ungültig: Sie steht als Hinweis auf stderr,
+und das XML kommt trotzdem. Die eigenen E-Rechnungen tragen eine, zum leeren
+Lieferblock (`PEPPOL-EN16931-R008`). Stammdaten braucht das Kommando nicht,
+LuaLaTeX auch nicht.
 
 ### Abschläge für die Schlussrechnung vorbereiten
 
@@ -353,11 +388,10 @@ gegen PDF/A-3u. Ohne gültiges PDF/A ist der Build rot.
 
 Layout und Toolchain stehen, ebenso Reverse Charge (§13b UStG), die Abschlags-
 und Schlussrechnung, das Storno, das Skonto und der Rabatt auf eine Position –
-als Satz oder als Betrag. Als E-Rechnung nach ZUGFeRD gehen bisher Rechnung und
-Teilrechnung mit Regelsteuersatz, ohne Rabatt und Skonto; die übrigen Arten und
-Merkmale folgen (#363). Offen sind außerdem ein Nachlass auf die ganze
-Rechnung und die Rechnungskorrektur – also das Berichtigen einzelner
-Positionen, statt ganz zu stornieren.
+als Satz oder als Betrag. Jede Rechnungsart geht auch als E-Rechnung nach
+ZUGFeRD, und das XML einer E-Rechnung lässt sich wieder auslesen. Offen sind
+ein Nachlass auf die ganze Rechnung und die Rechnungskorrektur – also das
+Berichtigen einzelner Positionen, statt ganz zu stornieren.
 
 ## Lizenz
 

@@ -2,7 +2,8 @@
 
 Kotlin/Gradle-Lernprojekt: erzeugt aus einer YAML-Rechnungsdatei plus
 YAML-Stammdaten-Konfiguration eine deutsche Rechnung als valides
-PDF/A-1b-Dokument, mit `--zugferd` als E-Rechnung (PDF/A-3u mit XML). Satz über
+PDF/A-1b-Dokument, mit `--zugferd` als E-Rechnung (PDF/A-3u mit XML); `xml`
+liest das XML einer geprüften E-Rechnung wieder aus. Satz über
 LuaLaTeX (Schrift: TeX Gyre Heros, passend zum CV/Web-Auftritt des Autors),
 PDF/A-Prüfung über veraPDF.
 
@@ -102,8 +103,11 @@ PDF/A-Prüfung über veraPDF.
   `TypesetterFactory`: Welcher Prüfer es ist, steht erst mit dem Schalter fest.
   Lizenz von veraPDF: gewählt ist **MPL-2.0** und nicht GPLv3+, die auf das
   Ganze durchschlüge. Das Profil – PDF/A-1b, mit E-Rechnung PDF/A-3u – folgt
-  allein aus `PdfSources.pdfaProfile`, und der Vergleich der beiden Prüfer
-  deckt beide.
+  beim Erzeugen allein aus `PdfSources.pdfaProfile`, und der Vergleich der
+  beiden Prüfer deckt beide. `xml` prüft gegen das Profil, als das sich die
+  Datei im XMP ausgibt (`PdfAIdentification`), deshalb kennt `PdfAProfile`
+  auch 3a und 3b; dass Bibliothek und Programm je Profil dasselbe bekommen,
+  hält `PdfAProfileTest`.
 
 - **Naht zu den Werkzeugen**: `Typesetter` – "aus Quelltext wird ein geprüftes
   PDF". Dahinter im Betrieb LuaLaTeX und veraPDF, im Test ein vorbereitetes
@@ -126,9 +130,10 @@ PDF/A-Prüfung über veraPDF.
   Gebaut wird der Wert im Renderer und nicht im Kommando, das sonst sechs
   Argumente aus vier Quellen zusammensetzte. Der Preis ist die Kante `generate.render →
   generate.toolchain` in `PackageStructureTest`: Der Renderer kennt den
-  Eingabetyp der Werkzeuge. Sie zeigt nach unten auf ein Blatt, `toolchain`
-  bleibt frei vom Projekt. Verworfen: zwei Typen mit einer Abbildung im
-  Kommando – das verlegt das Durchreichen nur.
+  Eingabetyp der Werkzeuge. Sie zeigt nach unten: `generate.toolchain` kennt
+  vom Projekt nur den gemeinsamen Rand `toolchain` (siehe Paketstruktur).
+  Verworfen: zwei Typen mit einer Abbildung im Kommando – das verlegt das
+  Durchreichen nur.
 - **Satz nur in der Vorlage** (ADR-0017): Abstände, Schriftgrad, Farbe, Linien,
   Beschriftungen, Trenner, Ort und Reihenfolge stehen in der Vorlage des
   Designs (`templates/helsinki.tex`, `templates/prag.tex`). Der Renderer
@@ -276,7 +281,7 @@ PDF/A-Prüfung über veraPDF.
   `main()` von Clikt beendet den Prozess mit Code 0 auch im Fehlerfall, deshalb
   `parse()` mit eigenem `exitProcess(e.statusCode)`. Das Programm ist ein
   Elternkommando mit Unterkommandos (`erzeuge`), weil kein Aufruf je nach
-  Schalter mal ein PDF und mal YAML ausgeben soll (ADR-0003). Fehlt das
+  Schalter mal ein PDF und mal YAML oder XML ausgeben soll (ADR-0003). Fehlt das
   Unterkommando, wirft Clikt die Hilfe ebenfalls mit Code 0 – deshalb wirft
   `RechnungsgeneratorCommand` sie selbst, mit 1. Der Kanal folgt dem Exitcode:
   Was mit Code ungleich 0 endet, steht auf stderr, stdout trägt nur das
@@ -294,12 +299,24 @@ PDF/A-Prüfung über veraPDF.
   Rechnungsdatei, als Kommando oder als Zweig in `erzeuge` – nicht
   abgeschrieben (#359).
   `erzeuge --oeffnen` öffnet das fertige PDF über `PdfViewer`, eine eigene
-  Naht im Paket `generate` und bewusst nicht in `toolchain` (#144): Dort
-  liegen die Werkzeuge, ohne die kein PDF entsteht, und `checkAvailable()`
+  Naht im Paket `generate` und bewusst nicht in `generate.toolchain` (#144):
+  Dort liegen die Werkzeuge, ohne die kein PDF entsteht, und `checkAvailable()`
   prüft sie beim Start. Fehlt der Viewer, entsteht die Rechnung trotzdem – ein
   Fehlschlag ist deshalb ein Hinweis mit Exitcode 0, kein Abbruch. Gestartet
   wird nicht über `ProcessRunner`, dessen Vertrag bis zum Ende wartet und hart
   abräumt; das risse unter Linux den Viewer mit.
+  `xml` (#380) gibt das XML einer E-Rechnung aus, Byte für Byte, wie es
+  eingebettet ist – deshalb als Bytes auf einen Strom, den `execute()` über
+  `RechnungsgeneratorCommand` reicht, und nicht über `echo`, das Text schreibt.
+  Vorher urteilen beide Prüfer wie beim Erzeugen (ADR-0023): veraPDF gegen
+  das Profil aus dem XMP, Mustang über das XML. Besteht die Datei nicht, bleibt
+  stdout leer, und auf stderr stehen alle Gründe auf einmal; eine Warnung ist
+  ein Hinweis auf stderr, und das XML kommt trotzdem. Angenommen wird jede
+  E-Rechnung nach ZUGFeRD oder Factur-X, nicht nur die eigene. Ausgepackt wird
+  mit PDFBox und nicht mit Mustangs `ZUGFeRDInvoiceImporter`, der einen
+  Lesefehler verschluckt und von mehreren Anhängen still den letzten nimmt.
+  Kein `-s`, keine Wurzel, kein LuaLaTeX; `--externe-pdfa-pruefung` kommt erst,
+  wenn jemand danach fragt.
   `--version` nennt die Fassung und endet mit 0. Woher sie zur Laufzeit kommt,
   ist eine Entscheidung und keine Formalie (#264): aus einer Ressource, die
   `generateVersionResource` beim Bauen aus `version` in `build.gradle.kts`
@@ -504,10 +521,13 @@ PDF/A-Prüfung über veraPDF.
   --zugferd` mit einer Kennung für genau sie ab, statt sie wegzulassen
   (Nachtrag zu ADR-0023).
 
-  Mustang wirkt nur hinter der Naht `Typesetter`: `EInvoiceValidator` prüft
-  das XML vor dem Satz – ein Verstoß ist eine Lücke im Generator, deshalb
-  `ToolchainException` und kein PDF –, `EInvoiceEmbedder` bettet es danach
-  ein. Mustang setzt dabei die Uhr ein und schreibt das XMP neu; der Embedder
+  Beim Erzeugen wirkt Mustang nur hinter der Naht `Typesetter`:
+  `EInvoiceValidator` prüft das XML vor dem Satz, `EInvoiceEmbedder` bettet es
+  danach ein. Der Prüfer liefert Fehler und Warnungen und wirft nicht, denn
+  was ein Fehler bedeutet, hängt am Kommando: Bei `erzeuge` ist er eine Lücke
+  im Generator, deshalb wirft `LuaLatexTypesetter` eine `ToolchainException`,
+  und es entsteht kein PDF; bei `xml` sagt er etwas über die übergebene
+  Datei. Mustang setzt dabei die Uhr ein und schreibt das XMP neu; der Embedder
   übernimmt vor dem Speichern XMP, Info-Dictionary und Datum aus dem
   PDF/A-1b. Das hängt an zwei Eigenheiten, die Mustang nirgends zusagt: Das
   Dokument ist nur über das `protected`-Feld `doc` erreichbar, und `setXML`
@@ -557,12 +577,21 @@ PDF/A-Prüfung über veraPDF.
   fehlt, soll nicht aussehen wie eines, das hält.
 - **Paketstruktur**: Ein vertikales Paket je Kommando, mit allem, was
   nur dieses Kommando braucht: `generate` mit dem LaTeX-Satz
-  (`generate.render`), dem XML der E-Rechnung (`generate.einvoice`) und der
-  Naht zu den Werkzeugen (`generate.toolchain`),
+  (`generate.render`), dem XML der E-Rechnung (`generate.einvoice`) und Satz
+  und Einbetten hinter der Naht zu den Werkzeugen (`generate.toolchain`),
   `prepayments` mit dem Zusammentragen der Abschläge und dem YAML-Block,
   `setup` mit der Vorlage der Stammdaten (#276) – es kennt aus dem Kern nur
   `model`, weil `einrichten` den Namen des Wurzelordners braucht und die Frage,
-  ob oberhalb schon eine Wurzel liegt.
+  ob oberhalb schon eine Wurzel liegt –, und `xml` mit dem Auspacken und dem
+  Lesen des XMP, ganz ohne den Kern, weil es keine Rechnungsdatei liest
+  (#380).
+  Neben den Kommandos liegt der **gemeinsame Rand** `toolchain`: die Prüfer
+  (`PdfAValidator` samt Adaptern, `EInvoiceValidator`) und der Prozessläufer
+  darunter, die `erzeuge` und `xml` beide brauchen. Er importiert nichts aus
+  dem Projekt. Ein Kommando importiert aus seinem eigenen Paket, dem Rand und
+  dem Kern, und was nur ein Kommando braucht, bleibt in dessen Paket – deshalb
+  liegen Satz und Einbetten weiter in `generate.toolchain` (Nachtrag zu
+  ADR-0023).
   Darunter der gemeinsame Kern im Paket `core`, in dem jede Kante nach unten
   zeigt:
   `accepted` (`AcceptedInvoice` samt `check`, `Verdict`,
@@ -604,7 +633,9 @@ PDF/A-Prüfung über veraPDF.
   darf aber jedes Paket sehen. Kein ADR:
   Die Alternative war "so lassen", der Grund sind die Zyklen. ZUGFeRD hat den
   Schnitt nicht geändert, `einvoice` ist ein Randpaket neben `render`
-  (ADR-0023).
+  (ADR-0023). `xml` hat ihn um den gemeinsamen Rand ergänzt; der Kern bekommt
+  keinen Verbraucher dazu, und der Modulschnitt aus
+  `docs/notizen/2026-09-14-umbauten-vor-dem-wachsen.md` bleibt, wo er ist.
 
 ## Konventionen
 
