@@ -241,3 +241,28 @@ gerechnet sind, samt negativem Rabattbetrag; Bankverbindung und
 Zahlungsbedingungen entfallen wie auf dem Blatt (`requestsPayment`). Für das
 Datum des Bezugs erklärt das Wurzelelement jetzt auch den Namensraum `qdt`,
 bei jeder Art – das ist die einzige Änderung an `rechnung-erwartet.xml`.
+
+## Nachtrag vom 26.09.2026: Die Schlussrechnung, und der Abbruch fällt weg
+
+Seit #369 schreibt der Writer die Schlussrechnung, und damit jede Art. Das
+war der Grund für das Profil EXTENDED (ADR-0002).
+
+**Je abgesetzter Abschlag ein `SpecifiedAdvancePayment`**, Feld für Feld wie
+der Block `abschlaege` (ADR-0001): der gezahlte Betrag, der Tag der
+Vereinnahmung, je Steueranteil Kategorie, Satz, Netto und Steuer, und die
+Abschlagsrechnung mit Nummer, Code 386 und Datum. Die Summe steht als
+`TotalPrepaidAmount`, der Restbetrag als `DuePayableAmount`. Die
+Steueraufschlüsselung bleibt die der Gesamtleistung; die Abschläge mindern
+den Zahlbetrag und nicht die Bemessungsgrundlage, wie auf dem Blatt. Mustang
+rechnet dabei nur die Summe gegen den Restbetrag nach (BR-FXEXT-CO-16), nicht
+den einzelnen Abschlag; den hält `CiiWriterTest` wörtlich fest.
+
+**`CiiResult.NotYetPossible` und `ZUGFERD_NOCH_NICHT_MOEGLICH` entfallen.**
+Der Abbruch war das Gerüst der Schritte aus "Konsequenzen": Solange eine Art
+fehlte, sollte sie nicht still unvollständig ins XML gehen. Ohne fehlende
+Art trüge der Rückgabetyp einen Zweig, den nichts mehr erreicht, und `Rule`
+eine Kennung, die nie vergeben wird. `CiiWriter.write` liefert das XML. Die
+Zusage, dass nichts still fehlt, hält jetzt das `when` ohne `else` über die
+`InvoiceKind`: Eine neue Art muss dort entscheiden, was sie trägt. Kommt
+einmal eine Angabe, die der Writer nicht schreiben kann, kehrt der Abbruch
+zurück, mit einer Kennung für genau diese Angabe.
