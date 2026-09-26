@@ -42,7 +42,8 @@ interface Typesetter {
     fun checkAvailable()
 
     /**
-     * Setzt die [sources] und prüft das Ergebnis gegen PDF/A-1b. Die
+     * Setzt die [sources] und prüft das Ergebnis gegen ihr Profil: PDF/A-1b,
+     * oder mit E-Rechnung PDF/A-3u, in das ihr XML eingebettet ist. Die
      * Arbeitsdateien bleiben in [workingDir] liegen; wer sie loswerden will,
      * räumt das Verzeichnis selbst auf.
      *
@@ -67,6 +68,8 @@ interface Typesetter {
 
 /**
  * Der Adapter für den Betrieb: LuaLaTeX setzt, ein [PdfAValidator] prüft.
+ * Mit E-Rechnung prüft davor Mustang ihr XML und bettet es danach ein
+ * (ADR-0023).
  *
  * Der Prüfer kommt von außen, weil er gewählt werden kann – eingebaut oder als
  * Programm `verapdf` (ADR-0014). Eine Klasse also und kein `object`: Welcher
@@ -93,7 +96,13 @@ class LuaLatexTypesetter(private val validator: PdfAValidator) : Typesetter {
         jobName: String,
         sources: PdfSources,
     ): TypesetPdf {
-        val pdf = compiler.compile(workingDir, jobName, sources)
-        return TypesetPdf(pdf, validator.validate(pdf, PdfAProfile.PDFA_1B))
+        // Vor dem Satz: Ein ungültiges XML soll gar kein PDF ergeben.
+        sources.einvoice?.let(EInvoiceValidator::check)
+        val typeset = compiler.compile(workingDir, jobName, sources)
+        val pdf =
+            sources.einvoice?.let { xml ->
+                workingDir.resolve("$jobName-zugferd.pdf").also { EInvoiceEmbedder.embed(typeset, xml, it) }
+            } ?: typeset
+        return TypesetPdf(pdf, validator.validate(pdf, sources.pdfaProfile))
     }
 }
