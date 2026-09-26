@@ -516,10 +516,10 @@ PDF/A-Prüfung über veraPDF.
   Vereinnahmung, Ursprungsrechnung, abgesetzte Abschläge als
   `SpecifiedAdvancePayment` –, fragt er die `InvoiceKind` in einem `when` ohne
   `else`. Das XML ist die maßgebliche Fassung, eine Angabe fehlt dort nie
-  still: Eine neue Art muss in diesem `when` entscheiden, was sie trägt, und
-  kommt eine Angabe, die der Writer nicht schreiben kann, bricht `erzeuge
-  --zugferd` mit einer Kennung für genau sie ab, statt sie wegzulassen
-  (Nachtrag zu ADR-0023).
+  still: Eine neue Art muss in diesem `when` entscheiden, was sie trägt. Eine
+  Angabe, die der Writer nicht schreiben kann, gibt es heute nicht; kommt eine,
+  bricht `erzeuge --zugferd` mit einer Kennung für genau sie ab, statt sie
+  wegzulassen (Nachtrag zu ADR-0023).
 
   Beim Erzeugen wirkt Mustang nur hinter der Naht `Typesetter`:
   `EInvoiceValidator` prüft das XML vor dem Satz, `EInvoiceEmbedder` bettet es
