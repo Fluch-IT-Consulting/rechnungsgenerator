@@ -27,6 +27,11 @@ enum class TemplateMacro(val macroName: String, val arity: Int) {
     ZEILENWECHSEL("zeilenwechsel", 0),
     ZUSAMMEN("zusammen", 1),
 
+    // Das Land unter der Anschrift, ausgeschrieben: Ob und wo es steht, ist
+    // Postkonvention und bleibt beim Renderer, die Versalien nach DIN 5008
+    // sind Schreibweise und stehen in der Vorlage (#374).
+    LANDZEILE("landzeile", 1),
+
     // Nur für Sätze aus dem Quelltext: Allein hier setzt die Vorlage nach einem
     // Satzende den breiten Abstand, und in Eingabedaten bekäme ihn auch eine
     // Abkürzung wie "Dr." (#143).

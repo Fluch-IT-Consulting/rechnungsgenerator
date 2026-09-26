@@ -170,6 +170,10 @@
 %% denn \\ überliest den Leerraum bis zum nächsten Zeichen.
 \newcommand{\zeilenwechsel}{\\}
 
+%% Das Land unter der Anschrift eines Kunden im Ausland, in Versalien nach
+%% DIN 5008 (#374). Der Renderer liefert den Namen, wie er geschrieben wird.
+\newcommand{\landzeile}[1]{\MakeUppercase{#1}}
+
 %% Die Person unter der Firmierung im Briefkopf (#147). Das {} hinter \\ aus
 %% demselben Grund wie beim Aufruf von \zeilenwechsel.
 \newcommand{\kopfperson}[1]{\\{}#1}

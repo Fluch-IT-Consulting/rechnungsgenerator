@@ -259,6 +259,20 @@ class PflichtangabenTest : FunSpec({
         }
     }
 
+    // Eine Rechnung ins Ausland (#374): Unter dem Ort steht das Land,
+    // ausgeschrieben und in Versalien nach DIN 5008, nicht der Code aus der
+    // Datei. Der Name steht hier wörtlich und kommt nicht aus dem JDK – sonst
+    // prüfte das Netz die Umsetzung gegen sich selbst.
+    for (design in designs) {
+        test("Auslandsrechnung im Design ${design.name}: gültig, mit dem Land ausgeschrieben unter der Anschrift") {
+            val (calculated, sheet) =
+                typesetAndCheck("auslandsrechnung", design, design.sellerConfig, targetName = "${design.name}-ausland")
+
+            calculated.isDomestic shouldBe false
+            sheet.shows("Land Kunde", "1010 Wien ÖSTERREICH")
+        }
+    }
+
     // Die Schreibweise der Zahlen (ADR-0021): Die Beispiele je Art tragen
     // Einzelpreise mit zwei Nachkommastellen und Mengen unter 1.000. Wie ein
     // Design längere Zahlen gruppiert, zeigte sich an keinem davon.

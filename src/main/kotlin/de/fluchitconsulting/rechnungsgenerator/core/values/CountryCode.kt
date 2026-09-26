@@ -9,8 +9,8 @@ import kotlinx.serialization.SerializationException
 class InvalidCountryCodeException(message: String) : IllegalArgumentException(message)
 
 /**
- * Der Ländercode einer Anschrift nach ISO 3166-1 alpha-2 (BT-40 für den Kunden,
- * BT-55 für den Rechnungssteller).
+ * Der Ländercode einer Anschrift nach ISO 3166-1 alpha-2 (BT-40 für den
+ * Rechnungssteller, BT-55 für den Kunden).
  *
  * Wozu ein eigener Typ für zwei Buchstaben: Wäre `land` ein String,
  * entschiede jede Vergleichsstelle selbst, ob Groß- und Kleinschreibung zählt.
@@ -33,7 +33,9 @@ class InvalidCountryCodeException(message: String) : IllegalArgumentException(me
  * "Deutschland", "D", "GER".
  *
  * Nebenbei bleibt damit `EL` zulässig – Griechenland heißt in den
- * Umsatzsteuer-Systemen der EU so, in ISO 3166 dagegen GR.
+ * Umsatzsteuer-Systemen der EU so, in ISO 3166 dagegen GR. Ausgeschrieben
+ * wird es deshalb nicht: Die Landzeile des Blatts kennt nur die Staaten nach
+ * ISO 3166 und nennt jeden anderen Code, wie er dasteht (#374).
  */
 @Serializable(with = CountryCodeSerializer::class)
 class CountryCode(raw: String) {
