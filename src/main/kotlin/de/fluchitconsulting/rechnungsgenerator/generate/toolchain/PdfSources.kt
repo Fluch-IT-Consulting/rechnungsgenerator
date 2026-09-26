@@ -38,4 +38,7 @@ class PdfSources(
     val einvoice: ByteArray? = null,
 ) {
     val pdfaProfile: PdfAProfile get() = if (einvoice == null) PdfAProfile.PDFA_1B else PdfAProfile.PDFA_3U
+
+    /** Dieselben Quellen, dazu das XML der E-Rechnung. */
+    fun withEInvoice(xml: ByteArray) = PdfSources(tex, xmpMetadata, creationDate, files, xml)
 }

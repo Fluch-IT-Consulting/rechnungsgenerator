@@ -5,10 +5,13 @@ import de.fluchitconsulting.rechnungsgenerator.generate.ViewerResult
 import de.fluchitconsulting.rechnungsgenerator.generate.toolchain.FakeTypesetter
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.core.test.Enabled
+import io.kotest.matchers.collections.shouldNotBeEmpty
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.string.shouldContain
 import io.kotest.matchers.string.shouldNotContain
+import org.slf4j.spi.SLF4JServiceProvider
 import java.nio.file.Path
+import java.util.ServiceLoader
 import kotlin.io.path.createTempDirectory
 import kotlin.io.path.readText
 import kotlin.io.path.writeText
@@ -134,6 +137,18 @@ class MainTest : FunSpec({
         result.exitCode shouldBe 0
         result.out shouldContain "PDF/A-1b: gültig"
         result.err shouldBe ""
+    }
+
+    /**
+     * Mustang protokolliert über SLF4J, und SLF4J ohne Anbindung schreibt beim
+     * ersten Gebrauch drei Warnzeilen auf stderr – an Clikt vorbei, direkt auf
+     * `System.err`. Ein Lauf mit `--zugferd` fängt sie deshalb nicht zuverlässig
+     * ein, zumal SLF4J je JVM nur einmal warnt. Gefragt wird, was die Warnung
+     * auslöst: ob SLF4J eine Anbindung findet, und zwar über denselben
+     * ServiceLoader, mit dem es selbst sucht.
+     */
+    test("SLF4J findet eine Anbindung und warnt deshalb nicht auf stderr") {
+        ServiceLoader.load(SLF4JServiceProvider::class.java).toList().shouldNotBeEmpty()
     }
 
     test("scheitert das Öffnen, bleibt der Aufruf ein Erfolg, und der Hinweis steht auf stdout") {
