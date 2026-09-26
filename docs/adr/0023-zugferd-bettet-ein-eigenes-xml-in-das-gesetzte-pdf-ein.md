@@ -215,3 +215,29 @@ müsste entscheiden, welche gilt.
 **Die Prüfung im Test zählt jede Warnung**, auch eine ohne `[ID …]`. So meldet
 Mustang eine Summe, die er anders nachrechnet; bisher sah der Test nur
 Warnungen mit Kennung und hätte gerade diese übersehen.
+
+## Nachtrag vom 26.09.2026: Abschlags- und Stornorechnung
+
+Seit #368 schreibt der Writer beide Arten, mit den Codes 386 und 384 aus
+`InvoiceType`.
+
+**Der Pflichtsatz wird eine Notiz (BT-22)**, nach Einleitung und Bemerkung.
+Er macht erst das Dokument zu dem, was es ist; ohne ihn stünde der Abschlag
+im XML wie eine Rechnung über die Leistung da. Gesetzt wird er mit
+`toPlainText` in `generate.einvoice`, dem Format neben `toLatex`
+(ADR-0019), und dafür darf `einvoice` jetzt `core.text` importieren. Ein
+Datum steht ausgeschrieben wie auf dem Blatt, damit Notiz und PDF denselben
+Satz lesen lassen.
+
+**Der Tag der Vereinnahmung eines Abschlags ist der Steuerzeitpunkt
+(BT-7)**: Die Steuer auf eine Anzahlung entsteht mit ihrem Eingang. Steht er
+noch nicht fest, fehlt er, wie auf dem Blatt. Dass der Leistungszeitraum
+eines Abschlags ein voraussichtlicher ist, sagt allein der Pflichtsatz;
+EXTENDED hat dafür kein eigenes Feld.
+
+**Das Storno nennt die Ursprungsrechnung zweimal**: im Pflichtsatz und als
+Bezug (BG-3) mit Nummer und Datum. Die negativen Mengen stehen, wie sie
+gerechnet sind, samt negativem Rabattbetrag; Bankverbindung und
+Zahlungsbedingungen entfallen wie auf dem Blatt (`requestsPayment`). Für das
+Datum des Bezugs erklärt das Wurzelelement jetzt auch den Namensraum `qdt`,
+bei jeder Art – das ist die einzige Änderung an `rechnung-erwartet.xml`.

@@ -177,7 +177,8 @@ PDF/A-Prüfung über veraPDF.
   sobald `InvoiceType` geladen wird. Das `TextTemplate` kennt weder Format noch
   Vokabular. Den Wert holt ein `VariableResolver` als `TextValue` ohne Format
   (`InvoiceVariableResolver`, bei der `AcceptedInvoice`), wie er aussieht,
-  entscheidet das Format (`toLatex` in `generate.render`). `<<NAME>>` gibt es
+  entscheidet das Format (`toLatex` in `generate.render`, `toPlainText` für
+  die Notiz der E-Rechnung in `generate.einvoice`). `<<NAME>>` gibt es
   damit zweimal:
   die Platzhalter der Design-Vorlage (`TemplateValue`) und die Variablen eines
   Textes (`InvoiceVariable`) – dieselbe Schreibweise, verschiedene Mengen.
@@ -467,19 +468,19 @@ PDF/A-Prüfung über veraPDF.
   `CiiWriter` in `generate.einvoice`, aus derselben `AcceptedInvoice` wie der
   Renderer und wie er ohne eigene Rechnung – jede Zahl kommt aus der
   `CalculatedInvoice`, denn Mustangs Modell rundet anders als ADR-0013 und
-  kennt `SpecifiedAdvancePayment` nicht. `rechnung-erwartet.xml` ist die
-  Vergleichsdatei, eine Frage und keine Aufgabe wie die `.tex`-Dateien; daneben
-  prüft Mustang das XML, und erlaubt ist allein die Warnung
-  `PEPPOL-EN16931-R008` zum leeren `ApplicableHeaderTradeDelivery`. Auch eine
-  Warnung ohne Kennung zählt: So meldet Mustang eine Summe, die er anders
-  nachrechnet. Satz und Basis eines Rabatts rechnet er nicht nach, die hält
-  der Test wörtlich fest. Leer ist
-  es nicht bei K: Dort steht das Land des Kunden als Lieferland (BR-IC-12).
-  O neben anderen Kategorien lehnt keine Regel ab, weil EXTENDED BR-O-11 bis
+  kennt `SpecifiedAdvancePayment` nicht. `<art>-erwartet.xml` ist je Art, die
+  der Writer schreibt, die Vergleichsdatei, eine Frage und keine Aufgabe wie
+  die `.tex`-Dateien; daneben prüft Mustang das XML, und erlaubt ist allein
+  die Warnung `PEPPOL-EN16931-R008` zum leeren
+  `ApplicableHeaderTradeDelivery`. Leer ist es nicht bei K: Dort steht das Land
+  des Kunden als Lieferland (BR-IC-12). Auch eine Warnung ohne Kennung zählt:
+  So meldet Mustang eine Summe, die er anders nachrechnet. Satz und Basis
+  eines Rabatts rechnet er nicht nach, die hält der Test wörtlich fest. O
+  neben anderen Kategorien lehnt keine Regel ab, weil EXTENDED BR-O-11 bis
   BR-O-14 nicht prüft (Nachtrag zu ADR-0023).
 
-  Was der Writer noch nicht schreibt – bisher Abschlags-, Schluss- und
-  Stornorechnung –, liefert er als
+  Was der Writer noch nicht schreibt – bisher die Schlussrechnung –, liefert
+  er als
   `CiiResult.NotYetPossible` mit `ZUGFERD_NOCH_NICHT_MOEGLICH`, und `erzeuge`
   bricht ab wie bei einer Ablehnung. Das XML ist die maßgebliche Fassung;
   eine Angabe fehlt dort nie still. Jeder weitere Schritt macht aus einem
