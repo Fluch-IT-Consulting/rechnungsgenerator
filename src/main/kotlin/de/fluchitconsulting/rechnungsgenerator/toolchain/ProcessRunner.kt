@@ -1,4 +1,4 @@
-package de.fluchitconsulting.rechnungsgenerator.generate.toolchain
+package de.fluchitconsulting.rechnungsgenerator.toolchain
 
 import java.nio.file.Path
 import kotlin.time.Duration
@@ -7,7 +7,7 @@ import kotlin.time.Duration.Companion.minutes
 /**
  * Ein fremdes Programm laufen lassen – die Naht zum Betriebssystem.
  *
- * Sie liegt eine Etage unter [Typesetter]: Dort wird entschieden, ob überhaupt
+ * Sie liegt eine Etage unter `Typesetter`: Dort wird entschieden, ob überhaupt
  * gesetzt und geprüft wird, hier, womit. Dazwischen liegt das, was tatsächlich
  * schiefgehen kann – ein Exitcode, der gedeutet werden will, ein Protokoll, das
  * gelesen wird, eine Schleife, die abbricht. Ohne diese Naht wäre all das nur

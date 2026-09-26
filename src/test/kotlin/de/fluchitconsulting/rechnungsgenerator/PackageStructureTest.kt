@@ -34,13 +34,15 @@ class PackageStructureTest : FunSpec({
     // Wer darf woher importieren – die Zeichnung aus #107, Zeile für Zeile.
     val allowedImports =
         mapOf(
-            // model und rules für die Fachfehler, die execute() übersetzt (#119).
+            // model, rules und toolchain für die Fachfehler, die execute()
+            // übersetzt (#119).
             root to
                 setOf(
                     "$root.generate",
                     "$root.generate.toolchain",
                     "$root.prepayments",
                     "$root.setup",
+                    "$root.toolchain",
                     "$core.rules",
                     "$core.model",
                 ),
@@ -49,6 +51,7 @@ class PackageStructureTest : FunSpec({
                     "$root.generate.render",
                     "$root.generate.einvoice",
                     "$root.generate.toolchain",
+                    "$root.toolchain",
                     "$core.accepted",
                     "$core.rules",
                     "$core.calculation",
@@ -56,8 +59,8 @@ class PackageStructureTest : FunSpec({
                 ),
             // generate.toolchain für PdfSources: Der Renderer liefert die
             // Quellen des PDF im Eingabetyp der Werkzeuge (#202). Die Kante
-            // zeigt nach unten auf ein Blatt – toolchain selbst importiert
-            // nichts aus dem Projekt.
+            // zeigt nach unten: generate.toolchain kennt vom Projekt nur den
+            // gemeinsamen Rand darunter.
             "$root.generate.render" to
                 setOf(
                     "$root.generate.toolchain",
@@ -81,7 +84,13 @@ class PackageStructureTest : FunSpec({
                     "$core.values",
                     "$core.text",
                 ),
-            "$root.generate.toolchain" to emptySet(),
+            // Satz und Einbetten braucht nur erzeuge. Die Prüfer und den
+            // Prozessläufer darunter braucht auch xml, deshalb liegen sie im
+            // gemeinsamen Rand (#380).
+            "$root.generate.toolchain" to setOf("$root.toolchain"),
+            // Der gemeinsame Rand zu den fremden Werkzeugen: Er kennt nichts
+            // aus dem Projekt, und jedes Kommando darf ihn benutzen.
+            "$root.toolchain" to emptySet(),
             "$root.prepayments" to setOf("$core.accepted", "$core.rules", "$core.calculation", "$core.model", "$core.values"),
             // setup kennt aus dem Kern nur die Wurzel: den Namen ihres
             // Ordners und die Frage, ob oberhalb schon eine liegt (#275).

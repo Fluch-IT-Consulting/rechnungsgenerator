@@ -1,4 +1,4 @@
-package de.fluchitconsulting.rechnungsgenerator.generate.toolchain
+package de.fluchitconsulting.rechnungsgenerator.toolchain
 
 import org.verapdf.core.VeraPDFException
 import org.verapdf.gf.foundry.VeraGreenfieldFoundryProvider
@@ -64,7 +64,7 @@ data class ValidationResult(
  * über Annahme oder Ablehnung entscheidet (ADR-0004). Anderer Gegenstand,
  * anderes Ergebnis, anderer Zeitpunkt – siehe das Glossar in `CONTEXT.md`.
  *
- * Zwei Adapter, wie beim [Typesetter] eine echte Naht und keine gedachte
+ * Zwei Adapter, wie beim `Typesetter` eine echte Naht und keine gedachte
  * (ADR-0014): [BuiltInPdfAValidator] prüft in derselben JVM, [ExternalPdfAValidator]
  * ruft das Programm `verapdf` auf. Eingebaut ist die Vorgabe; der externe
  * Prüfer urteilt dafür unabhängig – getrennt installiert, getrennt versioniert.

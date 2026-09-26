@@ -1,5 +1,6 @@
 package de.fluchitconsulting.rechnungsgenerator.generate.toolchain
 
+import de.fluchitconsulting.rechnungsgenerator.toolchain.ToolchainException
 import org.apache.pdfbox.Loader
 import org.apache.pdfbox.cos.COSDictionary
 import org.apache.pdfbox.pdmodel.PDDocument
