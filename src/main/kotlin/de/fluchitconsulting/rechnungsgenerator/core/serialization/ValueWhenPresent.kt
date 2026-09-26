@@ -1,5 +1,6 @@
 package de.fluchitconsulting.rechnungsgenerator.core.serialization
 
+import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.SerializationException
 import kotlinx.serialization.descriptors.SerialDescriptor
@@ -19,7 +20,14 @@ import kotlinx.serialization.encoding.Encoder
  * Benutzt wird er per Delegation wie [stringSerializer], an der Eigenschaft
  * mit `@Serializable(with = …)`: Nur dort, und nicht am Typ, kann ein
  * Serializer den leeren Wert überhaupt sehen.
+ *
+ * `decodeNotNullMark` und `encodeNull` gelten in kotlinx.serialization als
+ * experimentell und dürfen sich ohne Übergangsfrist ändern. Einen stabilen
+ * Weg, "steht ohne Wert da" von "fehlt" zu unterscheiden, gibt es nicht, und
+ * genau diese Unterscheidung ist der Zweck. Ändert ein Update sie, wird der
+ * `YamlLoaderTest` zu `akzentfarbe` rot (#388).
  */
+@OptIn(ExperimentalSerializationApi::class)
 fun <T : Any> valueWhenPresent(
     serializer: KSerializer<T>,
     empty: String,
