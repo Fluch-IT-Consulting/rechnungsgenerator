@@ -9,6 +9,7 @@
 \usepackage{fancyhdr}
 \usepackage{array}
 \usepackage{etoolbox}  %% \ifblank für die Angaben, die leer sein dürfen
+\usepackage{tikz}      %% das Logo
 
 \sisetup{
   output-decimal-marker = {,},
@@ -56,6 +57,11 @@
 
 
 \newlength{\balkenhoehe}
+
+\newlength{\logohoehe}\setlength{\logohoehe}{12mm}
+\newlength{\versalhoehe}
+\ifblank{}{}{\input{}}
+\providecommand{\logoskalierung}{1}
 
 \newlength{\positionsabstand}\setlength{\positionsabstand}{2.5mm}
 \newlength{\summenabstand}\setlength{\summenabstand}{1mm}
@@ -127,7 +133,9 @@ USt-IdNr. DE 123 456 788 · Musterbank Würzburg · BIC MUSTDEFFXXX · IBAN DE89
 \thispagestyle{erste}
 
 {\raggedleft\small\color{gedaempft}
-  {\bfseries\color{haupttext}Muster IT-Consulting UG (haftungsbeschränkt)}\ifblank{Dr. Erika Musterfrau}{\kopfperson{Dr. Erika Musterfrau}}{}\zeilenwechsel{}%
+  {\bfseries\color{haupttext}Muster IT-Consulting UG (haftungsbeschränkt)}\ifblank{}{}{\settoheight{\versalhoehe}{\bfseries M}%
+    \rlap{\hspace*{-\linewidth}\raisebox{\dimexpr\versalhoehe-\height\relax}[0pt][0pt]{\normalsize\color{haupttext}%
+      \resizebox{!}{\logoskalierung\logohoehe}{\begin{tikzpicture}\logozeichnung\end{tikzpicture}}}}}\ifblank{Dr. Erika Musterfrau}{\kopfperson{Dr. Erika Musterfrau}}{}\zeilenwechsel{}%
   Beispielweg 42 · 97070 Würzburg\ifblank{+49 931 1234567}{}{\zeilenwechsel{}Tel. +49 931 1234567}\zeilenwechsel{}rechnung@muster-it-consulting.example\par}
 
 \vspace{18mm}

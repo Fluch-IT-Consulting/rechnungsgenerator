@@ -33,6 +33,7 @@
 \usepackage{fancyhdr}
 \usepackage{array}
 \usepackage{etoolbox}  %% \ifblank für die Angaben, die leer sein dürfen
+\usepackage{tikz}      %% das Logo
 
 %% Die Schreibweise der Zahlen (ADR-0021): Komma, Punkt als Tausendertrenner,
 %% ab vier Stellen – sonst stünde 8337,50 ohne Punkt da. Die übrigen
@@ -113,6 +114,25 @@
 %% läuft. Deshalb steht \raggedright unten in jeder Minipage mit Fließtext.
 
 \newlength{\balkenhoehe}
+
+%% Das Logo nennen die Stammdaten (#370, ADR-0012). Der Renderer legt die
+%% Datei neben die .tex, <<LOGO>> ist ihr Name, ohne Logo leer. Sie wird hier
+%% in der Präambel gelesen und definiert:
+%%  - \logozeichnung, Pflicht: den Rumpf einer tikzpicture;
+%%  - \logoskalierung, optional: einen Faktor auf \logohoehe, sonst 1.
+%% Schrift und Farben bringt sie selbst mit; die Vorlage sichert zu, dass TikZ,
+%% fontspec und xcolor geladen sind.
+%%
+%% Den Faktor begrenzt die Vorlage nicht, man sieht ihn am Blatt; die Grenze
+%% steht beim Kopf.
+%%
+%% TikZ und keine Bilddatei: Der Treiber luatex.def von graphicx gibt jedem
+%% über \includegraphics eingebundenen PDF eine Transparenzgruppe mit, und die
+%% verbietet PDF/A-1 (ISO 19005-1, 6.4, siehe #197).
+\newlength{\logohoehe}\setlength{\logohoehe}{12mm}
+\newlength{\versalhoehe}
+\ifblank{<<LOGO>>}{}{\input{<<LOGO>>}}
+\providecommand{\logoskalierung}{1}
 
 %% Abstände als benannte Längen (#51): Wer das Satzbild ändert, fasst diese
 %% Datei an und keine zweite.
@@ -294,7 +314,18 @@ USt-IdNr. <<USTID>> · <<INSTITUT>> · BIC <<BIC>> · IBAN <<IBAN>>}}
 %% Alles rechtsbündig in einem Block, wie auf der Rechnung vor dem Generator:
 %% die Firmierung fett, darunter Anschrift und Kontakt in derselben
 %% Schriftgröße.
-%% Links bleibt frei – der Balken weiter unten ist der einzige Blickfang.
+%% Links steht allenfalls das Logo, sonst bleibt es frei – der Balken weiter
+%% unten ist der einzige Blickfang des Designs.
+%%
+%% Das Logo hängt am Ende der ersten Zeile: Sie endet rechtsbündig am Rand,
+%% der linke Rand liegt von dort genau \linewidth zurück. Der Anfang der Zeile
+%% hinge dagegen an der Länge der Firmierung. Es nimmt keinen Raum ein
+%% (\rlap, [0pt][0pt]), so bleibt der Kopf, wo er ohne Logo steht. Seine
+%% Oberkante liegt auf der Versalhöhe der Firmierung. \normalsize, weil ein
+%% Fragment mit Text sonst in \small gesetzt würde und in prag nicht, und
+%% \color{haupttext}, damit eine Fläche ohne eigene Farbe nicht grau wird.
+%% Nach unten wächst es in den Abstand zum Empfänger – mit \logoskalierung
+%% liegt die Grenze bei gut 2.
 %%
 %% Die Person steht unter der Firmierung nur, wenn es keine Geschäftsführung
 %% gibt: Die steht rechts neben dem Empfänger, und bei einer UG sind beide
@@ -303,7 +334,9 @@ USt-IdNr. <<USTID>> · <<INSTITUT>> · BIC <<BIC>> · IBAN <<IBAN>>}}
 %% Kopf – sie wiederholte nur die Domain der E-Mail. Die E-Mail gehört hierher:
 %% Rückfragen zu einer Rechnung kommen meist schriftlich.
 {\raggedleft\small\color{gedaempft}
-  {\bfseries\color{haupttext}<<FIRMA>>}\ifblank{<<GESCHAEFTSFUEHRUNG>>}{\kopfperson{<<INHABER>>}}{}\zeilenwechsel{}%
+  {\bfseries\color{haupttext}<<FIRMA>>}\ifblank{<<LOGO>>}{}{\settoheight{\versalhoehe}{\bfseries M}%
+    \rlap{\hspace*{-\linewidth}\raisebox{\dimexpr\versalhoehe-\height\relax}[0pt][0pt]{\normalsize\color{haupttext}%
+      \resizebox{!}{\logoskalierung\logohoehe}{\begin{tikzpicture}\logozeichnung\end{tikzpicture}}}}}\ifblank{<<GESCHAEFTSFUEHRUNG>>}{\kopfperson{<<INHABER>>}}{}\zeilenwechsel{}%
   <<STRASSE>> · <<PLZ>> <<ORT>>\ifblank{<<TELEFON>>}{}{\zeilenwechsel{}Tel. <<TELEFON>>}\zeilenwechsel{}<<EMAIL>>\par}
 
 \vspace{18mm}

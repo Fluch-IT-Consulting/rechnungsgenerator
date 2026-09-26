@@ -139,7 +139,9 @@ class PflichtangabenTest : FunSpec({
         listOf(
             Design(
                 name = "helsinki",
-                sellerConfig = sellerConfig,
+                // Jedes Design setzt das Logo; so sieht veraPDF es bei jeder
+                // Rechnungsart.
+                sellerConfig = sellerConfigWith("helsinki", logo = true),
                 dueDateLabel = "Zahlbar ohne Abzug bis",
                 bankHeading = "Bankverbindung",
                 discountHeading = "R A B AT T",
@@ -157,7 +159,6 @@ class PflichtangabenTest : FunSpec({
             ),
             Design(
                 name = "prag",
-                // prag setzt das Logo; so sieht veraPDF es bei jeder Rechnungsart.
                 sellerConfig = sellerConfigWith("prag", logo = true),
                 dueDateLabel = "Die Zahlung ist",
                 bankHeading = null,
@@ -317,10 +318,10 @@ class PflichtangabenTest : FunSpec({
         }
     }
 
-    // Die Stammdaten oben führen eine Geschäftsführung, und prag läuft dort
-    // mit Logo. Zwei Zweige der Vorlagen erreichten so nie ein echtes PDF: der
-    // Name des Inhabers, der nur ohne Geschäftsführung dasteht, und prag
-    // ohne Logo, der Fall ohne Eintrag. Beide hängen an den Stammdaten und
+    // Die Stammdaten oben führen eine Geschäftsführung, und jedes Design läuft
+    // dort mit Logo. Zwei Zweige der Vorlagen erreichten so nie ein echtes PDF:
+    // der Name des Inhabers, der nur ohne Geschäftsführung dasteht, und das
+    // Blatt ohne Logo, der Fall ohne Eintrag. Beide hängen an den Stammdaten und
     // nicht an der Rechnungsart, deshalb genügt die gewöhnliche Rechnung.
     for (design in designs) {
         test("rechnung im Design ${design.name} für ein Einzelunternehmen ohne Logo: gültig, mit dem Namen des Inhabers") {
