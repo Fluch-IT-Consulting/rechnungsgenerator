@@ -7,10 +7,12 @@ import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.assertions.withClue
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import io.kotest.matchers.shouldNotBe
 import io.kotest.matchers.string.shouldContain
 import io.kotest.matchers.string.shouldNotContain
 import org.apache.pdfbox.Loader
 import org.apache.pdfbox.cos.COSName
+import org.apache.pdfbox.pdmodel.common.PDMetadata
 import java.nio.file.Path
 import kotlin.io.path.createTempDirectory
 import kotlin.io.path.readBytes
@@ -105,5 +107,35 @@ class EInvoiceEmbedderTest : FunSpec({
             }
 
         error.message!! shouldContain "kein-pdf.pdf"
+    }
+
+    // mergeXmp sucht pdfaid:part als Element, so wie pdfx es schreibt, und
+    // prüft das nicht selbst. Dass es trotzdem nie ins Leere greift, liegt an
+    // einer Eigenheit von Mustang: load() prüft den Eingang vorher auf
+    // PDF/A-1 und lehnt ein XMP, das anders gebaut ist als das von pdfx,
+    // schon dort ab – mit einer IOException, die embed() übersetzt (#386).
+    // Fällt die Vorprüfung weg, wird dieser Test rot, bevor es ein
+    // Stacktrace wird.
+    test("ein XMP, das anders gebaut ist als das von pdfx, lehnt schon Mustangs Vorprüfung ab") {
+        val asAttributes = dir.resolve("pdfaid-als-attribut.pdf")
+        Loader.loadPDF(source.toFile()).use { document ->
+            val xmp = String(document.documentCatalog.metadata.toByteArray())
+            val rewritten =
+                xmp.replace(
+                    Regex("""<rdf:Description rdf:about="" xmlns:pdfaid="([^"]+)">.*?</rdf:Description>""", RegexOption.DOT_MATCHES_ALL),
+                    """<rdf:Description rdf:about="" xmlns:pdfaid="$1" pdfaid:part="1" pdfaid:conformance="B"/>""",
+                )
+            rewritten shouldNotBe xmp
+            document.documentCatalog.metadata = PDMetadata(document, rewritten.byteInputStream())
+            document.save(asAttributes.toFile())
+        }
+
+        val error =
+            shouldThrow<ToolchainException> {
+                EInvoiceEmbedder.embed(asAttributes, xml, dir.resolve("nichts.pdf"))
+            }
+
+        error.message!! shouldContain "pdfaid-als-attribut.pdf"
+        error.message!! shouldContain "not a valid PDF/A-1"
     }
 })
