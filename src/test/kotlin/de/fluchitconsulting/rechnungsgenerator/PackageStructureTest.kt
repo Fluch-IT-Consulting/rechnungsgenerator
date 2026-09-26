@@ -42,6 +42,7 @@ class PackageStructureTest : FunSpec({
                     "$root.generate.toolchain",
                     "$root.prepayments",
                     "$root.setup",
+                    "$root.xml",
                     "$root.toolchain",
                     "$core.rules",
                     "$core.model",
