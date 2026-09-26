@@ -1,9 +1,9 @@
 # Mitgelieferte Bibliotheken
 
-Das Release-Archiv enthält neben `rechnungsgenerator-<version>.jar` 48 fremde
+Das Release-Archiv enthält neben `rechnungsgenerator-<version>.jar` 49 fremde
 JAR-Dateien. Diese Datei nennt sie mit ihrer Lizenz – Apache-2.0 §4,
 BSD-3-Clause, MIT und MPL-2.0 §3.3 verlangen, dass die Vermerke mit der
-Binärfassung weitergegeben werden, und nur 24 der 48 tragen selbst einen.
+Binärfassung weitergegeben werden, und nur 25 der 49 tragen selbst einen.
 
 Keine dieser Bibliotheken ist verändert. Wo eine Lizenz den Quelltext
 verlangt, genügt deshalb der Verweis auf den Upstream.
@@ -89,8 +89,11 @@ Lizenz vom Eltern-POM `istack-commons`.
 
 <https://opensource.org/licenses/MIT>
 
-- `slf4j-api-2.0.18.jar` – SLF4J API (Copyright (c) 2004-2022 QOS.ch Sarl; der
-  Lizenztext liegt dem JAR als `META-INF/LICENSE.txt` bei)
+- `slf4j-api-2.0.18.jar` – SLF4J API
+- `slf4j-nop-2.0.18.jar` – SLF4J NOP Provider
+
+Copyright (c) 2004-2022 QOS.ch Sarl; der Lizenztext liegt beiden JARs als
+`META-INF/LICENSE.txt` bei.
 
 ## GPL v3 oder höher **oder** MPL 2.0 oder höher
 

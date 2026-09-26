@@ -15,6 +15,7 @@ ktlintCli = "1.8.0"      # ktlint selbst; ohne Eintrag wählte das Plugin 1.5.0 
 konsist = "0.17.3"       # Architekturtests: Schichten der Pakete, Importe (#112)
 verapdf = "1.30.2"       # PDF/A-Prüfung in derselben JVM (#226); dieselbe Fassung, die Homebrew als CLI führt
 mustang = "2.26.0"       # ZUGFeRD: bettet das XML ein und prüft es (ADR-0023)
+slf4j = "2.0.18"         # dieselbe Fassung wie slf4j-api, das Mustang mitbringt
 # Kommt über veraPDF und Mustang, wird aber nie geladen: ein vollständiger Lauf
 # lädt 4455 Klassen, davon 542 aus org.verapdf und keine aus Jackson
 # (nachgemessen in #250; ein ZUGFeRD-Lauf mit Mustang ebenso keine, #363).
@@ -43,6 +44,10 @@ verapdf = { module = "org.verapdf:validation-model-jakarta", version.ref = "vera
 # weil Mustangs Modell keine Absetzung kennt und anders rundet (ADR-0023).
 mustang-library = { module = "org.mustangproject:library", version.ref = "mustang" }
 mustang-validator = { module = "org.mustangproject:validator", version.ref = "mustang" }
+# Mustang protokolliert über SLF4J; ohne Anbindung schriebe SLF4J bei jedem
+# ZUGFeRD-Lauf drei Warnzeilen auf stderr. nop ist die ausdrückliche Antwort
+# "kein Protokoll", und API und Anbindung müssen dieselbe Fassung haben.
+slf4j-nop = { module = "org.slf4j:slf4j-nop", version.ref = "slf4j" }
 # Die Plattform hebt jackson-databind, -core und -annotations gemeinsam an.
 # Einzeln angehoben laufen sie auseinander, und das verträgt Jackson schlecht.
 jackson-bom = { module = "com.fasterxml.jackson:jackson-bom", version.ref = "jackson" }
