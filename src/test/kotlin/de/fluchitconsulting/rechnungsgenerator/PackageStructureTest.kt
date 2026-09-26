@@ -95,6 +95,9 @@ class PackageStructureTest : FunSpec({
             // setup kennt aus dem Kern nur die Wurzel: den Namen ihres
             // Ordners und die Frage, ob oberhalb schon eine liegt (#275).
             "$root.setup" to setOf("$core.model"),
+            // xml liest keine Rechnungsdatei und braucht deshalb nichts aus
+            // dem Kern, nur die Prüfer (#380).
+            "$root.xml" to setOf("$root.toolchain"),
             // Über rules, weil AcceptedInvoice.check die Regeln aufruft. Was
             // die Regeln bauen – InvoiceKind, Deduction –, bleibt dort: Ein
             // Typ wohnt, wo er gebaut wird, sonst zeigte rules nach oben (#304).
