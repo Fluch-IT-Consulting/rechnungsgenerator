@@ -145,8 +145,8 @@ diesem Zuschnitt ist er für keinen der Anlass:
   `com.helger:en16931-cii2ubl` (die Umwandlung nach UBL samt `ph-ubl21` bis
   `ph-ubl24`). ZUGFeRD ist immer CII, und das Blatt setzt LuaLaTeX. Kommt je
   XRechnung in UBL dazu, kehrt `en16931-cii2ubl` zurück.
-- **Die Auslieferung wächst** von 28 auf 49 JARs und von 20,9 auf 31,9 MB.
-  `THIRD-PARTY.md` bekommt 21 Einträge. Jackson bleibt ungeladen, wie #250 es
+- **Die Auslieferung wächst** von 28 auf 50 JARs und von 20,9 auf 31,9 MB.
+  `THIRD-PARTY.md` bekommt 22 Einträge. Jackson bleibt ungeladen, wie #250 es
   gemessen hat.
 - **`erzeuge` ohne Schalter bleibt so schnell wie bisher.** Mit `--zugferd`
   kommen rund 3,5 bis 4,5 s dazu, fast alles für das Schematron.
