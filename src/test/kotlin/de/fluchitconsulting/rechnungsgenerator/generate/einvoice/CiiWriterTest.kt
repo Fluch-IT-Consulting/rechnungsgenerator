@@ -4,6 +4,7 @@ import de.fluchitconsulting.rechnungsgenerator.core.accepted.AcceptedInvoice
 import de.fluchitconsulting.rechnungsgenerator.core.accepted.accepted
 import de.fluchitconsulting.rechnungsgenerator.core.calculation.CalculatedInvoice
 import de.fluchitconsulting.rechnungsgenerator.core.model.InvoiceType
+import de.fluchitconsulting.rechnungsgenerator.core.model.ServicePeriod
 import de.fluchitconsulting.rechnungsgenerator.core.model.SkontoTier
 import de.fluchitconsulting.rechnungsgenerator.core.model.TaxCategory
 import de.fluchitconsulting.rechnungsgenerator.core.model.YamlLoader
@@ -14,13 +15,16 @@ import de.fluchitconsulting.rechnungsgenerator.core.model.testSellerConfig
 import de.fluchitconsulting.rechnungsgenerator.core.rules.Rule
 import de.fluchitconsulting.rechnungsgenerator.core.rules.Subject
 import de.fluchitconsulting.rechnungsgenerator.core.values.Percent
+import de.fluchitconsulting.rechnungsgenerator.core.values.VatId
 import io.kotest.assertions.withClue
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.string.shouldContain
+import io.kotest.matchers.string.shouldNotContain
 import io.kotest.matchers.types.shouldBeInstanceOf
 import org.mustangproject.validator.ZUGFeRDValidator
 import java.nio.file.Path
+import java.time.LocalDate
 import kotlin.io.path.readText
 
 private fun resource(name: String): String = Path.of("src/test/resources/$name").readText()
@@ -63,6 +67,47 @@ class CiiWriterTest : FunSpec({
 
         xml shouldContain "<ram:TypeCode>326</ram:TypeCode>"
         xml.shouldBeValidExtended()
+    }
+
+    test("die freiwilligen Angaben stehen im XML, und es bleibt gültig") {
+        val item =
+            testItem(note = "Nachtrag").copy(
+                servicePeriod = ServicePeriod(start = LocalDate.of(2026, 7, 6), end = LocalDate.of(2026, 7, 10)),
+            )
+        val invoice =
+            testInvoice(
+                items = listOf(item),
+                customerVatId = VatId("DE987654328"),
+                contactPoint = "Petra Beispiel",
+                buyerIdentifier = "K-4711",
+                salesOrderReference = "A-2026-17",
+                introduction = "Für Projekt Nord berechnen wir:",
+            ).copy(note = "Bitte die Rechnungsnummer angeben.")
+        val config =
+            testSellerConfig().copy(phone = "+49 931 1234567", registerCourt = "Würzburg", registerNumber = "HRB 12345")
+
+        val xml = CalculatedInvoice(invoice, config).accepted().xml()
+
+        listOf(
+            "<ram:Content>Für Projekt Nord berechnen wir:</ram:Content>",
+            "<ram:Content>Bitte die Rechnungsnummer angeben.</ram:Content>",
+            "<udt:DateTimeString format=\"102\">20260706</udt:DateTimeString>",
+            "<ram:Description>Registergericht Würzburg</ram:Description>",
+            "<ram:ID>HRB 12345</ram:ID>",
+            "<ram:CompleteNumber>+49 931 1234567</ram:CompleteNumber>",
+            "<ram:ID>K-4711</ram:ID>",
+            "<ram:PersonName>Petra Beispiel</ram:PersonName>",
+            "<ram:ID schemeID=\"VA\">DE987654328</ram:ID>",
+            "<ram:IssuerAssignedID>A-2026-17</ram:IssuerAssignedID>",
+        ).forEach { xml shouldContain it }
+        xml.shouldBeValidExtended()
+    }
+
+    test("ohne Registerangaben steht nichts davon im XML") {
+        val xml = CalculatedInvoice(testInvoice(), testSellerConfig()).accepted().xml()
+
+        xml shouldNotContain "Registergericht"
+        xml shouldNotContain "ram:SpecifiedLegalOrganization"
     }
 
     context("was noch nicht geht, bricht ab statt still zu fehlen") {

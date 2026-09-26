@@ -4,6 +4,7 @@ import de.fluchitconsulting.rechnungsgenerator.core.accepted.AcceptedInvoice
 import de.fluchitconsulting.rechnungsgenerator.core.calculation.CalculatedInvoice
 import de.fluchitconsulting.rechnungsgenerator.core.calculation.CalculatedLine
 import de.fluchitconsulting.rechnungsgenerator.core.model.Address
+import de.fluchitconsulting.rechnungsgenerator.core.model.ServicePeriod
 import de.fluchitconsulting.rechnungsgenerator.core.model.TaxCategory
 import de.fluchitconsulting.rechnungsgenerator.core.rules.Finding
 import de.fluchitconsulting.rechnungsgenerator.core.rules.InvoiceKind
@@ -92,6 +93,13 @@ object CiiWriter {
                 element("ram:ID", calculated.invoice.number)
                 element("ram:TypeCode", calculated.invoice.type.code)
                 date("ram:IssueDateTime", calculated.invoice.issueDate)
+                // Einleitung und Bemerkung der Rechnungsdatei, BT-22. Nicht der
+                // Schlusssatz aus den Stammdaten, den die Bemerkung auf dem
+                // Blatt ersetzt: Er ist eine Höflichkeit und keine Angabe zur
+                // Rechnung.
+                listOfNotNull(calculated.invoice.introduction, calculated.invoice.note).forEach { note ->
+                    element("ram:IncludedNote") { element("ram:Content", note) }
+                }
             }
             element("rsm:SupplyChainTradeTransaction") {
                 calculated.lines.forEachIndexed { index, line -> lineItem(index, line) }
@@ -133,6 +141,7 @@ object CiiWriter {
                     element("ram:CategoryCode", item.taxCategory.code)
                     element("ram:RateApplicablePercent", percent(item.vatRate))
                 }
+                item.servicePeriod?.let { period(it) }
                 element("ram:SpecifiedTradeSettlementLineMonetarySummation") {
                     element("ram:LineTotalAmount", amount(line.net))
                 }
@@ -147,6 +156,20 @@ object CiiWriter {
             customer.buyerReference?.let { element("ram:BuyerReference", it) }
             element("ram:SellerTradeParty") {
                 element("ram:Name", config.companyName)
+                // Die Registernummer allein ist nicht eindeutig, erst mit dem
+                // Gericht; BT-30 hat aber nur ein Feld, das Gericht steht
+                // deshalb in BT-33 und so wie im Fuß des Blatts.
+                config.registerCourt?.let { element("ram:Description", "Registergericht $it") }
+                config.registerNumber?.let { number ->
+                    element("ram:SpecifiedLegalOrganization") { element("ram:ID", number) }
+                }
+                element("ram:DefinedTradeContact") {
+                    element("ram:PersonName", config.ownerName)
+                    config.phone?.let { phone ->
+                        element("ram:TelephoneUniversalCommunication") { element("ram:CompleteNumber", phone) }
+                    }
+                    element("ram:EmailURIUniversalCommunication") { element("ram:URIID", config.email) }
+                }
                 address(config.address)
                 element("ram:URIUniversalCommunication") {
                     element("ram:URIID", config.email, "schemeID" to "EM")
@@ -161,8 +184,18 @@ object CiiWriter {
                 }
             }
             element("ram:BuyerTradeParty") {
+                customer.buyerIdentifier?.let { element("ram:ID", it) }
                 element("ram:Name", customer.name)
+                customer.contactPoint?.let { contact ->
+                    element("ram:DefinedTradeContact") { element("ram:PersonName", contact) }
+                }
                 address(customer.address)
+                customer.vatId?.let { vatId ->
+                    element("ram:SpecifiedTaxRegistration") { element("ram:ID", vatId.value, "schemeID" to "VA") }
+                }
+            }
+            calculated.invoice.salesOrderReference?.let { reference ->
+                element("ram:SellerOrderReferencedDocument") { element("ram:IssuerAssignedID", reference) }
             }
         }
     }
@@ -203,10 +236,7 @@ object CiiWriter {
                     element("ram:RateApplicablePercent", percent(group.rate))
                 }
             }
-            element("ram:BillingSpecifiedPeriod") {
-                date("ram:StartDateTime", servicePeriod.start)
-                date("ram:EndDateTime", servicePeriod.end)
-            }
+            period(servicePeriod)
             calculated.dueDate?.let { dueDate ->
                 element("ram:SpecifiedTradePaymentTerms") {
                     date("ram:DueDateDateTime", dueDate)
@@ -219,6 +249,13 @@ object CiiWriter {
                 element("ram:GrandTotalAmount", amount(calculated.grossTotal))
                 element("ram:DuePayableAmount", amount(calculated.remainingAmount))
             }
+        }
+    }
+
+    private fun XmlElements.period(period: ServicePeriod) {
+        element("ram:BillingSpecifiedPeriod") {
+            date("ram:StartDateTime", period.start)
+            date("ram:EndDateTime", period.end)
         }
     }
 
