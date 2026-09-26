@@ -558,6 +558,22 @@ class GenerateCommandTest : FunSpec({
             error.message!! shouldContain "Die Stammdaten nennen ein Logo"
         }
 
+        test("ein ungültiges XML der E-Rechnung nennt das Logo nicht, denn daran kann es nicht liegen") {
+            val error =
+                shouldThrow<ToolchainException> {
+                    generate(
+                        FakeTypesetter(einvoiceFailure = "Das XML der E-Rechnung ist ungültig."),
+                        "--zugferd",
+                        "-o",
+                        target("logo-xml-ungueltig"),
+                        sellerConfigFile = sellerConfigWithLogo("prag"),
+                    )
+                }
+
+            error.message!! shouldContain "Das XML der E-Rechnung ist ungültig."
+            error.message!! shouldNotContain "Logo"
+        }
+
         test("ohne Logo in den Stammdaten nennt die Meldung keines") {
             val error =
                 shouldThrow<ToolchainException> {

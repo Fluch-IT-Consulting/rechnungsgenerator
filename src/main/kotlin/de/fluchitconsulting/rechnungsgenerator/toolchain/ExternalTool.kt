@@ -9,8 +9,13 @@ import kotlin.io.path.isExecutable
 import kotlin.io.path.readText
 import kotlin.time.Duration
 
-/** Wird geworfen, wenn ein externes Werkzeug fehlt, abstürzt oder hängen bleibt. */
-class ToolchainException(message: String, cause: Throwable? = null) : Exception(message, cause)
+/**
+ * Wird geworfen, wenn ein externes Werkzeug fehlt, abstürzt oder hängen bleibt.
+ *
+ * Offen, damit ein Kommando ein Scheitern, das es anders erklären muss, am
+ * Typ erkennt und nicht am Wortlaut (#386).
+ */
+open class ToolchainException(message: String, cause: Throwable? = null) : Exception(message, cause)
 
 /**
  * Was ein Programmlauf hinterlassen hat.

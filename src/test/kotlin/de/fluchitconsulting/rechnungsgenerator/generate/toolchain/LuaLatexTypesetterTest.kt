@@ -1,7 +1,6 @@
 package de.fluchitconsulting.rechnungsgenerator.generate.toolchain
 
 import de.fluchitconsulting.rechnungsgenerator.toolchain.BuiltInPdfAValidator
-import de.fluchitconsulting.rechnungsgenerator.toolchain.ToolchainException
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.collections.shouldBeEmpty
@@ -28,8 +27,10 @@ class LuaLatexTypesetterTest : FunSpec({
         val workDir = createTempDirectory("rechnungsgenerator-test")
         val sources = PdfSources(tex = "", xmpMetadata = "", creationDate = LocalDate.of(2026, 8, 14), einvoice = xml.toByteArray())
 
+        // Der eigene Typ und nicht bloß ToolchainException: An ihm erkennt
+        // erzeuge, dass kein Logo schuld sein kann (#386).
         val error =
-            shouldThrow<ToolchainException> {
+            shouldThrow<InvalidEInvoiceException> {
                 LuaLatexTypesetter(BuiltInPdfAValidator).typeset(workDir, "rechnung", sources)
             }
 

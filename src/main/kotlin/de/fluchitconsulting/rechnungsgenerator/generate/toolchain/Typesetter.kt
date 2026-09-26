@@ -115,17 +115,28 @@ class LuaLatexTypesetter(private val validator: PdfAValidator) : Typesetter {
     /**
      * Ein Fehler im XML ist kein Urteil über die Rechnung – die hat ihre
      * Prüfung schon bestanden –, sondern eine Lücke im Generator, der das XML
-     * geschrieben hat. Deshalb eine [ToolchainException] und kein Ergebnis
-     * wie beim PDF/A. Warnungen brechen nicht ab: Welche das XML tragen darf,
-     * hält `CiiWriterTest` fest.
+     * geschrieben hat. Deshalb eine [InvalidEInvoiceException] und kein
+     * Ergebnis wie beim PDF/A. Warnungen brechen nicht ab: Welche das XML
+     * tragen darf, hält `CiiWriterTest` fest.
      */
     private fun checkEInvoice(xml: ByteArray) {
         val result = EInvoiceValidator.validate(xml)
         if (!result.valid) {
-            throw ToolchainException(
+            throw InvalidEInvoiceException(
                 "Das XML der E-Rechnung ist ungültig. Das ist ein Fehler des Generators, nicht der Rechnung:\n" +
                     result.errors.joinToString("\n") { "  $it" },
             )
         }
     }
 }
+
+/**
+ * Das XML der E-Rechnung hat Mustangs Prüfung nicht bestanden, und gesetzt
+ * wurde noch nichts.
+ *
+ * Ein eigener Typ, weil das Kommando diesen Fehler anders erklärt als einen
+ * gescheiterten Satz: Am Satz kann ein Logo aus den Stammdaten schuld sein,
+ * am XML nie, und ein Hinweis darauf schickte die Benutzerin zur falschen
+ * Datei (#386).
+ */
+class InvalidEInvoiceException(message: String) : ToolchainException(message)
