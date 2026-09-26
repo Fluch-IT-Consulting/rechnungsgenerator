@@ -85,9 +85,25 @@ class XmlCommand(
     private fun pdfAReason(identification: PdfAIdentification?): String? {
         val profile = identification?.profile?.takeIf { it.part == 3 }
         return when {
-            identification == null -> "Es gibt sich in seinem XMP nicht als PDF/A aus. $PDFA_3"
-            profile == null -> "Es gibt sich als ${identification.label} aus. $PDFA_3"
-            else -> BuiltInPdfAValidator.validate(pdf, profile).takeUnless { it.valid }?.describe()
+            identification == null -> {
+                "Es gibt sich in seinem XMP nicht als PDF/A aus. $PDFA_3"
+            }
+            // Ist der Teil 3, liegt es an der Stufe. Der Satz der übrigen
+            // Fälle, eine E-Rechnung sei ein PDF/A-3, widerspräche hier der
+            // Angabe, die gerade genannt wurde (#386).
+            profile == null && identification.part == "3" -> {
+                val claimed =
+                    identification.conformance
+                        ?.let { "Es gibt sich als ${identification.label} aus, eine Konformitätsstufe, die PDF/A-3 nicht kennt." }
+                        ?: "Es gibt sich als PDF/A-3 aus, nennt aber keine Konformitätsstufe."
+                "$claimed $PDFA_3_LEVELS"
+            }
+            profile == null -> {
+                "Es gibt sich als ${identification.label} aus. $PDFA_3"
+            }
+            else -> {
+                BuiltInPdfAValidator.validate(pdf, profile).takeUnless { it.valid }?.describe()
+            }
         }
     }
 
@@ -110,5 +126,8 @@ class XmlCommand(
 
     private companion object {
         private const val PDFA_3 = "Eine E-Rechnung nach ZUGFeRD ist ein PDF/A-3."
+
+        // Die drei Stufen, die ISO 19005-3 kennt.
+        private const val PDFA_3_LEVELS = "Eine E-Rechnung nach ZUGFeRD ist ein PDF/A-3a, -3b oder -3u."
     }
 }

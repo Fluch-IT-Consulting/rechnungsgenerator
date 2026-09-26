@@ -79,6 +79,31 @@ class XmlCommandTest : FunSpec({
         result.err shouldNotContain "verletzt:"
     }
 
+    // Teil 3 stimmt, die Stufe nicht: Die Meldung nennt die Stufe und
+    // widerspricht sich nicht mit "gibt sich als PDF/A-3 aus … ist ein
+    // PDF/A-3" (#386).
+    test("ein PDF/A-3 ohne Konformitätsstufe nennt die fehlende Stufe") {
+        val pdf = writePdf(dir.resolve("ohne-stufe.pdf"), mapOf("factur-x.xml" to xml), xmpClaiming(3, null))
+
+        val result = runProgram("xml", pdf.toString())
+
+        result.exitCode shouldBe 1
+        result.out.size shouldBe 0
+        result.err shouldContain "Es gibt sich als PDF/A-3 aus, nennt aber keine Konformitätsstufe."
+        result.err shouldContain "Eine E-Rechnung nach ZUGFeRD ist ein PDF/A-3a, -3b oder -3u."
+    }
+
+    test("ein PDF/A-3 mit unbekannter Konformitätsstufe nennt sie") {
+        val pdf = writePdf(dir.resolve("unbekannte-stufe.pdf"), mapOf("factur-x.xml" to xml), xmpClaiming(3, "X"))
+
+        val result = runProgram("xml", pdf.toString())
+
+        result.exitCode shouldBe 1
+        result.out.size shouldBe 0
+        result.err shouldContain "Es gibt sich als PDF/A-3x aus, eine Konformitätsstufe, die PDF/A-3 nicht kennt."
+        result.err shouldContain "Eine E-Rechnung nach ZUGFeRD ist ein PDF/A-3a, -3b oder -3u."
+    }
+
     test("ein PDF, das sich als PDF/A-3u ausgibt, es aber nicht ist, fällt beim PDF/A durch") {
         val pdf = writePdf(dir.resolve("kein-pdfa.pdf"), mapOf("factur-x.xml" to xml), xmpClaiming(3, "U"))
 
