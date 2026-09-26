@@ -76,8 +76,9 @@ eigenen Abschnitt.
   (`CalculatedInvoice.fileBaseName`) und damit in der DocumentID (ADR-0005).
   Entsteht der Jobname aus dem Schlüssel der Datei, braucht er keine Sprache.
 - **Die Landzeile der Anschrift** (#374): Der ausgeschriebene Name des Landes
-  steht in der Sprache der Rechnung. #374 gehört deshalb mit dieser Frage
-  zusammen oder hinter sie.
+  steht in der Sprache der Rechnung. #374 kam vorher und schreibt ihn auf
+  Deutsch aus, über `Locale.getDisplayCountry(Locale.GERMAN)` in
+  `MetadataBlocks`. Dort wird aus `Locale.GERMAN` die Sprache der Rechnung.
 
 ## Was sie nicht berührt
 
