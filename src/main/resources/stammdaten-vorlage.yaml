@@ -69,7 +69,7 @@ bank:
 #design: helsinki
 
 # Ein Logo als TikZ-Fragment, sein Pfad relativ zu dieser Datei (ADR-0012).
-# Ohne Eintrag keines; gesetzt wird es nur vom Design prag.
+# Ohne Eintrag keines; beide Designs setzen es oben links.
 # Beispiel: logo.tex
 #logo:
 
