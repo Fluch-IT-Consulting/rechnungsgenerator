@@ -1,4 +1,4 @@
-package de.fluchitconsulting.rechnungsgenerator.generate.toolchain
+package de.fluchitconsulting.rechnungsgenerator.toolchain
 
 import java.nio.file.Path
 import kotlin.io.path.writeText
@@ -9,7 +9,7 @@ import kotlin.time.Duration
  *
  * Er benimmt sich wie das Werkzeug und nicht wie ein Rückgabewert: Ein Lauf
  * hinterlässt die Dateien, die LuaLaTeX hinterlassen würde. Das ist der Grund,
- * warum [LatexCompiler] fürs Testen nicht umgebaut werden musste – das
+ * warum `LatexCompiler` fürs Testen nicht umgebaut werden musste – das
  * Protokoll ist eine Datei, und dass bei einem harten Abbruch keine entsteht,
  * ist ein eigener Fall, den nur ein Adapter nachstellen kann, der Dateien
  * schreiben *darf*.

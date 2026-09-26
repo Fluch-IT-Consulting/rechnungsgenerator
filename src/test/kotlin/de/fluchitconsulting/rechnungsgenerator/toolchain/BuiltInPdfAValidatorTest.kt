@@ -1,4 +1,4 @@
-package de.fluchitconsulting.rechnungsgenerator.generate.toolchain
+package de.fluchitconsulting.rechnungsgenerator.toolchain
 
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.assertions.withClue

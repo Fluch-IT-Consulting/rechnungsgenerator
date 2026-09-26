@@ -1,5 +1,11 @@
 package de.fluchitconsulting.rechnungsgenerator.generate.toolchain
 
+import de.fluchitconsulting.rechnungsgenerator.toolchain.EInvoiceValidator
+import de.fluchitconsulting.rechnungsgenerator.toolchain.ExternalTool
+import de.fluchitconsulting.rechnungsgenerator.toolchain.PdfAValidator
+import de.fluchitconsulting.rechnungsgenerator.toolchain.ToolchainException
+import de.fluchitconsulting.rechnungsgenerator.toolchain.ValidationResult
+import de.fluchitconsulting.rechnungsgenerator.toolchain.requireAll
 import java.nio.file.Path
 
 /**
@@ -97,12 +103,29 @@ class LuaLatexTypesetter(private val validator: PdfAValidator) : Typesetter {
         sources: PdfSources,
     ): TypesetPdf {
         // Vor dem Satz: Ein ungültiges XML soll gar kein PDF ergeben.
-        sources.einvoice?.let(EInvoiceValidator::check)
+        sources.einvoice?.let(::checkEInvoice)
         val typeset = compiler.compile(workingDir, jobName, sources)
         val pdf =
             sources.einvoice?.let { xml ->
                 workingDir.resolve("$jobName-zugferd.pdf").also { EInvoiceEmbedder.embed(typeset, xml, it) }
             } ?: typeset
         return TypesetPdf(pdf, validator.validate(pdf, sources.pdfaProfile))
+    }
+
+    /**
+     * Ein Fehler im XML ist kein Urteil über die Rechnung – die hat ihre
+     * Prüfung schon bestanden –, sondern eine Lücke im Generator, der das XML
+     * geschrieben hat. Deshalb eine [ToolchainException] und kein Ergebnis
+     * wie beim PDF/A. Warnungen brechen nicht ab: Welche das XML tragen darf,
+     * hält `CiiWriterTest` fest.
+     */
+    private fun checkEInvoice(xml: ByteArray) {
+        val result = EInvoiceValidator.validate(xml)
+        if (!result.valid) {
+            throw ToolchainException(
+                "Das XML der E-Rechnung ist ungültig. Das ist ein Fehler des Generators, nicht der Rechnung:\n" +
+                    result.errors.joinToString("\n") { "  $it" },
+            )
+        }
     }
 }
