@@ -137,16 +137,29 @@ configurations.named("ktlint") {
     }
 }
 
+// Zwei Funktionen von Mustang, die der Generator nie aufruft: FOP samt Batik
+// setzt eine Sichtfassung der E-Rechnung, en16931-cii2ubl wandelt nach UBL.
+// Das Blatt setzt LuaLaTeX, und ZUGFeRD ist immer CII. Ausgeschlossen an
+// implementation und nicht erst am runtimeClasspath, damit die Tests mit dem
+// Klassenpfad laufen, der ausgeliefert wird: Fehlt doch eine Klasse, soll der
+// Build rot werden. Am Prüfer selbst wird nichts gekürzt (Nachtrag zu ADR-0014).
+configurations.implementation {
+    exclude(group = "org.apache.xmlgraphics")
+    exclude(group = "com.helger", module = "en16931-cii2ubl")
+}
+
 dependencies {
     implementation(libs.kaml)
     implementation(libs.clikt)
     implementation(libs.verapdf) // PDF/A-Prüfung in derselben JVM statt als Unterprozess (#226)
+    implementation(libs.mustang.library) // ZUGFeRD: XML ins PDF/A-3u einbetten (ADR-0023)
+    implementation(libs.mustang.validator) // ZUGFeRD: das XML gegen Schema und Schematron prüfen
 
-    // veraPDF bringt Jackson 2.21.1 mit, und darauf liegen elf Advisories –
-    // zwei davon verlangen 2.21.5. Angehoben wird auf die neueste Fassung
-    // derselben Reihe, gegen die veraPDF gebaut ist; 2.22 wäre ein Minor-Sprung
-    // in einer Bibliothek, die wir selbst nicht aufrufen. Anders als logback
-    // unten steht Jackson im ausgelieferten Programm, nicht nur bei ktlint.
+    // veraPDF und Mustang bringen Jackson mit, veraPDF in einer Fassung mit
+    // elf Advisories (#230). Die Plattform hebt alle Teile gemeinsam auf die
+    // Fassung im Versionskatalog; warum es diese ist, steht dort. Anders als
+    // logback oben steht Jackson im ausgelieferten Programm, nicht nur bei
+    // ktlint.
     implementation(platform(libs.jackson.bom))
 
     testImplementation(libs.kotest.runner) // Kotest läuft als JUnit-Platform-Engine

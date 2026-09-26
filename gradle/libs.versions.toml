@@ -14,12 +14,15 @@ ktlintPlugin = "14.2.0"  # Gradle-Plugin; welche ktlint-CLI es startet, sagt ktl
 ktlintCli = "1.8.0"      # ktlint selbst; ohne Eintrag wählte das Plugin 1.5.0 (#159)
 konsist = "0.17.3"       # Architekturtests: Schichten der Pakete, Importe (#112)
 verapdf = "1.30.2"       # PDF/A-Prüfung in derselben JVM (#226); dieselbe Fassung, die Homebrew als CLI führt
-# Kommt über veraPDF, wird aber nie geladen: ein vollständiger Lauf lädt 4455
-# Klassen, davon 542 aus org.verapdf und keine aus Jackson (nachgemessen in
-# #250). Angehoben wegen elf Advisories (#230) – dort auf die Reihe 2.21
-# festgelegt, weil ein Minor-Sprung Verhalten ändert. Genau das trägt hier
-# nicht, und die beiden PDF/A-Prüfer urteilen mit 2.22.1 weiterhin gleich.
-jackson = "2.22.1"
+mustang = "2.26.0"       # ZUGFeRD: bettet das XML ein und prüft es (ADR-0023)
+# Kommt über veraPDF und Mustang, wird aber nie geladen: ein vollständiger Lauf
+# lädt 4455 Klassen, davon 542 aus org.verapdf und keine aus Jackson
+# (nachgemessen in #250; ein ZUGFeRD-Lauf mit Mustang ebenso keine, #363).
+# Angehoben wegen elf Advisories (#230) – dort auf die Reihe 2.21 festgelegt,
+# weil ein Minor-Sprung Verhalten ändert. Genau das trägt hier nicht, und die
+# beiden PDF/A-Prüfer urteilen mit 2.22.2 weiterhin gleich. 2.22.2 und nicht
+# älter, weil Mustang sie verlangt und die Plattform sonst still überstimmt wäre.
+jackson = "2.22.2"
 
 [libraries]
 kaml = { module = "com.charleskorn.kaml:kaml", version.ref = "kaml" }
@@ -36,6 +39,10 @@ konsist = { module = "com.lemonappdev:konsist", version.ref = "konsist" }
 # Familien nebeneinander dieselben Klassen trügen (ADR-0023).
 # Lizenz: GPLv3+ oder MPLv2+ nach Wahl – wir wählen MPL-2.0 (#226).
 verapdf = { module = "org.verapdf:validation-model-jakarta", version.ref = "verapdf" }
+# Mustang nur zum Einbetten und Prüfen; das XML schreibt der Generator selbst,
+# weil Mustangs Modell keine Absetzung kennt und anders rundet (ADR-0023).
+mustang-library = { module = "org.mustangproject:library", version.ref = "mustang" }
+mustang-validator = { module = "org.mustangproject:validator", version.ref = "mustang" }
 # Die Plattform hebt jackson-databind, -core und -annotations gemeinsam an.
 # Einzeln angehoben laufen sie auseinander, und das verträgt Jackson schlecht.
 jackson-bom = { module = "com.fasterxml.jackson:jackson-bom", version.ref = "jackson" }
