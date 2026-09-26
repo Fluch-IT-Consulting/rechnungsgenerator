@@ -13,7 +13,6 @@ import de.fluchitconsulting.rechnungsgenerator.core.calculation.CalculatedInvoic
 import de.fluchitconsulting.rechnungsgenerator.core.model.Root
 import de.fluchitconsulting.rechnungsgenerator.core.model.YamlLoader
 import de.fluchitconsulting.rechnungsgenerator.core.rules.RejectedException
-import de.fluchitconsulting.rechnungsgenerator.generate.einvoice.CiiResult
 import de.fluchitconsulting.rechnungsgenerator.generate.einvoice.CiiWriter
 import de.fluchitconsulting.rechnungsgenerator.generate.render.InvoiceRenderer
 import de.fluchitconsulting.rechnungsgenerator.generate.toolchain.BuiltInPdfAValidator
@@ -128,18 +127,7 @@ class GenerateCommand(
                 is Verdict.Accepted -> verdict.invoice
                 is Verdict.Rejected -> throw RejectedException(verdict.aborts)
             }
-        // Vor dem Ziel und vor dem Satz, wie die Ablehnung: Was der Writer
-        // noch nicht schreibt, bricht mit denselben Worten ab wie ein Befund
-        // der Prüfung, statt im XML still zu fehlen.
-        val einvoice =
-            if (zugferd) {
-                when (val result = CiiWriter.write(acceptedInvoice)) {
-                    is CiiResult.Written -> result.xml.toByteArray()
-                    is CiiResult.NotYetPossible -> throw RejectedException(result.findings)
-                }
-            } else {
-                null
-            }
+        val einvoice = if (zugferd) CiiWriter.write(acceptedInvoice).toByteArray() else null
 
         // Ob die Nummer einen Jobnamen ergibt, hat die Prüfung schon gesagt
         // (#150); eine angenommene Rechnung hat immer einen. Mit der Zieldatei

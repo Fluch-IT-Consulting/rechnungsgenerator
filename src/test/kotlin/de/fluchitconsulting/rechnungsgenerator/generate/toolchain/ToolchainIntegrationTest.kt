@@ -4,7 +4,6 @@ import de.fluchitconsulting.rechnungsgenerator.core.accepted.accepted
 import de.fluchitconsulting.rechnungsgenerator.core.calculation.CalculatedInvoice
 import de.fluchitconsulting.rechnungsgenerator.core.model.YamlLoader
 import de.fluchitconsulting.rechnungsgenerator.core.values.Design
-import de.fluchitconsulting.rechnungsgenerator.generate.einvoice.CiiResult
 import de.fluchitconsulting.rechnungsgenerator.generate.einvoice.CiiWriter
 import de.fluchitconsulting.rechnungsgenerator.generate.render.InvoiceRenderer
 import io.kotest.assertions.throwables.shouldThrow
@@ -92,7 +91,7 @@ class ToolchainIntegrationTest : FunSpec({
         val invoice = YamlLoader.loadInvoice(Path.of("src/test/resources/rechnung.yaml"))
         val config = YamlLoader.loadSellerConfig(Path.of("src/test/resources/stammdaten.yaml"))
         val accepted = CalculatedInvoice(invoice, config).accepted()
-        val xml = (CiiWriter.write(accepted) as CiiResult.Written).xml.toByteArray()
+        val xml = CiiWriter.write(accepted).toByteArray()
         val rendered = InvoiceRenderer.render(accepted).sources
         val sources = PdfSources(rendered.tex, rendered.xmpMetadata, rendered.creationDate, rendered.files, xml)
         val typeset = LuaLatexTypesetter(BuiltInPdfAValidator).typeset(createTempDirectory(workDir, name), accepted.fileBaseName, sources)

@@ -7,12 +7,11 @@ import de.fluchitconsulting.rechnungsgenerator.core.calculation.CalculatedLine
 import de.fluchitconsulting.rechnungsgenerator.core.calculation.VatGroup
 import de.fluchitconsulting.rechnungsgenerator.core.model.Address
 import de.fluchitconsulting.rechnungsgenerator.core.model.CancelledInvoice
+import de.fluchitconsulting.rechnungsgenerator.core.model.InvoiceType
 import de.fluchitconsulting.rechnungsgenerator.core.model.ServicePeriod
 import de.fluchitconsulting.rechnungsgenerator.core.model.TaxCategory
-import de.fluchitconsulting.rechnungsgenerator.core.rules.Finding
+import de.fluchitconsulting.rechnungsgenerator.core.rules.Deduction
 import de.fluchitconsulting.rechnungsgenerator.core.rules.InvoiceKind
-import de.fluchitconsulting.rechnungsgenerator.core.rules.Rule
-import de.fluchitconsulting.rechnungsgenerator.core.rules.Subject
 import de.fluchitconsulting.rechnungsgenerator.core.values.Discount
 import de.fluchitconsulting.rechnungsgenerator.core.values.Money
 import de.fluchitconsulting.rechnungsgenerator.core.values.Percent
@@ -28,6 +27,11 @@ import java.time.format.DateTimeFormatter
  * Cent wäre dort ein Fehler der Rechnung und nicht der Darstellung.
  *
  * Die Reihenfolge der Elemente ist die des Schemas, nicht die des Blatts.
+ *
+ * Was eine Rechnungsart zusätzlich trägt – Vereinnahmung, Ursprungsrechnung,
+ * abgesetzte Abschläge –, fragt der Writer die [InvoiceKind], je in einem
+ * `when` ohne `else`: Eine neue Art muss dort entscheiden, was sie trägt
+ * (ADR-0008).
  */
 object CiiWriter {
     private const val EXTENDED = "urn:cen.eu:en16931:2017#conformant#urn:factur-x.eu:1p0:extended"
@@ -40,39 +44,7 @@ object CiiWriter {
             "udt" to "urn:un:unece:uncefact:data:standard:UnqualifiedDataType:100",
         )
 
-    fun write(acceptedInvoice: AcceptedInvoice): CiiResult {
-        val missing = notYetPossible(acceptedInvoice)
-        return if (missing.isEmpty()) {
-            CiiResult.Written(xml(acceptedInvoice))
-        } else {
-            CiiResult.NotYetPossible(missing)
-        }
-    }
-
-    /**
-     * Was diese Rechnung verlangt und der Writer noch nicht schreibt.
-     *
-     * Das `when` über die Rechnungsart hat kein `else`, wie im Renderer: Eine
-     * neue Art muss hier entscheiden, ob der Writer sie kann (ADR-0008).
-     */
-    private fun notYetPossible(acceptedInvoice: AcceptedInvoice): List<Finding> =
-        when (acceptedInvoice.kind) {
-            is InvoiceKind.Ordinary, is InvoiceKind.PrepaymentInvoice, is InvoiceKind.Cancellation -> {
-                emptyList()
-            }
-            is InvoiceKind.FinalInvoice -> {
-                val documentName = acceptedInvoice.calculated.invoice.type.documentName
-                listOf(
-                    Finding(
-                        Rule.ZUGFERD_NOCH_NICHT_MOEGLICH,
-                        Subject.WholeInvoice,
-                        "Eine $documentName lässt sich noch nicht als ZUGFeRD erzeugen.",
-                    ),
-                )
-            }
-        }
-
-    private fun xml(acceptedInvoice: AcceptedInvoice): String {
+    fun write(acceptedInvoice: AcceptedInvoice): String {
         val calculated = acceptedInvoice.calculated
         return indentedXml("rsm:CrossIndustryInvoice", namespaces) {
             element("rsm:ExchangedDocumentContext") {
@@ -270,6 +242,7 @@ object CiiWriter {
 
     private fun XmlElements.settlement(acceptedInvoice: AcceptedInvoice) {
         val calculated = acceptedInvoice.calculated
+        val deductions = deductionsOf(acceptedInvoice)
         val bank = calculated.config.bank
         val servicePeriod = calculated.invoice.servicePeriod
         element("ram:ApplicableHeaderTradeSettlement") {
@@ -322,6 +295,9 @@ object CiiWriter {
                 element("ram:TaxBasisTotalAmount", amount(calculated.netTotal))
                 element("ram:TaxTotalAmount", amount(calculated.vatTotal), "currencyID" to "EUR")
                 element("ram:GrandTotalAmount", amount(calculated.grossTotal))
+                if (deductions.isNotEmpty()) {
+                    element("ram:TotalPrepaidAmount", amount(calculated.prepaymentTotal))
+                }
                 element("ram:DuePayableAmount", amount(calculated.remainingAmount))
             }
             cancelled(acceptedInvoice)?.let { cancelled ->
@@ -330,17 +306,50 @@ object CiiWriter {
                     date("ram:FormattedIssueDateTime", cancelled.issueDate, "qdt:DateTimeString")
                 }
             }
+            deductions.forEach { advancePayment(it) }
         }
     }
+
+    /**
+     * Ein abgesetzter Abschlag (ADR-0002), Feld für Feld wie im Block
+     * `abschlaege` der Schlussrechnung (ADR-0001): gezahlter Betrag, Tag der
+     * Vereinnahmung, je Steueranteil Kategorie, Satz, Netto und Steuer, und
+     * die Abschlagsrechnung, auf die er zurückgeht.
+     */
+    private fun XmlElements.advancePayment(deduction: Deduction) {
+        val prepayment = deduction.deducted.prepayment
+        element("ram:SpecifiedAdvancePayment") {
+            element("ram:PaidAmount", amount(deduction.deducted.gross))
+            date("ram:FormattedReceivedDateTime", deduction.receivedOn, "qdt:DateTimeString")
+            prepayment.taxShares.forEach { share ->
+                element("ram:IncludedTradeTax") {
+                    element("ram:CalculatedAmount", amount(share.vat))
+                    element("ram:TypeCode", "VAT")
+                    element("ram:BasisAmount", amount(share.net))
+                    element("ram:CategoryCode", share.taxCategory.code)
+                    element("ram:RateApplicablePercent", percent(share.vatRate))
+                }
+            }
+            element("ram:InvoiceSpecifiedReferencedDocument") {
+                element("ram:IssuerAssignedID", prepayment.invoiceNumber)
+                element("ram:TypeCode", InvoiceType.PREPAYMENT.code)
+                date("ram:FormattedIssueDateTime", prepayment.issueDate, "qdt:DateTimeString")
+            }
+        }
+    }
+
+    /** Die abgesetzten Abschläge einer Schlussrechnung, bei jeder anderen Art keine. */
+    private fun deductionsOf(acceptedInvoice: AcceptedInvoice): List<Deduction> =
+        when (val kind = acceptedInvoice.kind) {
+            is InvoiceKind.FinalInvoice -> kind.deductions
+            is InvoiceKind.Ordinary, is InvoiceKind.PrepaymentInvoice, is InvoiceKind.Cancellation -> emptyList()
+        }
 
     /**
      * Der Tag der Vereinnahmung eines Abschlags (§14 Abs. 4 Nr. 6 UStG). Im
      * XML ist das der Steuerzeitpunkt (BT-7): Die Steuer auf eine Anzahlung
      * entsteht mit ihrem Eingang. Steht er noch nicht fest, fehlt er auch
      * hier, wie auf dem Blatt.
-     *
-     * Die `when` hier und in [cancelled] haben kein `else`: Eine neue Art
-     * entscheidet, ob sie das trägt (ADR-0008).
      */
     private fun receivedOn(acceptedInvoice: AcceptedInvoice): LocalDate? =
         when (val kind = acceptedInvoice.kind) {
