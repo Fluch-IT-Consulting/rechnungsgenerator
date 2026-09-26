@@ -190,6 +190,13 @@ PDF/A-Prüfung über veraPDF.
   Vorlage, die die Grundlage lädt, ein Eintrag in `Design`, eine
   Vergleichsdatei und eine Zeile im Pflichtangaben-Netz.
 
+  Die **Akzentfarbe** (ADR-0024) nennen die Stammdaten, `akzentfarbe: 31AE34`,
+  sechs Ziffern ohne `#`; die Vorgabe ohne Eintrag hat die Vorlage, nicht
+  Kotlin. `helsinki` färbt damit den Balken, `prag` hat keine. Steht der
+  Schlüssel ohne Wert da, bricht das Einlesen ab (`valueWhenPresent`): Ein
+  `#` ohne Anführungszeichen ist in YAML ein Kommentar, und die Farbe
+  verschwände sonst still.
+
 - **Mehrere Seiten** (ADR-0020): Die Positionen brechen zwischen zwei
   Positionen um, und die Vorlage setzt die Folgeseiten – ein kurzer Kopf mit
   Nummer, Datum und „Seite n von N“, der Fuß des Briefbogens auf jeder Seite,
