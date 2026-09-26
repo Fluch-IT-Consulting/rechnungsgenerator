@@ -165,3 +165,30 @@ diesem Zuschnitt ist er für keinen der Anlass:
   bei ihr mit eigener Kennung ab, statt ein unvollständiges XML auszugeben.
 
 Entschieden in #363.
+
+## Nachtrag vom 26.09.2026: Die Steuerkategorien außer S
+
+Seit #366 schreibt der Writer alle Kategorien aus `TaxCategory`. Dabei sind
+drei Fragen entschieden worden.
+
+**O neben anderen Kategorien bleibt erlaubt, ebenso die USt-IdNr. des
+Verkäufers bei O.** Der Kern von EN 16931 verbietet beides (BR-O-02,
+BR-O-11 bis BR-O-14), und Mustang prüft diese Regeln in BASIC und EN16931.
+Im Profil EXTENDED fehlen sie ausdrücklich, und eine Rechnung mit O neben S
+ist dort gültig. Eine Regel in `rules` lehnte deshalb eine Rechnung ab, die
+das Blatt und das Profil unserer E-Rechnung annehmen. Wechselt das Profil
+einmal, etwa zu XRechnung, ist die Frage neu zu stellen.
+
+**Das Lieferland der innergemeinschaftlichen Lieferung ist das Land des
+Kunden.** BR-IC-12 verlangt es (BT-80). Ein eigenes Feld für eine abweichende
+Lieferanschrift, etwa beim Reihengeschäft, kommt erst mit einem Fall: Bei
+einer Beratungsrechnung kommt K praktisch nicht vor. Nur dann trägt
+`ApplicableHeaderTradeDelivery` etwas, und die Warnung
+`PEPPOL-EN16931-R008` entfällt.
+
+**Der Befreiungsgrund steht zweimal**: in der Aufschlüsselung und an jeder
+Position, beide Male der Grund der Gruppe. EXTENDED verlangt beide gleich
+(`BR-FXEXT-E-08rev` und die Geschwister je Kategorie). Welche Gruppe zu einer
+Position gehört, sagt `CalculatedInvoice.vatGroupOf`, damit der Writer den
+Gruppenschlüssel nicht nachbaut. Bei O steht an der Position kein Satz
+(BR-O-05), in der Aufschlüsselung die 0.

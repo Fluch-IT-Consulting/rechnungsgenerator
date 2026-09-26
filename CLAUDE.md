@@ -470,10 +470,13 @@ PDF/A-Prüfung über veraPDF.
   kennt `SpecifiedAdvancePayment` nicht. `rechnung-erwartet.xml` ist die
   Vergleichsdatei, eine Frage und keine Aufgabe wie die `.tex`-Dateien; daneben
   prüft Mustang das XML, und erlaubt ist allein die Warnung
-  `PEPPOL-EN16931-R008` zum leeren `ApplicableHeaderTradeDelivery`.
+  `PEPPOL-EN16931-R008` zum leeren `ApplicableHeaderTradeDelivery`. Leer ist
+  es nicht bei K: Dort steht das Land des Kunden als Lieferland (BR-IC-12).
+  O neben anderen Kategorien lehnt keine Regel ab, weil EXTENDED BR-O-11 bis
+  BR-O-14 nicht prüft (Nachtrag zu ADR-0023).
 
   Was der Writer noch nicht schreibt – bisher alles außer Rechnung und
-  Teilrechnung mit Kategorie S ohne Rabatt und Skonto –, liefert er als
+  Teilrechnung ohne Rabatt und Skonto –, liefert er als
   `CiiResult.NotYetPossible` mit `ZUGFERD_NOCH_NICHT_MOEGLICH`, und `erzeuge`
   bricht ab wie bei einer Ablehnung. Das XML ist die maßgebliche Fassung;
   eine Angabe fehlt dort nie still. Jeder weitere Schritt macht aus einem
