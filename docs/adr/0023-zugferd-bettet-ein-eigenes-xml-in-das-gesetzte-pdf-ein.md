@@ -192,3 +192,26 @@ Position, beide Male der Grund der Gruppe. EXTENDED verlangt beide gleich
 Position gehört, sagt `CalculatedInvoice.vatGroupOf`, damit der Writer den
 Gruppenschlüssel nicht nachbaut. Bei O steht an der Position kein Satz
 (BR-O-05), in der Aufschlüsselung die 0.
+
+## Nachtrag vom 26.09.2026: Rabatt und Skonto
+
+Seit #367 schreibt der Writer beides.
+
+**Der Rabatt** steht als Abschlag auf die Position (BG-27) mit dem Code 95 und
+ohne Text, wie ADR-0013 es vorsieht. Ein Satz kommt mit seiner Basis, ein
+Betrag allein. Mustangs Validator rechnet dabei nur die Summen nach, nicht
+Satz × Basis; ein falscher Satz neben dem richtigen Betrag ginge durch.
+Deshalb hält `CiiWriterTest` die Abschläge wörtlich fest.
+
+**Das Skonto** steht strukturiert: je Stufe eigene Zahlungsbedingungen mit
+`ApplicableTradePaymentDiscountTerms`, Frist in Tagen ab dem Rechnungsdatum
+und Satz, ohne Betrag wie auf dem Blatt. Die Zahlungsbedingung mit dem
+Zahlungsziel steht davor. Verworfen ist der Freitext der XRechnung
+(`#SKONTO#TAGE=…#PROZENT=…#`): Er ist die Behelfslösung für Profile ohne
+strukturierte Skontobedingungen, und EXTENDED hat sie. Beides zu schreiben
+hieße, dieselbe Angabe zweimal zu führen, und ein Empfänger, der beide liest,
+müsste entscheiden, welche gilt.
+
+**Die Prüfung im Test zählt jede Warnung**, auch eine ohne `[ID …]`. So meldet
+Mustang eine Summe, die er anders nachrechnet; bisher sah der Test nur
+Warnungen mit Kennung und hätte gerade diese übersehen.
