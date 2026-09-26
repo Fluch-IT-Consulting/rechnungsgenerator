@@ -350,7 +350,7 @@ class ToolchainIntegrationTest : FunSpec({
                         ),
                 )
 
-            val validation = ExternalPdfAValidator(ExternalTool).validate(plain)
+            val validation = ExternalPdfAValidator(ExternalTool).validate(plain, PdfAProfile.PDFA_1B)
 
             validation.valid shouldBe false
             validation.violations.shouldNotBeEmpty()
@@ -374,7 +374,7 @@ class ToolchainIntegrationTest : FunSpec({
                     .of("src/test/resources/nicht-konform-mit-warnung.pdf")
                     .copyTo(workDir.resolve("nicht-konform-mit-warnung.pdf"), overwrite = true)
 
-            val result = ExternalPdfAValidator(ExternalTool).validate(noisy)
+            val result = ExternalPdfAValidator(ExternalTool).validate(noisy, PdfAProfile.PDFA_1B)
 
             result.valid shouldBe false
             result.violations.shouldNotBeEmpty()
@@ -412,13 +412,15 @@ class ToolchainIntegrationTest : FunSpec({
                 Path.of("src/test/resources/nicht-konform.pdf").copyTo(workDir.resolve("nicht-konform.pdf"), overwrite = true)
 
             for (pdf in listOf(valid, nonCompliant)) {
-                val builtIn = BuiltInPdfAValidator.validate(pdf)
-                val external = ExternalPdfAValidator(ExternalTool).validate(pdf)
+                val builtIn = BuiltInPdfAValidator.validate(pdf, PdfAProfile.PDFA_1B)
+                val external = ExternalPdfAValidator(ExternalTool).validate(pdf, PdfAProfile.PDFA_1B)
 
                 // Die Kennung als eine Zeichenkette: So steht im Fehlerfall
-                // "6.3.4-1" im Bericht und nicht ein Paar.
+                // "ISO 19005-1:2005 6.3.4-1" im Bericht und nicht ein Tupel.
+                // Der Teil der Norm gehört dazu, weil jeder Weg ihn selbst
+                // aus veraPDF liest.
                 fun rules(result: ValidationResult) =
-                    result.violations.map { "${it.clause}-${it.testNumber}" }.sorted()
+                    result.violations.map { "${it.specification} ${it.clause}-${it.testNumber}" }.sorted()
 
                 withClue("$pdf: Urteil") { builtIn.valid shouldBe external.valid }
                 withClue("$pdf: Regeln") { rules(builtIn) shouldBe rules(external) }
@@ -426,8 +428,9 @@ class ToolchainIntegrationTest : FunSpec({
 
             val noPdf =
                 Path.of("src/test/resources/kein-pdf.pdf").copyTo(workDir.resolve("kein-pdf.pdf"), overwrite = true)
-            withClue("eingebaut") { shouldThrow<ToolchainException> { BuiltInPdfAValidator.validate(noPdf) } }
-            withClue("extern") { shouldThrow<ToolchainException> { ExternalPdfAValidator(ExternalTool).validate(noPdf) } }
+            val external = ExternalPdfAValidator(ExternalTool)
+            withClue("eingebaut") { shouldThrow<ToolchainException> { BuiltInPdfAValidator.validate(noPdf, PdfAProfile.PDFA_1B) } }
+            withClue("extern") { shouldThrow<ToolchainException> { external.validate(noPdf, PdfAProfile.PDFA_1B) } }
         }
 
     /**

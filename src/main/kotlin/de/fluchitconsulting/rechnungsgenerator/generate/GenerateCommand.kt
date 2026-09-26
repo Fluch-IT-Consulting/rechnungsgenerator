@@ -194,8 +194,9 @@ class GenerateCommand(
                     } else {
                         "Mit --arbeitsdateien-behalten bleibt es zum Ansehen liegen."
                     }
+                val profile = typesetPdf.validation.profile.label
                 throw ToolchainException(
-                    "Das erzeugte PDF ist kein gültiges PDF/A-1b und wurde nicht nach $target geschrieben.\n" +
+                    "Das erzeugte PDF ist kein gültiges $profile und wurde nicht nach $target geschrieben.\n" +
                         "${typesetPdf.validation.describe()}\n$inspectionNote$logoNote",
                 )
             }

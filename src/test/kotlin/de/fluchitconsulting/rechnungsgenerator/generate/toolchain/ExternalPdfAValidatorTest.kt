@@ -4,6 +4,7 @@ import io.kotest.assertions.throwables.shouldNotThrowAny
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.collections.shouldBeEmpty
+import io.kotest.matchers.collections.shouldContain
 import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.string.shouldContain
@@ -29,7 +30,7 @@ class ExternalPdfAValidatorTest : FunSpec({
     fun validate(exitCode: Int, output: String, errorOutput: String = "") =
         ExternalPdfAValidator(
             FakeProcessRunner(FakeProcessRunner.Run(exitCode, output, errorOutput)),
-        ).validate(pdf)
+        ).validate(pdf, PdfAProfile.PDFA_1B)
 
     // Der einzige erfundene Bericht hier: Für ein konformes PDF gibt es keinen
     // Mitschnitt, weil dieser Fall im Integrationstest ohnehin echt vorkommt.
@@ -108,10 +109,20 @@ class ExternalPdfAValidatorTest : FunSpec({
         error.message!! shouldContain "Can't read file"
     }
 
-    test("ein Verstoß beschreibt sich selbst") {
+    test("ein Verstoß beschreibt sich selbst, mit dem Teil der Norm aus dem Bericht") {
         val violation = validate(exitCode = 1, output = transcript("verapdf-nicht-konform.txt")).violations.first()
 
-        violation.toString() shouldContain "ISO 19005-1"
+        violation.specification shouldBe "ISO 19005-1:2005"
+        violation.toString() shouldContain "ISO 19005-1:2005"
+    }
+
+    test("das Profil geht als -f an verapdf, und das Urteil nennt es") {
+        val runner = FakeProcessRunner(FakeProcessRunner.Run(exitCode = 0, output = compliant))
+
+        val result = ExternalPdfAValidator(runner).validate(pdf, PdfAProfile.PDFA_3U)
+
+        runner.commands.single().windowed(2) shouldContain listOf("-f", "3u")
+        result.describe() shouldBe "PDF/A-3u: gültig"
     }
 
     /**
