@@ -4,6 +4,11 @@ import de.fluchitconsulting.rechnungsgenerator.core.accepted.AcceptedInvoice
 import de.fluchitconsulting.rechnungsgenerator.core.calculation.CalculatedInvoice
 import de.fluchitconsulting.rechnungsgenerator.core.calculation.CalculatedLine
 import de.fluchitconsulting.rechnungsgenerator.core.model.Address
+import de.fluchitconsulting.rechnungsgenerator.core.model.TaxCategory
+import de.fluchitconsulting.rechnungsgenerator.core.rules.Finding
+import de.fluchitconsulting.rechnungsgenerator.core.rules.InvoiceKind
+import de.fluchitconsulting.rechnungsgenerator.core.rules.Rule
+import de.fluchitconsulting.rechnungsgenerator.core.rules.Subject
 import de.fluchitconsulting.rechnungsgenerator.core.values.Money
 import de.fluchitconsulting.rechnungsgenerator.core.values.Percent
 import java.time.LocalDate
@@ -29,9 +34,55 @@ object CiiWriter {
             "udt" to "urn:un:unece:uncefact:data:standard:UnqualifiedDataType:100",
         )
 
-    fun write(acceptedInvoice: AcceptedInvoice): String {
+    fun write(acceptedInvoice: AcceptedInvoice): CiiResult {
+        val missing = notYetPossible(acceptedInvoice)
+        return if (missing.isEmpty()) {
+            CiiResult.Written(xml(acceptedInvoice.calculated))
+        } else {
+            CiiResult.NotYetPossible(missing)
+        }
+    }
+
+    /**
+     * Was diese Rechnung verlangt und der Writer noch nicht schreibt.
+     *
+     * Das `when` über die Rechnungsart hat kein `else`, wie im Renderer: Eine
+     * neue Art muss hier entscheiden, ob der Writer sie kann (ADR-0008).
+     */
+    private fun notYetPossible(acceptedInvoice: AcceptedInvoice): List<Finding> {
         val calculated = acceptedInvoice.calculated
-        return indentedXml("rsm:CrossIndustryInvoice", namespaces) {
+        val invoice = calculated.invoice
+        return buildList {
+            when (acceptedInvoice.kind) {
+                is InvoiceKind.Ordinary -> {
+                    Unit
+                }
+                is InvoiceKind.PrepaymentInvoice, is InvoiceKind.FinalInvoice, is InvoiceKind.Cancellation -> {
+                    add(notYet(Subject.WholeInvoice, "Eine ${invoice.type.documentName} lässt sich noch nicht als ZUGFeRD erzeugen."))
+                }
+            }
+            calculated.lines.forEachIndexed { index, line ->
+                val subject = Subject.Item(index, line.item.name)
+                if (line.item.discount != null) {
+                    add(notYet(subject, "Ein Rabatt lässt sich noch nicht als ZUGFeRD erzeugen."))
+                }
+                if (line.item.taxCategory != TaxCategory.STANDARD) {
+                    add(notYet(subject, "Die Steuerkategorie ${line.item.taxCategory.code} lässt sich noch nicht als ZUGFeRD erzeugen."))
+                }
+            }
+            if (calculated.skonto.isNotEmpty()) {
+                add(notYet(Subject.WholeInvoice, "Ein Skonto lässt sich noch nicht als ZUGFeRD erzeugen."))
+            }
+        }
+    }
+
+    private fun notYet(
+        subject: Subject,
+        message: String,
+    ) = Finding(Rule.ZUGFERD_NOCH_NICHT_MOEGLICH, subject, message)
+
+    private fun xml(calculated: CalculatedInvoice): String =
+        indentedXml("rsm:CrossIndustryInvoice", namespaces) {
             element("rsm:ExchangedDocumentContext") {
                 element("ram:GuidelineSpecifiedDocumentContextParameter") {
                     element("ram:ID", EXTENDED)
@@ -53,7 +104,6 @@ object CiiWriter {
                 settlement(calculated)
             }
         }
-    }
 
     private fun XmlElements.lineItem(
         index: Int,

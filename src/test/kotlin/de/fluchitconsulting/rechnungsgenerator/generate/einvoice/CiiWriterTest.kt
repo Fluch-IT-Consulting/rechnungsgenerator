@@ -1,24 +1,41 @@
 package de.fluchitconsulting.rechnungsgenerator.generate.einvoice
 
+import de.fluchitconsulting.rechnungsgenerator.core.accepted.AcceptedInvoice
 import de.fluchitconsulting.rechnungsgenerator.core.accepted.accepted
 import de.fluchitconsulting.rechnungsgenerator.core.calculation.CalculatedInvoice
+import de.fluchitconsulting.rechnungsgenerator.core.model.InvoiceType
+import de.fluchitconsulting.rechnungsgenerator.core.model.SkontoTier
+import de.fluchitconsulting.rechnungsgenerator.core.model.TaxCategory
 import de.fluchitconsulting.rechnungsgenerator.core.model.YamlLoader
+import de.fluchitconsulting.rechnungsgenerator.core.model.exampleInvoices
+import de.fluchitconsulting.rechnungsgenerator.core.model.testInvoice
+import de.fluchitconsulting.rechnungsgenerator.core.model.testItem
+import de.fluchitconsulting.rechnungsgenerator.core.model.testSellerConfig
+import de.fluchitconsulting.rechnungsgenerator.core.rules.Rule
+import de.fluchitconsulting.rechnungsgenerator.core.rules.Subject
+import de.fluchitconsulting.rechnungsgenerator.core.values.Percent
+import io.kotest.assertions.withClue
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import io.kotest.matchers.string.shouldContain
+import io.kotest.matchers.types.shouldBeInstanceOf
 import org.mustangproject.validator.ZUGFeRDValidator
 import java.nio.file.Path
 import kotlin.io.path.readText
 
 private fun resource(name: String): String = Path.of("src/test/resources/$name").readText()
 
-private fun exampleXml(): String {
+private fun example(name: String): AcceptedInvoice {
     val seller = YamlLoader.parseSellerConfig(resource("stammdaten.yaml"))
-    val invoice = YamlLoader.parseInvoice(resource("rechnung.yaml"))
-    return CiiWriter.write(CalculatedInvoice(invoice, seller).accepted())
+    val invoice = YamlLoader.parseInvoice(resource("$name.yaml"))
+    return CalculatedInvoice(invoice, seller).accepted()
 }
 
+private fun AcceptedInvoice.xml(): String = CiiWriter.write(this).shouldBeInstanceOf<CiiResult.Written>().xml
+
 /**
- * Das XML der Beispielrechnung, zeichengleich und geprüft.
+ * Das XML einer Rechnung, zeichengleich und geprüft – und was der Writer noch
+ * nicht schreibt.
  *
  * Die Vergleichsdatei ist wie `rechnung-erwartet.tex` eine Frage und keine
  * Aufgabe: Wird der Test rot, erst nachsehen, ob die Änderung gewollt ist.
@@ -28,7 +45,7 @@ private fun exampleXml(): String {
 class CiiWriterTest : FunSpec({
 
     test("die Beispielrechnung ergibt das erwartete XML") {
-        exampleXml() shouldBe resource("rechnung-erwartet.xml")
+        example("rechnung").xml() shouldBe resource("rechnung-erwartet.xml")
     }
 
     /**
@@ -37,13 +54,64 @@ class CiiWriterTest : FunSpec({
      * jede weitere wäre ein Befund, der sonst unbemerkt durchginge.
      */
     test("das XML ist gültig, mit keiner Warnung außer PEPPOL-EN16931-R008") {
-        val validator = ZUGFeRDValidator()
-        val report = validator.validate(exampleXml().toByteArray(), "factur-x.xml")
+        example("rechnung").xml().shouldBeValidExtended()
+    }
 
+    // Nicht teilrechnung.yaml: Die trägt Rabatte, und die gehen noch nicht.
+    test("die Teilrechnung trägt den Code 326 und ist gültig") {
+        val xml = CalculatedInvoice(testInvoice(type = InvoiceType.PARTIAL), testSellerConfig()).accepted().xml()
+
+        xml shouldContain "<ram:TypeCode>326</ram:TypeCode>"
+        xml.shouldBeValidExtended()
+    }
+
+    context("was noch nicht geht, bricht ab statt still zu fehlen") {
+        listOf(InvoiceType.PREPAYMENT, InvoiceType.FINAL, InvoiceType.CANCELLATION).forEach { type ->
+            test("eine ${type.documentName}") {
+                val result = CiiWriter.write(example(exampleInvoices.getValue(type)))
+
+                val findings = result.shouldBeInstanceOf<CiiResult.NotYetPossible>().findings
+                findings.map { it.rule to it.subject } shouldBe listOf(Rule.ZUGFERD_NOCH_NICHT_MOEGLICH to Subject.WholeInvoice)
+            }
+        }
+
+        test("Rabatt, eine andere Steuerkategorie als S und Skonto, alle auf einmal") {
+            val invoice =
+                testInvoice(
+                    items =
+                        listOf(
+                            testItem(discount = "10"),
+                            testItem(
+                                vatRate = "0",
+                                taxCategory = TaxCategory.EXEMPT,
+                                taxExemptionReason = "Steuerfrei nach §4 Nr. 21 UStG",
+                            ),
+                        ),
+                    skonto = listOf(SkontoTier(Percent("2"), 7)),
+                )
+            val result = CiiWriter.write(CalculatedInvoice(invoice, testSellerConfig()).accepted())
+
+            val findings = result.shouldBeInstanceOf<CiiResult.NotYetPossible>().findings
+            findings.map { it.rule }.toSet() shouldBe setOf(Rule.ZUGFERD_NOCH_NICHT_MOEGLICH)
+            findings.map { it.subject } shouldBe
+                listOf(
+                    Subject.Item(0, "Testposition"),
+                    Subject.Item(1, "Testposition"),
+                    Subject.WholeInvoice,
+                )
+        }
+    }
+})
+
+private fun String.shouldBeValidExtended() {
+    val validator = ZUGFeRDValidator()
+    val report = validator.validate(toByteArray(), "factur-x.xml")
+
+    withClue(report) {
         validator.wasCompletelyValid() shouldBe true
         warningIds(report) shouldBe listOf("PEPPOL-EN16931-R008")
     }
-})
+}
 
 /** Die Kennungen der Warnungen im Bericht, etwa `[ID PEPPOL-EN16931-R008]`. */
 private fun warningIds(report: String): List<String> =
