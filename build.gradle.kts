@@ -36,8 +36,8 @@ kotlin {
 // (ValidationProfileImpl.flavour). Ab JDK 24 meldet die JVM das in drei Zeilen
 // auf stderr – dieselben drei, die heute schon der verapdf-Unterprozess
 // schreibt und die PdfAValidator nur wegschneidet, weil sie vor dem
-// XML-Prolog stehen. Die -jakarta-Artefakte helfen nicht: dort wechselt nur
-// der Verursacher.
+// XML-Prolog stehen. Die -jakarta-Artefakte (ADR-0023) ändern daran nichts:
+// dort wechselt nur der Verursacher.
 //
 // Was hier unterdrückt wird, ist eine *Ankündigung* und kein Symptom: Wird die
 // Änderung in einer künftigen JDK-Fassung scharf geschaltet, läuft veraPDF gar

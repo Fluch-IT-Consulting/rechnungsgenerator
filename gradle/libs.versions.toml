@@ -31,9 +31,11 @@ kotest-assertions = { module = "io.kotest:kotest-assertions-core", version.ref =
 kotest-property = { module = "io.kotest:kotest-property", version.ref = "kotest" }
 junit-platform-launcher = { module = "org.junit.platform:junit-platform-launcher", version.ref = "junit" }
 konsist = { module = "com.lemonappdev:konsist", version.ref = "konsist" }
-# validation-model allein genügt für PDF/A-1b; es zieht Kern, Parser und Modell
-# nach. Lizenz: GPLv3+ oder MPLv2+ nach Wahl – wir wählen MPL-2.0 (#226).
-verapdf = { module = "org.verapdf:validation-model", version.ref = "verapdf" }
+# validation-model allein genügt für die PDF/A-Prüfung; es zieht Kern, Parser
+# und Modell nach. Die -jakarta-Fassung, weil Mustang sie nachzieht und beide
+# Familien nebeneinander dieselben Klassen trügen (ADR-0023).
+# Lizenz: GPLv3+ oder MPLv2+ nach Wahl – wir wählen MPL-2.0 (#226).
+verapdf = { module = "org.verapdf:validation-model-jakarta", version.ref = "verapdf" }
 # Die Plattform hebt jackson-databind, -core und -annotations gemeinsam an.
 # Einzeln angehoben laufen sie auseinander, und das verträgt Jackson schlecht.
 jackson-bom = { module = "com.fasterxml.jackson:jackson-bom", version.ref = "jackson" }
