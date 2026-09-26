@@ -94,6 +94,6 @@ class LuaLatexTypesetter(private val validator: PdfAValidator) : Typesetter {
         sources: PdfSources,
     ): TypesetPdf {
         val pdf = compiler.compile(workingDir, jobName, sources)
-        return TypesetPdf(pdf, validator.validate(pdf))
+        return TypesetPdf(pdf, validator.validate(pdf, PdfAProfile.PDFA_1B))
     }
 }

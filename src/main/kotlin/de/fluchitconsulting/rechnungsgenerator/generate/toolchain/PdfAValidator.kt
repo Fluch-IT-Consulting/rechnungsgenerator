@@ -6,6 +6,7 @@ import org.verapdf.pdfa.Foundries
 import org.verapdf.pdfa.flavours.PDFAFlavour
 import org.verapdf.pdfa.results.TestAssertion
 import org.verapdf.pdfa.validation.profiles.Profiles
+import org.verapdf.pdfa.validation.profiles.ValidationProfile
 import org.w3c.dom.Element
 import java.io.IOException
 import java.nio.file.Path
@@ -13,23 +14,51 @@ import javax.xml.XMLConstants
 import javax.xml.parsers.DocumentBuilderFactory
 import kotlin.io.path.absolutePathString
 
-/** Ein von veraPDF gemeldeter Regelverstoß. */
+/**
+ * Wogegen geprüft wird: PDF/A-1b ohne E-Rechnung, PDF/A-3u mit ihr (ADR-0023).
+ *
+ * [flavour] und [cliFlag] nennen dasselbe Profil für die beiden Wege zu
+ * veraPDF, die Bibliothek und das Programm.
+ */
+enum class PdfAProfile(
+    val label: String,
+    val flavour: PDFAFlavour,
+    val cliFlag: String,
+) {
+    PDFA_1B("PDF/A-1b", PDFAFlavour.PDFA_1_B, "1b"),
+    PDFA_3U("PDF/A-3u", PDFAFlavour.PDFA_3_U, "3u"),
+}
+
+/**
+ * Ein von veraPDF gemeldeter Regelverstoß. Welcher Teil der Norm, sagt
+ * [specification] so, wie veraPDF es meldet, etwa "ISO 19005-1:2005".
+ */
 data class PdfAViolation(
+    val specification: String,
     val clause: String,
     val testNumber: String,
     val description: String,
     val errorMessage: String,
 ) {
-    override fun toString(): String = "ISO 19005-1 $clause Test $testNumber: $description\n    $errorMessage"
+    override fun toString(): String = "$specification $clause Test $testNumber: $description\n    $errorMessage"
 }
 
-data class ValidationResult(val valid: Boolean, val violations: List<PdfAViolation>) {
+data class ValidationResult(
+    val profile: PdfAProfile,
+    val valid: Boolean,
+    val violations: List<PdfAViolation>,
+) {
     fun describe(): String =
-        if (valid) "PDF/A-1b: gültig" else "PDF/A-1b verletzt:\n" + violations.joinToString("\n") { "  $it" }
+        if (valid) {
+            "${profile.label}: gültig"
+        } else {
+            "${profile.label} verletzt:\n" + violations.joinToString("\n") { "  $it" }
+        }
 }
 
 /**
- * Die PDF/A-Prüfung: Ist das gesetzte Dokument ein gültiges PDF/A-1b?
+ * Die PDF/A-Prüfung: Ist das gesetzte Dokument ein gültiges PDF/A im
+ * verlangten [PdfAProfile]?
  *
  * Nicht zu verwechseln mit der *Prüfung* der Rechnung, die Befunde liefert und
  * über Annahme oder Ablehnung entscheidet (ADR-0004). Anderer Gegenstand,
@@ -59,7 +88,10 @@ interface PdfAValidator {
      * weil `execute()` genau diese Ausnahme als Meldung ausgibt; jede andere
      * verließe `main` als Stacktrace (#294).
      */
-    fun validate(pdf: Path): ValidationResult
+    fun validate(
+        pdf: Path,
+        profile: PdfAProfile,
+    ): ValidationResult
 }
 
 /**
@@ -69,33 +101,41 @@ interface PdfAValidator {
  * Dokument rund 6,4 s, davon 6,2 s für den Start seines CLI-Wrappers. Die
  * Prüfung selbst dauert rund 50 ms, und genau die bleibt hier übrig (#226).
  *
- * Das Validierungsprofil wird einmal geladen und dann behalten: Es zu lesen
+ * Jedes Validierungsprofil wird einmal geladen und dann behalten: Es zu lesen
  * kostet 0,7 s, jede Prüfung danach Bruchteile davon.
  */
 object BuiltInPdfAValidator : PdfAValidator {
-    private val flavour = PDFAFlavour.PDFA_1_B
-
-    // by lazy statt im Initialisierer: Das Profil wird erst gelesen, wenn
-    // wirklich geprüft wird – ein Lauf, der vorher abbricht, zahlt es nicht.
+    // by lazy statt im Initialisierer: Ein Profil wird erst gelesen, wenn
+    // wirklich danach geprüft wird – ein Lauf, der vorher abbricht, zahlt es
+    // nicht, und ein Lauf ohne E-Rechnung liest das für PDF/A-3u nie.
     //
     // Ohne Argument ist das `LazyThreadSafetyMode.SYNCHRONIZED`, und das soll es
     // bleiben: `initialise()` setzt globalen statischen Zustand in veraPDF, und
-    // das Profil ist danach ein geteilter Wert. Hier läuft heute nur ein Thread,
+    // ein Profil ist danach ein geteilter Wert. Hier läuft heute nur ein Thread,
     // die Zusage kostet aber nichts – mit `NONE` wäre sie still weg. Benutzt wird
-    // das Profil danach nur lesend (`getRuleByRuleId`), und das bewacht veraPDF
+    // ein Profil danach nur lesend (`getRuleByRuleId`), und das bewacht veraPDF
     // selbst: Seine eigene faule Befüllung steht samt Prüfung in einem
     // `synchronized`-Block.
-    private val profile by lazy {
-        VeraGreenfieldFoundryProvider.initialise()
-        Profiles.getVeraProfileDirectory().getValidationProfileByFlavour(flavour)
-    }
+    private val initialised by lazy { VeraGreenfieldFoundryProvider.initialise() }
+
+    private val validationProfiles: Map<PdfAProfile, Lazy<ValidationProfile>> =
+        PdfAProfile.entries.associateWith { profile ->
+            lazy {
+                initialised
+                Profiles.getVeraProfileDirectory().getValidationProfileByFlavour(profile.flavour)
+            }
+        }
 
     /** Nichts zu prüfen: Der Prüfer liegt im Klassenpfad. */
     override fun checkAvailable() = Unit
 
-    override fun validate(pdf: Path): ValidationResult {
-        profile // erzwingt das Laden, bevor die Foundry gefragt wird
-        val validator = Foundries.defaultInstance().createValidator(flavour, false)
+    override fun validate(
+        pdf: Path,
+        profile: PdfAProfile,
+    ): ValidationResult {
+        // Erzwingt das Laden, bevor die Foundry gefragt wird.
+        val validationProfile = validationProfiles.getValue(profile).value
+        val validator = Foundries.defaultInstance().createValidator(profile.flavour, false)
         // Gefangen wird VeraPDFException und nicht mehr: Sie ist die gemeinsame
         // Oberklasse dessen, was beide Aufrufe deklarieren, also genau "konnte
         // nicht urteilen". Dazu die IOException, die `use` beim Schließen des
@@ -104,7 +144,7 @@ object BuiltInPdfAValidator : PdfAValidator {
         // Meldung.
         val result =
             try {
-                Foundries.defaultInstance().createParser(pdf.toFile(), flavour).use { parser ->
+                Foundries.defaultInstance().createParser(pdf.toFile(), profile.flavour).use { parser ->
                     validator.validate(parser)
                 }
             } catch (e: VeraPDFException) {
@@ -113,6 +153,7 @@ object BuiltInPdfAValidator : PdfAValidator {
                 throw cannotJudge(pdf, e)
             }
         return ValidationResult(
+            profile = profile,
             valid = result.isCompliant,
             violations =
                 result.testAssertions
@@ -121,8 +162,9 @@ object BuiltInPdfAValidator : PdfAValidator {
                         // Die Meldung steht im Profil, nicht an der Aussage:
                         // getErrorMessage() der Aussage ist null, den Wortlaut
                         // trägt die Regel.
-                        val rule = profile.getRuleByRuleId(assertion.ruleId)
+                        val rule = validationProfile.getRuleByRuleId(assertion.ruleId)
                         PdfAViolation(
+                            specification = assertion.ruleId.specification.id,
                             clause = assertion.ruleId.clause,
                             testNumber = assertion.ruleId.testNumber.toString(),
                             description = rule?.description.orEmpty(),
@@ -171,17 +213,21 @@ class ExternalPdfAValidator(private val runner: ProcessRunner) : PdfAValidator {
 
     override fun checkAvailable() = runner.requireAll(PROGRAM to "brew install verapdf")
 
-    override fun validate(pdf: Path): ValidationResult {
+    override fun validate(
+        pdf: Path,
+        profile: PdfAProfile,
+    ): ValidationResult {
         val result =
             runner.run(
                 PROGRAM,
-                listOf("--format", "xml", "-f", "1b", pdf.absolutePathString()),
+                listOf("--format", "xml", "-f", profile.cliFlag, pdf.absolutePathString()),
                 pdf.parent,
             )
         if (result.exitCode !in listOf(EXIT_COMPLIANT, EXIT_NOT_COMPLIANT)) {
             throw ToolchainException("$PROGRAM brach mit Exitcode ${result.exitCode} ab:\n${result.output.take(800)}")
         }
         return ValidationResult(
+            profile = profile,
             valid = result.exitCode == EXIT_COMPLIANT,
             violations = parseViolations(extractXml(result.standardOutput)),
         )
@@ -224,6 +270,7 @@ class ExternalPdfAValidator(private val runner: ProcessRunner) : PdfAValidator {
             .filter { it.getAttribute("status") == "failed" }
             .map { rule ->
                 PdfAViolation(
+                    specification = rule.getAttribute("specification"),
                     clause = rule.getAttribute("clause"),
                     testNumber = rule.getAttribute("testNumber"),
                     description = rule.childText("description"),

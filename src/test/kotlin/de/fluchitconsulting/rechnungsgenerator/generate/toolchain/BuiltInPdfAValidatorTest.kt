@@ -43,14 +43,22 @@ class BuiltInPdfAValidatorTest : FunSpec({
     val nonCompliant = Path.of("src/test/resources/nicht-konform.pdf")
 
     test("ein nicht konformes PDF wird als solches gemeldet") {
-        val result = BuiltInPdfAValidator.validate(nonCompliant)
+        val result = BuiltInPdfAValidator.validate(nonCompliant, PdfAProfile.PDFA_1B)
 
         result.valid shouldBe false
         result.describe() shouldContain "PDF/A-1b verletzt"
     }
 
+    test("gegen PDF/A-3u geprüft, nennt das Urteil das Profil und den Teil der Norm") {
+        val result = BuiltInPdfAValidator.validate(nonCompliant, PdfAProfile.PDFA_3U)
+
+        result.valid shouldBe false
+        result.describe() shouldContain "PDF/A-3u verletzt"
+        result.violations.map { it.specification }.toSet() shouldBe setOf("ISO 19005-3:2012")
+    }
+
     test("die verletzten Regeln stehen genau so im Ergebnis") {
-        val result = BuiltInPdfAValidator.validate(nonCompliant)
+        val result = BuiltInPdfAValidator.validate(nonCompliant, PdfAProfile.PDFA_1B)
 
         // Die Kennung als eine Zeichenkette, wie beim Vergleich der beiden
         // Prüfer: So steht im Fehlerfall "6.3.4-1" im Bericht und nicht ein Paar.
@@ -65,7 +73,7 @@ class BuiltInPdfAValidatorTest : FunSpec({
      * nicht.
      */
     test("jeder Verstoß trägt Beschreibung und Meldung aus dem Profil") {
-        val result = BuiltInPdfAValidator.validate(nonCompliant)
+        val result = BuiltInPdfAValidator.validate(nonCompliant, PdfAProfile.PDFA_1B)
 
         result.violations.forEach { violation ->
             withClue("${violation.clause}-${violation.testNumber}") {
@@ -87,7 +95,7 @@ class BuiltInPdfAValidatorTest : FunSpec({
     test("über ein unlesbares PDF urteilt er nicht, sondern wirft ToolchainException") {
         val noPdf = Path.of("src/test/resources/kein-pdf.pdf")
 
-        val error = shouldThrow<ToolchainException> { BuiltInPdfAValidator.validate(noPdf) }
+        val error = shouldThrow<ToolchainException> { BuiltInPdfAValidator.validate(noPdf, PdfAProfile.PDFA_1B) }
 
         error.message!! shouldContain "kein-pdf.pdf"
         error.message!! shouldContain generateSequence(error.cause) { it.cause }.last().message!!
