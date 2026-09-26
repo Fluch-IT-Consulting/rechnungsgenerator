@@ -204,7 +204,9 @@ class GenerateCommand(
             if (!typesetPdf.validation.valid) {
                 val inspectionNote =
                     if (keepWorkFiles) {
-                        "Das PDF liegt zum Ansehen in $workDir."
+                        // Die Datei und nicht das Verzeichnis: Mit E-Rechnung
+                        // liegt dort auch das gültige PDF/A-1b (#390).
+                        "Das PDF liegt zum Ansehen unter ${typesetPdf.pdf}."
                     } else {
                         "Mit --arbeitsdateien-behalten bleibt es zum Ansehen liegen."
                     }
