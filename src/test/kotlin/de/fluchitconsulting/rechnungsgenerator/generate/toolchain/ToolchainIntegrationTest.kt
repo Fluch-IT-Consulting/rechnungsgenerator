@@ -20,6 +20,7 @@ import io.kotest.matchers.shouldBe
 import io.kotest.matchers.string.shouldContain
 import io.kotest.matchers.string.shouldNotContain
 import org.apache.pdfbox.Loader
+import java.awt.image.BufferedImage
 import java.nio.file.Path
 import java.security.MessageDigest
 import java.time.LocalDate
@@ -31,6 +32,7 @@ import kotlin.io.path.readBytes
 import kotlin.io.path.readLines
 import kotlin.io.path.readText
 import kotlin.io.path.writeText
+import kotlin.math.abs
 
 /**
  * Markiert die Tests, die die echten Werkzeuge brauchen. CI wählt sie mit
@@ -260,6 +262,53 @@ class ToolchainIntegrationTest : FunSpec({
         val unscaledHeight = logoHeight(unscaledLogo)
 
         withClue("$scaledHeight und $unscaledHeight Pixel") { scaledHeight.toDouble() / unscaledHeight shouldBe (1.2 plusOrMinus 0.03) }
+    }
+
+    /**
+     * Die Akzentfarbe der Stammdaten kommt auf dem Blatt an (#371): Mit
+     * `akzentfarbe` hat der Balken von helsinki diese Farbe, und das Rot der
+     * Vorlage steht nirgends; ohne Eintrag umgekehrt. Gezählt werden Pixel
+     * genau dieser Farbe, mit etwas Spielraum für die Rundung beim Rastern –
+     * der Balken ist eine Fläche, deren Inneres pdftoppm nicht glättet.
+     */
+    test("die Akzentfarbe der Stammdaten färbt den Balken von helsinki") {
+        fun imageWith(accentColor: String?): BufferedImage {
+            val name = accentColor ?: "ohne"
+            val sellerConfig =
+                workDir.resolve("stammdaten-akzent-$name.yaml").also {
+                    it.writeText(
+                        Path.of("src/test/resources/stammdaten.yaml").readText() +
+                            accentColor?.let { color -> "akzentfarbe: $color\n" }.orEmpty(),
+                    )
+                }
+            val (pdf, output) = run.generate("rechnung", "akzent-$name", sellerConfig = sellerConfig)
+            withClue(output.joinToString("\n")) { output shouldContain "PDF/A-1b: gültig" }
+            return run.imageOf(pdf, dpi = 100)
+        }
+
+        fun BufferedImage.countOf(rgb: Int): Int {
+            fun near(color: Int, shift: Int) = abs(((color shr shift) and 0xFF) - ((rgb shr shift) and 0xFF)) <= 2
+            return (0 until height).sumOf { y ->
+                (0 until width).count { x ->
+                    val color = getRGB(x, y)
+                    near(color, 16) && near(color, 8) && near(color, 0)
+                }
+            }
+        }
+
+        val green = 0x31AE34
+        val red = 0x8D313A
+
+        withClue("mit Akzentfarbe") {
+            val image = imageWith("31AE34")
+            image.countOf(green) shouldBeGreaterThan 1000
+            image.countOf(red) shouldBe 0
+        }
+        withClue("ohne Akzentfarbe") {
+            val image = imageWith(null)
+            image.countOf(red) shouldBeGreaterThan 1000
+            image.countOf(green) shouldBe 0
+        }
     }
 
     /**

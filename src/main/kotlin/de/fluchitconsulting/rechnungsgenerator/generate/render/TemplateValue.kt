@@ -64,6 +64,11 @@ enum class TemplateValue(
     // Logo neben der .tex liegt. Die Vorlage bindet es selbst ein.
     LOGO(false),
 
+    // Die Akzentfarbe aus den Stammdaten (#371), sechs Hexadezimalziffern oder
+    // leer. Die Vorgabe ohne Eintrag hat die Vorlage, nicht Kotlin: Farbe ist
+    // Satzbild (ADR-0017), und ein Design ohne Akzentfarbe übergeht den Wert.
+    AKZENTFARBE(false),
+
     // Kopfangaben der Rechnung.
     DOKUMENTART(true),
     RECHNUNGSNUMMER(true),

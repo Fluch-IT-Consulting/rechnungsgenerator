@@ -1,12 +1,16 @@
 package de.fluchitconsulting.rechnungsgenerator.core.model
 
+import de.fluchitconsulting.rechnungsgenerator.core.serialization.valueWhenPresent
 import de.fluchitconsulting.rechnungsgenerator.core.values.Bic
 import de.fluchitconsulting.rechnungsgenerator.core.values.CountryCode
 import de.fluchitconsulting.rechnungsgenerator.core.values.Design
 import de.fluchitconsulting.rechnungsgenerator.core.values.Iban
 import de.fluchitconsulting.rechnungsgenerator.core.values.InvoiceNumberPattern
+import de.fluchitconsulting.rechnungsgenerator.core.values.RgbColor
+import de.fluchitconsulting.rechnungsgenerator.core.values.RgbColorSerializer
 import de.fluchitconsulting.rechnungsgenerator.core.values.TaxNumber
 import de.fluchitconsulting.rechnungsgenerator.core.values.VatId
+import kotlinx.serialization.KSerializer
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
@@ -39,6 +43,11 @@ data class SellerConfig(
     // Das Design der Rechnung (ADR-0011). In den Stammdaten und nicht je
     // Rechnung: Alle Rechnungen eines Rechnungsstellers sehen gleich aus.
     @SerialName("design") val design: Design = Design.HELSINKI,
+    // Die Akzentfarbe des Designs (#371), ohne Eintrag die der Vorlage. Ob und
+    // wo ein Design sie einsetzt, entscheidet seine Vorlage (ADR-0017).
+    @SerialName("akzentfarbe")
+    @Serializable(with = AccentColorSerializer::class)
+    val accentColor: RgbColor? = null,
     // Das Logo (#198): in der YAML nur der Pfad, wie er dasteht. Gelesen wird
     // die Datei in YamlLoader.loadSellerConfig, das allein weiß, wo die
     // Stammdaten liegen und wogegen ein relativer Pfad gilt. Ohne Eintrag kein Logo.
@@ -68,3 +77,16 @@ data class BankDetails(
     @SerialName("bic") val bic: Bic,
     @SerialName("institut") val bankName: String,
 )
+
+// Steht `akzentfarbe` da, braucht der Schlüssel einen Wert. Farben schreibt man
+// gewohnt mit `#`, und `akzentfarbe: #31AE34` ist in YAML ein Schlüssel mit
+// Kommentar und ohne Wert: Ohne diesen Serializer käme `null` an, und die
+// Rechnung erschiene still in der Farbe der Vorlage. Die anderen optionalen
+// Schlüssel lassen einen leeren Wert als "keiner" gelten; nur bei diesem
+// beginnt ein Wert üblicherweise mit `#`.
+object AccentColorSerializer :
+    KSerializer<RgbColor?> by valueWhenPresent(
+        RgbColorSerializer,
+        "akzentfarbe steht ohne Wert da. Ein # ohne Anführungszeichen beginnt in YAML einen Kommentar – " +
+            "die Farbe bitte ohne # schreiben, etwa 31AE34, oder den Schlüssel weglassen.",
+    )

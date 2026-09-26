@@ -20,6 +20,7 @@ import de.fluchitconsulting.rechnungsgenerator.core.model.testSellerConfig
 import de.fluchitconsulting.rechnungsgenerator.core.values.CountryCode
 import de.fluchitconsulting.rechnungsgenerator.core.values.Design
 import de.fluchitconsulting.rechnungsgenerator.core.values.Percent
+import de.fluchitconsulting.rechnungsgenerator.core.values.RgbColor
 import de.fluchitconsulting.rechnungsgenerator.core.values.VatId
 import io.kotest.assertions.withClue
 import io.kotest.core.spec.style.FunSpec
@@ -236,6 +237,29 @@ class InvoiceRendererTest : FunSpec({
             Design.entries.forEach { design ->
                 withClue(design) { typeset(design, null).includesLogo shouldBe false }
             }
+        }
+    }
+
+    context("akzentfarbe (#371)") {
+        fun typeset(design: Design, accentColor: RgbColor?) =
+            InvoiceRenderer
+                .render(CalculatedInvoice(testInvoice(), config.copy(design = design, accentColor = accentColor)).accepted())
+                .sources.tex
+
+        test("der Platzhalter ist die Farbe oder leer") {
+            valueOf(TemplateValue.AKZENTFARBE, sellerConfig = config.copy(accentColor = RgbColor("31ae34"))) shouldBe "31AE34"
+            valueOf(TemplateValue.AKZENTFARBE) shouldBe ""
+        }
+
+        test("helsinki setzt sie als Farbe des Balkens, ohne Eintrag die eigene") {
+            typeset(Design.HELSINKI, RgbColor("31AE34")) shouldContain
+                "\\ifblank{31AE34}{\\definecolor{akzent}{HTML}{8D313A}}{\\definecolor{akzent}{HTML}{31AE34}}"
+            typeset(Design.HELSINKI, null) shouldContain
+                "\\ifblank{}{\\definecolor{akzent}{HTML}{8D313A}}"
+        }
+
+        test("prag hat keine Akzentfarbe und übergeht sie") {
+            typeset(Design.PRAG, RgbColor("31AE34")) shouldBe typeset(Design.PRAG, null)
         }
     }
 

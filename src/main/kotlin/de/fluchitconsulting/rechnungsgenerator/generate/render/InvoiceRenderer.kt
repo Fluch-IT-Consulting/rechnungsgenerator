@@ -99,64 +99,152 @@ object InvoiceRenderer {
         val bank = config.bank
         val taxNumber = config.taxNumber
         return when (key) {
-            TemplateValue.FIRMA -> config.companyName.escapeLatex()
-            TemplateValue.INHABER -> config.ownerName.escapeLatex()
-            TemplateValue.STRASSE -> address.street.escapeLatex()
-            TemplateValue.PLZ -> address.postalCode.escapeLatex()
-            TemplateValue.ORT -> address.city.escapeLatex()
-            TemplateValue.EMAIL -> config.email.escapeLatex()
-            TemplateValue.TELEFON -> config.phone.orEmpty().escapeLatex()
-            TemplateValue.WEBSEITE -> config.website.orEmpty().escapeLatex()
-            TemplateValue.USTID -> config.vatId.formatted().escapeLatex()
-            TemplateValue.STEUERNUMMER -> taxNumber?.value.orEmpty().escapeLatex()
-            TemplateValue.REGISTERGERICHT -> config.registerCourt.orEmpty().escapeLatex()
-            TemplateValue.REGISTERNUMMER -> config.registerNumber.orEmpty().escapeLatex()
-            TemplateValue.GESCHAEFTSFUEHRUNG -> config.managingDirector.orEmpty().escapeLatex()
-            TemplateValue.KONTOINHABER -> bank.accountHolder.escapeLatex()
-            TemplateValue.INSTITUT -> bank.bankName.escapeLatex()
-            TemplateValue.IBAN -> bank.iban.formatted().escapeLatex()
-            TemplateValue.BIC -> bank.bic.value.escapeLatex()
-            TemplateValue.LOGO -> if (config.logo != null) LOGO_NAME.escapeLatex() else Latex.EMPTY
-            TemplateValue.DOKUMENTART -> invoice.type.documentName.escapeLatex()
-            TemplateValue.RECHNUNGSNUMMER -> invoice.number.escapeLatex()
-            TemplateValue.RECHNUNGSDATUM -> GermanFormat.date(invoice.issueDate)
-            TemplateValue.EMPFAENGER -> MetadataBlocks.recipient(calculatedInvoice)
+            TemplateValue.FIRMA -> {
+                config.companyName.escapeLatex()
+            }
+            TemplateValue.INHABER -> {
+                config.ownerName.escapeLatex()
+            }
+            TemplateValue.STRASSE -> {
+                address.street.escapeLatex()
+            }
+            TemplateValue.PLZ -> {
+                address.postalCode.escapeLatex()
+            }
+            TemplateValue.ORT -> {
+                address.city.escapeLatex()
+            }
+            TemplateValue.EMAIL -> {
+                config.email.escapeLatex()
+            }
+            TemplateValue.TELEFON -> {
+                config.phone.orEmpty().escapeLatex()
+            }
+            TemplateValue.WEBSEITE -> {
+                config.website.orEmpty().escapeLatex()
+            }
+            TemplateValue.USTID -> {
+                config.vatId.formatted().escapeLatex()
+            }
+            TemplateValue.STEUERNUMMER -> {
+                taxNumber?.value.orEmpty().escapeLatex()
+            }
+            TemplateValue.REGISTERGERICHT -> {
+                config.registerCourt.orEmpty().escapeLatex()
+            }
+            TemplateValue.REGISTERNUMMER -> {
+                config.registerNumber.orEmpty().escapeLatex()
+            }
+            TemplateValue.GESCHAEFTSFUEHRUNG -> {
+                config.managingDirector.orEmpty().escapeLatex()
+            }
+            TemplateValue.KONTOINHABER -> {
+                bank.accountHolder.escapeLatex()
+            }
+            TemplateValue.INSTITUT -> {
+                bank.bankName.escapeLatex()
+            }
+            TemplateValue.IBAN -> {
+                bank.iban.formatted().escapeLatex()
+            }
+            TemplateValue.BIC -> {
+                bank.bic.value.escapeLatex()
+            }
+            TemplateValue.LOGO -> {
+                if (config.logo != null) LOGO_NAME.escapeLatex() else Latex.EMPTY
+            }
+            TemplateValue.AKZENTFARBE -> {
+                config.accentColor
+                    ?.value
+                    .orEmpty()
+                    .escapeLatex()
+            }
+            TemplateValue.DOKUMENTART -> {
+                invoice.type.documentName.escapeLatex()
+            }
+            TemplateValue.RECHNUNGSNUMMER -> {
+                invoice.number.escapeLatex()
+            }
+            TemplateValue.RECHNUNGSDATUM -> {
+                GermanFormat.date(invoice.issueDate)
+            }
+            TemplateValue.EMPFAENGER -> {
+                MetadataBlocks.recipient(calculatedInvoice)
+            }
             // BT-48, leer, wenn der Kunde keine hat. Bei Reverse Charge und
             // innergemeinschaftlicher Lieferung verlangt §14a UStG sie auf der
             // Rechnung; wo sie steht, entscheidet die Vorlage.
-            TemplateValue.KUNDE_USTID -> customer.vatId?.formatted()?.escapeLatex() ?: Latex.EMPTY
+            TemplateValue.KUNDE_USTID -> {
+                customer.vatId?.formatted()?.escapeLatex() ?: Latex.EMPTY
+            }
             // BT-46 und BT-14: freiwillige Angaben der Rechnungsdatei, leer,
             // wenn sie keine nennt – Pflicht ist nur, dass die Vorlage sie
             // setzt (#190, #191).
-            TemplateValue.KUNDENNUMMER -> customer.buyerIdentifier?.escapeLatex() ?: Latex.EMPTY
-            TemplateValue.AUFTRAGSNUMMER -> invoice.salesOrderReference?.escapeLatex() ?: Latex.EMPTY
+            TemplateValue.KUNDENNUMMER -> {
+                customer.buyerIdentifier?.escapeLatex() ?: Latex.EMPTY
+            }
+            TemplateValue.AUFTRAGSNUMMER -> {
+                invoice.salesOrderReference?.escapeLatex() ?: Latex.EMPTY
+            }
             // Die eine Beschriftung, die vom Renderer kommt (#188): Auf einer
             // Abschlagsrechnung ist der Zeitraum eine Prognose, und eine
             // Vorlage, die dort fest "Leistungszeitraum" schriebe, wäre falsch.
             // Den Doppelpunkt setzt die Vorlage.
-            TemplateValue.ZEITRAUM_BESCHRIFTUNG -> invoice.type.servicePeriodLabel.escapeLatex()
+            TemplateValue.ZEITRAUM_BESCHRIFTUNG -> {
+                invoice.type.servicePeriodLabel.escapeLatex()
+            }
             // Pflichtangabe nach §14 Abs. 4 Nr. 6 UStG, geschrieben wie die Art
             // es verlangt.
-            TemplateValue.LEISTUNGSZEITRAUM -> servicePeriod(invoice.servicePeriod, invoice.type)
-            TemplateValue.VEREINNAHMT_AM -> MetadataBlocks.receivedOn(acceptedInvoice)
+            TemplateValue.LEISTUNGSZEITRAUM -> {
+                servicePeriod(invoice.servicePeriod, invoice.type)
+            }
+            TemplateValue.VEREINNAHMT_AM -> {
+                MetadataBlocks.receivedOn(acceptedInvoice)
+            }
             // BT-10, die Referenz des Kunden.
-            TemplateValue.KUNDENREFERENZ -> customer.buyerReference?.escapeLatex() ?: Latex.EMPTY
+            TemplateValue.KUNDENREFERENZ -> {
+                customer.buyerReference?.escapeLatex() ?: Latex.EMPTY
+            }
             // Ob es ein Zahlungsziel gibt, entscheidet der Calculator
             // (CalculatedInvoice.dueDate); hier wird nur gesetzt, was dasteht.
             // Ohne eines bleibt der Wert leer, und die Vorlage lässt die Zeile
             // samt Beschriftung weg.
-            TemplateValue.ZAHLUNGSZIEL -> calculatedInvoice.dueDate?.let { GermanFormat.date(it) } ?: Latex.EMPTY
-            TemplateValue.EINLEITUNG -> invoice.introduction.orEmpty().escapeLatex()
-            TemplateValue.RABATTSPALTE -> ItemBlocks.discountColumn(calculatedInvoice)
-            TemplateValue.POSITIONEN -> ItemBlocks.lineItems(calculatedInvoice)
-            TemplateValue.SUMMEN -> ItemBlocks.totalsBlock(calculatedInvoice)
-            TemplateValue.ARTHINWEIS -> ItemBlocks.typeNote(acceptedInvoice)
-            TemplateValue.STEUERHINWEISE -> ItemBlocks.taxNotes(calculatedInvoice)
-            TemplateValue.ABSETZUNG -> DeductionBlocks.deductionBlock(acceptedInvoice)
-            TemplateValue.ZAHLUNGSFRIST -> ItemBlocks.paymentTermNote(calculatedInvoice)
-            TemplateValue.SKONTO -> ItemBlocks.skontoNote(calculatedInvoice)
-            TemplateValue.BANKVERBINDUNG -> SellerBlocks.bankDetails(calculatedInvoice)
-            TemplateValue.SCHLUSSSATZ -> (invoice.note ?: config.closingLine).escapeLatex()
+            TemplateValue.ZAHLUNGSZIEL -> {
+                calculatedInvoice.dueDate?.let { GermanFormat.date(it) } ?: Latex.EMPTY
+            }
+            TemplateValue.EINLEITUNG -> {
+                invoice.introduction.orEmpty().escapeLatex()
+            }
+            TemplateValue.RABATTSPALTE -> {
+                ItemBlocks.discountColumn(calculatedInvoice)
+            }
+            TemplateValue.POSITIONEN -> {
+                ItemBlocks.lineItems(calculatedInvoice)
+            }
+            TemplateValue.SUMMEN -> {
+                ItemBlocks.totalsBlock(calculatedInvoice)
+            }
+            TemplateValue.ARTHINWEIS -> {
+                ItemBlocks.typeNote(acceptedInvoice)
+            }
+            TemplateValue.STEUERHINWEISE -> {
+                ItemBlocks.taxNotes(calculatedInvoice)
+            }
+            TemplateValue.ABSETZUNG -> {
+                DeductionBlocks.deductionBlock(acceptedInvoice)
+            }
+            TemplateValue.ZAHLUNGSFRIST -> {
+                ItemBlocks.paymentTermNote(calculatedInvoice)
+            }
+            TemplateValue.SKONTO -> {
+                ItemBlocks.skontoNote(calculatedInvoice)
+            }
+            TemplateValue.BANKVERBINDUNG -> {
+                SellerBlocks.bankDetails(calculatedInvoice)
+            }
+            TemplateValue.SCHLUSSSATZ -> {
+                (invoice.note ?: config.closingLine).escapeLatex()
+            }
         }
     }
 

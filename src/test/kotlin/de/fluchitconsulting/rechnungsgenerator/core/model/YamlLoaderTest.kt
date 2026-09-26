@@ -5,6 +5,7 @@ import de.fluchitconsulting.rechnungsgenerator.core.values.Design
 import de.fluchitconsulting.rechnungsgenerator.core.values.Money
 import de.fluchitconsulting.rechnungsgenerator.core.values.Percent
 import de.fluchitconsulting.rechnungsgenerator.core.values.Price
+import de.fluchitconsulting.rechnungsgenerator.core.values.RgbColor
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.assertions.withClue
 import io.kotest.core.spec.style.FunSpec
@@ -232,6 +233,52 @@ class YamlLoaderTest : FunSpec({
 
         failure.message!! shouldContain file.toString()
         failure.message!! shouldContain "Kein gültiger regulärer Ausdruck"
+    }
+
+    context("akzentfarbe (#371)") {
+        test("ohne Eintrag keine, mit Eintrag die genannte") {
+            YamlLoader.parseSellerConfig(resource("stammdaten.yaml")).accentColor shouldBe null
+            YamlLoader.parseSellerConfig(resource("stammdaten.yaml") + "akzentfarbe: 31ae34\n").accentColor shouldBe
+                RgbColor("31AE34")
+        }
+
+        test("sechs Ziffern ohne Buchstaben bleiben eine Farbe und werden keine Zahl") {
+            YamlLoader.parseSellerConfig(resource("stammdaten.yaml") + "akzentfarbe: 000000\n").accentColor shouldBe
+                RgbColor("000000")
+        }
+
+        test("eine ungültige Farbe nennt Datei und Wert") {
+            val file = createTempDirectory("loader-test").resolve("stammdaten.yaml")
+            file.writeText(resource("stammdaten.yaml") + "akzentfarbe: grün\n")
+
+            val failure = shouldThrow<InputFileException> { YamlLoader.loadSellerConfig(file) }
+
+            failure.message!! shouldContain file.toString()
+            failure.message!! shouldContain "'grün'"
+        }
+
+        test("ein # ohne Anführungszeichen ist ein Kommentar, und der leere Wert bricht ab") {
+            // Sonst käme null an, und die Rechnung erschiene still in der
+            // Farbe der Vorlage.
+            listOf("akzentfarbe: #31AE34", "akzentfarbe:", "akzentfarbe: ~").forEach { entry ->
+                withClue(entry) {
+                    val file = createTempDirectory("loader-test").resolve("stammdaten.yaml")
+                    file.writeText(resource("stammdaten.yaml") + "$entry\n")
+
+                    val failure = shouldThrow<InputFileException> { YamlLoader.loadSellerConfig(file) }
+
+                    failure.message!! shouldContain file.toString()
+                    failure.message!! shouldContain "akzentfarbe steht ohne Wert da"
+                    failure.message!! shouldContain "ohne #"
+                }
+            }
+        }
+
+        test("in Anführungszeichen mit # bricht es ebenfalls ab") {
+            shouldThrow<SerializationException> {
+                YamlLoader.parseSellerConfig(resource("stammdaten.yaml") + "akzentfarbe: \"#31AE34\"\n")
+            }.message!! shouldContain "ohne #"
+        }
     }
 
     context("logo") {
