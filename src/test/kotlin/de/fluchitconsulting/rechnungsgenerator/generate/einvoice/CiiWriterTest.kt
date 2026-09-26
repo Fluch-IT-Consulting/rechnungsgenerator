@@ -3,10 +3,12 @@ package de.fluchitconsulting.rechnungsgenerator.generate.einvoice
 import de.fluchitconsulting.rechnungsgenerator.core.accepted.AcceptedInvoice
 import de.fluchitconsulting.rechnungsgenerator.core.accepted.accepted
 import de.fluchitconsulting.rechnungsgenerator.core.calculation.CalculatedInvoice
+import de.fluchitconsulting.rechnungsgenerator.core.model.CheckMethod
 import de.fluchitconsulting.rechnungsgenerator.core.model.InvoiceType
 import de.fluchitconsulting.rechnungsgenerator.core.model.ServicePeriod
 import de.fluchitconsulting.rechnungsgenerator.core.model.SkontoTier
 import de.fluchitconsulting.rechnungsgenerator.core.model.TaxCategory
+import de.fluchitconsulting.rechnungsgenerator.core.model.VatIdCheck
 import de.fluchitconsulting.rechnungsgenerator.core.model.YamlLoader
 import de.fluchitconsulting.rechnungsgenerator.core.model.exampleInvoices
 import de.fluchitconsulting.rechnungsgenerator.core.model.testInvoice
@@ -14,10 +16,12 @@ import de.fluchitconsulting.rechnungsgenerator.core.model.testItem
 import de.fluchitconsulting.rechnungsgenerator.core.model.testSellerConfig
 import de.fluchitconsulting.rechnungsgenerator.core.rules.Rule
 import de.fluchitconsulting.rechnungsgenerator.core.rules.Subject
+import de.fluchitconsulting.rechnungsgenerator.core.values.CountryCode
 import de.fluchitconsulting.rechnungsgenerator.core.values.Percent
 import de.fluchitconsulting.rechnungsgenerator.core.values.VatId
 import io.kotest.assertions.withClue
 import io.kotest.core.spec.style.FunSpec
+import io.kotest.matchers.collections.shouldBeEmpty
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.string.shouldContain
 import io.kotest.matchers.string.shouldNotContain
@@ -52,11 +56,6 @@ class CiiWriterTest : FunSpec({
         example("rechnung").xml() shouldBe resource("rechnung-erwartet.xml")
     }
 
-    /**
-     * Gültig heißt für Mustang auch "gültig mit Warnungen". Erlaubt ist genau
-     * eine, die zum leeren `ApplicableHeaderTradeDelivery` (siehe `CiiWriter`);
-     * jede weitere wäre ein Befund, der sonst unbemerkt durchginge.
-     */
     test("das XML ist gültig, mit keiner Warnung außer PEPPOL-EN16931-R008") {
         example("rechnung").xml().shouldBeValidExtended()
     }
@@ -110,6 +109,79 @@ class CiiWriterTest : FunSpec({
         xml shouldNotContain "ram:SpecifiedLegalOrganization"
     }
 
+    context("die Steuerkategorien außer S") {
+        test("Z trägt keinen Befreiungsgrund") {
+            val xml = invoiceIn(TaxCategory.ZERO_RATED).xml()
+
+            xml.occurrencesOf("<ram:CategoryCode>Z</ram:CategoryCode>") shouldBe 2
+            xml shouldNotContain "ram:ExemptionReason"
+            xml.shouldBeValidExtended()
+        }
+
+        // Je einmal an der Position und in der Aufschlüsselung, gleich lautend.
+        test("E trägt den Grund aus der Rechnungsdatei") {
+            val xml = invoiceIn(TaxCategory.EXEMPT, reason = "Steuerfrei nach §4 Nr. 21 UStG").xml()
+
+            xml.occurrencesOf("<ram:ExemptionReason>Steuerfrei nach §4 Nr. 21 UStG</ram:ExemptionReason>") shouldBe 2
+            xml.shouldBeValidExtended()
+        }
+
+        listOf(TaxCategory.REVERSE_CHARGE to "AT", TaxCategory.EXPORT to "CH").forEach { (category, country) ->
+            test("${category.code} trägt ohne eigenen Grund den der Kategorie") {
+                val xml = invoiceIn(category, country).xml()
+
+                xml.occurrencesOf("<ram:ExemptionReason>${category.defaultReason}</ram:ExemptionReason>") shouldBe 2
+                xml.shouldBeValidExtended()
+            }
+        }
+
+        // Das Lieferland füllt den Lieferblock, und damit entfällt auch die
+        // Warnung zum leeren Element.
+        test("K nennt das Land des Kunden als Lieferland") {
+            val xml = invoiceIn(TaxCategory.INTRA_COMMUNITY, "AT").xml()
+
+            xml shouldContain
+                """
+                |    <ram:ApplicableHeaderTradeDelivery>
+                |      <ram:ShipToTradeParty>
+                |        <ram:PostalTradeAddress>
+                |          <ram:CountryID>AT</ram:CountryID>
+                """.trimMargin()
+            xml.shouldBeValidExtended()
+        }
+
+        // In der Aufschlüsselung bleibt die 0 stehen, an der Position nicht.
+        test("O nennt an der Position keinen Satz") {
+            val xml = invoiceIn(TaxCategory.OUT_OF_SCOPE, reason = "Nicht steuerbar").xml()
+
+            xml.occurrencesOf("<ram:RateApplicablePercent>") shouldBe 1
+            xml.shouldBeValidExtended()
+        }
+
+        // EXTENDED lässt O neben anderen Kategorien zu und verlangt dann
+        // nicht, dass die USt-IdNr. des Verkäufers fehlt. BR-O-02 und
+        // BR-O-11 bis BR-O-14 prüft Mustang nur in BASIC und EN16931.
+        test("O neben S ist gültig") {
+            val invoice =
+                testInvoice(
+                    items =
+                        listOf(
+                            testItem(),
+                            testItem(vatRate = "0", taxCategory = TaxCategory.OUT_OF_SCOPE, taxExemptionReason = "Nicht steuerbar"),
+                        ),
+                )
+
+            CalculatedInvoice(invoice, testSellerConfig()).accepted().xml().shouldBeValidExtended()
+        }
+
+        test("gemischte Steuersätze samt E und Z sind gültig") {
+            val xml = example("gemischte-steuersaetze").xml()
+
+            listOf("S", "E", "Z").forEach { xml shouldContain "<ram:CategoryCode>$it</ram:CategoryCode>" }
+            xml.shouldBeValidExtended()
+        }
+    }
+
     context("was noch nicht geht, bricht ab statt still zu fehlen") {
         listOf(InvoiceType.PREPAYMENT, InvoiceType.FINAL, InvoiceType.CANCELLATION).forEach { type ->
             test("eine ${type.documentName}") {
@@ -120,18 +192,10 @@ class CiiWriterTest : FunSpec({
             }
         }
 
-        test("Rabatt, eine andere Steuerkategorie als S und Skonto, alle auf einmal") {
+        test("Rabatt und Skonto, alle auf einmal") {
             val invoice =
                 testInvoice(
-                    items =
-                        listOf(
-                            testItem(discount = "10"),
-                            testItem(
-                                vatRate = "0",
-                                taxCategory = TaxCategory.EXEMPT,
-                                taxExemptionReason = "Steuerfrei nach §4 Nr. 21 UStG",
-                            ),
-                        ),
+                    items = listOf(testItem(discount = "10"), testItem(), testItem(discount = "5")),
                     skonto = listOf(SkontoTier(Percent("2"), 7)),
                 )
             val result = CiiWriter.write(CalculatedInvoice(invoice, testSellerConfig()).accepted())
@@ -141,20 +205,50 @@ class CiiWriterTest : FunSpec({
             findings.map { it.subject } shouldBe
                 listOf(
                     Subject.Item(0, "Testposition"),
-                    Subject.Item(1, "Testposition"),
+                    Subject.Item(2, "Testposition"),
                     Subject.WholeInvoice,
                 )
         }
     }
 })
 
+/**
+ * Eine Rechnung, deren einzige Position in [category] steht, an einen Kunden
+ * in [country]. Verlangt die Kategorie die USt-IdNr. des Kunden, trägt er eine
+ * samt Nachweis der Bestätigungsabfrage, sonst lehnten die Regeln ab.
+ */
+private fun invoiceIn(
+    category: TaxCategory,
+    country: String = "DE",
+    reason: String? = null,
+): AcceptedInvoice {
+    val invoice = testInvoice(items = listOf(testItem(vatRate = "0", taxCategory = category, taxExemptionReason = reason)))
+    val customer =
+        invoice.customer.copy(
+            address = invoice.customer.address.copy(countryCode = CountryCode(country)),
+            vatId = VatId("ATU12345678").takeIf { category.requiresCustomerVatId },
+            vatIdCheck =
+                VatIdCheck(LocalDate.of(2026, 8, 1), CheckMethod.QUALIFIED, "BZSt-Protokoll 4711")
+                    .takeIf { category.requiresCustomerVatId },
+        )
+    return CalculatedInvoice(invoice.copy(customer = customer), testSellerConfig()).accepted()
+}
+
+private fun String.occurrencesOf(text: String): Int = split(text).size - 1
+
+/**
+ * Gültig heißt für Mustang auch "gültig mit Warnungen". Erlaubt ist nur die
+ * zum leeren `ApplicableHeaderTradeDelivery` (siehe `CiiWriter`), und die
+ * fehlt, sobald der Block ein Lieferland trägt. Jede andere wäre ein Befund,
+ * der sonst unbemerkt durchginge.
+ */
 private fun String.shouldBeValidExtended() {
     val validator = ZUGFeRDValidator()
     val report = validator.validate(toByteArray(), "factur-x.xml")
 
     withClue(report) {
         validator.wasCompletelyValid() shouldBe true
-        warningIds(report) shouldBe listOf("PEPPOL-EN16931-R008")
+        warningIds(report).filterNot { it == "PEPPOL-EN16931-R008" }.shouldBeEmpty()
     }
 }
 

@@ -3,6 +3,7 @@ package de.fluchitconsulting.rechnungsgenerator.generate.einvoice
 import de.fluchitconsulting.rechnungsgenerator.core.accepted.AcceptedInvoice
 import de.fluchitconsulting.rechnungsgenerator.core.calculation.CalculatedInvoice
 import de.fluchitconsulting.rechnungsgenerator.core.calculation.CalculatedLine
+import de.fluchitconsulting.rechnungsgenerator.core.calculation.VatGroup
 import de.fluchitconsulting.rechnungsgenerator.core.model.Address
 import de.fluchitconsulting.rechnungsgenerator.core.model.ServicePeriod
 import de.fluchitconsulting.rechnungsgenerator.core.model.TaxCategory
@@ -67,9 +68,6 @@ object CiiWriter {
                 if (line.item.discount != null) {
                     add(notYet(subject, "Ein Rabatt lässt sich noch nicht als ZUGFeRD erzeugen."))
                 }
-                if (line.item.taxCategory != TaxCategory.STANDARD) {
-                    add(notYet(subject, "Die Steuerkategorie ${line.item.taxCategory.code} lässt sich noch nicht als ZUGFeRD erzeugen."))
-                }
             }
             if (calculated.skonto.isNotEmpty()) {
                 add(notYet(Subject.WholeInvoice, "Ein Skonto lässt sich noch nicht als ZUGFeRD erzeugen."))
@@ -102,20 +100,42 @@ object CiiWriter {
                 }
             }
             element("rsm:SupplyChainTradeTransaction") {
-                calculated.lines.forEachIndexed { index, line -> lineItem(index, line) }
+                calculated.lines.forEachIndexed { index, line -> lineItem(index, line, calculated.vatGroupOf(line)) }
                 agreement(calculated)
-                // Leer, weil hier nur ein Lieferdatum (BT-72) stünde, und bei
-                // einem Leistungszeitraum wäre jedes Datum erfunden. Der Zeitraum
-                // steht in der Abrechnung (BG-14). Das Schematron warnt deshalb
-                // mit PEPPOL-EN16931-R008, das Schema verlangt das Element.
-                empty("ram:ApplicableHeaderTradeDelivery")
+                delivery(calculated)
                 settlement(calculated)
             }
         }
 
+    /**
+     * Meist leer, weil hier nur ein Lieferdatum (BT-72) stünde, und bei einem
+     * Leistungszeitraum wäre jedes Datum erfunden. Der Zeitraum steht in der
+     * Abrechnung (BG-14). Das Schematron warnt deshalb mit
+     * PEPPOL-EN16931-R008, das Schema verlangt das Element.
+     *
+     * Nur die innergemeinschaftliche Lieferung braucht ein Lieferland (BT-80,
+     * BR-IC-12). Das ist das Land des Kunden: Ein eigenes Feld für eine
+     * abweichende Lieferanschrift, etwa beim Reihengeschäft, kennt das Modell
+     * nicht, und bei einer Beratungsrechnung kommt K praktisch nicht vor.
+     */
+    private fun XmlElements.delivery(calculated: CalculatedInvoice) {
+        if (TaxCategory.INTRA_COMMUNITY in calculated.taxCategories) {
+            element("ram:ApplicableHeaderTradeDelivery") {
+                element("ram:ShipToTradeParty") {
+                    element("ram:PostalTradeAddress") {
+                        element("ram:CountryID", calculated.invoice.customer.address.countryCode.value)
+                    }
+                }
+            }
+        } else {
+            empty("ram:ApplicableHeaderTradeDelivery")
+        }
+    }
+
     private fun XmlElements.lineItem(
         index: Int,
         line: CalculatedLine,
+        group: VatGroup,
     ) {
         val item = line.item
         element("ram:IncludedSupplyChainTradeLineItem") {
@@ -138,8 +158,17 @@ object CiiWriter {
             element("ram:SpecifiedLineTradeSettlement") {
                 element("ram:ApplicableTradeTax") {
                     element("ram:TypeCode", "VAT")
+                    // Der Grund der Gruppe und nicht der der Position: EXTENDED
+                    // verlangt beide gleich (BR-FXEXT-E-08rev und die
+                    // Geschwister je Kategorie), und die Gruppe trägt schon den
+                    // Vorgabegrund der Kategorie.
+                    group.exemptionReason?.let { element("ram:ExemptionReason", it) }
                     element("ram:CategoryCode", item.taxCategory.code)
-                    element("ram:RateApplicablePercent", percent(item.vatRate))
+                    // Nicht steuerbar heißt ohne Satz, nicht mit 0 % (BR-O-05).
+                    // In der Aufschlüsselung darf die 0 stehen (BR-48).
+                    if (item.taxCategory != TaxCategory.OUT_OF_SCOPE) {
+                        element("ram:RateApplicablePercent", percent(item.vatRate))
+                    }
                 }
                 item.servicePeriod?.let { period(it) }
                 element("ram:SpecifiedTradeSettlementLineMonetarySummation") {
@@ -231,6 +260,7 @@ object CiiWriter {
                 element("ram:ApplicableTradeTax") {
                     element("ram:CalculatedAmount", amount(group.amount))
                     element("ram:TypeCode", "VAT")
+                    group.exemptionReason?.let { element("ram:ExemptionReason", it) }
                     element("ram:BasisAmount", amount(group.base))
                     element("ram:CategoryCode", group.category.code)
                     element("ram:RateApplicablePercent", percent(group.rate))
