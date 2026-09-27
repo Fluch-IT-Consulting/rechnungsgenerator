@@ -1,0 +1,82 @@
+# Fiktive Rechnung auf Englisch (#377) an einen Unternehmer im Vereinigten
+# Königreich: der häufigste Fall einer englischen Rechnung. Eine sonstige
+# Leistung an einen Unternehmer im Drittland ist in Deutschland nicht
+# steuerbar (§3a Abs. 2 UStG), deshalb Kategorie O mit Grund.
+#
+# Die Positionen tragen, was auf Englisch anders geschrieben wird: Beträge
+# über 1.000 mit Tausendertrenner, einen Einzelpreis mit drei
+# Nachkommastellen, einen Rabatt, eine negative Position für das Minus vor
+# dem €, und die Einheiten in Einzahl, Mehrzahl und Bruchteil – 1 hr, 1 day,
+# 2 days, 0.5 days.
+sprache: en-GB
+nummer: R26-051
+datum: 2026-08-14
+leistungszeitraum:
+  von: 2026-07-01
+  bis: 2026-07-31
+kunde:
+  name: Example Ltd
+  ansprechpartner: Accounts Payable
+  kundennummer: "0017"
+  referenz: PO-4711
+  anschrift:
+    strasse: 1 Example Street
+    plz: EC1A 1BB
+    ort: London
+    land: GB
+einleitung: For the consulting services in July 2026 we invoice as follows.
+positionen:
+  - bezeichnung: IT consulting
+    beschreibung: Framework agreement of 1 February 2026
+    menge: 86.5
+    einheit: Std.
+    einzelpreis: 95.00
+    ust-satz: 0
+    steuerkategorie: O
+    steuerbefreiungsgrund: Not taxable in Germany, place of supply abroad
+  - bezeichnung: Support call
+    menge: 1
+    einheit: Std.
+    einzelpreis: 95.00
+    ust-satz: 0
+    steuerkategorie: O
+    steuerbefreiungsgrund: Not taxable in Germany, place of supply abroad
+  - bezeichnung: Workshop
+    menge: 2
+    einheit: Tage
+    einzelpreis: 1200.00
+    rabatt: 10
+    ust-satz: 0
+    steuerkategorie: O
+    steuerbefreiungsgrund: Not taxable in Germany, place of supply abroad
+  - bezeichnung: Follow-up workshop
+    positions-leistungszeitraum:
+      von: 2026-07-20
+      bis: 2026-07-20
+    menge: 1
+    einheit: Tage
+    einzelpreis: 1200.00
+    ust-satz: 0
+    steuerkategorie: O
+    steuerbefreiungsgrund: Not taxable in Germany, place of supply abroad
+  - bezeichnung: Review
+    menge: 0.5
+    einheit: Tage
+    einzelpreis: 1200.00
+    ust-satz: 0
+    steuerkategorie: O
+    steuerbefreiungsgrund: Not taxable in Germany, place of supply abroad
+  - bezeichnung: Mileage
+    menge: 120
+    einheit: km
+    einzelpreis: 0.335
+    ust-satz: 0
+    steuerkategorie: O
+    steuerbefreiungsgrund: Not taxable in Germany, place of supply abroad
+  - bezeichnung: Credit for travel booked twice
+    menge: -1
+    einheit: pauschal
+    einzelpreis: 200.00
+    ust-satz: 0
+    steuerkategorie: O
+    steuerbefreiungsgrund: Not taxable in Germany, place of supply abroad

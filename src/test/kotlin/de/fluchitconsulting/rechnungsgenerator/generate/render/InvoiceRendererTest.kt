@@ -201,6 +201,27 @@ class InvoiceRendererTest : FunSpec({
             resource("prag-rechnung-erwartet.tex")
     }
 
+    /**
+     * Je Design der Volltext einer englischen Rechnung (#377), wie der
+     * deutschen oben eine Frage und keine Aufgabe. Was aus Kotlin kommt –
+     * Daten, Einheiten, Sätze, das Land – steht hier wörtlich; die Wörter der
+     * Designs stehen als `\wort…` da und in ihren Sprachdateien.
+     */
+    test("eine englische Rechnung wird in jedem Design gesetzt wie festgehalten") {
+        val seller = YamlLoader.parseSellerConfig(resource("stammdaten.yaml"))
+        val invoice = YamlLoader.parseInvoice(resource("englische-rechnung.yaml"))
+
+        mapOf(
+            seller to "englische-rechnung-erwartet.tex",
+            seller.copy(design = Design.PRAG, logo = exampleLogo) to "prag-englische-rechnung-erwartet.tex",
+        ).forEach { (sellerConfig, expected) ->
+            withClue(expected) {
+                InvoiceRenderer.render(CalculatedInvoice(invoice, sellerConfig).accepted()).sources.tex shouldBe
+                    resource(expected)
+            }
+        }
+    }
+
     context("logo (#198)") {
         fun typeset(design: Design, logo: Logo?) =
             InvoiceRenderer.render(CalculatedInvoice(testInvoice(), config.copy(design = design, logo = logo)).accepted())
