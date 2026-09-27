@@ -63,6 +63,12 @@ Ohne `-s` wie beim Erzeugen: Der Generator sucht die Stammdaten je Datei. Liegen
 die Abschlagsrechnungen in verschiedenen Wurzeln, bricht er ab und nennt beide –
 dann gehören sie nicht in einen Block.
 
+Die Sprache der Abschlagsrechnungen spielt keine Rolle: Eine englische
+Schlussrechnung setzt auch Abschläge ab, die deutsch gestellt wurden. Der Block
+trägt nur Nummern, Daten und Beträge, und die stehen auf dem Blatt in der
+Sprache der Schlussrechnung. Frag deshalb nicht nach, wenn die Sprachen
+verschieden sind.
+
 Den Block übernimmst du, wie er kommt. Bei einem Fehler endet das Kommando mit
 einem Exitcode ungleich 0 und schreibt nichts in die Datei; gib die Meldung
 weiter. Fertig, wenn der Block in der Datei steht.

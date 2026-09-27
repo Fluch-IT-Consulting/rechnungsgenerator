@@ -117,7 +117,7 @@ Was du dir selbst beschaffen kannst, solltest du auch selbst beschaffen:
   Eine englische Rechnung ist `sprache: en-GB`, und dann schreibst du alles,
   was aufs Blatt kommt, auf Englisch: Bezeichnungen, Beschreibungen,
   Einleitung, Befreiungsgrund. Die Schlüssel und `einheit: Std.` bleiben
-  deutsch. Englisch geht bisher nur mit `art: rechnung`, ohne Skonto und ohne
+  deutsch. Englisch geht mit jeder `art`, aber bisher ohne Skonto und ohne
   die Kategorien AE, K und G – sonst bricht der Generator mit
   `SPRACHE_NOCH_NICHT_MOEGLICH` ab; frag dann, ob die Rechnung deutsch sein
   soll.

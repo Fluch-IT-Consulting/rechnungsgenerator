@@ -219,8 +219,8 @@ PDF/A-Prüfung über veraPDF.
   `Language` in `core.values` ist eine geschlossene Menge von Tags nach
   BCP 47, immer mit Variante. Was an ihr hängt, steht an drei Orten:
   - Sätze mit fachlicher Aussage in Kotlin, wo sie schon standen
-    (`InvoiceType`, `TaxCategory`, `Unit`, `ItemBlocks`, `DateFormat`), je als
-    `when` über die Sprache ohne `else`.
+    (`InvoiceType`, `TaxCategory`, `Unit`, `ItemBlocks`, `DeductionBlocks`,
+    `DateFormat`), je als `when` über die Sprache ohne `else`.
   - Die Wörter eines Designs in seiner **Sprachdatei**,
     `templates/<design>-<tag>.tex`, als `\wort…`-Makros samt der
     Zahlenschreibweise. Der Renderer legt sie als `sprache.tex` neben die
@@ -231,9 +231,10 @@ PDF/A-Prüfung über veraPDF.
     Ihre Schlüssel sind Sprachbereiche: erst der genaue Code, dann die
     Hauptsprache, dann die Vorgabe aus `SellerConfig.closingLine`.
 
-  Englisch kann zuerst nur die gewöhnliche Rechnung, mit S, Z, E und O und
-  ohne Skonto; alles andere lehnt `SPRACHE_NOCH_NICHT_MOEGLICH` ab
-  (`LanguageRules`). Die englischen Zweige der fehlenden Sätze werfen über
+  Englisch kann jede Rechnungsart (#405), aber nur mit S, Z, E und O und
+  ohne Skonto; AE, K, G und Skonto lehnt `SPRACHE_NOCH_NICHT_MOEGLICH` ab
+  (`LanguageRules`). Die englischen Begriffe der Arten und der Absetzung
+  stehen im Glossar, die Pflichtsätze je Art neben den deutschen. Die englischen Zweige der fehlenden Sätze werfen über
   `Language.notYet`. Beide Hälften hält das Pflichtangaben-Netz zusammen: Es
   setzt jedes Beispiel auf Englisch und verlangt diesen Abbruch oder ein PDF.
   Wer einen Satz übersetzt, nimmt ihn dort aus dem Ausschluss.
@@ -458,8 +459,10 @@ PDF/A-Prüfung über veraPDF.
 
   Dazu ein Sicherungsnetz: `src/test/resources/rechnung-erwartet.tex` ist das
   erwartete LaTeX der Beispielrechnung, zeichengleich verglichen, daneben je
-  Art eine Inhalts-Datei `<art>-inhalt.tex` und je Design ein Volltext der
-  gewöhnlichen Rechnung und einer englischen (`englische-rechnung.yaml`). Wird
+  Art eine Inhalts-Datei `<art>-inhalt.tex`, dieselbe auf Englisch
+  (`<art>-en-gb-inhalt.tex`, aus dem Beispiel mit `sprache: en-GB`) und je
+  Design ein Volltext der gewöhnlichen Rechnung und einer englischen
+  (`englische-rechnung.yaml`). Wird
   einer rot, ist das **eine Frage und keine Aufgabe**: erst nachsehen, ob die
   Änderung gewollt ist, dann die Datei neu erzeugen – und das erzeugte PDF
   gegen das vorherige prüfen. Gleiche Prüfsumme
@@ -546,7 +549,8 @@ PDF/A-Prüfung über veraPDF.
   Renderer und wie er ohne eigene Rechnung – jede Zahl kommt aus der
   `CalculatedInvoice`, denn Mustangs Modell rundet anders als ADR-0013 und
   kennt `SpecifiedAdvancePayment` nicht. `<art>-erwartet.xml` ist je Art, die
-  der Writer schreibt, die Vergleichsdatei, eine Frage und keine Aufgabe wie
+  der Writer schreibt, die Vergleichsdatei, dazu `englische-rechnung-erwartet.xml`
+  für die Freitexte auf Englisch – eine Frage und keine Aufgabe wie
   die `.tex`-Dateien; daneben prüft Mustang das XML, und erlaubt ist allein
   die Warnung `PEPPOL-EN16931-R008` zum leeren
   `ApplicableHeaderTradeDelivery`. Leer ist es nicht bei K: Dort steht das Land
