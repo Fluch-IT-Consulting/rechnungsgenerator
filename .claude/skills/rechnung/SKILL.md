@@ -201,7 +201,7 @@ soll die Zahlen prüfen können, ohne die Datei zu öffnen.
 ```yaml
 nummer: R26-012
 art: rechnung                       # optional, Vorgabe: rechnung
-sprache: en-GB                      # optional, Vorgabe: de-DE; sonst nur en-GB
+sprache: de-DE                      # optional, Vorgabe: de-DE; sonst nur en-GB
 datum: 2026-09-02
 leistungszeitraum:
   von: 2026-08-01
