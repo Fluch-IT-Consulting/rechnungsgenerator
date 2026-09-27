@@ -100,6 +100,14 @@ private data class Words(
 )
 
 /**
+ * Dieselben Wörter für beide Varianten des Englischen: Die Sprachdateien
+ * eines Designs schreiben sie gleich (#407). Setzt eine Variante ein Wort
+ * anders, bekommt sie hier ihren eigenen Eintrag.
+ */
+private fun englishWords(words: Words): Map<Language, Words> =
+    mapOf(Language.BRITISH_ENGLISH to words, Language.AMERICAN_ENGLISH to words)
+
+/**
  * Das Pflichtangaben-Netz unter jedem Design: Für jede Rechnungsart entsteht
  * das PDF mit den echten Werkzeugen, veraPDF bestätigt PDF/A-1b, und
  * `pdftotext` liest zurück, ob die Pflichtangaben auf dem Blatt stehen.
@@ -177,7 +185,8 @@ class PflichtangabenTest : FunSpec({
                                 greeting = "Mit freundlichen Grüßen",
                                 columnHeading = "EINZELPREIS",
                             ),
-                        Language.BRITISH_ENGLISH to
+                    ) +
+                        englishWords(
                             Words(
                                 dueDateLabel = "Due in full by",
                                 bankHeading = "Bank details",
@@ -187,7 +196,7 @@ class PflichtangabenTest : FunSpec({
                                 greeting = "Kind regards",
                                 columnHeading = "UNIT PRICE",
                             ),
-                    ),
+                        ),
             ),
             Design(
                 name = "prag",
@@ -211,7 +220,8 @@ class PflichtangabenTest : FunSpec({
                                 greeting = null,
                                 columnHeading = "Einzelpreis",
                             ),
-                        Language.BRITISH_ENGLISH to
+                    ) +
+                        englishWords(
                             Words(
                                 dueDateLabel = "Payment is due",
                                 bankHeading = null,
@@ -221,7 +231,7 @@ class PflichtangabenTest : FunSpec({
                                 greeting = null,
                                 columnHeading = "Unit price",
                             ),
-                    ),
+                        ),
             ),
         )
 
@@ -391,18 +401,40 @@ class PflichtangabenTest : FunSpec({
         }
     }
 
-    // Jedes Beispiel auf Englisch (#377, #406): Es entsteht ein PDF, samt
-    // dem XML der E-Rechnung. Die Freitexte der Dateien bleiben deutsch;
-    // geprüft ist, dass jeder Satz aus Kotlin einen englischen Wortlaut hat.
-    for ((_, file) in exampleInvoices) {
-        test("$file auf Englisch: gültiges PDF/A-1b mit allen Pflichtangaben") {
-            val input = workDir.resolve("$file-englisch.yaml")
-            input.writeText("sprache: en-GB\n" + Path.of("src/test/resources/$file.yaml").readText())
-            val calculated = CalculatedInvoice(YamlLoader.loadInvoice(input), YamlLoader.loadSellerConfig(sellerConfig))
+    // Eine Rechnung in amerikanischem Englisch (#407) an einen Unternehmer
+    // in den USA. Das lange Datum prüft verify mit den Schreibweisen der
+    // Sprache; hier steht es wörtlich, samt dem Komma nach dem Jahr im Satz
+    // zum Skonto, und das Land aus demselben Grund wie ÖSTERREICH oben.
+    for (design in designs) {
+        test("amerikanische Rechnung im Design ${design.name}: gültig, mit dem Datum der Variante") {
+            val (calculated, sheet) =
+                typesetAndCheck("amerikanische-rechnung", design, design.sellerConfig, targetName = "${design.name}-amerikanisch")
 
-            CiiWriter.write(calculated.accepted())
-            designs.forEach { design ->
-                typesetAndCheck(file, design, design.sellerConfig, targetName = "${design.name}-$file-englisch", input = input)
+            calculated.invoice.language shouldBe Language.AMERICAN_ENGLISH
+            sheet.shows("Land Kunde", "94105 San Francisco, CA UNITED STATES")
+            sheet.shows("Rechnungsdatum", "August 14, 2026")
+            sheet.shows("Skonto", "For payment by August 21, 2026, an early payment discount of 2% may be deducted")
+            sheet.lacks("britisches Datum", "14 August 2026", "21 August 2026")
+            sheet.lacks("Deutsch auf dem Blatt", "Rechnung", "Leistungszeitraum", "Umsatzsteuer", "Skonto")
+        }
+    }
+
+    // Jedes Beispiel auf Englisch (#377, #406), in beiden Varianten (#407):
+    // Es entsteht ein PDF, samt dem XML der E-Rechnung. Die Freitexte der
+    // Dateien bleiben deutsch; geprüft ist, dass jeder Satz aus Kotlin einen
+    // englischen Wortlaut hat.
+    for (language in listOf(Language.BRITISH_ENGLISH, Language.AMERICAN_ENGLISH)) {
+        for ((_, file) in exampleInvoices) {
+            test("$file auf ${language.tag}: gültiges PDF/A-1b mit allen Pflichtangaben") {
+                val input = workDir.resolve("$file-${language.tag}.yaml")
+                input.writeText("sprache: ${language.tag}\n" + Path.of("src/test/resources/$file.yaml").readText())
+                val calculated = CalculatedInvoice(YamlLoader.loadInvoice(input), YamlLoader.loadSellerConfig(sellerConfig))
+
+                calculated.invoice.language shouldBe language
+                CiiWriter.write(calculated.accepted())
+                designs.forEach { design ->
+                    typesetAndCheck(file, design, design.sellerConfig, targetName = "${design.name}-$file-${language.tag}", input = input)
+                }
             }
         }
     }
@@ -833,8 +865,12 @@ private fun Sheet.verify(
  */
 private fun settledNote(language: Language): String =
     when (language) {
-        Language.GERMAN -> "Der Rechnungsbetrag ist durch die vereinnahmten Abschläge ausgeglichen; es verbleibt kein Restbetrag."
-        Language.BRITISH_ENGLISH -> "The invoice amount is settled by the advance payments received; no balance remains."
+        Language.GERMAN -> {
+            "Der Rechnungsbetrag ist durch die vereinnahmten Abschläge ausgeglichen; es verbleibt kein Restbetrag."
+        }
+        Language.BRITISH_ENGLISH, Language.AMERICAN_ENGLISH -> {
+            "The invoice amount is settled by the advance payments received; no balance remains."
+        }
     }
 
 // --- Schreibweisen ----------------------------------------------------------
@@ -861,17 +897,19 @@ private class Spelling(
         when (language) {
             Language.GERMAN -> DecimalFormatSymbols(Locale.GERMANY)
             Language.BRITISH_ENGLISH -> DecimalFormatSymbols(Locale.UK)
+            Language.AMERICAN_ENGLISH -> DecimalFormatSymbols(Locale.US)
         }.apply { minusSign = '\u2212' }
 
     val short: DateTimeFormatter =
         when (language) {
             Language.GERMAN -> DateTimeFormatter.ofPattern("dd.MM.yyyy", language.locale)
-            Language.BRITISH_ENGLISH -> DateTimeFormatter.ofPattern("yyyy-MM-dd", language.locale)
+            Language.BRITISH_ENGLISH, Language.AMERICAN_ENGLISH -> DateTimeFormatter.ofPattern("yyyy-MM-dd", language.locale)
         }
     val long: DateTimeFormatter =
         when (language) {
             Language.GERMAN -> DateTimeFormatter.ofPattern("d. MMMM yyyy", language.locale)
             Language.BRITISH_ENGLISH -> DateTimeFormatter.ofPattern("d MMMM yyyy", language.locale)
+            Language.AMERICAN_ENGLISH -> DateTimeFormatter.ofPattern("MMMM d, yyyy", language.locale)
         }
     private val month = DateTimeFormatter.ofPattern("MMMM", language.locale)
     private val monthYear = DateTimeFormatter.ofPattern("MMMM yyyy", language.locale)
@@ -889,8 +927,19 @@ private class Spelling(
     fun amount(money: Money): String {
         val digits = number(money.value, minFraction = 2)
         return when (language) {
-            Language.GERMAN -> digits
-            Language.BRITISH_ENGLISH -> if (money.isNegative()) "\u2212€" + digits.removePrefix("\u2212") else digits
+            Language.GERMAN -> {
+                digits
+            }
+            Language.BRITISH_ENGLISH, Language.AMERICAN_ENGLISH -> {
+                if (money.isNegative()) {
+                    "\u2212€" +
+                        digits.removePrefix(
+                            "\u2212",
+                        )
+                } else {
+                    digits
+                }
+            }
         }
     }
 
@@ -915,7 +964,7 @@ private class Spelling(
                     else -> arrayOf("$days Tage nach Rechnungsdatum")
                 }
             }
-            Language.BRITISH_ENGLISH -> {
+            Language.BRITISH_ENGLISH, Language.AMERICAN_ENGLISH -> {
                 when (days) {
                     0 -> arrayOf("due immediately")
                     1 -> arrayOf("1 day after the invoice date")
@@ -935,7 +984,7 @@ private class Spelling(
         val until =
             when (language) {
                 Language.GERMAN -> "bis"
-                Language.BRITISH_ENGLISH -> "to"
+                Language.BRITISH_ENGLISH, Language.AMERICAN_ENGLISH -> "to"
             }
         val days = listOf("–", "-", until).map { "${short.format(start)} $it ${short.format(end)}" }
         val wholeMonths = start.dayOfMonth == 1 && end == end.withDayOfMonth(end.lengthOfMonth())

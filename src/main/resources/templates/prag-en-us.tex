@@ -1,0 +1,52 @@
+%% Die Sprachdatei von prag für en-US (#407). Was eine Sprachdatei ist und
+%% welche Regeln für sie gelten, steht im Kopf von helsinki-de-de.tex.
+%%
+%% Jedes Wort wie in prag-en-gb.tex, auch die Schreibweise der Zahlen: Wo
+%% sich die Varianten auf dem Blatt unterscheiden, im langen Datum, schreibt
+%% Kotlin. Trotzdem eine eigene Datei und kein Rückfall auf die britische,
+%% damit eine fehlende Übersetzung auffällt (ADR-0025).
+
+%% ---------------------------------------------------------------- Zahlen
+%% Wie in helsinki-en-gb.tex, wo steht, warum \betrag das Vorzeichen selbst
+%% setzt: €8,337.50 und −€200.00.
+\sisetup{
+  output-decimal-marker = {.},
+  group-separator       = {,},
+}
+\makeatletter
+\newcommand{\betrag}[1]{\betrag@zeichen#1\relax}
+\def\betrag@zeichen#1#2\relax{\ifx-#1\textminus€\num{#2}\else€\num{#1#2}\fi}
+\makeatother
+\newcommand{\prozent}[1]{\num{#1}\%}
+
+%% ------------------------------------------------------------- Seiten
+\newcommand{\wortseitevon}[2]{Page #1 of #2}
+\newcommand{\wortfortsetzung}{Continued on the next page}
+
+%% ------------------------------------------------------------ Kopfangaben
+\newcommand{\wortrechnungsnr}{Invoice no.:}
+\newcommand{\wortkundennr}{Customer no.:}
+\newcommand{\wortauftragsnr}{Our order no.:}
+\newcommand{\wortdatum}{Date:}
+\newcommand{\wortvereinnahmtam}{Received on:}
+\newcommand{\wortreferenz}{Your reference:}
+
+%% ----------------------------------------------------- Positionen, Summen
+%% Kurze Wörter im Spaltenkopf, wie in prag-en-gb.tex.
+\newcommand{\wortpos}{No.}
+\newcommand{\wortbezeichnung}{Item}
+\newcommand{\wortmenge}{Qty}
+\newcommand{\worteinheit}{Unit}
+\newcommand{\worteinzelpreis}{Unit price}
+\newcommand{\wortrabatt}{Discount}
+\newcommand{\wortgesamt}{Total}
+\newcommand{\wortzwischensumme}{Subtotal (net)}
+%% Satz und, bei mehreren Steuergruppen, ihre Grundlage – sonst ist sie leer.
+\newcommand{\wortsteuer}[2]{VAT #1\ifblank{#2}{}{ on #2}}
+\newcommand{\wortgesamtbetrag}{Total amount}
+
+%% --------------------------------------------------------------------- Fuß
+\newcommand{\wortustid}{VAT ID}
+\newcommand{\wortsteuernummer}{Tax number}
+\newcommand{\wortregistergericht}{Registry court}
+\newcommand{\wortgeschaeftsfuehrung}{Managing director}

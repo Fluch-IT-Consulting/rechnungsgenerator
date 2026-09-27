@@ -10,6 +10,7 @@ class LanguageTableTest : FunSpec({
 
     val german = Language.GERMAN
     val english = Language.BRITISH_ENGLISH
+    val american = Language.AMERICAN_ENGLISH
 
     test("die Hauptsprache gilt für jede ihrer Varianten") {
         LanguageTable(mapOf("de" to "X"))[german] shouldBe "X"
@@ -19,8 +20,19 @@ class LanguageTableTest : FunSpec({
         LanguageTable(mapOf("de" to "X", "de-DE" to "Y"))[german] shouldBe "Y"
     }
 
+    test("die Hauptsprache gilt für beide Varianten, der genaue Code nur für seine (#407)") {
+        val shared = LanguageTable(mapOf("en" to "X"))
+        val separate = LanguageTable(mapOf("en" to "X", "en-US" to "Y"))
+
+        shared[english] shouldBe "X"
+        shared[american] shouldBe "X"
+        separate[english] shouldBe "X"
+        separate[american] shouldBe "Y"
+    }
+
     test("seitwärts wird nicht gesucht, und ohne passenden Schlüssel gibt es keinen Text") {
         LanguageTable(mapOf("de-DE" to "X"))[english] shouldBe null
+        LanguageTable(mapOf("en-GB" to "X"))[american] shouldBe null
         LanguageTable.EMPTY[german] shouldBe null
     }
 
@@ -32,12 +44,12 @@ class LanguageTableTest : FunSpec({
     test("nur unterstützte Sprachen und ihre Hauptsprache sind Schlüssel") {
         // Ein Satz, den keine Rechnung je verwendet, ist derselbe stille
         // Fehler wie ein vertippter Schlüssel.
-        listOf("fr", "en-US", "englisch", "").forEach { key ->
+        listOf("fr", "en-AU", "englisch", "").forEach { key ->
             withClue(key) {
                 val error = shouldThrow<InvalidLanguageRangeException> { LanguageTable(mapOf(key to "X")) }
 
                 error.message!! shouldContain "Unbekannte Sprache '$key'"
-                error.message!! shouldContain "de-DE, de, en-GB, en"
+                error.message!! shouldContain "de-DE, de, en-GB, en, en-US"
             }
         }
     }

@@ -1,0 +1,44 @@
+# Fiktive Rechnung in amerikanischem Englisch (#407) an einen Unternehmer in
+# den USA, Kategorie O wie in englische-rechnung.yaml. Sie trägt, worin sich
+# die Varianten auf dem Blatt unterscheiden: das lange Datum, im Kopf und im
+# Satz zum Skonto, wo auf das Jahr ein Komma folgt. Alles andere schreibt
+# en-US wie en-GB, und das zeigt englische-rechnung.yaml.
+sprache: en-US
+nummer: R26-052
+datum: 2026-08-14
+leistungszeitraum:
+  von: 2026-07-01
+  bis: 2026-07-31
+kunde:
+  name: Example Inc.
+  ansprechpartner: Accounts Payable
+  anschrift:
+    strasse: 1 Example Avenue
+    plz: "94105"
+    ort: San Francisco, CA
+    land: US
+einleitung: For the consulting services in July 2026 we invoice as follows.
+skonto:
+  - satz: 2
+    tage: 7
+  - satz: 1.5
+    tage: 10
+positionen:
+  - bezeichnung: IT consulting
+    beschreibung: Framework agreement of February 1, 2026
+    menge: 40
+    einheit: Std.
+    einzelpreis: 95.00
+    ust-satz: 0
+    steuerkategorie: O
+    steuerbefreiungsgrund: Not taxable in Germany, place of supply abroad
+  - bezeichnung: Workshop
+    positions-leistungszeitraum:
+      von: 2026-07-20
+      bis: 2026-07-21
+    menge: 2
+    einheit: Tage
+    einzelpreis: 1200.00
+    ust-satz: 0
+    steuerkategorie: O
+    steuerbefreiungsgrund: Not taxable in Germany, place of supply abroad
