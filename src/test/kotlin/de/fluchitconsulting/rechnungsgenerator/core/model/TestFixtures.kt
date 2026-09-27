@@ -1,6 +1,7 @@
 package de.fluchitconsulting.rechnungsgenerator.core.model
 
 import de.fluchitconsulting.rechnungsgenerator.core.values.Bic
+import de.fluchitconsulting.rechnungsgenerator.core.values.Currency
 import de.fluchitconsulting.rechnungsgenerator.core.values.Iban
 import de.fluchitconsulting.rechnungsgenerator.core.values.InvoiceNumberPattern
 import de.fluchitconsulting.rechnungsgenerator.core.values.Language
@@ -95,11 +96,13 @@ fun testInvoice(
     salesOrderReference: String? = null,
     introduction: String? = null,
     language: Language = Language.GERMAN,
+    currency: Currency = Currency.EUR,
 ) = Invoice(
     number = number,
     issueDate = LocalDate.of(2026, 8, 14),
     type = type,
     language = language,
+    currency = currency,
     receivedOn = receivedOn,
     servicePeriod = ServicePeriod(start = LocalDate.of(2026, 7, 1), end = LocalDate.of(2026, 7, 31)),
     customer =

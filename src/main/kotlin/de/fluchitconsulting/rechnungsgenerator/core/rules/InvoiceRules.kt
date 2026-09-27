@@ -35,6 +35,7 @@ internal object InvoiceRules {
             CancellationRules.check(calculated),
             ItemRules.check(calculated),
             TaxCategoryRules.check(calculated),
+            CurrencyRules.check(calculated),
             ServicePeriodRules.check(calculated),
             PrepaymentRules.check(calculated),
             FinalInvoiceRules.check(calculated),
