@@ -231,13 +231,17 @@ PDF/A-Prüfung über veraPDF.
     Ihre Schlüssel sind Sprachbereiche: erst der genaue Code, dann die
     Hauptsprache, dann die Vorgabe aus `SellerConfig.closingLine`.
 
-  Englisch kann jede Rechnungsart (#405), aber nur mit S, Z, E und O und
-  ohne Skonto; AE, K, G und Skonto lehnt `SPRACHE_NOCH_NICHT_MOEGLICH` ab
-  (`LanguageRules`). Die englischen Begriffe der Arten und der Absetzung
-  stehen im Glossar, die Pflichtsätze je Art neben den deutschen. Die englischen Zweige der fehlenden Sätze werfen über
-  `Language.notYet`. Beide Hälften hält das Pflichtangaben-Netz zusammen: Es
-  setzt jedes Beispiel auf Englisch und verlangt diesen Abbruch oder ein PDF.
-  Wer einen Satz übersetzt, nimmt ihn dort aus dem Ausschluss.
+  Englisch kann alles, was Deutsch kann: jede Rechnungsart (#405), jede
+  Steuerkategorie und Skonto (#406). Die englischen Begriffe der Arten, der
+  Absetzung und des Skontos stehen im Glossar, die Pflichtsätze je Art
+  neben den deutschen. Der Vorgabegrund bei AE ist „Reverse charge“, der
+  Begriff aus Anlage 8 UStAE, den die Verwaltung statt des deutschen
+  zulässt; K und G haben keinen vorgeschriebenen Wortlaut und sagen mit den
+  Wörtern der Richtlinie, was der deutsche sagt – nie „zero-rated“, das ist
+  hier Z. Das Pflichtangaben-Netz setzt jedes Beispiel auch auf Englisch und
+  verlangt ein gültiges PDF. Einen Ausschluss für Sätze, die eine Sprache
+  noch nicht hat, gibt es nicht mehr: Kommt eine Sprache schrittweise, bringt
+  sie Regel und werfende Zweige wieder mit (Nachtrag zu ADR-0025).
 
   Deutsch bleibt, was sich an den Rechnungssteller richtet – Befunde,
   Meldungen, YAML-Schlüssel und -Werte –, dazu der Jobname
