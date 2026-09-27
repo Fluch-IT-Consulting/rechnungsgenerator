@@ -10,7 +10,7 @@ import de.fluchitconsulting.rechnungsgenerator.core.values.Language
  *
  * Eine Sprache kommt schrittweise, wie ZUGFeRD (ADR-0023): Englisch zuerst nur
  * für die gewöhnliche Rechnung, ohne die Kategorien AE, K und G und ohne
- * Skonto. Deren Sätze haben rechtliche Folgen – ein Pflichtsatz, ein
+ * Skonto, danach je Art ein Schritt (#405). Deren Sätze haben rechtliche Folgen – ein Pflichtsatz, ein
  * Befreiungsgrund mit gesetzlichem Wortlaut –, und ihr englischer Wortlaut
  * wird je in einem eigenen Schritt entschieden statt nebenbei übersetzt.
  *
@@ -42,8 +42,8 @@ internal object LanguageRules {
                             Finding(
                                 Rule.SPRACHE_NOCH_NICHT_MOEGLICH,
                                 Subject.WholeInvoice,
-                                "Auf $language gibt es bisher nur die Rechnung; dieses Dokument ist eine " +
-                                    "${invoice.type.documentName}. Bitte 'sprache' weglassen.",
+                                "Die ${invoice.type.documentName} gibt es auf $language noch nicht. " +
+                                    "Bitte 'sprache' weglassen.",
                             ),
                         )
                     }
@@ -78,8 +78,8 @@ internal object LanguageRules {
     // ist. Kommt eine dritte mit anderem Umfang, bekommen sie die Sprache.
     private fun supportsType(type: InvoiceType): Boolean =
         when (type) {
-            InvoiceType.INVOICE -> true
-            InvoiceType.PARTIAL, InvoiceType.PREPAYMENT, InvoiceType.FINAL, InvoiceType.CANCELLATION -> false
+            InvoiceType.INVOICE, InvoiceType.PARTIAL -> true
+            InvoiceType.PREPAYMENT, InvoiceType.FINAL, InvoiceType.CANCELLATION -> false
         }
 
     // S, Z, E und O ja: Bei E und O schreibt der Rechnungssteller den Grund
