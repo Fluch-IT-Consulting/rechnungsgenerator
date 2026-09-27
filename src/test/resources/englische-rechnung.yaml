@@ -6,9 +6,14 @@
 # Die Positionen tragen, was auf Englisch anders geschrieben wird: Beträge
 # über 1.000 mit Tausendertrenner, einen Einzelpreis mit drei
 # Nachkommastellen, einen Rabatt, eine negative Position für das Minus vor
-# dem €, und die Einheiten in Einzahl, Mehrzahl und Bruchteil – 1 hr, 1 day,
-# 2 days, 0.5 days.
+# dem Währungszeichen, und die Einheiten in Einzahl, Mehrzahl und Bruchteil –
+# 1 hr, 1 day, 2 days, 0.5 days.
+#
+# In Pfund, der Währung des Kunden (#409): Das zeigt ein anderes Zeichen als
+# € an der englischen Stelle, vor der Zahl. Englisch in Euro zeigen
+# reverse-charge.yaml und die Beispiele je Art auf Englisch.
 sprache: en-GB
+waehrung: GBP
 nummer: R26-051
 datum: 2026-08-14
 leistungszeitraum:

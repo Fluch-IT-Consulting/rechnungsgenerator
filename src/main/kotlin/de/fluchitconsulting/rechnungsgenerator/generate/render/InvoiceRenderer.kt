@@ -170,6 +170,9 @@ object InvoiceRenderer {
             TemplateValue.RECHNUNGSDATUM -> {
                 DateFormat(invoice.language).date(invoice.issueDate)
             }
+            TemplateValue.WAEHRUNG -> {
+                invoice.currency.name.escapeLatex()
+            }
             TemplateValue.EMPFAENGER -> {
                 MetadataBlocks.recipient(calculatedInvoice)
             }

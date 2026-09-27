@@ -8,17 +8,22 @@
   output-decimal-marker = {.},
   group-separator       = {,},
 }
-%% Das €-Zeichen steht britisch vor der Zahl und ohne Abstand, das Minus
-%% davor: −€200.00. siunitx setzt kein Zeichen vor die Zahl, deshalb trennt
-%% \betrag@zeichen das Vorzeichen ab und setzt es selbst, als \textminus wie
-%% siunitx (#320). Das erste Zeichen genügt: Kotlin liefert die Ziffern mit
+%% Die Zeichen je Währung wie in helsinki-de-de.tex, wo steht, warum.
+\newcommand{\zeichenEUR}{€}
+\newcommand{\zeichenUSD}{\$}
+\newcommand{\zeichenGBP}{£}
+\newcommand{\waehrungszeichen}{\csname zeichen\waehrung\endcsname}
+%% Das Währungszeichen steht britisch vor der Zahl und ohne Abstand, das
+%% Minus davor: −€200.00. siunitx setzt kein Zeichen vor die Zahl, deshalb
+%% trennt \betrag@zeichen das Vorzeichen ab und setzt es selbst, als
+%% \textminus wie siunitx (#320). Das erste Zeichen genügt: Kotlin liefert die Ziffern mit
 %% Punkt und einem Minus davor, nie ein Plus oder Leerraum (ADR-0021).
 %%
 %% Das @ im Namen macht die Hilfe zu einem Makro allein dieser Datei; die
 %% übrigen Sprachdateien brauchen sie nicht zu kennen.
 \makeatletter
 \newcommand{\betrag}[1]{\betrag@zeichen#1\relax}
-\def\betrag@zeichen#1#2\relax{\ifx-#1\textminus€\num{#2}\else€\num{#1#2}\fi}
+\def\betrag@zeichen#1#2\relax{\ifx-#1\textminus\waehrungszeichen\num{#2}\else\waehrungszeichen\num{#1#2}\fi}
 \makeatother
 %% Das Prozentzeichen ohne Abstand: 19%.
 \newcommand{\prozent}[1]{\num{#1}\%}

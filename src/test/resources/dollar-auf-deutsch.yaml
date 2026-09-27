@@ -1,0 +1,36 @@
+# Fiktive Rechnung auf Deutsch in US-Dollar (#409) an einen Unternehmer in
+# den USA, Kategorie O wie in amerikanische-rechnung.yaml: Die Sprache
+# bestimmt die Schreibweise, die Währung das Zeichen. Sie trägt, was das
+# zeigt: Beträge über 1.000 mit deutschem Tausendertrenner und Dezimalkomma,
+# das Zeichen dahinter, und eine negative Position für das Minus davor.
+waehrung: USD
+nummer: R26-053
+datum: 2026-08-14
+leistungszeitraum:
+  von: 2026-07-01
+  bis: 2026-07-31
+kunde:
+  name: Beispiel Inc.
+  ansprechpartner: Buchhaltung
+  anschrift:
+    strasse: 1 Example Avenue
+    plz: "10001"
+    ort: New York, NY
+    land: US
+einleitung: Für die Beratung im Juli 2026 berechnen wir wie folgt.
+positionen:
+  - bezeichnung: IT-Beratung
+    beschreibung: Rahmenvertrag vom 1. Februar 2026
+    menge: 40
+    einheit: Std.
+    einzelpreis: 110.00
+    ust-satz: 0
+    steuerkategorie: O
+    steuerbefreiungsgrund: Nicht im Inland steuerbar, Leistungsort im Ausland
+  - bezeichnung: Gutschrift für doppelt gebuchte Reise
+    menge: -1
+    einheit: pauschal
+    einzelpreis: 200.00
+    ust-satz: 0
+    steuerkategorie: O
+    steuerbefreiungsgrund: Nicht im Inland steuerbar, Leistungsort im Ausland

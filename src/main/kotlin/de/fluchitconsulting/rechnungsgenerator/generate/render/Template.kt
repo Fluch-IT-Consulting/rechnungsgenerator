@@ -1,5 +1,6 @@
 package de.fluchitconsulting.rechnungsgenerator.generate.render
 
+import de.fluchitconsulting.rechnungsgenerator.core.values.Currency
 import de.fluchitconsulting.rechnungsgenerator.core.values.Design
 import de.fluchitconsulting.rechnungsgenerator.core.values.Language
 
@@ -160,13 +161,17 @@ class Template private constructor(
         }
 
         /**
-         * Prüft, dass die Vorlage ihre Sprachdatei lädt und dass die keinen
-         * Platzhalter enthält.
+         * Prüft, dass die Vorlage ihre Sprachdatei lädt, dass die keinen
+         * Platzhalter enthält und für jede [Currency] ein Zeichen kennt.
          *
          * Ohne die erste Prüfung fehlten die Wörter erst LuaLaTeX auf, als
          * unbekannte Makros. Ohne die zweite stünde ein Platzhalter der
          * Sprachdatei wörtlich im PDF: Gefüllt wird nur die Vorlage, die
          * Sprachdatei geht als Datei daneben, wie sie ist.
+         *
+         * Ohne die dritte stünde ein Betrag in dieser Währung ohne Zeichen da:
+         * Die Sprachdatei schlägt es mit `\csname` nach, und ein Name ohne
+         * Definition ist dort `\relax` und setzt still nichts (#409).
          */
         private fun checkLanguageFile(source: String, languageFile: String) {
             check(source.lines().any { it.trim() == LANGUAGE_FILE_USAGE }) {
@@ -175,7 +180,16 @@ class Template private constructor(
             PLACEHOLDER.find(languageFile)?.let {
                 error("Die Sprachdatei enthält ${it.value}. Werte der Rechnung setzt die Vorlage, die Sprachdatei nur Wörter.")
             }
+            val defined = NEWCOMMAND.findAll(languageFile).map { it.groupValues[1] }.toSet()
+            Currency.entries.forEach { currency ->
+                check(currencySymbolOf(currency) in defined) {
+                    "Die Sprachdatei kennt kein Zeichen für $currency. Sie braucht \\newcommand{\\${currencySymbolOf(currency)}}."
+                }
+            }
         }
+
+        /** Das Makro der Sprachdatei, das das Zeichen einer Währung setzt: `\zeichenUSD`. */
+        private fun currencySymbolOf(currency: Currency): String = "zeichen${currency.name}"
 
         /**
          * Prüft, dass die Vorlage die [Foundation] lädt, und zwar in der Zeile

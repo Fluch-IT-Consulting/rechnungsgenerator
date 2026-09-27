@@ -74,6 +74,12 @@ enum class TemplateValue(
     RECHNUNGSNUMMER(true),
     RECHNUNGSDATUM(true),
 
+    // Die Währung als Code nach ISO 4217 (#409). Kein Wort auf dem Blatt: Die
+    // Vorlage reicht ihn an die Sprachdatei, die daraus das Zeichen in
+    // \betrag setzt. Pflicht, weil er an der Rechnung hängt – eine Vorlage
+    // ohne ihn setzte jeden Betrag mit dem Zeichen einer anderen Währung.
+    WAEHRUNG(true),
+
     // Ein Block und keine einzelnen Zeilen: Die Landzeile hängt an
     // CalculatedInvoice.isDomestic, und die Reihenfolge einer Anschrift ist
     // Postkonvention, kein Satzbild.
