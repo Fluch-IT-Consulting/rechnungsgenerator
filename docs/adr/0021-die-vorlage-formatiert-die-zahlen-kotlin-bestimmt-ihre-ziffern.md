@@ -130,3 +130,20 @@ Die Schreibweise – Dezimalzeichen, Tausendertrenner, ab wie vielen Stellen
 gruppiert wird – wählt jedes Design selbst. Nur die Konsequenz „Wer ein
 Design baut, übernimmt den ganzen `\sisetup`-Block“ gilt nicht mehr; es
 übernimmt die Zeilen der Schreibweise.
+
+## Nachtrag vom 27.09.2026: Die Schreibweise hängt an Design und Sprache
+
+Mit der Sprache der Rechnung (ADR-0025) wählt nicht mehr das Design allein,
+wie eine Zahl aussieht. Was an der Sprache hängt – Dezimalzeichen,
+Tausendertrenner, wo das € steht und ob ein Abstand davor –, steht jetzt in
+der Sprachdatei des Designs, samt `\betrag` und `\prozent`. Ab wie vielen
+Stellen gruppiert wird, bleibt in der Vorlage, `\menge` ebenso: Beides hängt
+an keiner Sprache.
+
+Die Grenze zwischen Ziffern und Schreibweise bleibt, wo sie war. Kotlin
+liefert weiter `\betrag{-200.00}`, und die englische Sprachdatei setzt daraus
+`−€200.00`. Weil siunitx kein Zeichen vor die Zahl setzt, trennt `\betrag`
+dort das Vorzeichen selbst ab, mit `\textminus` wie siunitx (#320).
+
+Aus `GermanFormat` ist `DateFormat` geworden, eine Klasse für alle Sprachen.
+Die Konsequenz „`GermanFormat` formatiert nur noch Daten“ gilt für sie.

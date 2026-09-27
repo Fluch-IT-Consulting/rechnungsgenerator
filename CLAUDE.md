@@ -72,7 +72,8 @@ PDF/A-Prüfung über veraPDF.
   **einkommentierten** Vorlage sind die `@SerialName` aus den Deskriptoren von
   `SellerConfig`, `Address` und `BankDetails`, in beide Richtungen; jede
   genannte Vorgabe (`land`, `zahlungsziel-tage`, `design`, `schlusssatz`) ist
-  die echte, geprüft über zwei Läufe mit und ohne sie; und die unausgefüllte
+  die echte, geprüft über zwei Läufe mit und ohne sie – den Schlusssatz je
+  Sprache, unter ihrem genauen Code (`de-DE`, `en-GB`); und die unausgefüllte
   Vorlage wird abgelehnt. Ohne dieses Netz wird das Kommando nicht gebaut.
 - **Geldwerte**: ausschließlich `BigDecimal`, niemals Float/Double. Zwei
   gleichrangige Value Objects, die die Grenze der EN 16931 abbilden:
@@ -143,7 +144,8 @@ PDF/A-Prüfung über veraPDF.
   Durchreichen nur.
 - **Satz nur in der Vorlage** (ADR-0017): Abstände, Schriftgrad, Farbe, Linien,
   Beschriftungen, Trenner, Ort und Reihenfolge stehen in der Vorlage des
-  Designs (`templates/helsinki.tex`, `templates/prag.tex`). Der Renderer
+  Designs (`templates/helsinki.tex`, `templates/prag.tex`), die Wörter davon
+  in ihren Sprachdateien (siehe Sprache). Der Renderer
   liefert Werte und Makroaufrufe und entscheidet, *ob* etwas dasteht; er
   schreibt kein LaTeX von sich aus – keinen Längennamen, kein `\\`, kein
   `\mbox`. Die Grenze läuft zwischen zwei Arten von Angaben: Eine **einzelne
@@ -175,30 +177,31 @@ PDF/A-Prüfung über veraPDF.
   Schreibweise. `Numbers` reicht Beträge, Einzelpreise, Mengen und Sätze als
   `\betrag{8337.50}`, `\menge{86.5}`, `\prozent{19}` durch – Punkt, keine
   Gruppierung, `toPlainString()` und nie `toString()`, sonst läse siunitx
-  `1E+3` als Exponenten. Die Vorlage setzt sie mit siunitx und wählt in
-  ihrem `\sisetup` nur die Schreibweise: Dezimalzeichen, Tausendertrenner,
-  ab wie vielen Stellen gruppiert wird. Was siunitx sonst still falsch
-  setzte, etwa `0,033.5` statt `0,0335`, steht in der Grundlage. Nach dem
-  Komma wird nie getrennt, weder durch Punkt noch durch Leerraum.
-  `GermanFormat` formatiert nur noch Daten. Den Vertrag „jede Ziffer, keine
-  weitere“ hält der `PflichtangabenTest` je Design am fertigen PDF, samt
-  `schreibweise-der-zahlen.yaml`.
+  `1E+3` als Exponenten. Die Vorlage setzt sie mit siunitx und wählt nur die
+  Schreibweise: ab wie vielen Stellen gruppiert wird in ihrem `\sisetup`,
+  Dezimalzeichen, Tausendertrenner und die Stellung des € samt `\betrag` und
+  `\prozent` in ihrer Sprachdatei – `8.337,50 €`, `€8,337.50`. Was siunitx
+  sonst still falsch setzte, etwa `0,033.5` statt `0,0335`, steht in der
+  Grundlage. Nach dem Komma wird nie getrennt, weder durch Punkt noch durch
+  Leerraum. `DateFormat` formatiert nur noch Daten, je Sprache. Den Vertrag
+  „jede Ziffer, keine weitere“ hält der `PflichtangabenTest` je Design am
+  fertigen PDF, samt `schreibweise-der-zahlen.yaml`.
 
 - **Landzeile** (#374): Eine Auslandsrechnung nennt unter dem Ort das Land
-  ausgeschrieben, auf Deutsch und in Versalien nach DIN 5008 – `ÖSTERREICH`,
-  nicht `AT`. Derselbe Schnitt wie bei den Zahlen: `MetadataBlocks` liefert
-  `\landzeile{Österreich}` im Block `EMPFAENGER`, die Vorlage setzt die
-  Versalien (Nachtrag zu ADR-0017). Der Name kommt aus dem JDK
-  (`Locale.getDisplayCountry`), nicht aus einer eigenen Liste – `CountryCode`
-  prüft bewusst nur die Form –, und nur für einen Code aus
-  `Locale.getISOCountries()`. Jeder andere steht als Code da, ohne Abbruch:
-  `EL`, weil in einer Anschrift ohnehin `GR` verlangt ist, und `ZZ`, das das
-  JDK sonst „Unbekannte Region“ nennte. Der Preis: Der Name folgt dem JDK, auf
-  dem das Programm läuft, und ein neueres kann ein Land umbenennen. Die
-  Vergleichsdateien sehen das nicht, sie sind Inlandsrechnungen; das Netz
-  hält „ÖSTERREICH“ wörtlich an `auslandsrechnung.yaml`. Das XML behält den
-  Code (BT-55). Kommen Rechnungen in anderen Sprachen, folgt der Name der
-  Sprache der Rechnung (`docs/notizen/2026-09-26-rechnungen-in-anderen-sprachen.md`).
+  ausgeschrieben, in der Sprache der Rechnung und in Versalien nach DIN 5008
+  – `ÖSTERREICH`, `UNITED KINGDOM`, nicht `AT`. Derselbe Schnitt wie bei den
+  Zahlen: `MetadataBlocks` liefert `\landzeile{Österreich}` im Block
+  `EMPFAENGER`, die Vorlage setzt die Versalien (Nachtrag zu ADR-0017). Der
+  Name kommt aus dem JDK (`Locale.getDisplayCountry` mit dem `Locale` der
+  Sprache), nicht aus einer eigenen Liste – `CountryCode` prüft bewusst nur
+  die Form –, und nur für einen Code aus `Locale.getISOCountries()`. Jeder
+  andere steht als Code da, ohne Abbruch: `EL`, weil in einer Anschrift
+  ohnehin `GR` verlangt ist, und `ZZ`, das das JDK sonst „Unbekannte Region“
+  nennte. Der Preis: Der Name folgt dem JDK, auf dem das Programm läuft, und
+  ein neueres kann ein Land umbenennen. Die deutschen Vergleichsdateien sehen
+  das nicht, sie sind Inlandsrechnungen; das Netz hält „ÖSTERREICH“ wörtlich
+  an `auslandsrechnung.yaml` und „UNITED KINGDOM“ an
+  `englische-rechnung.yaml`. Das XML behält den Code (BT-55).
 
 - **Texte mit Platzhaltern** (ADR-0010, ADR-0019): Der Pflichtsatz ist ein
   `TextTemplate<InvoiceVariable>`, beim Bau zerlegt – ein vertippter Name wirft,
@@ -211,13 +214,42 @@ PDF/A-Prüfung über veraPDF.
   die Platzhalter der Design-Vorlage (`TemplateValue`) und die Variablen eines
   Textes (`InvoiceVariable`) – dieselbe Schreibweise, verschiedene Mengen.
 
+- **Sprache** (ADR-0025): Jede Rechnung steht in einer Sprache, gewählt in
+  der Rechnungsdatei neben `art` – `sprache: en-GB`, ohne Eintrag `de-DE`.
+  `Language` in `core.values` ist eine geschlossene Menge von Tags nach
+  BCP 47, immer mit Variante. Was an ihr hängt, steht an drei Orten:
+  - Sätze mit fachlicher Aussage in Kotlin, wo sie schon standen
+    (`InvoiceType`, `TaxCategory`, `Unit`, `ItemBlocks`, `DateFormat`), je als
+    `when` über die Sprache ohne `else`.
+  - Die Wörter eines Designs in seiner **Sprachdatei**,
+    `templates/<design>-<tag>.tex`, als `\wort…`-Makros samt der
+    Zahlenschreibweise. Der Renderer legt sie als `sprache.tex` neben die
+    Vorlage, die sie mit `\input{sprache}` lädt; `Template.of` prüft beide
+    zusammen, und ein Test verlangt, dass alle Sprachdateien eines Designs
+    dieselben Makros definieren.
+  - Der Schlusssatz in den Stammdaten als Tabelle, `{de-DE: …, en-GB: …}`.
+    Ihre Schlüssel sind Sprachbereiche: erst der genaue Code, dann die
+    Hauptsprache, dann die Vorgabe aus `SellerConfig.closingLine`.
+
+  Englisch kann zuerst nur die gewöhnliche Rechnung, mit S, Z, E und O und
+  ohne Skonto; alles andere lehnt `SPRACHE_NOCH_NICHT_MOEGLICH` ab
+  (`LanguageRules`). Die englischen Zweige der fehlenden Sätze werfen über
+  `Language.notYet`. Beide Hälften hält das Pflichtangaben-Netz zusammen: Es
+  setzt jedes Beispiel auf Englisch und verlangt diesen Abbruch oder ein PDF.
+  Wer einen Satz übersetzt, nimmt ihn dort aus dem Ausschluss.
+
+  Deutsch bleibt, was sich an den Rechnungssteller richtet – Befunde,
+  Meldungen, YAML-Schlüssel und -Werte –, dazu der Jobname
+  (`InvoiceType.documentName` ohne Sprache, ADR-0005) und BT-33 im XML.
+
 - **Designs** (ADR-0011): Die Stammdaten wählen das Design, `design: helsinki`
   oder `design: prag`, ohne Eintrag `helsinki`. Jedes ist eine eingebaute
   Vorlage, die derselbe Renderer füllt – kein zweiter Renderer, kein Schalter,
   keine mitgebrachte Vorlage. Feste Texte gehören zum Design, ein Wortlaut mit
   fachlicher Aussage kommt aus Kotlin (ADR-0017). Ein neues Design ist eine
-  Vorlage, die die Grundlage lädt, ein Eintrag in `Design`, eine
-  Vergleichsdatei und eine Zeile im Pflichtangaben-Netz.
+  Vorlage, die Grundlage und Sprachdatei lädt, je Sprache eine Sprachdatei,
+  ein Eintrag in `Design`, je Sprache eine Vergleichsdatei und ein Eintrag im
+  Pflichtangaben-Netz mit seinen Wörtern je Sprache.
 
   Die **Akzentfarbe** (ADR-0024) nennen die Stammdaten, `akzentfarbe: 31AE34`,
   sechs Ziffern ohne `#`; die Vorgabe ohne Eintrag hat die Vorlage, nicht
@@ -427,9 +459,10 @@ PDF/A-Prüfung über veraPDF.
   Dazu ein Sicherungsnetz: `src/test/resources/rechnung-erwartet.tex` ist das
   erwartete LaTeX der Beispielrechnung, zeichengleich verglichen, daneben je
   Art eine Inhalts-Datei `<art>-inhalt.tex` und je Design ein Volltext der
-  gewöhnlichen Rechnung. Wird einer rot, ist das **eine Frage und keine
-  Aufgabe**: erst nachsehen, ob die Änderung gewollt ist, dann die Datei neu
-  erzeugen – und das erzeugte PDF gegen das vorherige prüfen. Gleiche Prüfsumme
+  gewöhnlichen Rechnung und einer englischen (`englische-rechnung.yaml`). Wird
+  einer rot, ist das **eine Frage und keine Aufgabe**: erst nachsehen, ob die
+  Änderung gewollt ist, dann die Datei neu erzeugen – und das erzeugte PDF
+  gegen das vorherige prüfen. Gleiche Prüfsumme
   heißt: nichts geändert; weicht sie ab, entscheidet das Bild (`pdftoppm`),
   denn eine geänderte Leerzeile der Vorlage ändert die Trailer-ID, aber nicht
   das Satzbild. Einen Schalter zum Neu-Erzeugen gibt es nicht. Welche

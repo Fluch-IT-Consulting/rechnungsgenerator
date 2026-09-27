@@ -15,6 +15,7 @@ gesetzt wird, steht im Code; warum eine Entscheidung so gefallen ist, in
 Das Dokument, das eine erbrachte Leistung abrechnet und zur Zahlung auffordert.
 Ohne Zusatz immer die gewöhnliche Rechnung über eine bereits erbrachte Leistung.
 _Vermeiden_: Faktura, Beleg, Ausgangsrechnung
+_Englisch_: Invoice – _Vermeiden_: Bill
 
 **Abschlagsrechnung**:
 Rechnung über einen Teil des Entgelts für eine noch **nicht** erbrachte
@@ -161,6 +162,8 @@ _Vermeiden_: Meilenstein, Arbeitspaket, Bauabschnitt
 Der Zeitraum, in dem die Leistung tatsächlich erbracht wurde. Gibt es nur, wenn
 sie erbracht ist.
 _Vermeiden_: Abrechnungszeitraum, Leistungsdatum
+_Englisch_: Service period – _Vermeiden_: Period of supply, Tax point (beides
+im britischen VAT eigene Begriffe)
 
 **Voraussichtlicher Leistungszeitraum**:
 Der erwartete Zeitraum auf einer Abschlagsrechnung. Eine Prognose, keine
@@ -201,6 +204,13 @@ muss anders nachgewiesen werden, etwa durch eine Unternehmerbescheinigung.
 _Vermeiden_: Nicht-EU-Land, Ausland (für diesen Fall)
 
 ## Texte
+
+**Sprache**:
+Die Sprache, in der eine Rechnung steht – genau eine je Rechnung, mit ihrer
+Variante: britisches und nicht bloß Englisch. Sie gilt für das Blatt und die
+Freitexte der E-Rechnung, nicht für das, was sich an den Rechnungssteller
+richtet.
+_Vermeiden_: Locale, Übersetzung
 
 **Einleitung**:
 Der Satz über den Positionen, der sagt, worum es geht: welcher Auftrag, welcher
