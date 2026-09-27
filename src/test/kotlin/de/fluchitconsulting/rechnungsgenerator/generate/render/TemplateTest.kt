@@ -1,5 +1,6 @@
 package de.fluchitconsulting.rechnungsgenerator.generate.render
 
+import de.fluchitconsulting.rechnungsgenerator.core.values.Currency
 import de.fluchitconsulting.rechnungsgenerator.core.values.Design
 import de.fluchitconsulting.rechnungsgenerator.core.values.Language
 import io.kotest.assertions.throwables.shouldThrow
@@ -39,12 +40,19 @@ private fun templateWith(placeholders: List<TemplateValue>) = macros() + "\n" + 
 private fun templateWithout(missing: TemplateMacro? = null, wrongArity: TemplateMacro? = null) =
     macros(missing, wrongArity) + "\n" + required.joinToString("\n") { it.placeholder }
 
+// Die Zeichen der Währungen, ohne die keine Sprachdatei angenommen wird (#409),
+// bis auf die genannte.
+private fun currencySymbols(missing: Currency? = null) =
+    Currency.entries
+        .filterNot { it == missing }
+        .joinToString("") { "\\newcommand{\\zeichen${it.name}}{}\n" }
+
 /**
- * Baut eine Vorlage mit einer Sprachdatei, die nichts definiert – die Makros
- * stehen in diesen Tests in der Vorlage, bis auf die, die eigens der
- * Sprachdatei gelten.
+ * Baut eine Vorlage mit einer Sprachdatei, die außer den Zeichen der
+ * Währungen nur [languageFile] definiert – die Makros stehen in diesen Tests
+ * in der Vorlage, bis auf die, die eigens der Sprachdatei gelten.
  */
-private fun templateOf(source: String, languageFile: String = ""): Template = Template.of(source, languageFile)
+private fun templateOf(source: String, languageFile: String = ""): Template = Template.of(source, currencySymbols() + languageFile)
 
 /**
  * Hängt [text] an eine sonst vollständige Vorlage, füllt sie und liefert nur,
@@ -140,7 +148,7 @@ class TemplateTest : FunSpec({
 
         test("die Sprachdatei geht mit, wie sie ist") {
             String(templateOf(templateWith(required), languageFile).files.getValue(Template.LANGUAGE_FILE_NAME)) shouldBe
-                languageFile
+                currencySymbols() + languageFile
         }
 
         test("ein Makro des Renderers darf in der Sprachdatei stehen") {
@@ -149,6 +157,26 @@ class TemplateTest : FunSpec({
             templateOf(template, "\\newcommand{\\betrag}[1]{\\num{#1}~€}")
             shouldThrow<IllegalStateException> { templateOf(template, "\\newcommand{\\betrag}{€}") }
                 .message!! shouldContain "betrag"
+        }
+
+        test("eine Sprachdatei ohne Zeichen für eine Währung wird abgelehnt, auch mit auskommentiertem (#409)") {
+            // Sonst stünde ein Betrag in dieser Währung still ohne Zeichen da.
+            Currency.entries.forEach { currency ->
+                withClue(currency) {
+                    val error =
+                        shouldThrow<IllegalStateException> {
+                            Template.of(templateWith(required), currencySymbols(missing = currency))
+                        }
+                    error.message!! shouldContain "zeichen${currency.name}"
+
+                    shouldThrow<IllegalStateException> {
+                        Template.of(
+                            templateWith(required),
+                            currencySymbols(missing = currency) + "% \\newcommand{\\zeichen${currency.name}}{}",
+                        )
+                    }
+                }
+            }
         }
 
         test("ein Platzhalter in der Sprachdatei wird abgelehnt, einer im Kommentar nicht") {

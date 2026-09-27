@@ -8,14 +8,19 @@
 
 %% ---------------------------------------------------------------- Zahlen
 %% Wie in helsinki-en-gb.tex, wo steht, warum \betrag das Vorzeichen selbst
-%% setzt: €8,337.50 und −€200.00.
+%% setzt: €8,337.50 und −€200.00. Die Zeichen je Währung wie in
+%% helsinki-de-de.tex, wo steht, warum.
 \sisetup{
   output-decimal-marker = {.},
   group-separator       = {,},
 }
+\newcommand{\zeichenEUR}{€}
+\newcommand{\zeichenUSD}{\$}
+\newcommand{\zeichenGBP}{£}
+\newcommand{\waehrungszeichen}{\csname zeichen\waehrung\endcsname}
 \makeatletter
 \newcommand{\betrag}[1]{\betrag@zeichen#1\relax}
-\def\betrag@zeichen#1#2\relax{\ifx-#1\textminus€\num{#2}\else€\num{#1#2}\fi}
+\def\betrag@zeichen#1#2\relax{\ifx-#1\textminus\waehrungszeichen\num{#2}\else\waehrungszeichen\num{#1#2}\fi}
 \makeatother
 \newcommand{\prozent}[1]{\num{#1}\%}
 

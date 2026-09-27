@@ -36,10 +36,14 @@
 \usepackage{tikz}      %% das Logo
 
 %% Die Schreibweise der Zahlen (ADR-0021): gruppiert ab vier Stellen – sonst
-%% stünde 8337,50 ohne Trenner da. Welche Zeichen trennen und wo das €
-%% steht, hängt an der Sprache und steht in der Sprachdatei, die übrigen
-%% Einstellungen von siunitx setzt die Grundlage.
+%% stünde 8337,50 ohne Trenner da. Welche Zeichen trennen und wo das
+%% Währungszeichen steht, hängt an der Sprache und steht in der Sprachdatei,
+%% die übrigen Einstellungen von siunitx setzt die Grundlage.
 \sisetup{group-minimum-digits = 4}
+
+%% Die Währung der Rechnung als Code nach ISO 4217 (#409). Ihr Zeichen und
+%% wo es steht, setzt die Sprachdatei in \betrag; hier steht nur, welche.
+\newcommand{\waehrung}{<<WAEHRUNG>>}
 
 %% Die Sprachdatei (#377): die Wörter dieses Designs und die Schreibweise der
 %% Zahlen in der Sprache der Rechnung, als \wort... und \betrag, \prozent.
@@ -194,7 +198,7 @@
 %% "Juni bis Oktober 2026" sonst hinter dem "bis" und läse sich wie zwei Angaben.
 \newcommand{\zusammen}[1]{\mbox{#1}}
 %% Die Mengen, gesetzt nach \sisetup. \betrag und \prozent stehen in der
-%% Sprachdatei: Wo das €-Zeichen steht, hängt an der Sprache.
+%% Sprachdatei: Wo das Währungszeichen steht, hängt an der Sprache.
 \newcommand{\menge}[1]{\num{#1}}
 
 %% Kleine, gesperrte Versalien – dasselbe Stilmittel wie im Lebenslauf.

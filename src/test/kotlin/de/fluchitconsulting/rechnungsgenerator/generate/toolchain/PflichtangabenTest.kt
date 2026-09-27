@@ -9,6 +9,7 @@ import de.fluchitconsulting.rechnungsgenerator.core.model.exampleInvoices
 import de.fluchitconsulting.rechnungsgenerator.core.text.TextTemplate
 import de.fluchitconsulting.rechnungsgenerator.core.text.TextValue
 import de.fluchitconsulting.rechnungsgenerator.core.text.VariableResolver
+import de.fluchitconsulting.rechnungsgenerator.core.values.Currency
 import de.fluchitconsulting.rechnungsgenerator.core.values.Discount
 import de.fluchitconsulting.rechnungsgenerator.core.values.Language
 import de.fluchitconsulting.rechnungsgenerator.core.values.Money
@@ -381,7 +382,8 @@ class PflichtangabenTest : FunSpec({
             sheet.shows("Einheit, ein Tag", "1 day")
             sheet.shows("Einheit, zwei Tage", "2 days")
             sheet.shows("Einheit, ein halber Tag", "0.5 days")
-            sheet.shows("negativer Betrag", "\u2212€200.00")
+            sheet.shows("negativer Betrag", "\u2212£200.00")
+            sheet.lacks("Euro auf einer Rechnung in Pfund", "€")
             sheet.lacks("Deutsch auf dem Blatt", "Rechnung", "Leistungszeitraum", "Umsatzsteuer", "Seite")
         }
     }
@@ -415,7 +417,27 @@ class PflichtangabenTest : FunSpec({
             sheet.shows("Rechnungsdatum", "August 14, 2026")
             sheet.shows("Skonto", "For payment by August 21, 2026, an early payment discount of 2% may be deducted")
             sheet.lacks("britisches Datum", "14 August 2026", "21 August 2026")
+            sheet.shows("Betrag in US-Dollar", "$3,800.00")
+            sheet.lacks("Euro auf einer Rechnung in US-Dollar", "€")
             sheet.lacks("Deutsch auf dem Blatt", "Rechnung", "Leistungszeitraum", "Umsatzsteuer", "Skonto")
+        }
+    }
+
+    // Eine Rechnung in US-Dollar auf Deutsch (#409): Die Sprache bestimmt
+    // die Schreibweise, die Währung das Zeichen. Die Beträge stehen hier
+    // wörtlich, aus demselben Grund wie ÖSTERREICH oben – das Zeichen und
+    // seine Stellung prüft verify nicht, weil ein Design es in den
+    // Spaltenkopf stellen darf.
+    for (design in designs) {
+        test("Rechnung in US-Dollar auf Deutsch im Design ${design.name}: gültig, mit dem Dollarzeichen hinter der Zahl") {
+            val (calculated, sheet) =
+                typesetAndCheck("dollar-auf-deutsch", design, design.sellerConfig, targetName = "${design.name}-dollar")
+
+            calculated.invoice.language shouldBe Language.GERMAN
+            calculated.invoice.currency shouldBe Currency.USD
+            sheet.shows("Betrag in US-Dollar", "4.400,00 $")
+            sheet.shows("negativer Betrag", "\u2212200,00 $")
+            sheet.lacks("Euro auf einer Rechnung in US-Dollar", "€")
         }
     }
 
@@ -600,7 +622,7 @@ private fun Sheet.verify(
     val invoice = calculated.invoice
     val config = calculated.config
     val words = design.words.getValue(invoice.language)
-    val spelling = Spelling(invoice.language)
+    val spelling = Spelling(invoice.language, invoice.currency)
 
     // §14 Abs. 4 Nr. 1: Name und Anschrift beider Seiten. Der vollständige
     // Name des leistenden Unternehmers ist ohne Geschäftsführung die Person,
@@ -885,14 +907,24 @@ private fun settledNote(language: Language): String =
  * Hier eigens gesetzt und nicht aus DateFormat übernommen: Es ist die
  * Erwartung an das Blatt, und das JDK brächte den Bindestrich mit.
  *
- * Beträge ohne €, weil ein Design das Zeichen in den Spaltenkopf stellen
- * darf. Im Englischen steht es aber zwischen Minus und Zahl, `−€200.00`; ohne
- * € stünde `−200.00` nirgends auf dem Blatt. Ein negativer Betrag nennt es
- * dort deshalb mit.
+ * Beträge ohne Währungszeichen, weil ein Design das Zeichen in den
+ * Spaltenkopf stellen darf. Im Englischen steht es aber zwischen Minus und
+ * Zahl, `−€200.00`; ohne Zeichen stünde `−200.00` nirgends auf dem Blatt. Ein
+ * negativer Betrag nennt es dort deshalb mit, das der [currency] (#409).
  */
 private class Spelling(
     private val language: Language,
+    private val currency: Currency,
 ) {
+    // Abgeschrieben und nicht aus der Sprachdatei gelesen, aus demselben
+    // Grund wie die Wörter der Designs.
+    private val symbol =
+        when (currency) {
+            Currency.EUR -> "€"
+            Currency.USD -> "$"
+            Currency.GBP -> "£"
+        }
+
     private val symbols =
         when (language) {
             Language.GERMAN -> DecimalFormatSymbols(Locale.GERMANY)
@@ -932,7 +964,7 @@ private class Spelling(
             }
             Language.BRITISH_ENGLISH, Language.AMERICAN_ENGLISH -> {
                 if (money.isNegative()) {
-                    "\u2212€" +
+                    "\u2212$symbol" +
                         digits.removePrefix(
                             "\u2212",
                         )

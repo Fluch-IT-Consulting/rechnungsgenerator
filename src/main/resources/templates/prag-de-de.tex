@@ -8,9 +8,14 @@
   output-decimal-marker = {,},
   group-separator       = {.},
 }
-%% Das €-Zeichen und das Prozentzeichen hängen mit festem Leerzeichen an der
-%% Zahl. Einzelpreise nehmen \betrag.
-\newcommand{\betrag}[1]{\num{#1}~€}
+%% Das Währungszeichen und das Prozentzeichen hängen mit festem Leerzeichen
+%% an der Zahl. Einzelpreise nehmen \betrag. Die Zeichen je Währung wie in
+%% helsinki-de-de.tex, wo steht, warum.
+\newcommand{\zeichenEUR}{€}
+\newcommand{\zeichenUSD}{\$}
+\newcommand{\zeichenGBP}{£}
+\newcommand{\waehrungszeichen}{\csname zeichen\waehrung\endcsname}
+\newcommand{\betrag}[1]{\num{#1}~\waehrungszeichen}
 \newcommand{\prozent}[1]{\num{#1}~\%}
 
 %% ------------------------------------------------------------- Seiten

@@ -20,9 +20,19 @@
   output-decimal-marker = {,},
   group-separator       = {.},
 }
-%% Das €-Zeichen und das Prozentzeichen hängen mit festem Leerzeichen an der
-%% Zahl. Einzelpreise nehmen \betrag.
-\newcommand{\betrag}[1]{\num{#1}~€}
+%% Das Währungszeichen und das Prozentzeichen hängen mit festem Leerzeichen
+%% an der Zahl. Einzelpreise nehmen \betrag.
+%%
+%% Welches Zeichen, sagt die Währung der Rechnung (#409): Die Vorlage setzt
+%% \waehrung auf ihren Code, und \waehrungszeichen schlägt damit ein Zeichen
+%% je Code nach. Eines für jeden Code aus Currency, das prüft Template.of.
+%% $ und nicht US$ oder USD: das Zeichen, das der Empfänger auf seiner
+%% Rechnung erwartet; welcher Dollar gemeint ist, sagt das XML (BT-5).
+\newcommand{\zeichenEUR}{€}
+\newcommand{\zeichenUSD}{\$}
+\newcommand{\zeichenGBP}{£}
+\newcommand{\waehrungszeichen}{\csname zeichen\waehrung\endcsname}
+\newcommand{\betrag}[1]{\num{#1}~\waehrungszeichen}
 \newcommand{\prozent}[1]{\num{#1}~\%}
 
 %% ------------------------------------------------------------- Seiten
