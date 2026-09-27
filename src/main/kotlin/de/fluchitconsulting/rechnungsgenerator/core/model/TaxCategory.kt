@@ -187,8 +187,15 @@ enum class TaxCategory(
      * deutscher Zusatz ist nicht nötig. Eine eigene Übersetzung wäre ein
      * Wortlaut, den keine Liste der Verwaltung kennt.
      *
-     * K und G hat Englisch noch nicht (#406): Anlage 8 nennt sie nicht, und
-     * ihr englischer Grund darf fachlich nichts anderes sagen als der deutsche.
+     * Bei K und G nennt Anlage 8 nichts, und einen Wortlaut schreibt auch
+     * sonst niemand vor: Der Grund darf umgangssprachlich stehen (Abschnitt
+     * 14.5 Abs. 20 UStAE). Er sagt deshalb mit den Wörtern der Richtlinie,
+     * was der deutsche sagt – "exempt" aus Art. 226 Nr. 11, "intra-Community
+     * supply of goods" aus Art. 138. "of goods", weil beide eine Lieferung
+     * sind: Eine Dienstleistung ins Drittland ist O und nicht G. Nicht
+     * "zero-rated", wie das britische VAT beide nennt: Das ist hier die
+     * Kategorie Z, von der sich K und G gerade unterscheiden.
+     *
      * Ohne `else`: Eine neue Kategorie sagt, ob sie einen hat.
      */
     fun defaultReason(language: Language): String? =
@@ -200,7 +207,8 @@ enum class TaxCategory(
                 when (this) {
                     STANDARD, ZERO_RATED, EXEMPT, OUT_OF_SCOPE -> null
                     REVERSE_CHARGE -> "Reverse charge"
-                    INTRA_COMMUNITY, EXPORT -> language.notYet("Den Befreiungsgrund der Kategorie $code")
+                    INTRA_COMMUNITY -> "Exempt intra-Community supply of goods"
+                    EXPORT -> "Exempt export of goods"
                 }
             }
         }
