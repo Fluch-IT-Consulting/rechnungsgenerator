@@ -54,8 +54,10 @@ class CiiWriterTest : FunSpec({
 
     // Je Art, die der Writer schreibt, eine Vergleichsdatei. Die Teilrechnung
     // unterscheidet sich von der Rechnung im XML nur im Code, sie prüft der
-    // Test darunter.
-    listOf("rechnung", "abschlagsrechnung", "schlussrechnung", "stornorechnung").forEach { name ->
+    // Test darunter. Dazu die englische Rechnung (#405): Mustang prüft nur,
+    // ob ihr XML gilt, nicht, dass Einleitung und Befreiungsgrund darin auf
+    // Englisch stehen.
+    listOf("rechnung", "abschlagsrechnung", "schlussrechnung", "stornorechnung", "englische-rechnung").forEach { name ->
         test("$name.yaml ergibt das erwartete XML") {
             example(name).xml() shouldBe resource("$name-erwartet.xml")
         }
