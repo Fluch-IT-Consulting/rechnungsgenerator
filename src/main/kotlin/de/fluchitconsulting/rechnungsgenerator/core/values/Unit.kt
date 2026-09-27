@@ -3,6 +3,7 @@ package de.fluchitconsulting.rechnungsgenerator.core.values
 import de.fluchitconsulting.rechnungsgenerator.core.serialization.enumSerializer
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.Serializable
+import java.math.BigDecimal
 
 /**
  * Die Maßeinheit einer Position – EN 16931 BT-130.
@@ -12,9 +13,9 @@ import kotlinx.serialization.Serializable
  * (BR-23). Ein Freitextfeld würde den Fehler erst beim Empfänger zeigen; so
  * fällt ein Tippfehler wie "Stnd." schon beim Einlesen auf.
  *
- * [label] ist die Schreibweise in der YAML und im PDF, [code] die Kennung fürs
- * spätere ZUGFeRD-XML. Die Liste deckt ab, was in einer Beratungsrechnung
- * vorkommt; weitere Einheiten sind eine Zeile.
+ * [label] ist die Schreibweise in der YAML, eine je Einheit und unabhängig von
+ * der Menge; [nameFor] der Text auf dem Blatt, [code] die Kennung fürs
+ * ZUGFeRD-XML. Die Liste deckt ab, was in einer Beratungsrechnung vorkommt.
  */
 @Serializable(with = UnitSerializer::class)
 enum class Unit(val label: String, val code: String) {
@@ -29,6 +30,25 @@ enum class Unit(val label: String, val code: String) {
     FLAT_RATE("pauschal", "LS"),
     KILOMETRE("km", "KMT"),
     ;
+
+    /**
+     * Der Name auf dem Blatt: bei genau einer Einheit die Einzahl, sonst die
+     * Mehrzahl, auch bei einem Bruchteil. Der Betrag zählt und nicht das
+     * Vorzeichen, damit eine negative Menge dasselbe Wort bekommt; verglichen
+     * mit `compareTo`, weil `equals` bei `1.00` die Skala mitvergleicht.
+     *
+     * Ein `when` ohne `else`: Eine neue Einheit muss sagen, ob sie eine
+     * Einzahl hat.
+     */
+    fun nameFor(quantity: BigDecimal): String {
+        val one = quantity.abs().compareTo(BigDecimal.ONE) == 0
+        return when (this) {
+            DAY -> if (one) "Tag" else label
+            WEEK -> if (one) "Woche" else label
+            MONTH -> if (one) "Monat" else label
+            HOUR, PIECE, FLAT_RATE, KILOMETRE -> label
+        }
+    }
 
     override fun toString(): String = label
 }
