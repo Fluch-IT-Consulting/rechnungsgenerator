@@ -33,10 +33,10 @@ und beides gibst du weiter – ein Abschlag, der fehlt oder unerwartet auftaucht
 gehört erklärt.
 
 Eine Zeile, die mit **Achtung** beginnt, hältst du an. Dann widerspricht sich
-die Ablage, und zwar so, dass Geld daran hängt: Entweder setzt eine gültige
-Schlussrechnung einen stornierten Abschlag ab, oder zwei Schlussrechnungen
-setzen denselben ab. Beides ist ein Fall für den Nutzer, nicht für die neue
-Rechnung.
+die Ablage, und zwar so, dass Geld daran hängt: Eine gültige Schlussrechnung
+setzt einen stornierten Abschlag ab, zwei Schlussrechnungen setzen denselben
+ab, oder eine Währung passt nicht zu der des Dokuments, auf das es sich
+bezieht. Das ist ein Fall für den Nutzer, nicht für die neue Rechnung.
 
 **2. Vorlegen und fragen, welche abgesetzt werden.** Die Beträge liefert der
 Generator: Lass ihn über alle gefundenen Dateien laufen (Aufruf wie in
@@ -62,6 +62,13 @@ build/install/rechnungsgenerator/bin/rechnungsgenerator abschlaege \
 Ohne `-s` wie beim Erzeugen: Der Generator sucht die Stammdaten je Datei. Liegen
 die Abschlagsrechnungen in verschiedenen Wurzeln, bricht er ab und nennt beide –
 dann gehören sie nicht in einen Block.
+
+Die **Währung** dagegen muss stimmen: Die Schlussrechnung setzt jeden Abschlag
+in ihrer eigenen ab. Stehen die Abschlagsrechnungen in verschiedenen
+Währungen, bricht der Generator ab (`ABSCHLAGSRECHNUNGEN_VERSCHIEDENE_WAEHRUNGEN`).
+Stehen sie nicht in Euro, schreibt er auf stderr, welche `waehrung` die
+Schlussrechnung braucht. Die trägst du ein, denn der Block nennt sie nicht,
+und ohne den Eintrag stünde die Schlussrechnung in Euro.
 
 Die Sprache der Abschlagsrechnungen spielt keine Rolle: Eine englische
 Schlussrechnung setzt auch Abschläge ab, die deutsch gestellt wurden. Der Block

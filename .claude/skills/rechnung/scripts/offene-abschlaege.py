@@ -9,9 +9,12 @@ Datum, Datei – durch Tabulatoren getrennt, nach Nummer sortiert. Beträge gibt
 das Skript bewusst nicht aus: Die rechnet der Generator
 (rechnungsgenerator abschlaege), nicht dieses Skript.
 
-Zwei Widersprüche der Ablage meldet das Skript dabei, weil sie nur beim Lesen
-eines ganzen Verzeichnisses auffallen: ein Abschlag, den zwei Schlussrechnungen
-absetzen (#67), und einer, der storniert ist und trotzdem abgesetzt wird.
+Widersprüche der Ablage meldet das Skript dabei, weil sie nur beim Lesen eines
+ganzen Verzeichnisses auffallen: ein Abschlag, den zwei Schlussrechnungen
+absetzen (#67), einer, der storniert ist und trotzdem abgesetzt wird, und
+eine Währung, die nicht zu der des anderen Dokuments passt (#409) – eine
+Schlussrechnung, die einen Abschlag anderer Währung absetzt, und ein Storno in
+anderer Währung als die Rechnung, die es aufhebt.
 
 Stornos zählen mit (#66), in beide Richtungen: Eine stornierte
 Abschlagsrechnung ist nichts mehr, was abgesetzt werden könnte, und eine
@@ -37,6 +40,11 @@ def as_text(number) -> str:
     # Exakt verglichen wie ABSCHLAG_DOPPELT im Generator (#53). str(), weil YAML
     # eine Nummer wie 123 als Zahl liest, der Generator aber als Text.
     return str(number)
+
+
+def currency(invoice) -> str:
+    # Wie der Generator: ohne Eintrag EUR, ohne Rücksicht auf die Schreibweise.
+    return str(invoice.get("waehrung") or "EUR").strip().upper()
 
 
 def final_invoice_phrase(numbers, adjective: str = "") -> str:
@@ -69,6 +77,9 @@ def main() -> int:
     cancelled_by = {}
     # Nummer der Schlussrechnung -> Nummern der darin abgesetzten Abschläge.
     final_invoices = []
+    # Nummer jedes Dokuments -> seine Währung (#409). Ohne Nummer unter dem
+    # Dateinamen, wie ihn die Meldungen nennen.
+    currency_of = {}
     # rglob wie bei naechste-nummer.py: Abschlag und Schlussrechnung liegen
     # oft in verschiedenen Jahrgängen.
     for file in sorted(args.directory.rglob("*.yaml")):
@@ -87,6 +98,7 @@ def main() -> int:
         if not isinstance(invoice, dict):
             continue
 
+        currency_of[as_text(invoice.get("nummer") or file.name)] = currency(invoice)
         invoice_type = invoice.get("art")
         if invoice_type == "abschlagsrechnung":
             prepayment_invoices.append((file, invoice))
@@ -129,9 +141,31 @@ def main() -> int:
             print(f"Keine Abschlagsrechnung im Verzeichnis {args.directory}.", file=sys.stderr)
         return 0
 
+    # Ein Storno wird einmal gemeldet, auch wenn es eine Schlussrechnung über
+    # mehrere Abschläge aufhebt.
+    reported_cancellations = set()
+
+    def check_cancellation_currency(cancelled: str):
+        cancellation = cancelled_by.get(cancelled)
+        if not cancellation or cancellation in reported_cancellations:
+            return
+        reported_cancellations.add(cancellation)
+        if currency_of[cancellation] != currency_of[cancelled]:
+            print(f"Achtung: Das Storno {cancellation} steht in {currency_of[cancellation]}, "
+                  f"die stornierte Rechnung {cancelled} in {currency_of[cancelled]}.", file=sys.stderr)
+
     still_open = []
     for file, invoice in sorted(customer_invoices, key=lambda t: as_text(t[1].get("nummer", ""))):
         number = as_text(invoice.get("nummer", ""))
+        # Die Währung vor allem anderen: Sie gilt unabhängig davon, ob der
+        # Abschlag danach offen ist.
+        check_cancellation_currency(number)
+        for final in deducted_in.get(number, []) + released_by.get(number, []):
+            check_cancellation_currency(final)
+        for final in deducted_in.get(number, []):
+            if currency_of[final] != currency_of[number]:
+                print(f"Achtung: {number} steht in {currency_of[number]}, wird aber in der "
+                      f"Schlussrechnung {final} in {currency_of[final]} abgesetzt.", file=sys.stderr)
         cancellation = cancelled_by.get(number)
         if cancellation:
             if number in deducted_in:
