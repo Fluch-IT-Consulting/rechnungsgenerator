@@ -185,3 +185,63 @@ Sprache noch ablehnt, hat keine solche Datei – der Test führt so keine eigene
 Liste. `englische-rechnung-erwartet.xml` hält das XML der englischen Rechnung
 fest, und das Pflichtangaben-Netz kennt den Satz zum ausgeglichenen
 Restbetrag je Sprache.
+
+## Nachtrag vom 27.09.2026: Englisch kann alles, der Ausschluss fällt weg
+
+Reverse Charge, innergemeinschaftliche Lieferung, Ausfuhr und Skonto gibt es
+jetzt auch auf Englisch (#406). Damit hat jeder Satz des Programms einen
+englischen Wortlaut.
+
+**AE: „Reverse charge“, der Begriff der Verwaltung.** §14a Abs. 1 und 5 UStG
+verlangen den Hinweis „Steuerschuldnerschaft des Leistungsempfängers“. Statt
+seiner lässt die Verwaltung den Begriff zu, den Art. 226 Nr. 11a MwStSystRL
+in der jeweiligen Sprachfassung verwendet (Abschnitt 14a.1 Abs. 6 und
+Anlage 8 UStAE, eingefügt mit BMF vom 17.09.2025 – III C 2 - S 7290/00003/
+003/013). Für Englisch nennt Anlage 8 „Reverse charge“, und genau das steht
+da, ohne deutschen Zusatz und ohne Erklärung. Eine eigene Übersetzung wäre
+ein Wortlaut, den keine Liste der Verwaltung kennt. Er gilt deshalb auch im
+XML (BT-120), der maßgeblichen Fassung. Der Steuerhinweis bleibt „No VAT is
+charged on …: Reverse charge.“: Der Leistende berechnet keine Steuer, der
+Kunde führt sie ab, und der Satz ist gleich gebaut wie der deutsche.
+
+**K und G: die Wörter der Richtlinie.** Anlage 8 nennt sie nicht, und einen
+Wortlaut schreibt auch sonst niemand vor: Der Grund darf umgangssprachlich
+stehen (Abschnitt 14.5 Abs. 20 UStAE). Bindend ist nur, dass er fachlich
+dasselbe sagt wie der deutsche. K heißt „Exempt intra-Community supply of
+goods“, G „Exempt export of goods“ – „exempt“ aus Art. 226 Nr. 11,
+„intra-Community supply of goods“ aus Art. 138. „of goods“, weil beide eine
+Lieferung sind; eine Dienstleistung ins Drittland ist O. Nicht
+„zero-rated“, wie das britische VAT beide nennt: Das ist hier die Kategorie
+Z, von der sich K und G gerade unterscheiden.
+
+**Skonto: kein vorgeschriebener Wortlaut.** UStAE 14.5 Abs. 19 lässt eine
+Angabe wie „2 % Skonto bei Zahlung bis …“ genügen, und Anlage 8 kennt Skonto
+nicht. Der englische Satz ist gleich gebaut wie der deutsche: „For payment
+by 21 August 2026, an early payment discount of 2% may be deducted; for
+payment by 24 August 2026, 1.5%.“ – „of 2%“, weil der Artikel vor der Zahl an
+ihrer Aussprache hinge (a 2%, an 8%). Die Zahlungsfrist sagt mit Skonto „in
+full“, wie das „Due in full by“ im Kopf von helsinki. Die Begriffe stehen mit
+„Vermeiden“ im Glossar; *Prompt payment discount* gehört nicht dazu, weil
+HMRC damit eigene Regeln verbindet. Das XML trägt das Skonto ohne Text und
+bleibt, wie es war.
+
+**`SPRACHE_NOCH_NICHT_MOEGLICH` und `Language.notYet` fallen weg**, mit
+`LanguageRules`. Die Regel schlüge auf keiner Sprache mehr an, und eine
+Regel, die nie anschlägt, sowie eine Funktion ohne Aufrufer wären Pflege ohne
+Nutzen. Verworfen: sie leer stehen lassen, als Gerüst für die nächste
+Sprache. Kommt eine Sprache wieder schrittweise, bringt sie den Mechanismus
+mit – Regel, werfende Zweige und den Test, der beide zusammenhält –, und die
+Konsequenz oben zu einer neuen Sprache gilt dann wieder mit diesem Zweig.
+Bis dahin braucht eine neue Sprache einen Wortlaut in jedem `when`.
+
+Was die Regel nebenbei hielt, hält jetzt ein Test: Jede Sprache hat einen
+Vorgabegrund genau für die Kategorien, die einen mitbringen. Darauf verlässt
+sich `BEFREIUNGSGRUND_FEHLT`, das `TaxCategory.hasDefaultReason` ohne Sprache
+fragt – fehlte einer Sprache ein Grund, stünde sonst still keiner auf dem
+Blatt.
+
+**Das Netz**: `reverse-charge.yaml` ist eine englische Rechnung mit AE an
+einen Unternehmer in Österreich, und `skonto.yaml` läuft je Design auch auf
+Englisch. Jedes Beispiel je Art ergibt auf Englisch ein gültiges PDF, ohne
+den früheren Ausweg des Abbruchs. `verify` prüft an jeder Rechnung die
+USt-IdNr. des Kunden, sobald die Datei sie nennt.

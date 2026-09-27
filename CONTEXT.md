@@ -159,16 +159,21 @@ innerhalb einer Frist zahlt. Auf der Rechnung steht die Bedingung, nicht der
 geminderte Betrag; ob der Kunde sie nutzt, zeigt erst seine Zahlung. Eine
 Rechnung kann mehrere Skontostufen nennen.
 _Vermeiden_: Rabatt (mindert sofort und ohne Bedingung), Nachlass, Abzug
+_Englisch_: Early payment discount – _Vermeiden_: Cash discount (klingt nach
+Barzahlung), Settlement discount, Prompt payment discount (im britischen VAT
+ein Begriff mit eigenen Regeln)
 
 **Skontostufe**:
 Eine Bedingung des Skontos: ein Skontosatz und die Skontofrist, bis zu der er
 gilt.
 _Vermeiden_: Skontostaffel (für eine einzelne Stufe), Skontozeile
+_Englisch_: Discount tier – _Vermeiden_: Discount level, Discount scale
 
 **Skontosatz**:
 Der Prozentsatz, um den sich das Entgelt bei Zahlung innerhalb der Skontofrist
 mindert.
 _Vermeiden_: Skontoprozent, Skontorate
+_Englisch_: Discount rate – _Vermeiden_: Discount percentage
 
 **Steueraufschlüsselung**:
 Die Aufstellung der Bemessungsgrundlagen und Steuerbeträge, gruppiert nach
@@ -206,6 +211,7 @@ zusammen)
 Die Frist ab Rechnungsdatum, innerhalb derer eine Zahlung den Skontosatz einer
 Skontostufe abziehen darf. Sie endet vor dem Zahlungsziel.
 _Vermeiden_: Skontotage, Skontoziel
+_Englisch_: Discount period – _Vermeiden_: Discount deadline, Discount days
 
 ## Orte
 
