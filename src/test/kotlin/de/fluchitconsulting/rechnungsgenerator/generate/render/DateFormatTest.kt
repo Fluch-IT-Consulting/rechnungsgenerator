@@ -70,5 +70,14 @@ class DateFormatTest : FunSpec({
             english.servicePeriod(LocalDate.of(2026, 7, 1), LocalDate.of(2026, 7, 15)).tex shouldBe
                 "2026-07-01\\,–\\,2026-07-15"
         }
+
+        test("ein voraussichtlicher Zeitraum in Monaten, mit to (#405)") {
+            assertSoftly {
+                english.monthPeriod(LocalDate.of(2026, 6, 1), LocalDate.of(2026, 10, 31)).tex shouldBe
+                    "June to October 2026"
+                english.monthPeriod(LocalDate.of(2026, 12, 1), LocalDate.of(2027, 3, 31)).tex shouldBe
+                    "December 2026 to March 2027"
+            }
+        }
     }
 })
