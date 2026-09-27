@@ -59,7 +59,6 @@ internal object LanguageRules {
     private fun supportsCategory(category: TaxCategory): Boolean =
         when (category) {
             TaxCategory.STANDARD, TaxCategory.ZERO_RATED, TaxCategory.EXEMPT, TaxCategory.OUT_OF_SCOPE -> true
-            TaxCategory.REVERSE_CHARGE -> true
-            TaxCategory.INTRA_COMMUNITY, TaxCategory.EXPORT -> false
+            TaxCategory.REVERSE_CHARGE, TaxCategory.INTRA_COMMUNITY, TaxCategory.EXPORT -> true
         }
 }

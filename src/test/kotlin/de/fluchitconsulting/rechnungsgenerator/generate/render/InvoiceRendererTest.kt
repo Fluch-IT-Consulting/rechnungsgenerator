@@ -4,6 +4,7 @@ import de.fluchitconsulting.rechnungsgenerator.core.accepted.AcceptedInvoice
 import de.fluchitconsulting.rechnungsgenerator.core.accepted.Verdict
 import de.fluchitconsulting.rechnungsgenerator.core.accepted.accepted
 import de.fluchitconsulting.rechnungsgenerator.core.calculation.CalculatedInvoice
+import de.fluchitconsulting.rechnungsgenerator.core.model.CheckMethod
 import de.fluchitconsulting.rechnungsgenerator.core.model.Invoice
 import de.fluchitconsulting.rechnungsgenerator.core.model.InvoiceType
 import de.fluchitconsulting.rechnungsgenerator.core.model.LineItem
@@ -13,6 +14,7 @@ import de.fluchitconsulting.rechnungsgenerator.core.model.SellerConfig
 import de.fluchitconsulting.rechnungsgenerator.core.model.ServicePeriod
 import de.fluchitconsulting.rechnungsgenerator.core.model.SkontoTier
 import de.fluchitconsulting.rechnungsgenerator.core.model.TaxCategory
+import de.fluchitconsulting.rechnungsgenerator.core.model.VatIdCheck
 import de.fluchitconsulting.rechnungsgenerator.core.model.YamlLoader
 import de.fluchitconsulting.rechnungsgenerator.core.model.exampleInvoices
 import de.fluchitconsulting.rechnungsgenerator.core.model.testInvoice
@@ -756,6 +758,33 @@ class InvoiceRendererTest : FunSpec({
         test("auf Englisch heißt der Grund bei Reverse Charge Reverse charge") {
             render(withReverseCharge().copy(language = Language.BRITISH_ENGLISH)) shouldContain
                 "No VAT is charged on \\betrag{200.00}: Reverse charge."
+        }
+
+        // Einen vorgeschriebenen Wortlaut haben beide nicht: Der Grund darf
+        // umgangssprachlich stehen (UStAE 14.5 Abs. 20), nur fachlich nichts
+        // anderes sagen als der deutsche (#406).
+        listOf(
+            TaxCategory.INTRA_COMMUNITY to "Exempt intra-Community supply of goods",
+            TaxCategory.EXPORT to "Exempt export of goods",
+        ).forEach { (category, reason) ->
+            test("auf Englisch heißt der Grund bei ${category.code} $reason") {
+                val invoice =
+                    testInvoice(
+                        items = listOf(testItem(unitPrice = "200.00", vatRate = "0", taxCategory = category)),
+                        customerVatId = VatId("ATU12345678"),
+                        language = Language.BRITISH_ENGLISH,
+                    )
+                // K verlangt die Bestätigungsabfrage immer, G nie.
+                val checked =
+                    invoice.copy(
+                        customer =
+                            invoice.customer.copy(
+                                vatIdCheck = VatIdCheck(LocalDate.of(2026, 8, 1), CheckMethod.QUALIFIED, "BZSt-Protokoll 4711"),
+                            ),
+                    )
+
+                render(checked) shouldContain "No VAT is charged on \\betrag{200.00}: $reason."
+            }
         }
 
         test("eine Steuergruppe ohne Steuerbetrag steht nicht in den Summen") {

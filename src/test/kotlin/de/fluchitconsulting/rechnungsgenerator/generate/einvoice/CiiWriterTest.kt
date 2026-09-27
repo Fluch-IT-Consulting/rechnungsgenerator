@@ -190,13 +190,19 @@ class CiiWriterTest : FunSpec({
             }
         }
 
-        // Der Begriff aus Anlage 8 zum UStAE ist selbst die zulässige Angabe,
-        // auch in der maßgeblichen Fassung (#406).
-        test("AE trägt auf Englisch den Grund Reverse charge") {
-            val xml = invoiceIn(TaxCategory.REVERSE_CHARGE, "AT", language = Language.BRITISH_ENGLISH).xml()
+        // Das XML ist die maßgebliche Fassung und trägt denselben Grund wie das
+        // Blatt. Bei AE ist es der Begriff aus Anlage 8 zum UStAE (#406).
+        listOf(
+            Triple(TaxCategory.REVERSE_CHARGE, "AT", "Reverse charge"),
+            Triple(TaxCategory.INTRA_COMMUNITY, "AT", "Exempt intra-Community supply of goods"),
+            Triple(TaxCategory.EXPORT, "CH", "Exempt export of goods"),
+        ).forEach { (category, country, reason) ->
+            test("${category.code} trägt auf Englisch den Grund $reason") {
+                val xml = invoiceIn(category, country, language = Language.BRITISH_ENGLISH).xml()
 
-            xml.occurrencesOf("<ram:ExemptionReason>Reverse charge</ram:ExemptionReason>") shouldBe 2
-            xml.shouldBeValidExtended()
+                xml.occurrencesOf("<ram:ExemptionReason>$reason</ram:ExemptionReason>") shouldBe 2
+                xml.shouldBeValidExtended()
+            }
         }
 
         // Das Lieferland füllt den Lieferblock, und damit entfällt auch die

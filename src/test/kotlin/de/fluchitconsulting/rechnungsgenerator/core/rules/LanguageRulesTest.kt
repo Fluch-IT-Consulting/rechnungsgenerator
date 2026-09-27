@@ -14,8 +14,6 @@ import de.fluchitconsulting.rechnungsgenerator.core.values.VatId
 import io.kotest.assertions.withClue
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.collections.shouldBeEmpty
-import io.kotest.matchers.shouldBe
-import io.kotest.matchers.string.shouldContain
 
 /** Was Englisch schon setzen kann (#377, #405). */
 class LanguageRulesTest : FunSpec({
@@ -67,18 +65,10 @@ class LanguageRulesTest : FunSpec({
         }
     }
 
-    test("auf Englisch bricht jede Position mit K oder G ab und nennt sie") {
-        val items =
-            listOf(
-                testItem(),
-                testItem(vatRate = "0", taxCategory = TaxCategory.INTRA_COMMUNITY),
-                testItem(vatRate = "0", taxCategory = TaxCategory.EXPORT),
-            )
+    test("auf Englisch gibt es jede Steuerkategorie") {
+        val items = TaxCategory.entries.map { testItem(vatRate = "0", taxCategory = it) }
 
-        val findings = languageFindings(testInvoice(items = items, language = english))
-
-        findings.map { it.subject } shouldBe (1..2).map { Subject.Item(it, "Testposition") }
-        findings.first().message shouldContain "K (innergemeinschaftliche Lieferung)"
+        languageFindings(testInvoice(items = items, language = english)).shouldBeEmpty()
     }
 
     // Auf den beiden Arten, die Skonto überhaupt tragen dürfen
