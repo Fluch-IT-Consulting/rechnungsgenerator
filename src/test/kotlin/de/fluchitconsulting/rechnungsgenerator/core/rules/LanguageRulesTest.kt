@@ -55,7 +55,8 @@ class LanguageRulesTest : FunSpec({
     }
 
     // Die Arten, die es auf Englisch schon gibt; mit jedem Schritt eine mehr (#405).
-    val englishTypes = setOf(InvoiceType.INVOICE, InvoiceType.PARTIAL, InvoiceType.CANCELLATION)
+    val englishTypes =
+        setOf(InvoiceType.INVOICE, InvoiceType.PARTIAL, InvoiceType.PREPAYMENT, InvoiceType.CANCELLATION)
 
     test("auf Englisch wird jede Art angenommen, deren Sätze übersetzt sind") {
         englishTypes.forEach { type ->

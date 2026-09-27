@@ -18,12 +18,12 @@ import kotlinx.serialization.Serializable
  * [label] ist die Schreibweise in der YAML, [code] die Kennung fürs spätere
  * ZUGFeRD-XML.
  *
- * Die drei Eigenschaften danach haben bewusst **keine** Vorgabewerte (ADR-0009):
+ * Die Eigenschaften danach haben bewusst **keine** Vorgabewerte (ADR-0009):
  * Eine neue Rechnungsart muss sagen, ob ihr Zeitraum eine Prognose ist, ob sie
- * Geld fordert und welcher Satz auf ihr stehen muss. Mit Vorgaben erbte sie
+ * Geld fordert und welcher Satz auf ihr stehen muss, in jeder Sprache. Mit Vorgaben erbte sie
  * still die Antworten der gewöhnlichen Rechnung, und Renderer und Calculator
  * folgten ihnen, ohne dass je jemand darüber entschieden hätte. Ohne Vorgaben
- * übersetzt der neue Eintrag erst, wenn alle drei dastehen.
+ * übersetzt der neue Eintrag erst, wenn alle dastehen.
  */
 @Serializable(with = InvoiceTypeSerializer::class)
 enum class InvoiceType(
@@ -73,6 +73,12 @@ enum class InvoiceType(
      * [mandatoryNote] mit ihrer Sprache.
      */
     private val germanMandatoryNote: TextTemplate<InvoiceVariable>?,
+    /**
+     * Derselbe Satz auf Englisch (#405). Er darf fachlich nichts anderes
+     * sagen als der deutsche – deshalb stehen beide im selben Eintrag, und
+     * wer den einen ändert, hat den anderen vor Augen.
+     */
+    private val englishMandatoryNote: TextTemplate<InvoiceVariable>?,
 ) {
     // Benannte Argumente, obwohl die Reihenfolge eindeutig ist: Ein nacktes
     // `false, true, null` ließe sich nur mit der Parameterliste daneben lesen.
@@ -82,6 +88,7 @@ enum class InvoiceType(
         servicePeriodIsForecast = false,
         chargesForService = true,
         germanMandatoryNote = null,
+        englishMandatoryNote = null,
     ),
 
     // Der Code heißt in der Liste "Prepayment invoice"; das Wort dieses
@@ -96,6 +103,14 @@ enum class InvoiceType(
             TextTemplate.parse(
                 "Die Leistung ist noch nicht erbracht. Über die Gesamtleistung folgt eine " +
                     "Schlussrechnung, in der dieser Abschlag abgesetzt wird.",
+            ),
+        // "provided" und nicht "supplied": Die supply ist ein Begriff des
+        // britischen VAT, wie schon beim "Service period". Der Abschlag ist
+        // die "advance payment", wie im XML der Schlussrechnung.
+        englishMandatoryNote =
+            TextTemplate.parse(
+                "The service has not yet been provided. A final invoice for the complete service will follow, " +
+                    "in which this advance payment will be deducted.",
             ),
     ),
 
@@ -112,6 +127,7 @@ enum class InvoiceType(
         servicePeriodIsForecast = false,
         chargesForService = true,
         germanMandatoryNote = null,
+        englishMandatoryNote = null,
     ),
 
     // Ändert nur den Code und nichts an der Rechnung. Aufgenommen, damit die
@@ -124,6 +140,7 @@ enum class InvoiceType(
         servicePeriodIsForecast = false,
         chargesForService = true,
         germanMandatoryNote = null,
+        englishMandatoryNote = null,
     ),
 
     // 384 ("Corrected invoice") und nicht 381: Die KoSIT führt 384 für Korrektur
@@ -143,29 +160,25 @@ enum class InvoiceType(
                 "Diese Stornorechnung hebt die Rechnung <<URSPRUNGSNUMMER>> vom <<URSPRUNGSDATUM>> vollständig auf. " +
                     "Ein bereits gezahlter Betrag wird erstattet.",
             ),
+        // "dated" ist die britische Wendung für "vom".
+        englishMandatoryNote =
+            TextTemplate.parse(
+                "This cancellation invoice cancels invoice <<URSPRUNGSNUMMER>> dated <<URSPRUNGSDATUM>> in full. " +
+                    "Any amount already paid will be refunded.",
+            ),
     ),
     ;
 
     /**
      * Der Pflichtsatz in [language], oder `null`, wenn diese Art keinen hat.
      *
-     * Ohne `else`, über Sprache und Art: Eine neue Sprache übersetzt erst,
-     * wenn jede Art ihren Satz hat oder ausdrücklich keinen. Englisch hat
-     * den Abschlag noch nicht – sein Wortlaut sagt etwas Rechtliches und
-     * wird in einem eigenen Schritt entschieden (#405).
+     * Ohne `else` über die Sprache: Eine neue Sprache bekommt je Art einen
+     * Satz oder ausdrücklich keinen, als eigenen Parameter neben den übrigen.
      */
     fun mandatoryNote(language: Language): TextTemplate<InvoiceVariable>? =
         when (language) {
-            Language.GERMAN -> {
-                germanMandatoryNote
-            }
-            Language.BRITISH_ENGLISH -> {
-                when (this) {
-                    INVOICE, FINAL, PARTIAL -> null
-                    CANCELLATION -> ENGLISH_CANCELLATION_NOTE
-                    PREPAYMENT -> language.notYet("Den Pflichtsatz der $documentName")
-                }
-            }
+            Language.GERMAN -> germanMandatoryNote
+            Language.BRITISH_ENGLISH -> englishMandatoryNote
         }
 
     /** Die Beschriftung des Zeitraums der ganzen Rechnung. */
@@ -175,9 +188,10 @@ enum class InvoiceType(
                 if (servicePeriodIsForecast) "Voraussichtlicher Leistungszeitraum" else "Leistungszeitraum"
             }
             // "Service period" und nicht "Period of supply" oder "Tax point":
-            // Beide sind im britischen VAT eigene Begriffe.
+            // Beide sind im britischen VAT eigene Begriffe. "Expected" und
+            // nicht "Estimated", das nach einer Schätzung klingt.
             Language.BRITISH_ENGLISH -> {
-                if (servicePeriodIsForecast) language.notYet("Den voraussichtlichen Leistungszeitraum") else "Service period"
+                if (servicePeriodIsForecast) "Expected service period" else "Service period"
             }
         }
 
@@ -192,7 +206,7 @@ enum class InvoiceType(
                 if (servicePeriodIsForecast) "Voraussichtlicher Zeitraum" else "Zeitraum"
             }
             Language.BRITISH_ENGLISH -> {
-                if (servicePeriodIsForecast) language.notYet("Den voraussichtlichen Zeitraum") else "Period"
+                if (servicePeriodIsForecast) "Expected period" else "Period"
             }
         }
 
@@ -218,32 +232,23 @@ enum class InvoiceType(
             // Code 326 in der Codeliste heißt – nicht "Interim invoice" oder
             // "Progress invoice", die beide nach einem Abschlag klingen.
             // "Cancellation invoice" und nicht "Credit note": So heißt Code
-            // 381, den das Storno bewusst nicht trägt (ADR-0006). Die übrigen
-            // Arten bekommen ihren Namen mit ihrem Schritt.
+            // 381, den das Storno bewusst nicht trägt (ADR-0006). "Advance
+            // payment invoice" und nicht "Prepayment invoice", obwohl Code
+            // 386 so heißt – aus demselben Grund, aus dem das Deutsche die
+            // Anzahlung meidet. Die Schlussrechnung bekommt ihren Namen mit
+            // ihrem Schritt.
             Language.BRITISH_ENGLISH -> {
                 when (this) {
                     INVOICE -> "Invoice"
                     PARTIAL -> "Partial invoice"
                     CANCELLATION -> "Cancellation invoice"
-                    PREPAYMENT, FINAL -> language.notYet("Den Namen der $documentName")
+                    PREPAYMENT -> "Advance payment invoice"
+                    FINAL -> language.notYet("Den Namen der $documentName")
                 }
             }
         }
 
     override fun toString(): String = label
-
-    companion object {
-        // Derselbe Satz wie der deutsche, Glied für Glied: vollständig
-        // aufgehoben, und nur ein bereits gezahlter Betrag wird erstattet.
-        // "dated" ist die britische Wendung für "vom". Im Begleitobjekt und
-        // nicht beim Aufruf zerlegt, damit ein vertippter Name wirft, sobald
-        // die Klasse geladen wird – wie beim deutschen Satz.
-        private val ENGLISH_CANCELLATION_NOTE =
-            TextTemplate.parse<InvoiceVariable>(
-                "This cancellation invoice cancels invoice <<URSPRUNGSNUMMER>> dated <<URSPRUNGSDATUM>> in full. " +
-                    "Any amount already paid will be refunded.",
-            )
-    }
 }
 
 object InvoiceTypeSerializer :

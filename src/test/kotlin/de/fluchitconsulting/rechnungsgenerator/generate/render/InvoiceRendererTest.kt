@@ -444,6 +444,17 @@ class InvoiceRendererTest : FunSpec({
                 "Voraussichtlicher Zeitraum: September 2026"
         }
 
+        // Die kurze Beschriftung steht in keiner Beispieldatei, weil keine
+        // Position des Abschlags einen eigenen Zeitraum trägt (#405).
+        test("auf Englisch heißt der Zeitraum einer Position Expected period") {
+            val item =
+                testItem().copy(servicePeriod = ServicePeriod(LocalDate.of(2026, 9, 1), LocalDate.of(2026, 9, 30)))
+            val invoice = testInvoice(type = InvoiceType.PREPAYMENT, items = listOf(item), language = Language.BRITISH_ENGLISH)
+
+            InvoiceRenderer.render(CalculatedInvoice(invoice, config).accepted()).sources.tex shouldContain
+                "Expected period: September 2026"
+        }
+
         test("die Vereinnahmung wird genannt, sobald sie feststeht") {
             val vereinnahmt = testInvoice(type = InvoiceType.PREPAYMENT, receivedOn = LocalDate.of(2026, 8, 10))
 

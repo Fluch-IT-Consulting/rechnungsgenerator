@@ -21,6 +21,9 @@ _Englisch_: Invoice – _Vermeiden_: Bill
 Rechnung über einen Teil des Entgelts für eine noch **nicht** erbrachte
 Leistung. Sie wird später durch eine Schlussrechnung abgelöst.
 _Vermeiden_: Anzahlungsrechnung, Vorausrechnung, Akontorechnung, Teilrechnung
+_Englisch_: Advance payment invoice – _Vermeiden_: Prepayment invoice (so heißt
+Code 386, aber „prepayment" ist die Vorauszahlung), Deposit invoice, Interim
+invoice, Progress invoice, Pro forma invoice (die ist gar keine Rechnung)
 
 **Schlussrechnung**:
 Rechnung über die vollständig erbrachte Leistung, in der die vereinnahmten
@@ -114,6 +117,8 @@ _Vermeiden_: Nummernbereich, Zählerkreis, Sequenz
 **Abschlag**:
 Der Betrag, über den eine Abschlagsrechnung lautet.
 _Vermeiden_: Anzahlung, Vorauszahlung, Akonto, Teilzahlung
+_Englisch_: Advance payment, wie `SpecifiedAdvancePayment` im XML –
+_Vermeiden_: Prepayment, Deposit, Instalment
 
 **Vereinnahmung**:
 Der Eingang eines Abschlags beim Rechnungssteller. Erst sie lässt die
@@ -180,6 +185,8 @@ im britischen VAT eigene Begriffe)
 Der erwartete Zeitraum auf einer Abschlagsrechnung. Eine Prognose, keine
 Tatsache; der Kalendermonat genügt.
 _Vermeiden_: geplanter Zeitraum, Lieferdatum
+_Englisch_: Expected service period – _Vermeiden_: Estimated service period
+(klingt nach einer Schätzung), Planned service period
 
 **Zahlungsziel**:
 Die Frist ab Rechnungsdatum, bis zu der ohne Abzug zu zahlen ist. Ein Dokument,

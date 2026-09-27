@@ -81,6 +81,17 @@ class CiiWriterTest : FunSpec({
         xml.shouldBeValidExtended()
     }
 
+    test("der Abschlag auf Englisch trägt den englischen Pflichtsatz, und das XML ist gültig") {
+        val seller = YamlLoader.parseSellerConfig(resource("stammdaten.yaml"))
+        val invoice = YamlLoader.parseInvoice("sprache: en-GB\n" + resource("abschlagsrechnung.yaml"))
+        val xml = CalculatedInvoice(invoice, seller).accepted().xml()
+
+        xml shouldContain
+            "<ram:Content>The service has not yet been provided. A final invoice for the complete service " +
+            "will follow, in which this advance payment will be deducted.</ram:Content>"
+        xml.shouldBeValidExtended()
+    }
+
     // Nicht teilrechnung.yaml: Die trägt Rabatte, und die gehen noch nicht.
     test("die Teilrechnung trägt den Code 326 und ist gültig") {
         val xml = CalculatedInvoice(testInvoice(type = InvoiceType.PARTIAL), testSellerConfig()).accepted().xml()
