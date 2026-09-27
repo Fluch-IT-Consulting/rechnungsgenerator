@@ -135,3 +135,53 @@ die Abwägung fest. Kurz:
   auf Deutsch (#374): „UNITED KINGDOM“, nicht „VEREINIGTES KÖNIGREICH“.
 
 Entschieden in #375 und #377.
+
+## Nachtrag vom 27.09.2026: jede Rechnungsart auf Englisch
+
+Teilrechnung, Abschlagsrechnung, Schlussrechnung und Stornorechnung gibt es
+jetzt auch auf Englisch (#405), je in einem eigenen Schritt. Ausgeschlossen
+bleiben die Kategorien AE, K und G und das Skonto. `LanguageRules` fragt
+deshalb die Art nicht mehr; dass eine neue Art ihren englischen Namen und
+Pflichtsatz nennt, erzwingen das `when` in `InvoiceType.documentName` und der
+Parameter ohne Vorgabe.
+
+**Die Begriffe sind Entscheidungen, keine Übersetzungen**, und stehen mit
+„Vermeiden“ im Glossar:
+
+- *Partial invoice*, wie Code 326 heißt – nicht *Interim* oder *Progress
+  invoice*, die nach einem Abschlag klingen.
+- *Advance payment invoice* und *advance payment* für den Abschlag, wie
+  `SpecifiedAdvancePayment` im XML – nicht *Prepayment invoice*, obwohl Code
+  386 so heißt: *Prepayment* ist die Vorauszahlung, die auch das Deutsche
+  meidet.
+- *Final invoice*, wie der Pflichtsatz der Abschlagsrechnung sie ankündigt.
+- *Cancellation invoice* – nicht *Credit note*, so heißt Code 381 (ADR-0006),
+  und nicht *Corrected invoice*, obwohl Code 384 so heißt: Auf dem Blatt
+  behauptete das eine Rechnungskorrektur. *Self-billing* bleibt, wie im
+  Deutschen die *Gutschrift*, der Rechnung des Leistungsempfängers
+  vorbehalten.
+- In der Absetzung *Less …* für „abzüglich“, *received* für „vereinnahmt“,
+  wie die Sprachdateien schon beschriften, und *Balance due* für den
+  Restbetrag – nicht *Amount due*, das wäre der ganze Rechnungsbetrag.
+- *Expected service period* für den voraussichtlichen Leistungszeitraum.
+  *Provided* und nicht *supplied* im Pflichtsatz: Die *supply* ist ein
+  Begriff des britischen VAT, wie schon beim *Service period*.
+
+**Die Pflichtsätze sagen Glied für Glied dasselbe wie die deutschen.** Sie
+stehen deshalb je Art als eigener Parameter `englishMandatoryNote` neben
+`germanMandatoryNote`, ohne Vorgabe (ADR-0009): Wer den einen ändert, hat den
+anderen vor Augen, und zerlegt werden beide beim Laden der Klasse.
+
+**Eine englische Schlussrechnung darf Abschläge absetzen, die deutsch
+gestellt wurden.** Dieselbe Sprache wird nicht verlangt: Die Nummern hängen
+an keiner Sprache, die Daten stehen im Block `abschlaege` als Werte und
+erscheinen in der Sprache der Schlussrechnung, und `abschlaege` liest aus den
+Abschlagsrechnungen nur Werte, keine Sätze.
+
+**Das Netz** hält je Art die Werte einer englischen Rechnung fest,
+`<art>-en-gb-inhalt.tex`, aus dem Beispiel der Art mit vorangestelltem
+`sprache: en-GB`; die Freitexte darin bleiben deutsch. Eine Art, die eine
+Sprache noch ablehnt, hat keine solche Datei – der Test führt so keine eigene
+Liste. `englische-rechnung-erwartet.xml` hält das XML der englischen Rechnung
+fest, und das Pflichtangaben-Netz kennt den Satz zum ausgeglichenen
+Restbetrag je Sprache.
