@@ -47,7 +47,7 @@ internal object TaxCategoryRules {
                         ),
                     )
                 }
-                if (category.requiresReason && item.taxExemptionReason == null && category.defaultReason == null) {
+                if (category.requiresReason && item.taxExemptionReason == null && !category.hasDefaultReason) {
                     add(
                         Finding(
                             Rule.BEFREIUNGSGRUND_FEHLT,

@@ -32,21 +32,38 @@ enum class Unit(val label: String, val code: String) {
     ;
 
     /**
-     * Der Name auf dem Blatt: bei genau einer Einheit die Einzahl, sonst die
-     * Mehrzahl, auch bei einem Bruchteil. Der Betrag zählt und nicht das
-     * Vorzeichen, damit eine negative Menge dasselbe Wort bekommt; verglichen
-     * mit `compareTo`, weil `equals` bei `1.00` die Skala mitvergleicht.
+     * Der Name auf dem Blatt, in [language]: bei genau einer Einheit die
+     * Einzahl, sonst die Mehrzahl, auch bei einem Bruchteil – `0.5 days` wie
+     * `0,5 Tage`. Der Betrag zählt und nicht das Vorzeichen, damit eine
+     * negative Menge dasselbe Wort bekommt; verglichen mit `compareTo`, weil
+     * `equals` bei `1.00` die Skala mitvergleicht.
      *
-     * Ein `when` ohne `else`: Eine neue Einheit muss sagen, ob sie eine
-     * Einzahl hat.
+     * Ein `when` ohne `else` über Sprache und Einheit: Eine neue Einheit muss
+     * in jeder Sprache sagen, ob sie eine Einzahl hat. Die Schreibweise in der
+     * YAML bleibt [label], auch auf einer englischen Rechnung.
      */
-    fun nameFor(quantity: BigDecimal): String {
+    fun nameFor(quantity: BigDecimal, language: Language): String {
         val one = quantity.abs().compareTo(BigDecimal.ONE) == 0
-        return when (this) {
-            DAY -> if (one) "Tag" else label
-            WEEK -> if (one) "Woche" else label
-            MONTH -> if (one) "Monat" else label
-            HOUR, PIECE, FLAT_RATE, KILOMETRE -> label
+        return when (language) {
+            Language.GERMAN -> {
+                when (this) {
+                    DAY -> if (one) "Tag" else label
+                    WEEK -> if (one) "Woche" else label
+                    MONTH -> if (one) "Monat" else label
+                    HOUR, PIECE, FLAT_RATE, KILOMETRE -> label
+                }
+            }
+            Language.BRITISH_ENGLISH -> {
+                when (this) {
+                    HOUR -> if (one) "hr" else "hrs"
+                    DAY -> if (one) "day" else "days"
+                    WEEK -> if (one) "week" else "weeks"
+                    MONTH -> if (one) "month" else "months"
+                    PIECE -> if (one) "pc" else "pcs"
+                    FLAT_RATE -> "flat rate"
+                    KILOMETRE -> "km"
+                }
+            }
         }
     }
 

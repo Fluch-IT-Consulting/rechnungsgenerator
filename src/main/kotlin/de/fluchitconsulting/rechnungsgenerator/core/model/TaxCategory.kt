@@ -1,6 +1,7 @@
 package de.fluchitconsulting.rechnungsgenerator.core.model
 
 import de.fluchitconsulting.rechnungsgenerator.core.serialization.enumSerializer
+import de.fluchitconsulting.rechnungsgenerator.core.values.Language
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.Serializable
 
@@ -80,8 +81,11 @@ enum class TaxCategory(
     val requiresCustomerVatId: Boolean,
     /** Wann die Bestätigungsabfrage nachgewiesen sein muss. */
     val vatIdConfirmation: VatIdConfirmation,
-    /** Vorschlag für den Grund, wenn keiner angegeben wird. */
-    val defaultReason: String? = null,
+    /**
+     * Vorschlag für den Grund, wenn keiner angegeben wird, auf Deutsch.
+     * Welcher auf der Rechnung steht, sagt [defaultReason] mit ihrer Sprache.
+     */
+    private val germanDefaultReason: String? = null,
 ) {
     STANDARD(
         "S",
@@ -127,7 +131,7 @@ enum class TaxCategory(
         requiresCustomerVatId = true,
         vatIdConfirmation = VatIdConfirmation.IN_EU,
         // §14a Abs. 5 UStG verlangt genau diese Angabe im Wortlaut.
-        defaultReason = "Steuerschuldnerschaft des Leistungsempfängers (Reverse Charge)",
+        germanDefaultReason = "Steuerschuldnerschaft des Leistungsempfängers (Reverse Charge)",
     ),
 
     INTRA_COMMUNITY(
@@ -137,7 +141,7 @@ enum class TaxCategory(
         requiresZeroRate = true,
         requiresCustomerVatId = true,
         vatIdConfirmation = VatIdConfirmation.ALWAYS,
-        defaultReason = "Steuerfreie innergemeinschaftliche Lieferung",
+        germanDefaultReason = "Steuerfreie innergemeinschaftliche Lieferung",
     ),
 
     EXPORT(
@@ -150,7 +154,7 @@ enum class TaxCategory(
         // läuft über den Beleg des Zolls, nicht über VIES.
         requiresCustomerVatId = false,
         vatIdConfirmation = VatIdConfirmation.NEVER,
-        defaultReason = "Steuerfreie Ausfuhrlieferung",
+        germanDefaultReason = "Steuerfreie Ausfuhrlieferung",
     ),
 
     OUT_OF_SCOPE(
@@ -162,6 +166,36 @@ enum class TaxCategory(
         vatIdConfirmation = VatIdConfirmation.NEVER,
     ),
     ;
+
+    /**
+     * Bringt die Kategorie einen Grund mit, wenn die Position keinen nennt?
+     *
+     * Ohne Sprache, weil BEFREIUNGSGRUND_FEHLT auch auf einer Rechnung prüft,
+     * deren Sprache den Grund noch nicht kennt – die lehnt
+     * SPRACHE_NOCH_NICHT_MOEGLICH ab, nicht ein fehlender Grund.
+     */
+    val hasDefaultReason: Boolean get() = germanDefaultReason != null
+
+    /**
+     * Der vorgesehene Grund in [language], oder `null`, wenn die Kategorie
+     * keinen hat.
+     *
+     * Englisch hat die Gründe von AE, K und G noch nicht (#377): Sie haben
+     * einen gesetzlichen Wortlaut, und dessen englische Fassung ist erst
+     * nachzulesen. Ohne `else`: Eine neue Kategorie sagt, ob sie einen hat.
+     */
+    fun defaultReason(language: Language): String? =
+        when (language) {
+            Language.GERMAN -> {
+                germanDefaultReason
+            }
+            Language.BRITISH_ENGLISH -> {
+                when (this) {
+                    STANDARD, ZERO_RATED, EXEMPT, OUT_OF_SCOPE -> null
+                    REVERSE_CHARGE, INTRA_COMMUNITY, EXPORT -> language.notYet("Der Befreiungsgrund der Kategorie $code")
+                }
+            }
+        }
 
     override fun toString(): String = code
 }

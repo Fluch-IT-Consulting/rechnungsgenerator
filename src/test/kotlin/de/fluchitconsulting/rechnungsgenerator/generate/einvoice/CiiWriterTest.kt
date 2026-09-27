@@ -16,6 +16,7 @@ import de.fluchitconsulting.rechnungsgenerator.core.model.testInvoice
 import de.fluchitconsulting.rechnungsgenerator.core.model.testItem
 import de.fluchitconsulting.rechnungsgenerator.core.model.testSellerConfig
 import de.fluchitconsulting.rechnungsgenerator.core.values.CountryCode
+import de.fluchitconsulting.rechnungsgenerator.core.values.Language
 import de.fluchitconsulting.rechnungsgenerator.core.values.Money
 import de.fluchitconsulting.rechnungsgenerator.core.values.Percent
 import de.fluchitconsulting.rechnungsgenerator.core.values.VatId
@@ -157,7 +158,7 @@ class CiiWriterTest : FunSpec({
             test("${category.code} trägt ohne eigenen Grund den der Kategorie") {
                 val xml = invoiceIn(category, country).xml()
 
-                xml.occurrencesOf("<ram:ExemptionReason>${category.defaultReason}</ram:ExemptionReason>") shouldBe 2
+                xml.occurrencesOf("<ram:ExemptionReason>${category.defaultReason(Language.GERMAN)}</ram:ExemptionReason>") shouldBe 2
                 xml.shouldBeValidExtended()
             }
         }

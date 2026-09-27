@@ -19,8 +19,10 @@ import de.fluchitconsulting.rechnungsgenerator.core.model.testPrepayment
 import de.fluchitconsulting.rechnungsgenerator.core.model.testSellerConfig
 import de.fluchitconsulting.rechnungsgenerator.core.values.CountryCode
 import de.fluchitconsulting.rechnungsgenerator.core.values.Design
+import de.fluchitconsulting.rechnungsgenerator.core.values.Language
 import de.fluchitconsulting.rechnungsgenerator.core.values.Percent
 import de.fluchitconsulting.rechnungsgenerator.core.values.RgbColor
+import de.fluchitconsulting.rechnungsgenerator.core.values.Unit
 import de.fluchitconsulting.rechnungsgenerator.core.values.VatId
 import io.kotest.assertions.withClue
 import io.kotest.core.spec.style.FunSpec
@@ -543,6 +545,53 @@ class InvoiceRendererTest : FunSpec({
                     prepayments = listOf(testPrepayment()),
                 )
             paymentTerm(settled) shouldBe ""
+        }
+    }
+
+    context("Englisch (#377)") {
+        // Nur die Sätze aus Kotlin. Daten, Beschriftungen der Vorlage und die
+        // Schreibweise der Zahlen folgen der Sprache in eigenen Schritten.
+        fun english(
+            items: List<LineItem> = listOf(testItem()),
+            paymentTermDaysOverride: Int? = null,
+        ) = testInvoice(items = items, paymentTermDaysOverride = paymentTermDaysOverride, language = Language.BRITISH_ENGLISH)
+
+        test("Name des Dokuments und Beschriftung des Zeitraums") {
+            valueOf(TemplateValue.DOKUMENTART, english()) shouldBe "Invoice"
+            valueOf(TemplateValue.ZEITRAUM_BESCHRIFTUNG, english()) shouldBe "Service period"
+        }
+
+        test("die Zahlungsfrist in allen drei Formen") {
+            valueOf(TemplateValue.ZAHLUNGSFRIST, english()) shouldBe
+                "\\hinweisabsatz{Payment is due 14 days after the invoice date.}"
+            valueOf(TemplateValue.ZAHLUNGSFRIST, english(paymentTermDaysOverride = 1)) shouldBe
+                "\\hinweisabsatz{Payment is due 1 day after the invoice date.}"
+            valueOf(TemplateValue.ZAHLUNGSFRIST, english(paymentTermDaysOverride = 0)) shouldBe
+                "\\hinweisabsatz{Payment is due immediately.}"
+        }
+
+        test("die Einheit und der Zeitraum einer Position") {
+            val item =
+                testItem().copy(
+                    unit = Unit.DAY,
+                    servicePeriod = ServicePeriod(LocalDate.of(2026, 7, 1), LocalDate.of(2026, 7, 15)),
+                )
+            val positions = valueOf(TemplateValue.POSITIONEN, english(items = listOf(item)))
+
+            positions shouldContain "{day}"
+            positions shouldContain "Period: "
+        }
+
+        test("der Steuerhinweis sagt nicht steuerbefreit") {
+            val item = testItem(vatRate = "0", taxCategory = TaxCategory.OUT_OF_SCOPE, taxExemptionReason = "Not subject to German VAT")
+
+            valueOf(TemplateValue.STEUERHINWEISE, english(items = listOf(item))) shouldBe
+                "\\steuerhinweis{No VAT is charged on \\betrag{100.00}: Not subject to German VAT.}"
+        }
+
+        test("ohne Pflichtsatz, mit dem englischen Schlusssatz") {
+            valueOf(TemplateValue.ARTHINWEIS, english()) shouldBe ""
+            valueOf(TemplateValue.SCHLUSSSATZ, english()) shouldBe "Thank you for your trust and the pleasant collaboration."
         }
     }
 

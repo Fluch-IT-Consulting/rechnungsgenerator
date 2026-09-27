@@ -8,6 +8,7 @@ import de.fluchitconsulting.rechnungsgenerator.core.model.SkontoTier
 import de.fluchitconsulting.rechnungsgenerator.core.model.TaxCategory
 import de.fluchitconsulting.rechnungsgenerator.core.values.Discount
 import de.fluchitconsulting.rechnungsgenerator.core.values.EuMemberStates
+import de.fluchitconsulting.rechnungsgenerator.core.values.Language
 import de.fluchitconsulting.rechnungsgenerator.core.values.Money
 import de.fluchitconsulting.rechnungsgenerator.core.values.Percent
 import de.fluchitconsulting.rechnungsgenerator.core.values.sumOf
@@ -63,6 +64,11 @@ data class VatGroup(
     val base: Money,
     val amount: Money,
     /**
+     * Die Sprache der Rechnung. Die Gruppe braucht sie für den Vorgabegrund
+     * in [exemptionReason], der je Sprache anders lautet (#377).
+     */
+    val language: Language,
+    /**
      * Die Befreiungsgründe, die die Positionen dieser Gruppe ausdrücklich
      * nennen – ohne den Vorgabegrund der Kategorie.
      *
@@ -87,7 +93,7 @@ data class VatGroup(
         when {
             !category.requiresReason -> null
             reasons.size > 1 -> null
-            else -> reasons.singleOrNull() ?: category.defaultReason
+            else -> reasons.singleOrNull() ?: category.defaultReason(language)
         }
 }
 
@@ -157,6 +163,7 @@ data class CalculatedInvoice(
                     rate = rate,
                     base = base,
                     amount = base * rate,
+                    language = invoice.language,
                     reasons = group.mapNotNull { it.item.taxExemptionReason }.toSet(),
                 )
             }.sortedWith(compareBy<VatGroup> { it.category }.thenByDescending { it.rate.valueAsPercentage })
