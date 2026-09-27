@@ -48,6 +48,22 @@ Die Rechnung, auf die sich eine Stornorechnung bezieht. Genannt wird sie mit
 Nummer und Datum (EN 16931 BG-3, BT-25 und BT-26).
 _Vermeiden_: Originalrechnung, vorausgegangene Rechnung, Ausgangsrechnung
 
+**E-Rechnung**:
+Eine Rechnung, die neben dem Blatt als XML nach ZUGFeRD vorliegt, beides in
+einem PDF/A-3; maßgeblich ist das XML. Keine Rechnungsart, sondern eine Form –
+jede Art kann E-Rechnung sein. Gültig ist sie, wenn das PDF/A die
+PDF/A-Prüfung besteht und das XML die XML-Prüfung.
+_Vermeiden_: ZUGFeRD-Rechnung, Hybridrechnung, PDF-Rechnung, XRechnung (das
+ist XML ohne Blatt)
+
+Das Gesetz sagt *elektronische Rechnung* (§14 Abs. 1 UStG) und meint mehr:
+jede Rechnung in einem strukturierten Format, auch reines XML wie die
+XRechnung. Dieses Projekt kennt davon nur die Form mit Blatt. Enger als ZUGFeRD
+ist das Gesetz bei zwei Profilen: MINIMUM und BASIC-WL tragen nicht alle
+Pflichtangaben und sind keine E-Rechnung (BMF-Schreiben vom 15.10.2024). Und
+ein PDF ohne XML ist keine, auch per E-Mail nicht – umsatzsteuerlich ist es
+eine *sonstige Rechnung*.
+
 **Stammdaten**:
 Die Angaben des Rechnungsstellers, die auf jeder Rechnung gleich sind.
 _Vermeiden_: Konfiguration, Absenderdaten, Profil
@@ -227,7 +243,8 @@ _Vermeiden_: Prüfergebnis, Status, Validierung
 **Angenommen**:
 Das Urteil über eine Rechnung ohne Abbruch. Nur aus ihr entsteht ein Dokument;
 Hinweise kann sie tragen.
-_Vermeiden_: gültig (das sagt veraPDF über das PDF), korrekt, freigegeben
+_Vermeiden_: gültig (das ist das Urteil über ein Dokument, nicht über die
+Rechnung), korrekt, freigegeben
 
 **PDF/A-Prüfung**:
 Die Frage, ob ein Dokument dem Archivformat PDF/A genügt – eine gesetzte
@@ -239,8 +256,17 @@ PDF/A entsteht keine Datei am Ziel.
 _Vermeiden_: Prüfung (ohne Zusatz – das ist die der Rechnung), Validierung,
 Konformitätsprüfung
 
+**XML-Prüfung**:
+Die Frage, ob das XML einer E-Rechnung dem Schema und den Geschäftsregeln
+seines Profils genügt. Wie die PDF/A-Prüfung betrifft sie das Dokument, und ihr
+Ergebnis ist *gültig* oder nicht. Ihre Regeln sind die der Norm (EN 16931 und
+ZUGFeRD), nicht die der Prüfung, und was sie bemängelt, sind keine Befunde.
+Beim Erzeugen geht sie dem Satz voraus; scheitert sie dort, liegt der Fehler
+beim Generator, der das XML geschrieben hat, und nicht an der Rechnung.
+_Vermeiden_: Prüfung (ohne Zusatz), Validierung, ZUGFeRD-Prüfung
+
 **Abgelehnt**:
 Das Urteil über eine Rechnung mit mindestens einem Abbruch – oder über das
 Zusammentragen der Abschläge, wenn eine Abschlagsrechnung abgelehnt ist oder sie
 nicht zusammenpassen. Es nennt alle Befunde auf einmal.
-_Vermeiden_: ungültig, fehlerhaft
+_Vermeiden_: ungültig (das Urteil über ein Dokument), fehlerhaft
