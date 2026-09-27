@@ -67,6 +67,20 @@ class CiiWriterTest : FunSpec({
         }
     }
 
+    // Der Pflichtsatz steht im XML in der Sprache der Rechnung, als Notiz
+    // (#405). Die Vergleichsdatei der englischen Rechnung sieht ihn nicht:
+    // Die gewöhnliche Rechnung hat keinen.
+    test("das Storno auf Englisch trägt den englischen Pflichtsatz, und das XML ist gültig") {
+        val seller = YamlLoader.parseSellerConfig(resource("stammdaten.yaml"))
+        val invoice = YamlLoader.parseInvoice("sprache: en-GB\n" + resource("stornorechnung.yaml"))
+        val xml = CalculatedInvoice(invoice, seller).accepted().xml()
+
+        xml shouldContain
+            "<ram:Content>This cancellation invoice cancels invoice R26-042 dated 14 August 2026 in full. " +
+            "Any amount already paid will be refunded.</ram:Content>"
+        xml.shouldBeValidExtended()
+    }
+
     // Nicht teilrechnung.yaml: Die trägt Rabatte, und die gehen noch nicht.
     test("die Teilrechnung trägt den Code 326 und ist gültig") {
         val xml = CalculatedInvoice(testInvoice(type = InvoiceType.PARTIAL), testSellerConfig()).accepted().xml()

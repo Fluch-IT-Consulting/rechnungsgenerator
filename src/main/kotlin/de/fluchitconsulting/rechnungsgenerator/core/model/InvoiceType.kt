@@ -151,8 +151,8 @@ enum class InvoiceType(
      *
      * Ohne `else`, über Sprache und Art: Eine neue Sprache übersetzt erst,
      * wenn jede Art ihren Satz hat oder ausdrücklich keinen. Englisch hat
-     * Abschlag und Storno noch nicht (#377) – ihr Wortlaut sagt etwas
-     * Rechtliches und wird je in einem eigenen Schritt entschieden.
+     * den Abschlag noch nicht – sein Wortlaut sagt etwas Rechtliches und
+     * wird in einem eigenen Schritt entschieden (#405).
      */
     fun mandatoryNote(language: Language): TextTemplate<InvoiceVariable>? =
         when (language) {
@@ -162,7 +162,8 @@ enum class InvoiceType(
             Language.BRITISH_ENGLISH -> {
                 when (this) {
                     INVOICE, FINAL, PARTIAL -> null
-                    PREPAYMENT, CANCELLATION -> language.notYet("Den Pflichtsatz der $documentName")
+                    CANCELLATION -> ENGLISH_CANCELLATION_NOTE
+                    PREPAYMENT -> language.notYet("Den Pflichtsatz der $documentName")
                 }
             }
         }
@@ -215,18 +216,34 @@ enum class InvoiceType(
             }
             // "Invoice" und nicht "Bill" (CONTEXT.md). "Partial invoice", wie
             // Code 326 in der Codeliste heißt – nicht "Interim invoice" oder
-            // "Progress invoice", die beide nach einem Abschlag klingen. Die
-            // übrigen Arten bekommen ihren Namen mit ihrem Schritt.
+            // "Progress invoice", die beide nach einem Abschlag klingen.
+            // "Cancellation invoice" und nicht "Credit note": So heißt Code
+            // 381, den das Storno bewusst nicht trägt (ADR-0006). Die übrigen
+            // Arten bekommen ihren Namen mit ihrem Schritt.
             Language.BRITISH_ENGLISH -> {
                 when (this) {
                     INVOICE -> "Invoice"
                     PARTIAL -> "Partial invoice"
-                    PREPAYMENT, FINAL, CANCELLATION -> language.notYet("Den Namen der $documentName")
+                    CANCELLATION -> "Cancellation invoice"
+                    PREPAYMENT, FINAL -> language.notYet("Den Namen der $documentName")
                 }
             }
         }
 
     override fun toString(): String = label
+
+    companion object {
+        // Derselbe Satz wie der deutsche, Glied für Glied: vollständig
+        // aufgehoben, und nur ein bereits gezahlter Betrag wird erstattet.
+        // "dated" ist die britische Wendung für "vom". Im Begleitobjekt und
+        // nicht beim Aufruf zerlegt, damit ein vertippter Name wirft, sobald
+        // die Klasse geladen wird – wie beim deutschen Satz.
+        private val ENGLISH_CANCELLATION_NOTE =
+            TextTemplate.parse<InvoiceVariable>(
+                "This cancellation invoice cancels invoice <<URSPRUNGSNUMMER>> dated <<URSPRUNGSDATUM>> in full. " +
+                    "Any amount already paid will be refunded.",
+            )
+    }
 }
 
 object InvoiceTypeSerializer :
