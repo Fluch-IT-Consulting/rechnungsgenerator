@@ -73,8 +73,9 @@ PDF/A-Prüfung über veraPDF.
   `SellerConfig`, `Address` und `BankDetails`, in beide Richtungen; jede
   genannte Vorgabe (`land`, `zahlungsziel-tage`, `design`, `schlusssatz`) ist
   die echte, geprüft über zwei Läufe mit und ohne sie – den Schlusssatz je
-  Sprache, unter ihrem genauen Code (`de-DE`, `en-GB`); und die unausgefüllte
-  Vorlage wird abgelehnt. Ohne dieses Netz wird das Kommando nicht gebaut.
+  Sprache, unter ihrem genauen Code (`de-DE`, `en-GB`, `en-US`); und die
+  unausgefüllte Vorlage wird abgelehnt. Ohne dieses Netz wird das Kommando
+  nicht gebaut.
 - **Geldwerte**: ausschließlich `BigDecimal`, niemals Float/Double. Zwei
   gleichrangige Value Objects, die die Grenze der EN 16931 abbilden:
   - `Price` – exakt, rundet nie. Für Einzelpreise (BT-146), wo die Norm beliebig
@@ -238,10 +239,20 @@ PDF/A-Prüfung über veraPDF.
   Begriff aus Anlage 8 UStAE, den die Verwaltung statt des deutschen
   zulässt; K und G haben keinen vorgeschriebenen Wortlaut und sagen mit den
   Wörtern der Richtlinie, was der deutsche sagt – nie „zero-rated“, das ist
-  hier Z. Das Pflichtangaben-Netz setzt jedes Beispiel auch auf Englisch und
-  verlangt ein gültiges PDF. Einen Ausschluss für Sätze, die eine Sprache
-  noch nicht hat, gibt es nicht mehr: Kommt eine Sprache schrittweise, bringt
-  sie Regel und werfende Zweige wieder mit (Nachtrag zu ADR-0025).
+  hier Z. Das Pflichtangaben-Netz setzt jedes Beispiel auch auf Englisch,
+  in beiden Varianten, und verlangt ein gültiges PDF. Einen Ausschluss für
+  Sätze, die eine Sprache noch nicht hat, gibt es nicht mehr: Kommt eine
+  Sprache schrittweise, bringt sie Regel und werfende Zweige wieder mit
+  (Nachtrag zu ADR-0025).
+
+  Englisch gibt es als `en-GB` und `en-US` (#407). Die Varianten teilen
+  sich jeden Zweig, `BRITISH_ENGLISH, AMERICAN_ENGLISH ->`, und gehen allein
+  im langen Datum auseinander: „August 14, 2026“. Jede hat trotzdem ihre
+  Sprachdatei, ohne Rückfall auf die andere. Der Pflichtsatz bleibt ein
+  Parameter je Sprache in `InvoiceType` und wird keine `LanguageTable`: Dort
+  wäre eine fehlende Sprache ein stiller Rückfall, hier übersetzt sie nicht.
+  Ein englischer Satz stellt ein Datum ans Satzende oder vor ein Komma, sonst
+  verlangte das Amerikanische nach dem Jahr eines (Nachtrag zu ADR-0025).
 
   Deutsch bleibt, was sich an den Rechnungssteller richtet – Befunde,
   Meldungen, YAML-Schlüssel und -Werte –, dazu der Jobname
@@ -464,9 +475,10 @@ PDF/A-Prüfung über veraPDF.
   Dazu ein Sicherungsnetz: `src/test/resources/rechnung-erwartet.tex` ist das
   erwartete LaTeX der Beispielrechnung, zeichengleich verglichen, daneben je
   Art eine Inhalts-Datei `<art>-inhalt.tex`, dieselbe auf Englisch
-  (`<art>-en-gb-inhalt.tex`, aus dem Beispiel mit `sprache: en-GB`) und je
-  Design ein Volltext der gewöhnlichen Rechnung und einer englischen
-  (`englische-rechnung.yaml`). Wird
+  (`<art>-en-gb-inhalt.tex` und `<art>-en-us-inhalt.tex`, aus dem Beispiel
+  mit vorangestellter `sprache`) und je Design ein Volltext der
+  gewöhnlichen Rechnung, einer englischen (`englische-rechnung.yaml`) und
+  einer amerikanischen (`amerikanische-rechnung.yaml`). Wird
   einer rot, ist das **eine Frage und keine Aufgabe**: erst nachsehen, ob die
   Änderung gewollt ist, dann die Datei neu erzeugen – und das erzeugte PDF
   gegen das vorherige prüfen. Gleiche Prüfsumme
