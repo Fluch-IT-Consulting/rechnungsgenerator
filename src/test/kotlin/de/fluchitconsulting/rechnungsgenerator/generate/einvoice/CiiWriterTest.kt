@@ -16,6 +16,7 @@ import de.fluchitconsulting.rechnungsgenerator.core.model.testInvoice
 import de.fluchitconsulting.rechnungsgenerator.core.model.testItem
 import de.fluchitconsulting.rechnungsgenerator.core.model.testSellerConfig
 import de.fluchitconsulting.rechnungsgenerator.core.values.CountryCode
+import de.fluchitconsulting.rechnungsgenerator.core.values.Currency
 import de.fluchitconsulting.rechnungsgenerator.core.values.Language
 import de.fluchitconsulting.rechnungsgenerator.core.values.Money
 import de.fluchitconsulting.rechnungsgenerator.core.values.Percent
@@ -62,6 +63,37 @@ class CiiWriterTest : FunSpec({
             example(name).xml() shouldBe resource("$name-erwartet.xml")
         }
 
+        test("das XML aus $name.yaml ist gültig, mit keiner Warnung außer PEPPOL-EN16931-R008") {
+            example(name).xml().shouldBeValidExtended()
+        }
+    }
+
+    // Die Währung der Rechnung (#409) steht als BT-5 und an der einen Summe,
+    // die sie in CII eigens nennt, der Steuersumme (BT-110). Jeder andere
+    // Betrag gilt in BT-5.
+    test("die Währung steht als InvoiceCurrencyCode und an der Steuersumme") {
+        Currency.entries.forEach { currency ->
+            withClue(currency) {
+                val xml =
+                    CalculatedInvoice(
+                        testInvoice(
+                            currency = currency,
+                            items = listOf(testItem(vatRate = "0", taxCategory = TaxCategory.ZERO_RATED)),
+                        ),
+                        testSellerConfig(),
+                    ).accepted().xml()
+
+                xml shouldContain "<ram:InvoiceCurrencyCode>${currency.name}</ram:InvoiceCurrencyCode>"
+                xml shouldContain "<ram:TaxTotalAmount currencyID=\"${currency.name}\">"
+                Currency.entries.filter { it != currency }.forEach { xml shouldNotContain it.name }
+            }
+        }
+    }
+
+    // Die Beispiele in Fremdwährung (#409): Mustang nimmt sie ohne neue
+    // Warnung an. Die englische Rechnung in Pfund steht schon oben, mit
+    // Vergleichsdatei.
+    listOf("amerikanische-rechnung", "dollar-auf-deutsch").forEach { name ->
         test("das XML aus $name.yaml ist gültig, mit keiner Warnung außer PEPPOL-EN16931-R008") {
             example(name).xml().shouldBeValidExtended()
         }
