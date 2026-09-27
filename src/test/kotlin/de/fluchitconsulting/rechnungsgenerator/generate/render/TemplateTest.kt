@@ -1,6 +1,7 @@
 package de.fluchitconsulting.rechnungsgenerator.generate.render
 
 import de.fluchitconsulting.rechnungsgenerator.core.values.Design
+import de.fluchitconsulting.rechnungsgenerator.core.values.Language
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.assertions.withClue
 import io.kotest.core.spec.style.FunSpec
@@ -18,9 +19,12 @@ private val empty = TemplateValue.entries.associateWith { Latex.EMPTY }
 // Der Kopf jeder Vorlage: die Klasse und direkt danach die Grundlage.
 private val head = "\\documentclass{article}\n${Foundation.USAGE}\n"
 
-/** Der Kopf und die Definitionen aller Makros – bis auf die genannte Abweichung. */
+/**
+ * Der Kopf, das Laden der Sprachdatei und die Definitionen aller Makros – bis
+ * auf die genannte Abweichung.
+ */
 private fun macros(missing: TemplateMacro? = null, wrongArity: TemplateMacro? = null) =
-    head +
+    head + Template.LANGUAGE_FILE_USAGE + "\n" +
         TemplateMacro.entries
             .filterNot { it == missing }
             .joinToString("\n") { macro ->
@@ -36,13 +40,20 @@ private fun templateWithout(missing: TemplateMacro? = null, wrongArity: Template
     macros(missing, wrongArity) + "\n" + required.joinToString("\n") { it.placeholder }
 
 /**
+ * Baut eine Vorlage mit einer Sprachdatei, die nichts definiert – die Makros
+ * stehen in diesen Tests in der Vorlage, bis auf die, die eigens der
+ * Sprachdatei gelten.
+ */
+private fun templateOf(source: String, languageFile: String = ""): Template = Template.of(source, languageFile)
+
+/**
  * Hängt [text] an eine sonst vollständige Vorlage, füllt sie und liefert nur,
  * was aus [text] geworden ist. Der Rumpf davor ist dabei immer derselbe, solange
  * [values] keinen Pflicht-Platzhalter belegt.
  */
 private fun filled(text: String, values: Map<TemplateValue, Latex> = emptyMap()): String {
     val body = templateWith(required) + "\n"
-    return Template.of(body + text).fillIn(empty + values).removePrefix(Template.of(body).fillIn(empty))
+    return templateOf(body + text).fillIn(empty + values).removePrefix(templateOf(body).fillIn(empty))
 }
 
 /**
@@ -57,14 +68,37 @@ private fun filled(text: String, values: Map<TemplateValue, Latex> = emptyMap())
  */
 class TemplateTest : FunSpec({
 
-    val complete = Template.of(templateWith(required))
+    val complete = templateOf(templateWith(required))
 
-    test("für jedes Design lässt sich die Vorlage bauen") {
+    test("für jedes Design lässt sich die Vorlage in jeder Sprache bauen") {
         // Der Positivfall, damit die Prüfungen nicht nur beim Kaputten greifen:
-        // Jede echte Vorlage kennt jedes Makro und setzt jeden Platzhalter,
-        // den sie setzen muss.
+        // Jede echte Vorlage kennt mit jeder Sprachdatei jedes Makro und setzt
+        // jeden Platzhalter, den sie setzen muss.
         Design.entries.forEach { design ->
-            withClue(design) { Template.of(design) }
+            Language.entries.forEach { language ->
+                withClue("$design $language") { Template.of(design, language) }
+            }
+        }
+    }
+
+    test("alle Sprachdateien eines Designs definieren dieselben Makros (#377)") {
+        // Sonst fehlte ein Wort erst LuaLaTeX auf, und nur in der Sprache, in
+        // der es fehlt – oder stünde als Wort einer Sprache in der anderen.
+        // Gezählt wird \newcommand; eine Hilfe mit @ im Namen gehört allein
+        // ihrer Datei.
+        val definition = Regex("""\\newcommand\{\\([a-zA-Z]+)}(?:\[(\d+)])?""")
+
+        fun macrosOf(design: Design, language: Language): Map<String, String> {
+            val path = "/templates/${Template.languageFileOf(design, language)}"
+            val source = withoutCommentLines(checkNotNull(Template::class.java.getResource(path)).readText())
+            return definition.findAll(source).associate { it.groupValues[1] to it.groupValues[2] }
+        }
+
+        Design.entries.forEach { design ->
+            val reference = macrosOf(design, Language.GERMAN)
+            Language.entries.forEach { language ->
+                withClue("$design $language") { macrosOf(design, language) shouldBe reference }
+            }
         }
     }
 
@@ -72,24 +106,57 @@ class TemplateTest : FunSpec({
         val body = templateWith(required).removePrefix(head)
 
         test("ohne sie wird die Vorlage abgelehnt") {
-            val error = shouldThrow<IllegalStateException> { Template.of("\\documentclass{article}\n$body") }
+            val error = shouldThrow<IllegalStateException> { templateOf("\\documentclass{article}\n$body") }
 
             error.message!! shouldContain Foundation.USAGE
         }
 
         test("sie muss direkt nach der Klasse stehen, denn sie lädt pdfx") {
             shouldThrow<IllegalStateException> {
-                Template.of("\\documentclass{article}\n\\usepackage{geometry}\n${Foundation.USAGE}\n$body")
+                templateOf("\\documentclass{article}\n\\usepackage{geometry}\n${Foundation.USAGE}\n$body")
             }
         }
 
         test("Leerzeilen und Kommentarzeilen dazwischen zählen nicht, eine auskommentierte Grundlage aber auch nicht") {
-            Template.of("\\documentclass{article}\n\n%% Die Grundlage.\n${Foundation.USAGE}\n$body")
-            shouldThrow<IllegalStateException> { Template.of("\\documentclass{article}\n% ${Foundation.USAGE}\n$body") }
+            templateOf("\\documentclass{article}\n\n%% Die Grundlage.\n${Foundation.USAGE}\n$body")
+            shouldThrow<IllegalStateException> { templateOf("\\documentclass{article}\n% ${Foundation.USAGE}\n$body") }
         }
 
         test("die Vorlage bringt die Grundlage als Datei mit") {
-            complete.files.keys shouldBe setOf(Foundation.FILE_NAME)
+            complete.files.keys shouldBe setOf(Foundation.FILE_NAME, Template.LANGUAGE_FILE_NAME)
+        }
+    }
+
+    context("Jede Vorlage lädt ihre Sprachdatei (#377)") {
+        val languageFile = "\\newcommand{\\wortbetrag}{Betrag}"
+
+        test("ohne sie wird die Vorlage abgelehnt") {
+            val template = templateWith(required).replace(Template.LANGUAGE_FILE_USAGE, "")
+
+            val error = shouldThrow<IllegalStateException> { templateOf(template, languageFile) }
+
+            error.message!! shouldContain Template.LANGUAGE_FILE_USAGE
+        }
+
+        test("die Sprachdatei geht mit, wie sie ist") {
+            String(templateOf(templateWith(required), languageFile).files.getValue(Template.LANGUAGE_FILE_NAME)) shouldBe
+                languageFile
+        }
+
+        test("ein Makro des Renderers darf in der Sprachdatei stehen") {
+            val template = templateWithout(missing = TemplateMacro.BETRAG)
+
+            templateOf(template, "\\newcommand{\\betrag}[1]{\\num{#1}~€}")
+            shouldThrow<IllegalStateException> { templateOf(template, "\\newcommand{\\betrag}{€}") }
+                .message!! shouldContain "betrag"
+        }
+
+        test("ein Platzhalter in der Sprachdatei wird abgelehnt, einer im Kommentar nicht") {
+            val error =
+                shouldThrow<IllegalStateException> { templateOf(templateWith(required), "\\newcommand{\\wortfirma}{<<FIRMA>>}") }
+
+            error.message!! shouldContain "<<FIRMA>>"
+            templateOf(templateWith(required), "% <<FIRMA>>")
         }
     }
 
@@ -101,7 +168,7 @@ class TemplateTest : FunSpec({
         test("ein Makro, das die Vorlage nicht kennt, wird benannt") {
             val error =
                 shouldThrow<IllegalStateException> {
-                    Template.of(templateWithout(missing = TemplateMacro.POSITIONSZEILE))
+                    templateOf(templateWithout(missing = TemplateMacro.POSITIONSZEILE))
                 }
 
             error.message!! shouldContain "positionszeile"
@@ -110,7 +177,7 @@ class TemplateTest : FunSpec({
         test("eine falsche Stelligkeit fällt ebenfalls auf") {
             val error =
                 shouldThrow<IllegalStateException> {
-                    Template.of(templateWithout(wrongArity = TemplateMacro.POSITIONSZEILE))
+                    templateOf(templateWithout(wrongArity = TemplateMacro.POSITIONSZEILE))
                 }
 
             error.message!! shouldContain "positionszeile"
@@ -123,7 +190,7 @@ class TemplateTest : FunSpec({
                 templateWithout(missing = TemplateMacro.POSITIONSZEILE) +
                     "\n% \\newcommand{\\positionszeile}[${TemplateMacro.POSITIONSZEILE.arity}]{}"
 
-            val error = shouldThrow<IllegalStateException> { Template.of(template) }
+            val error = shouldThrow<IllegalStateException> { templateOf(template) }
 
             error.message!! shouldContain "positionszeile"
         }
@@ -138,7 +205,7 @@ class TemplateTest : FunSpec({
             // weg, und keines der Beispiele hat eines.
             val error =
                 shouldThrow<IllegalStateException> {
-                    Template.of(templateWith(required - TemplateValue.SKONTO))
+                    templateOf(templateWith(required - TemplateValue.SKONTO))
                 }
 
             error.message!! shouldContain "<<SKONTO>>"
@@ -149,7 +216,7 @@ class TemplateTest : FunSpec({
             // Kommentarzeilen, also zählen sie auch bei der Prüfung nicht.
             val error =
                 shouldThrow<IllegalStateException> {
-                    Template.of(templateWith(required - TemplateValue.SKONTO) + "\n% <<SKONTO>>")
+                    templateOf(templateWith(required - TemplateValue.SKONTO) + "\n% <<SKONTO>>")
                 }
 
             error.message!! shouldContain "<<SKONTO>>"
@@ -160,14 +227,14 @@ class TemplateTest : FunSpec({
             // Summen (#211).
             val withoutPaymentInfo = required - TemplateValue.ZAHLUNGSZIEL - TemplateValue.ZAHLUNGSFRIST
 
-            Template.of(templateWith(withoutPaymentInfo + TemplateValue.ZAHLUNGSZIEL))
-            Template.of(templateWith(withoutPaymentInfo + TemplateValue.ZAHLUNGSFRIST))
+            templateOf(templateWith(withoutPaymentInfo + TemplateValue.ZAHLUNGSZIEL))
+            templateOf(templateWith(withoutPaymentInfo + TemplateValue.ZAHLUNGSFRIST))
         }
 
         test("fehlt eine Gruppe ganz, werden alle ihre Platzhalter genannt") {
             val error =
                 shouldThrow<IllegalStateException> {
-                    Template.of(templateWith(required - TemplateValue.ZAHLUNGSZIEL - TemplateValue.ZAHLUNGSFRIST))
+                    templateOf(templateWith(required - TemplateValue.ZAHLUNGSZIEL - TemplateValue.ZAHLUNGSFRIST))
                 }
 
             error.message!! shouldContain "<<ZAHLUNGSZIEL>>"
@@ -177,7 +244,7 @@ class TemplateTest : FunSpec({
         test("die Angaben der Stammdaten darf eine Vorlage weglassen") {
             // "Steuernummer oder USt-IdNr." lässt sich als Kennzeichen nicht
             // ausdrücken; das prüft das Pflichtangaben-Netz am fertigen PDF.
-            Template.of(templateWith(required))
+            templateOf(templateWith(required))
         }
 
         test("einen Schalter darf sie ebenso weglassen, und die Einleitung auch") {
@@ -185,7 +252,7 @@ class TemplateTest : FunSpec({
             // ob die Vorlage ein Mittel einsetzt (#248). Die Einleitung darf ein
             // Design weglassen (#209). Unter Pflicht müsste ein drittes Design
             // sie leer aufnehmen (#248).
-            val template = Template.of(templateWith(required))
+            val template = templateOf(templateWith(required))
 
             template.uses(TemplateValue.LOGO) shouldBe false
             template.uses(TemplateValue.RABATTSPALTE) shouldBe false
@@ -195,11 +262,11 @@ class TemplateTest : FunSpec({
 
     context("Ob die Vorlage einen Platzhalter setzt") {
         test("steht er in der Vorlage, setzt sie ihn") {
-            Template.of(templateWith(required) + "\n<<LOGO>>").uses(TemplateValue.LOGO) shouldBe true
+            templateOf(templateWith(required) + "\n<<LOGO>>").uses(TemplateValue.LOGO) shouldBe true
         }
 
         test("steht er nur in einer Kommentarzeile, setzt sie ihn nicht") {
-            Template.of(templateWith(required) + "\n% <<LOGO>>").uses(TemplateValue.LOGO) shouldBe false
+            templateOf(templateWith(required) + "\n% <<LOGO>>").uses(TemplateValue.LOGO) shouldBe false
         }
     }
 

@@ -1,14 +1,21 @@
 package de.fluchitconsulting.rechnungsgenerator.generate.render
 
 import de.fluchitconsulting.rechnungsgenerator.core.values.Design
+import de.fluchitconsulting.rechnungsgenerator.core.values.Language
 
 // Ein Platzhalter der Vorlage: <<GROSSGESCHRIEBEN>>.
 internal val PLACEHOLDER = Regex("<<([A-Z_]+)>>")
 
 /**
  * Eine geprüfte Vorlage: ohne Kommentarzeilen, mit der [Foundation] als erstem
- * Paket, mit jedem Makro, das der Renderer aufruft, und jedem Platzhalter, den
- * keine Vorlage weglassen darf (#201).
+ * Paket, mit ihrer Sprachdatei, mit jedem Makro, das der Renderer aufruft, und
+ * jedem Platzhalter, den keine Vorlage weglassen darf (#201).
+ *
+ * Die Sprachdatei gehört zur Vorlage und nicht zur Rechnung (#377): Sie
+ * enthält die Wörter eines Designs in einer Sprache und die Schreibweise der
+ * Zahlen, als Makros. Geprüft wird sie zusammen mit der Vorlage – ein Makro,
+ * das der Renderer aufruft, darf in der einen oder der anderen stehen, wie
+ * `\betrag` in der Sprachdatei.
  *
  * Derselbe Zug wie bei der `AcceptedInvoice`: Was ungeprüft ist, lässt sich
  * nicht bauen. Der Konstruktor ist privat, gebaut wird über [of], und dort
@@ -24,6 +31,7 @@ internal val PLACEHOLDER = Regex("<<([A-Z_]+)>>")
  */
 class Template private constructor(
     private val source: String,
+    private val languageFile: String,
 ) {
     /**
      * Ob die Vorlage den Platzhalter setzt. Ein Platzhalter, der nur in einer
@@ -33,10 +41,18 @@ class Template private constructor(
 
     /**
      * Die Dateien, die jede Vorlage neben ihrer `.tex` braucht: die
-     * [Foundation]. Dass die Vorlage sie lädt, prüft der Bau.
+     * [Foundation] und die Sprachdatei. Dass die Vorlage beide lädt, prüft der
+     * Bau.
+     *
+     * Die Sprachdatei geht mit ihren Kommentaren hinaus, wie die Grundlage: Sie
+     * steht in keinem Volltext, und TeX überliest sie.
      */
     val files: Map<String, ByteArray>
-        get() = mapOf(Foundation.FILE_NAME to Foundation.BUILT_IN.content)
+        get() =
+            mapOf(
+                Foundation.FILE_NAME to Foundation.BUILT_IN.content,
+                LANGUAGE_FILE_NAME to languageFile.toByteArray(),
+            )
 
     /**
      * Setzt die Werte in die Vorlage – und prüft vorher, dass jeder Platzhalter
@@ -104,30 +120,65 @@ class Template private constructor(
     // Die Fabriken stehen im Companion, weil nur er den privaten Konstruktor
     // rufen darf.
     companion object {
+        /** Der Name, unter dem die Sprachdatei neben der `.tex` liegt. */
+        const val LANGUAGE_FILE_NAME = "sprache.tex"
+
+        /** Die Zeile, mit der eine Vorlage ihre Sprachdatei lädt. */
+        const val LANGUAGE_FILE_USAGE = "\\input{sprache}"
+
         // Eine Makro-Definition der Vorlage: \newcommand{\name}[stelligkeit].
         private val NEWCOMMAND = Regex("""\\newcommand\{\\([a-zA-Z]+)}(?:\[(\d+)])?""")
 
         /**
-         * Die Vorlage eines Designs. Jedes Design ist eine Datei unter
-         * `templates/`, benannt wie in der YAML.
+         * Die Vorlage eines Designs in einer Sprache. Jedes Design ist eine
+         * Datei unter `templates/`, benannt wie in der YAML, und daneben liegt
+         * je Sprache seine Sprachdatei, benannt nach Design und Tag:
+         * `helsinki-en-gb.tex`.
          */
-        fun of(design: Design): Template {
-            val path = "/templates/${design.label}.tex"
-            return of(checkNotNull(Template::class.java.getResource(path)) { "Vorlage $path fehlt" }.readText())
+        fun of(design: Design, language: Language): Template =
+            of(
+                resource("/templates/${design.label}.tex", "Vorlage"),
+                resource("/templates/${languageFileOf(design, language)}", "Sprachdatei"),
+            )
+
+        /** Der Name der Sprachdatei eines Designs unter `templates/`. */
+        fun languageFileOf(design: Design, language: Language): String = "${design.label}-${language.tag.lowercase()}.tex"
+
+        private fun resource(path: String, what: String): String =
+            checkNotNull(Template::class.java.getResource(path)) { "$what $path fehlt" }.readText()
+
+        /**
+         * Baut eine Vorlage aus Quelltext und dem ihrer Sprachdatei: erst die
+         * Kommentarzeilen streichen, dann prüfen. Geprüft wird also nur, was
+         * TeX liest – ein auskommentiertes `\newcommand` definiert nichts, und
+         * ein Platzhalter, der nur noch in einem Kommentar steht, setzt nichts.
+         */
+        fun of(source: String, languageFile: String): Template {
+            val withoutComments = withoutCommentLines(source)
+            val languageWithoutComments = withoutCommentLines(languageFile)
+            checkFoundation(withoutComments)
+            checkLanguageFile(withoutComments, languageWithoutComments)
+            checkMacros(withoutComments + "\n" + languageWithoutComments)
+            checkPlaceholders(withoutComments)
+            return Template(withoutComments, languageFile)
         }
 
         /**
-         * Baut eine Vorlage aus Quelltext: erst die Kommentarzeilen streichen,
-         * dann prüfen. Geprüft wird also nur, was TeX liest – ein
-         * auskommentiertes `\newcommand` definiert nichts, und ein Platzhalter,
-         * der nur noch in einem Kommentar steht, setzt nichts.
+         * Prüft, dass die Vorlage ihre Sprachdatei lädt und dass die keinen
+         * Platzhalter enthält.
+         *
+         * Ohne die erste Prüfung fehlten die Wörter erst LuaLaTeX auf, als
+         * unbekannte Makros. Ohne die zweite stünde ein Platzhalter der
+         * Sprachdatei wörtlich im PDF: Gefüllt wird nur die Vorlage, die
+         * Sprachdatei geht als Datei daneben, wie sie ist.
          */
-        fun of(source: String): Template {
-            val withoutComments = withoutCommentLines(source)
-            checkFoundation(withoutComments)
-            checkMacros(withoutComments)
-            checkPlaceholders(withoutComments)
-            return Template(withoutComments)
+        private fun checkLanguageFile(source: String, languageFile: String) {
+            check(source.lines().any { it.trim() == LANGUAGE_FILE_USAGE }) {
+                "Die Vorlage lädt ihre Sprachdatei nicht. Sie braucht eine Zeile $LANGUAGE_FILE_USAGE."
+            }
+            PLACEHOLDER.find(languageFile)?.let {
+                error("Die Sprachdatei enthält ${it.value}. Werte der Rechnung setzt die Vorlage, die Sprachdatei nur Wörter.")
+            }
         }
 
         /**
@@ -153,8 +204,8 @@ class Template private constructor(
         }
 
         /**
-         * Prüft, dass die Vorlage jedes Makro kennt, das der Renderer aufruft – und
-         * zwar mit derselben Stelligkeit.
+         * Prüft, dass Vorlage und Sprachdatei zusammen jedes Makro kennen, das
+         * der Renderer aufruft – und zwar mit derselben Stelligkeit.
          *
          * Dieselbe Sorte Fehler wie beim Platzhalter (#30), nur eine Ebene tiefer:
          * Ein vertippter Makroname übersetzt in Kotlin klaglos und fällt erst

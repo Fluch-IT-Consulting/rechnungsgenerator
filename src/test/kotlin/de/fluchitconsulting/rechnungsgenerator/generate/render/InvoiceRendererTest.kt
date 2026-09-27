@@ -216,7 +216,7 @@ class InvoiceRendererTest : FunSpec({
                     val rendered = typeset(design, exampleLogo)
 
                     rendered.sources.tex shouldContain "\\input{logo}"
-                    rendered.sources.files.keys shouldBe setOf(Foundation.FILE_NAME, "logo.tex")
+                    rendered.sources.files.keys shouldBe setOf(Foundation.FILE_NAME, Template.LANGUAGE_FILE_NAME, "logo.tex")
                     rendered.sources.files.getValue("logo.tex") shouldBe exampleLogo.content
                 }
             }
@@ -224,7 +224,10 @@ class InvoiceRendererTest : FunSpec({
 
         test("ohne Logo gibt es in keinem Design eine Datei dafür, nur die Grundlage") {
             Design.entries.forEach { design ->
-                withClue(design) { typeset(design, null).sources.files.keys shouldBe setOf(Foundation.FILE_NAME) }
+                withClue(design) {
+                    typeset(design, null).sources.files.keys shouldBe
+                        setOf(Foundation.FILE_NAME, Template.LANGUAGE_FILE_NAME)
+                }
             }
         }
 

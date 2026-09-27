@@ -11,11 +11,9 @@
 \usepackage{etoolbox}  %% \ifblank für die Angaben, die leer sein dürfen
 \usepackage{tikz}      %% das Logo
 
-\sisetup{
-  output-decimal-marker = {,},
-  group-separator       = {.},
-  group-minimum-digits  = 4,
-}
+\sisetup{group-minimum-digits = 4}
+
+\input{sprache}
 
 \setmainfont{texgyreheros}[
   Extension      = .otf,
@@ -42,12 +40,12 @@
 \fancypagestyle{erste}{\fancyhf{}\renewcommand{\headrulewidth}{0pt}\fancyfoot[C]{\fuss}\fancyfoot[R]{\fortsetzung}}
 \fancypagestyle{folge}{\fancyhf{}\renewcommand{\headrulewidth}{0pt}%
   \fancyhead[L]{\small\color{gedaempft}Rechnung R26-042 · 14.~August 2026}%
-  \fancyhead[R]{\small\color{gedaempft}Seite \thepage\ von \pageref*{LastPage}}%
+  \fancyhead[R]{\small\color{gedaempft}\wortseitevon{\thepage}{\pageref*{LastPage}}}%
   \fancyfoot[C]{\fuss}\fancyfoot[R]{\fortsetzung}}
 \pagestyle{folge}
 
 \newcommand{\fortsetzung}{\wennweitereseite{%
-  \raisebox{\dimexpr\footskip-3mm\relax}[0pt][0pt]{\footnotesize\color{gedaempft}Fortsetzung auf der nächsten Seite}}}
+  \raisebox{\dimexpr\footskip-3mm\relax}[0pt][0pt]{\footnotesize\color{gedaempft}\wortfortsetzung}}}
 
 \raggedright
 
@@ -82,8 +80,6 @@
 \newcommand{\kopfangabe}[2]{\ifblank{#2}{}{#1 #2\par}}
 
 \newcommand{\zusammen}[1]{\mbox{#1}}
-\newcommand{\betrag}[1]{\num{#1}~€}
-\newcommand{\prozent}[1]{\num{#1}~\%}
 \newcommand{\menge}[1]{\num{#1}}
 
 \newcommand{\rubrik}[1]{{\footnotesize\color{gedaempft}\addfontfeature{LetterSpace=14}\MakeUppercase{#1}}}
@@ -95,9 +91,9 @@
 
 \newcommand{\absetzungskopf}[1]{\par\vspace{6mm}\noindent #1\par\vspace{1.5mm}}
 
-\newcommand{\bankblock}{\vspace{9mm}\noindent{\bfseries Bankverbindung}\\[1.5mm]%
-  Kontoinhaber: Muster IT-Consulting UG (haftungsbeschränkt)\\
-  Institut: Musterbank Würzburg\\
+\newcommand{\bankblock}{\vspace{9mm}\noindent{\bfseries \wortbankverbindung}\\[1.5mm]%
+  \wortkontoinhaber: Muster IT-Consulting UG (haftungsbeschränkt)\\
+  \wortinstitut: Musterbank Würzburg\\
   IBAN: DE89 3704 0044 0532 0130 00\\
   BIC: MUSTDEFFXXX}
 
@@ -114,7 +110,7 @@
 \iftoggle{rabattspalte}{\newcolumntype{R}{r}}{\newcolumntype{R}{}}
 \newcommand{\positionszeile}[7]{#2 & #3 & #4 & #5\mitrabatt{ & #6} & #7}
 
-\newcommand{\positionskopf}{\mbox{\rubrik{Beschreibung}} & \mbox{\rubrik{Menge}} & & \mbox{\rubrik{Einzelpreis}}\mitrabatt{ & \mbox{\rubrik{Rabatt}}} & \mbox{\rubrik{Betrag}} \\[1.5mm]
+\newcommand{\positionskopf}{\mbox{\rubrik{\wortbeschreibung}} & \mbox{\rubrik{\wortmenge}} & & \mbox{\rubrik{\worteinzelpreis}}\mitrabatt{ & \mbox{\rubrik{\wortrabatt}}} & \mbox{\rubrik{\wortbetrag}} \\[1.5mm]
   \midrule}
 
 \newcommand{\spaltenzahl}{\iftoggle{rabattspalte}{6}{5}}
@@ -123,13 +119,13 @@
 
 \newcommand{\abschlusszeile}[2]{\\\midrule\textbf{#1} & \textbf{#2}}
 
-\newcommand{\nettozeile}[1]{\summenzeile{Nettobetrag}{#1}}
-\newcommand{\steuerzeile}[3]{\summenzeile{zzgl. #1 USt.\ifblank{#2}{}{ auf #2}}{#3}}
-\newcommand{\gesamtzeile}[1]{\abschlusszeile{Gesamtbetrag}{#1}}
+\newcommand{\nettozeile}[1]{\summenzeile{\wortnettobetrag}{#1}}
+\newcommand{\steuerzeile}[3]{\summenzeile{\wortsteuer{#1}{#2}}{#3}}
+\newcommand{\gesamtzeile}[1]{\abschlusszeile{\wortgesamtbetrag}{#1}}
 
 \newcommand{\fuss}{\parbox[b]{\textwidth}{\centering\scriptsize\color{gedaempft}
-Muster IT-Consulting UG (haftungsbeschränkt) · Beispielweg 42, 97070 Würzburg\ifblank{Würzburg}{}{ · Registergericht Würzburg\ifblank{HRB 12345}{}{, HRB 12345}}\\
-USt-IdNr. DE 123 456 788 · Musterbank Würzburg · BIC MUSTDEFFXXX · IBAN DE89 3704 0044 0532 0130 00}}
+Muster IT-Consulting UG (haftungsbeschränkt) · Beispielweg 42, 97070 Würzburg\ifblank{Würzburg}{}{ · \wortregistergericht{} Würzburg\ifblank{HRB 12345}{}{, HRB 12345}}\\
+\wortustid{} DE 123 456 788 · Musterbank Würzburg · BIC MUSTDEFFXXX · IBAN DE89 3704 0044 0532 0130 00}}
 
 \begin{document}
 \thispagestyle{erste}
@@ -143,18 +139,18 @@ USt-IdNr. DE 123 456 788 · Musterbank Würzburg · BIC MUSTDEFFXXX · IBAN DE89
 \vspace{18mm}
 
 \begin{minipage}[t]{0.52\linewidth}\raggedright
-  Beispiel Software GmbH\zeilenwechsel{}Industriestraße 1\zeilenwechsel{}90402 Nürnberg\ifblank{}{}{\ustidtrenner{}USt-IdNr. }
+  Beispiel Software GmbH\zeilenwechsel{}Industriestraße 1\zeilenwechsel{}90402 Nürnberg\ifblank{}{}{\ustidtrenner{}\wortustid{} }
 \end{minipage}%
 \hfill
 \begin{minipage}[t]{0.44\linewidth}
   \raggedleft\small\color{gedaempft}
-  \ifblank{Dr. Erika Musterfrau}{}{Geschäftsführung\zeilenwechsel{}Dr. Erika Musterfrau\blocktrenner{}}
-  \kopfangabe{Kundennr.:}{}
-  \kopfangabe{Unsere Auftragsnr.:}{}
+  \ifblank{Dr. Erika Musterfrau}{}{\wortgeschaeftsfuehrung\zeilenwechsel{}Dr. Erika Musterfrau\blocktrenner{}}
+  \kopfangabe{\wortkundennr}{}
+  \kopfangabe{\wortauftragsnr}{}
   \kopfangabe{Leistungszeitraum:}{\zusammen{Juli 2026}}
-  \kopfangabe{Abschlag vereinnahmt am}{}
-  \kopfangabe{Ihre Referenz:}{BST-2026-0815}
-  \kopfangabe{Zahlbar ohne Abzug bis}{28.~August 2026}
+  \kopfangabe{\wortvereinnahmtam}{}
+  \kopfangabe{\wortreferenz}{BST-2026-0815}
+  \kopfangabe{\wortzahlbarbis}{28.~August 2026}
 \end{minipage}
 
 \vspace{14mm}
@@ -205,7 +201,7 @@ USt-IdNr. DE 123 456 788 · Musterbank Würzburg · BIC MUSTDEFFXXX · IBAN DE89
 \nopagebreak
 \vspace{5mm}
 
-Mit freundlichen Grüßen\\*[7mm]
+\wortgruss\\*[7mm]
 Dr. Erika Musterfrau
 
 \bankblock{}

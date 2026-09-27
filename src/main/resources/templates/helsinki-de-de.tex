@@ -1,0 +1,59 @@
+%% Die Sprachdatei von helsinki für de-DE (#377): die Wörter des Designs und
+%% die Schreibweise der Zahlen, soweit sie an der Sprache hängt. Der Renderer
+%% legt sie als sprache.tex neben die Vorlage, die sie lädt.
+%%
+%% Jede Sprachdatei eines Designs definiert dieselben Makros, mit derselben
+%% Stelligkeit – das prüft ein Test. Welches Wort ein Design an einer Stelle
+%% setzt, entscheidet das Design; deshalb eine Datei je Design und Sprache
+%% und keine für alle Designs. Ein Satz mit fachlicher Aussage steht nicht
+%% hier, sondern kommt aus Kotlin (ADR-0017). Kein Platzhalter: Die Werte der
+%% Rechnung setzt die Vorlage.
+%%
+%% Die Beschriftungen heißen \wort... nach dem deutschen Wort, damit sie sich
+%% von den Makros unterscheiden, die der Renderer aufruft: \wortbetrag ist
+%% der Spaltenkopf, \betrag die Zahl.
+
+%% ---------------------------------------------------------------- Zahlen
+%% Dezimalkomma und Punkt als Tausendertrenner (ADR-0021). Ab wie vielen
+%% Stellen gruppiert wird, wählt die Vorlage.
+\sisetup{
+  output-decimal-marker = {,},
+  group-separator       = {.},
+}
+%% Das €-Zeichen und das Prozentzeichen hängen mit festem Leerzeichen an der
+%% Zahl. Einzelpreise nehmen \betrag.
+\newcommand{\betrag}[1]{\num{#1}~€}
+\newcommand{\prozent}[1]{\num{#1}~\%}
+
+%% ------------------------------------------------------------- Seiten
+\newcommand{\wortseitevon}[2]{Seite #1 von #2}
+\newcommand{\wortfortsetzung}{Fortsetzung auf der nächsten Seite}
+
+%% ------------------------------------------------------ Kopf und Anschrift
+%% "Geschäftsführung" statt "Geschäftsführer": Die Bezeichnung steht neben
+%% einem Namen, dessen Geschlecht die Stammdaten nicht kennen.
+\newcommand{\wortgeschaeftsfuehrung}{Geschäftsführung}
+\newcommand{\wortustid}{USt-IdNr.}
+\newcommand{\wortkundennr}{Kundennr.:}
+\newcommand{\wortauftragsnr}{Unsere Auftragsnr.:}
+\newcommand{\wortvereinnahmtam}{Abschlag vereinnahmt am}
+\newcommand{\wortreferenz}{Ihre Referenz:}
+\newcommand{\wortzahlbarbis}{Zahlbar ohne Abzug bis}
+
+%% ----------------------------------------------------- Positionen, Summen
+\newcommand{\wortbeschreibung}{Beschreibung}
+\newcommand{\wortmenge}{Menge}
+\newcommand{\worteinzelpreis}{Einzelpreis}
+\newcommand{\wortrabatt}{Rabatt}
+\newcommand{\wortbetrag}{Betrag}
+\newcommand{\wortnettobetrag}{Nettobetrag}
+%% Satz und, bei mehreren Steuergruppen, ihre Grundlage – sonst ist sie leer.
+\newcommand{\wortsteuer}[2]{zzgl. #1 USt.\ifblank{#2}{}{ auf #2}}
+\newcommand{\wortgesamtbetrag}{Gesamtbetrag}
+
+%% --------------------------------------------------------- Schluss und Fuß
+\newcommand{\wortgruss}{Mit freundlichen Grüßen}
+\newcommand{\wortbankverbindung}{Bankverbindung}
+\newcommand{\wortkontoinhaber}{Kontoinhaber}
+\newcommand{\wortinstitut}{Institut}
+\newcommand{\wortregistergericht}{Registergericht}

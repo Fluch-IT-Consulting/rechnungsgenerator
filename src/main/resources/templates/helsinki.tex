@@ -35,14 +35,17 @@
 \usepackage{etoolbox}  %% \ifblank für die Angaben, die leer sein dürfen
 \usepackage{tikz}      %% das Logo
 
-%% Die Schreibweise der Zahlen (ADR-0021): Komma, Punkt als Tausendertrenner,
-%% ab vier Stellen – sonst stünde 8337,50 ohne Punkt da. Die übrigen
+%% Die Schreibweise der Zahlen (ADR-0021): gruppiert ab vier Stellen – sonst
+%% stünde 8337,50 ohne Trenner da. Welche Zeichen trennen und wo das €
+%% steht, hängt an der Sprache und steht in der Sprachdatei, die übrigen
 %% Einstellungen von siunitx setzt die Grundlage.
-\sisetup{
-  output-decimal-marker = {,},
-  group-separator       = {.},
-  group-minimum-digits  = 4,
-}
+\sisetup{group-minimum-digits = 4}
+
+%% Die Sprachdatei (#377): die Wörter dieses Designs und die Schreibweise der
+%% Zahlen in der Sprache der Rechnung, als \wort... und \betrag, \prozent.
+%% Der Renderer legt die passende als sprache.tex neben diese Vorlage. Nach
+%% etoolbox und siunitx, denn sie braucht beide.
+\input{sprache}
 
 %% Dieselbe Schrift wie im Lebenslauf – dadurch passen die Dokumente zusammen.
 \setmainfont{texgyreheros}[
@@ -89,7 +92,7 @@
 \fancypagestyle{erste}{\fancyhf{}\renewcommand{\headrulewidth}{0pt}\fancyfoot[C]{\fuss}\fancyfoot[R]{\fortsetzung}}
 \fancypagestyle{folge}{\fancyhf{}\renewcommand{\headrulewidth}{0pt}%
   \fancyhead[L]{\small\color{gedaempft}<<DOKUMENTART>> <<RECHNUNGSNUMMER>> · <<RECHNUNGSDATUM>>}%
-  \fancyhead[R]{\small\color{gedaempft}Seite \thepage\ von \pageref*{LastPage}}%
+  \fancyhead[R]{\small\color{gedaempft}\wortseitevon{\thepage}{\pageref*{LastPage}}}%
   \fancyfoot[C]{\fuss}\fancyfoot[R]{\fortsetzung}}
 \pagestyle{folge}
 
@@ -99,7 +102,7 @@
 %% dem Ende des Textbereichs, der \footskip über der Grundlinie des Fußes
 %% endet.
 \newcommand{\fortsetzung}{\wennweitereseite{%
-  \raisebox{\dimexpr\footskip-3mm\relax}[0pt][0pt]{\footnotesize\color{gedaempft}Fortsetzung auf der nächsten Seite}}}
+  \raisebox{\dimexpr\footskip-3mm\relax}[0pt][0pt]{\footnotesize\color{gedaempft}\wortfortsetzung}}}
 
 %% Flattersatz statt Blocksatz. In den schmalen Spalten einer Rechnung reißt
 %% Blocksatz sichtbare Löcher zwischen die Wörter; Heros verträgt Flattersatz gut.
@@ -190,10 +193,8 @@
 %% Diese Angabe bricht nicht um. Im schmalen Block oben rechts bräche
 %% "Juni bis Oktober 2026" sonst hinter dem "bis" und läse sich wie zwei Angaben.
 \newcommand{\zusammen}[1]{\mbox{#1}}
-%% Die Zahlen, gesetzt nach \sisetup oben. Das €-Zeichen und das Prozentzeichen
-%% hängen mit festem Leerzeichen an der Zahl. Einzelpreise nehmen \betrag.
-\newcommand{\betrag}[1]{\num{#1}~€}
-\newcommand{\prozent}[1]{\num{#1}~\%}
+%% Die Mengen, gesetzt nach \sisetup. \betrag und \prozent stehen in der
+%% Sprachdatei: Wo das €-Zeichen steht, hängt an der Sprache.
 \newcommand{\menge}[1]{\num{#1}}
 
 %% Kleine, gesperrte Versalien – dasselbe Stilmittel wie im Lebenslauf.
@@ -230,9 +231,9 @@
 %% darunter wäre schlimmer als keine. Ob es dasteht, entscheidet der Renderer,
 %% indem er es aufruft oder nicht; was darin steht, diese Vorlage. Der Abstand
 %% darüber gehört deshalb ins Makro, wie bei \hinweisabsatz.
-\newcommand{\bankblock}{\vspace{9mm}\noindent{\bfseries Bankverbindung}\\[1.5mm]%
-  Kontoinhaber: <<KONTOINHABER>>\\
-  Institut: <<INSTITUT>>\\
+\newcommand{\bankblock}{\vspace{9mm}\noindent{\bfseries \wortbankverbindung}\\[1.5mm]%
+  \wortkontoinhaber: <<KONTOINHABER>>\\
+  \wortinstitut: <<INSTITUT>>\\
   IBAN: <<IBAN>>\\
   BIC: <<BIC>>}
 
@@ -272,7 +273,7 @@
 %% Folgeseite. \mbox um jeden Spaltenkopf: In der X-Spalte ist der Inhalt sonst
 %% ein Absatz, dessen erste Zeile tiefer sitzt als die Grundlinie der
 %% r-/l-Spalten.
-\newcommand{\positionskopf}{\mbox{\rubrik{Beschreibung}} & \mbox{\rubrik{Menge}} & & \mbox{\rubrik{Einzelpreis}}\mitrabatt{ & \mbox{\rubrik{Rabatt}}} & \mbox{\rubrik{Betrag}} \\[1.5mm]
+\newcommand{\positionskopf}{\mbox{\rubrik{\wortbeschreibung}} & \mbox{\rubrik{\wortmenge}} & & \mbox{\rubrik{\worteinzelpreis}}\mitrabatt{ & \mbox{\rubrik{\wortrabatt}}} & \mbox{\rubrik{\wortbetrag}} \\[1.5mm]
   \midrule}
 
 %% Wie viele Spalten die Positionstabelle hat, für die Zeilen über ihre ganze
@@ -292,11 +293,12 @@
 \newcommand{\abschlusszeile}[2]{\\\midrule\textbf{#1} & \textbf{#2}}
 
 %% Die Zeilen des Summenblocks mit ihren Beschriftungen (#217). Die Wörter
-%% gehören zum Design; Kotlin liefert nur Satz und Beträge.
-\newcommand{\nettozeile}[1]{\summenzeile{Nettobetrag}{#1}}
-%% Die Grundlage nur bei mehreren Steuergruppen (#218), sonst ist sie leer.
-\newcommand{\steuerzeile}[3]{\summenzeile{zzgl. #1 USt.\ifblank{#2}{}{ auf #2}}{#3}}
-\newcommand{\gesamtzeile}[1]{\abschlusszeile{Gesamtbetrag}{#1}}
+%% gehören zum Design und stehen in seiner Sprachdatei; Kotlin liefert nur
+%% Satz und Beträge. Die Grundlage der Steuerzeile gibt es nur bei mehreren
+%% Steuergruppen (#218), sonst ist sie leer.
+\newcommand{\nettozeile}[1]{\summenzeile{\wortnettobetrag}{#1}}
+\newcommand{\steuerzeile}[3]{\summenzeile{\wortsteuer{#1}{#2}}{#3}}
+\newcommand{\gesamtzeile}[1]{\abschlusszeile{\wortgesamtbetrag}{#1}}
 
 %% ------------------------------------------------------------------ Fußzeile
 %% Zwei zentrierte Zeilen ohne Trennlinie darüber, wie auf der Rechnung vor
@@ -311,8 +313,8 @@
 %% ODER die USt-IdNr., nicht beides. Mit beiden wurde die zweite Zeile 178 mm
 %% breit und passte nicht mehr in die 165 mm Textbreite.
 \newcommand{\fuss}{\parbox[b]{\textwidth}{\centering\scriptsize\color{gedaempft}
-<<FIRMA>> · <<STRASSE>>, <<PLZ>> <<ORT>>\ifblank{<<REGISTERGERICHT>>}{}{ · Registergericht <<REGISTERGERICHT>>\ifblank{<<REGISTERNUMMER>>}{}{, <<REGISTERNUMMER>>}}\\
-USt-IdNr. <<USTID>> · <<INSTITUT>> · BIC <<BIC>> · IBAN <<IBAN>>}}
+<<FIRMA>> · <<STRASSE>>, <<PLZ>> <<ORT>>\ifblank{<<REGISTERGERICHT>>}{}{ · \wortregistergericht{} <<REGISTERGERICHT>>\ifblank{<<REGISTERNUMMER>>}{}{, <<REGISTERNUMMER>>}}\\
+\wortustid{} <<USTID>> · <<INSTITUT>> · BIC <<BIC>> · IBAN <<IBAN>>}}
 
 \begin{document}
 \thispagestyle{erste}
@@ -359,12 +361,12 @@ USt-IdNr. <<USTID>> · <<INSTITUT>> · BIC <<BIC>> · IBAN <<IBAN>>}}
 %% Seiten, die eigene steht im Fuß. Sie hängt ohne Leerraum an der Anschrift,
 %% sonst stünde ohne sie ein Leerzeichen am Ende des Blocks.
 \begin{minipage}[t]{0.52\linewidth}\raggedright
-  <<EMPFAENGER>>\ifblank{<<KUNDE_USTID>>}{}{\ustidtrenner{}USt-IdNr. <<KUNDE_USTID>>}
+  <<EMPFAENGER>>\ifblank{<<KUNDE_USTID>>}{}{\ustidtrenner{}\wortustid{} <<KUNDE_USTID>>}
 \end{minipage}%
 \hfill
 %% Die Geschäftsführung steht hier und nicht im Fuß, sonst bräche die erste
-%% Fußzeile um. "Geschäftsführung" statt "Geschäftsführer": Die Bezeichnung
-%% steht neben einem Namen, dessen Geschlecht die Stammdaten nicht kennen.
+%% Fußzeile um. Warum das Wort nicht "Geschäftsführer" ist, steht in der
+%% Sprachdatei.
 %%
 %% Nummer und Datum der Rechnung stehen im Balken, nicht hier. Die
 %% Kundennummer steht als erste Kopfangabe, gleich neben dem Kunden. Die Beschriftung
@@ -374,13 +376,13 @@ USt-IdNr. <<USTID>> · <<INSTITUT>> · BIC <<BIC>> · IBAN <<IBAN>>}}
 %% "bis" und läse sich wie zwei Angaben.
 \begin{minipage}[t]{0.44\linewidth}
   \raggedleft\small\color{gedaempft}
-  \ifblank{<<GESCHAEFTSFUEHRUNG>>}{}{Geschäftsführung\zeilenwechsel{}<<GESCHAEFTSFUEHRUNG>>\blocktrenner{}}
-  \kopfangabe{Kundennr.:}{<<KUNDENNUMMER>>}
-  \kopfangabe{Unsere Auftragsnr.:}{<<AUFTRAGSNUMMER>>}
+  \ifblank{<<GESCHAEFTSFUEHRUNG>>}{}{\wortgeschaeftsfuehrung\zeilenwechsel{}<<GESCHAEFTSFUEHRUNG>>\blocktrenner{}}
+  \kopfangabe{\wortkundennr}{<<KUNDENNUMMER>>}
+  \kopfangabe{\wortauftragsnr}{<<AUFTRAGSNUMMER>>}
   \kopfangabe{<<ZEITRAUM_BESCHRIFTUNG>>:}{\zusammen{<<LEISTUNGSZEITRAUM>>}}
-  \kopfangabe{Abschlag vereinnahmt am}{<<VEREINNAHMT_AM>>}
-  \kopfangabe{Ihre Referenz:}{<<KUNDENREFERENZ>>}
-  \kopfangabe{Zahlbar ohne Abzug bis}{<<ZAHLUNGSZIEL>>}
+  \kopfangabe{\wortvereinnahmtam}{<<VEREINNAHMT_AM>>}
+  \kopfangabe{\wortreferenz}{<<KUNDENREFERENZ>>}
+  \kopfangabe{\wortzahlbarbis}{<<ZAHLUNGSZIEL>>}
 \end{minipage}
 
 \vspace{14mm}
@@ -491,7 +493,7 @@ USt-IdNr. <<USTID>> · <<INSTITUT>> · BIC <<BIC>> · IBAN <<IBAN>>}}
 \nopagebreak
 \vspace{5mm}
 
-Mit freundlichen Grüßen\\*[7mm]
+\wortgruss\\*[7mm]
 <<INHABER>>
 
 %% ---------------------------------------------------------- Bankverbindung
