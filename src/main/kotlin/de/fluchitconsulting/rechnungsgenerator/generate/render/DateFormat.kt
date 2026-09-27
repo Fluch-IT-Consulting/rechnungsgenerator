@@ -80,7 +80,7 @@ class DateFormat(
             when (language) {
                 Language.GERMAN -> "bis"
                 // Die Abschlagsrechnung gibt es auf Englisch noch nicht (#377).
-                Language.BRITISH_ENGLISH -> language.notYet("Der voraussichtliche Leistungszeitraum")
+                Language.BRITISH_ENGLISH -> language.notYet("Den voraussichtlichen Leistungszeitraum")
             }
         val fillsWholeMonths = start.dayOfMonth == 1 && end == end.withDayOfMonth(end.lengthOfMonth())
         if (!fillsWholeMonths) return servicePeriod(start, end)

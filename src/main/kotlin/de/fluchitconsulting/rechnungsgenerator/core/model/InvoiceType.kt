@@ -162,7 +162,7 @@ enum class InvoiceType(
             Language.BRITISH_ENGLISH -> {
                 when (this) {
                     INVOICE, FINAL, PARTIAL -> null
-                    PREPAYMENT, CANCELLATION -> language.notYet("Der Pflichtsatz der $documentName")
+                    PREPAYMENT, CANCELLATION -> language.notYet("Den Pflichtsatz der $documentName")
                 }
             }
         }
@@ -176,7 +176,7 @@ enum class InvoiceType(
             // "Service period" und nicht "Period of supply" oder "Tax point":
             // Beide sind im britischen VAT eigene Begriffe.
             Language.BRITISH_ENGLISH -> {
-                if (servicePeriodIsForecast) language.notYet("Der voraussichtliche Leistungszeitraum") else "Service period"
+                if (servicePeriodIsForecast) language.notYet("Den voraussichtlichen Leistungszeitraum") else "Service period"
             }
         }
 
@@ -191,7 +191,7 @@ enum class InvoiceType(
                 if (servicePeriodIsForecast) "Voraussichtlicher Zeitraum" else "Zeitraum"
             }
             Language.BRITISH_ENGLISH -> {
-                if (servicePeriodIsForecast) language.notYet("Der voraussichtliche Zeitraum") else "Period"
+                if (servicePeriodIsForecast) language.notYet("Den voraussichtlichen Zeitraum") else "Period"
             }
         }
 
@@ -218,7 +218,7 @@ enum class InvoiceType(
             Language.BRITISH_ENGLISH -> {
                 when (this) {
                     INVOICE -> "Invoice"
-                    PARTIAL, PREPAYMENT, FINAL, CANCELLATION -> language.notYet("Der Name der $documentName")
+                    PARTIAL, PREPAYMENT, FINAL, CANCELLATION -> language.notYet("Den Namen der $documentName")
                 }
             }
         }

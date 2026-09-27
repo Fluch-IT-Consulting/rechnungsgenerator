@@ -1,16 +1,21 @@
 package de.fluchitconsulting.rechnungsgenerator.generate.toolchain
 
+import de.fluchitconsulting.rechnungsgenerator.core.accepted.AcceptedInvoice
+import de.fluchitconsulting.rechnungsgenerator.core.accepted.Verdict
 import de.fluchitconsulting.rechnungsgenerator.core.calculation.CalculatedInvoice
 import de.fluchitconsulting.rechnungsgenerator.core.model.InvoiceVariable
 import de.fluchitconsulting.rechnungsgenerator.core.model.YamlLoader
 import de.fluchitconsulting.rechnungsgenerator.core.model.exampleInvoices
+import de.fluchitconsulting.rechnungsgenerator.core.rules.Rule
 import de.fluchitconsulting.rechnungsgenerator.core.text.TextTemplate
 import de.fluchitconsulting.rechnungsgenerator.core.text.TextValue
 import de.fluchitconsulting.rechnungsgenerator.core.text.VariableResolver
 import de.fluchitconsulting.rechnungsgenerator.core.values.Discount
+import de.fluchitconsulting.rechnungsgenerator.core.values.Language
 import de.fluchitconsulting.rechnungsgenerator.core.values.Money
 import de.fluchitconsulting.rechnungsgenerator.core.values.Percent
 import de.fluchitconsulting.rechnungsgenerator.core.values.Price
+import de.fluchitconsulting.rechnungsgenerator.generate.einvoice.CiiWriter
 import io.kotest.assertions.assertSoftly
 import io.kotest.assertions.withClue
 import io.kotest.core.spec.style.FunSpec
@@ -26,16 +31,41 @@ import java.time.format.DateTimeFormatter
 import java.util.Locale
 import kotlin.io.path.createTempDirectory
 import kotlin.io.path.readLines
+import kotlin.io.path.readText
 import kotlin.io.path.writeText
 
 /**
  * Ein Design, wie das Netz es sieht: die Stammdaten-Datei, die es wählt, und
- * die Wörter, an denen sich zeigt, dass etwas *fehlt*.
+ * je Sprache die Wörter, an denen sich zeigt, dass etwas *fehlt* ([Words]).
  *
- * Diese Wörter stehen in der Vorlage und nicht in der Rechnung, deshalb gehören
- * sie zum Design. Ob eine Angabe dasteht, lässt sich an ihrem Wert prüfen; ob
- * sie fehlt, nur an ihrer Beschriftung – die IBAN etwa steht im Fuß jedes
- * Dokuments, die Überschrift der Bankverbindung nicht.
+ * [closingLineAtPaymentTerm]: Das Design nennt die Zahlungsfrist als Satz
+ * unter den Summen und hält den Schlusssatz daran fest, damit er nicht allein
+ * auf der letzten Seite steht. In helsinki steht die Frist im Kopf, und den
+ * Schlusssatz hält der Gruß.
+ *
+ * [pages] nennt je Beispieldatei, wie viele Seiten sie in diesem Design hat,
+ * sobald es mehr als eine sind; jede andere hat eine. Nachgemessen und nicht
+ * hergeleitet: "Mehr als eine" übersähe eine Seite mehr oder weniger (#337),
+ * und eine gewöhnliche Rechnung, die still auf zwei Seiten wüchse, sähe nicht
+ * mehr aus wie bisher (ADR-0020).
+ */
+private data class Design(
+    val name: String,
+    val sellerConfig: Path,
+    val closingLineAtPaymentTerm: Boolean,
+    val pages: Map<String, Int>,
+    val words: Map<Language, Words>,
+)
+
+/**
+ * Die Wörter eines Designs in einer Sprache, an denen sich zeigt, dass etwas
+ * *fehlt*.
+ *
+ * Diese Wörter stehen in der Vorlage und ihrer Sprachdatei und nicht in der
+ * Rechnung, deshalb gehören sie zum Design. Ob eine Angabe dasteht, lässt
+ * sich an ihrem Wert prüfen; ob sie fehlt, nur an ihrer Beschriftung – die
+ * IBAN etwa steht im Fuß jedes Dokuments, die Überschrift der Bankverbindung
+ * nicht.
  *
  * [bankHeading] ist null, wenn das Design keinen eigenen Bankblock setzt:
  * prag führt die Bank nur im Fuß, als Angabe des Briefbogens (ADR-0011).
@@ -47,7 +77,7 @@ import kotlin.io.path.writeText
  *
  * [discountHeading] ist der Kopf der Rabattspalte, so wie `pdftotext` ihn
  * liest: helsinki sperrt seine Spaltenköpfe, und dann kommt jeder Buchstabe
- * einzeln zurück (#213).
+ * einzeln zurück (#213) – je nach Wort aber auch nicht.
  *
  * [continuationNote] und [pageNumber] sind die Wörter der Folgeseiten
  * (ADR-0020): der Satz am Ende jeder Seite, auf die eine weitere folgt, und
@@ -57,32 +87,17 @@ import kotlin.io.path.writeText
  * [greeting] steht zwischen Schlusssatz und Name; null, wenn das Design
  * keine setzt – prag schließt mit dem Schlusssatz.
  *
- * [closingLineAtPaymentTerm]: Das Design nennt die Zahlungsfrist als Satz
- * unter den Summen und hält den Schlusssatz daran fest, damit er nicht allein
- * auf der letzten Seite steht. In helsinki steht die Frist im Kopf, und den
- * Schlusssatz hält der Gruß.
- *
  * [columnHeading] ist ein Wort aus dem Kopf der Positionstabelle, so wie
  * `pdftotext` es liest. Es steht auf jeder Seite, die Positionen trägt.
- *
- * [pages] nennt je Beispieldatei, wie viele Seiten sie in diesem Design hat,
- * sobald es mehr als eine sind; jede andere hat eine. Nachgemessen und nicht
- * hergeleitet: "Mehr als eine" übersähe eine Seite mehr oder weniger (#337),
- * und eine gewöhnliche Rechnung, die still auf zwei Seiten wüchse, sähe nicht
- * mehr aus wie bisher (ADR-0020).
  */
-private data class Design(
-    val name: String,
-    val sellerConfig: Path,
+private data class Words(
     val dueDateLabel: String,
     val bankHeading: String?,
     val discountHeading: String,
     val continuationNote: String,
     val pageNumber: (page: Int, total: Int) -> String,
     val greeting: String?,
-    val closingLineAtPaymentTerm: Boolean,
     val columnHeading: String,
-    val pages: Map<String, Int>,
 )
 
 /**
@@ -134,7 +149,8 @@ class PflichtangabenTest : FunSpec({
         }
     }
 
-    // Ein weiteres Design ist hier eine weitere Zeile.
+    // Ein weiteres Design ist hier ein weiterer Eintrag, eine weitere Sprache
+    // je Design ein Eintrag in words.
     val designs =
         listOf(
             Design(
@@ -142,45 +158,79 @@ class PflichtangabenTest : FunSpec({
                 // Jedes Design setzt das Logo; so sieht veraPDF es bei jeder
                 // Rechnungsart.
                 sellerConfig = sellerConfigWith("helsinki", logo = true),
-                dueDateLabel = "Zahlbar ohne Abzug bis",
-                bankHeading = "Bankverbindung",
-                discountHeading = "R A B AT T",
-                continuationNote = "Fortsetzung auf der nächsten Seite",
-                pageNumber = { page, total -> "Seite $page von $total" },
-                greeting = "Mit freundlichen Grüßen",
                 closingLineAtPaymentTerm = false,
-                columnHeading = "EINZELPREIS",
                 pages =
                     mapOf(
                         "viele-positionen" to 3,
                         "schluss-an-der-seitengrenze" to 3,
                         "befreiungsgrund-an-der-seitengrenze" to 3,
+                        "englische-rechnung" to 2,
+                    ),
+                words =
+                    mapOf(
+                        Language.GERMAN to
+                            Words(
+                                dueDateLabel = "Zahlbar ohne Abzug bis",
+                                bankHeading = "Bankverbindung",
+                                discountHeading = "R A B AT T",
+                                continuationNote = "Fortsetzung auf der nächsten Seite",
+                                pageNumber = { page, total -> "Seite $page von $total" },
+                                greeting = "Mit freundlichen Grüßen",
+                                columnHeading = "EINZELPREIS",
+                            ),
+                        Language.BRITISH_ENGLISH to
+                            Words(
+                                dueDateLabel = "Due in full by",
+                                bankHeading = "Bank details",
+                                discountHeading = "DISCOUNT",
+                                continuationNote = "Continued on the next page",
+                                pageNumber = { page, total -> "Page $page of $total" },
+                                greeting = "Kind regards",
+                                columnHeading = "UNIT PRICE",
+                            ),
                     ),
             ),
             Design(
                 name = "prag",
                 sellerConfig = sellerConfigWith("prag", logo = true),
-                dueDateLabel = "Die Zahlung ist",
-                bankHeading = null,
-                discountHeading = "Rabatt",
-                continuationNote = "Fortsetzung auf der nächsten Seite",
-                pageNumber = { page, total -> "Seite $page von $total" },
-                greeting = null,
                 closingLineAtPaymentTerm = true,
-                columnHeading = "Einzelpreis",
                 pages =
                     mapOf(
                         "viele-positionen" to 3,
                         "schluss-an-der-seitengrenze" to 3,
                         "befreiungsgrund-an-der-seitengrenze" to 3,
                     ),
+                words =
+                    mapOf(
+                        Language.GERMAN to
+                            Words(
+                                dueDateLabel = "Die Zahlung ist",
+                                bankHeading = null,
+                                discountHeading = "Rabatt",
+                                continuationNote = "Fortsetzung auf der nächsten Seite",
+                                pageNumber = { page, total -> "Seite $page von $total" },
+                                greeting = null,
+                                columnHeading = "Einzelpreis",
+                            ),
+                        Language.BRITISH_ENGLISH to
+                            Words(
+                                dueDateLabel = "Payment is due",
+                                bankHeading = null,
+                                discountHeading = "Discount",
+                                continuationNote = "Continued on the next page",
+                                pageNumber = { page, total -> "Page $page of $total" },
+                                greeting = null,
+                                columnHeading = "Unit price",
+                            ),
+                    ),
             ),
         )
 
-    test("jedes Design steht im Netz") {
+    test("jedes Design steht im Netz, in jeder Sprache") {
         designs.map { it.name } shouldBe
             de.fluchitconsulting.rechnungsgenerator.core.values.Design.entries
                 .map { it.label }
+        designs.forEach { design -> withClue(design.name) { design.words.keys shouldBe Language.entries.toSet() } }
     }
 
     // Setzt eine Beispieldatei mit den echten Werkzeugen und prüft das Blatt.
@@ -189,11 +239,11 @@ class PflichtangabenTest : FunSpec({
         design: Design,
         sellerConfig: Path,
         targetName: String,
+        input: Path = Path.of("src/test/resources/$file.yaml"),
     ): Typeset {
-        val input = Path.of("src/test/resources/$file.yaml")
         val calculated = CalculatedInvoice(YamlLoader.loadInvoice(input), YamlLoader.loadSellerConfig(sellerConfig))
 
-        val (pdf, output) = run.generate(file, targetName = targetName, sellerConfig = sellerConfig)
+        val (pdf, output) = run.generate(file, targetName = targetName, input = input, sellerConfig = sellerConfig)
         withClue(output.joinToString("\n")) { output shouldContain "PDF/A-1b: gültig" }
 
         val sheet = Sheet(run.textOf(pdf))
@@ -270,6 +320,53 @@ class PflichtangabenTest : FunSpec({
 
             calculated.isDomestic shouldBe false
             sheet.shows("Land Kunde", "1010 Wien ÖSTERREICH")
+        }
+    }
+
+    // Eine englische Rechnung (#377) an einen Unternehmer im Vereinigten
+    // Königreich, Kategorie O: der häufigste Fall. verify prüft sie mit den
+    // Wörtern des Designs und den Schreibweisen der Sprache; das Land und die
+    // Einheiten stehen hier wörtlich, aus demselben Grund wie ÖSTERREICH oben.
+    for (design in designs) {
+        test("englische Rechnung im Design ${design.name}: gültig, mit allen Pflichtangaben auf Englisch") {
+            val (calculated, sheet) =
+                typesetAndCheck("englische-rechnung", design, design.sellerConfig, targetName = "${design.name}-englisch")
+
+            calculated.invoice.language shouldBe Language.BRITISH_ENGLISH
+            sheet.shows("Land Kunde", "EC1A 1BB London UNITED KINGDOM")
+            sheet.shows("Einheit, eine Stunde", "1 hr")
+            sheet.shows("Einheit, ein Tag", "1 day")
+            sheet.shows("Einheit, zwei Tage", "2 days")
+            sheet.shows("Einheit, ein halber Tag", "0.5 days")
+            sheet.shows("negativer Betrag", "\u2212€200.00")
+            sheet.lacks("Deutsch auf dem Blatt", "Rechnung", "Leistungszeitraum", "Umsatzsteuer", "Seite")
+        }
+    }
+
+    // Jedes Beispiel auf Englisch (#377): Es bricht mit
+    // SPRACHE_NOCH_NICHT_MOEGLICH ab, oder es entsteht ein PDF, samt E-Rechnung.
+    // Ein Drittes gibt es nicht – die Regel und die werfenden Zweige der Sätze
+    // stehen an verschiedenen Stellen, und dieser Test hält sie zusammen.
+    // Nimmt die Regel etwas an, dessen Satz noch wirft, bricht er hier mit
+    // der Ausnahme ab; lehnt sie etwas ab, das gesetzt werden könnte, ist
+    // das ein Befund, den man sieht.
+    for ((_, file) in exampleInvoices) {
+        test("$file auf Englisch: Abbruch SPRACHE_NOCH_NICHT_MOEGLICH oder ein PDF") {
+            val input = workDir.resolve("$file-englisch.yaml")
+            input.writeText("sprache: en-GB\n" + Path.of("src/test/resources/$file.yaml").readText())
+            val calculated = CalculatedInvoice(YamlLoader.loadInvoice(input), YamlLoader.loadSellerConfig(sellerConfig))
+
+            when (val verdict = AcceptedInvoice.check(calculated)) {
+                is Verdict.Rejected -> {
+                    verdict.aborts.map { it.rule }.toSet() shouldBe setOf(Rule.SPRACHE_NOCH_NICHT_MOEGLICH)
+                }
+                is Verdict.Accepted -> {
+                    CiiWriter.write(verdict.invoice)
+                    designs.forEach { design ->
+                        typesetAndCheck(file, design, design.sellerConfig, targetName = "${design.name}-$file-englisch", input = input)
+                    }
+                }
+            }
         }
     }
 
@@ -433,6 +530,8 @@ private fun Sheet.verify(
 ) {
     val invoice = calculated.invoice
     val config = calculated.config
+    val words = design.words.getValue(invoice.language)
+    val spelling = Spelling(invoice.language)
 
     // §14 Abs. 4 Nr. 1: Name und Anschrift beider Seiten. Der vollständige
     // Name des leistenden Unternehmers ist ohne Geschäftsführung die Person,
@@ -452,22 +551,22 @@ private fun Sheet.verify(
     )
 
     // Nr. 3 und 4: Rechnungsdatum und Rechnungsnummer.
-    shows("Rechnungsdatum", *date(invoice.issueDate))
+    shows("Rechnungsdatum", *spelling.date(invoice.issueDate))
     shows("Rechnungsnummer", invoice.number)
 
     // Nr. 5 und 6: Menge und Art der Leistung, Zeitpunkt der Leistung und –
     // bei einer Abschlagsrechnung, wenn er feststeht – der Vereinnahmung.
     invoice.items.forEachIndexed { i, item ->
         shows("Bezeichnung der Position ${i + 1}", item.name)
-        shows("Menge der Position ${i + 1}", quantity(item.quantity))
+        shows("Menge der Position ${i + 1}", spelling.quantity(item.quantity))
     }
     // Einzelpreis und Betrag einer Position sind keine Pflichtangaben, aber
     // ohne sie ließe sich die Position nicht nachrechnen (#14). Und nur der
     // Einzelpreis trägt mehr als zwei Nachkommastellen: Setzte ein Design ihn
     // in falscher Schreibweise, sähe das Netz es sonst nirgends (ADR-0021).
     calculated.lines.forEachIndexed { i, line ->
-        shows("Einzelpreis der Position ${i + 1}", price(line.item.unitPrice))
-        shows("Betrag der Position ${i + 1}", amount(line.net))
+        shows("Einzelpreis der Position ${i + 1}", spelling.price(line.item.unitPrice))
+        shows("Betrag der Position ${i + 1}", spelling.amount(line.net))
     }
     // Der Rabatt ist keine Pflichtangabe: §14 Abs. 4 Nr. 7 verlangt nur
     // Minderungen, die nicht schon im Entgelt berücksichtigt sind, und der
@@ -478,20 +577,20 @@ private fun Sheet.verify(
         when (val discount = line.item.discount) {
             null -> {}
             is Discount.Rate -> {
-                shows("Rabatt der Position ${i + 1}", *rate(discount.rate))
+                shows("Rabatt der Position ${i + 1}", *spelling.rate(discount.rate))
             }
             is Discount.Amount -> {
-                shows("Rabatt der Position ${i + 1}", amount(discount.amount))
+                shows("Rabatt der Position ${i + 1}", spelling.amount(discount.amount))
             }
         }
     }
     if (invoice.items.any { it.discount != null }) {
-        shows("Kopf der Rabattspalte", design.discountHeading)
+        shows("Kopf der Rabattspalte", words.discountHeading)
     } else {
-        lacks("Kopf der Rabattspalte", design.discountHeading)
+        lacks("Kopf der Rabattspalte", words.discountHeading)
     }
-    shows("Leistungszeitraum", *zeitraum(invoice.servicePeriod.start, invoice.servicePeriod.end))
-    invoice.receivedOn?.let { shows("Tag der Vereinnahmung", *date(it)) }
+    shows("Leistungszeitraum", *spelling.zeitraum(invoice.servicePeriod.start, invoice.servicePeriod.end))
+    invoice.receivedOn?.let { shows("Tag der Vereinnahmung", *spelling.date(it)) }
 
     // Nr. 7 und 8: Entgelt je Steuersatz, dazu Satz und Steuerbetrag – oder,
     // bei einer Steuerbefreiung, der Hinweis darauf statt beider (Nr. 8
@@ -502,11 +601,11 @@ private fun Sheet.verify(
     // und Steuerbetrag zeigen muss.
     calculated.vatGroups.forEach { group ->
         val name = "Steuergruppe ${group.category} ${group.rate}"
-        shows("$name: Entgelt", amount(group.base))
+        shows("$name: Entgelt", spelling.amount(group.base))
         val reason = group.exemptionReason
         if (reason == null) {
-            shows("$name: Satz", *rate(group.rate))
-            shows("$name: Steuerbetrag", amount(group.amount))
+            shows("$name: Satz", *spelling.rate(group.rate))
+            shows("$name: Steuerbetrag", spelling.amount(group.amount))
         } else {
             shows("$name: Hinweis auf die Steuerbefreiung", reason)
         }
@@ -517,8 +616,8 @@ private fun Sheet.verify(
     calculated.prepayments.forEach { abschlag ->
         val number = abschlag.prepayment.invoiceNumber
         shows("Abschlag $number", number)
-        shows("Abschlag $number: Entgelt", amount(abschlag.net))
-        shows("Abschlag $number: Steuer", amount(abschlag.vat))
+        shows("Abschlag $number: Entgelt", spelling.amount(abschlag.net))
+        shows("Abschlag $number: Steuer", spelling.amount(abschlag.vat))
     }
 
     // §35a GmbHG, soweit die Stammdaten die Angaben führen.
@@ -539,7 +638,7 @@ private fun Sheet.verify(
                         InvoiceVariable.URSPRUNGSDATUM -> TextValue.Date(original.issueDate)
                     }
                 }
-            listOf(template.plainText(values, SHORT), template.plainText(values, LONG))
+            listOf(template.plainText(values, spelling.short), template.plainText(values, spelling.long))
         }
     mandatoryNote?.let { shows("Pflichtsatz", *it.toTypedArray()) }
 
@@ -547,21 +646,21 @@ private fun Sheet.verify(
     // fordert. Die Abwesenheit zeigt sich an der Beschriftung: Ein Design, das
     // sie ohne Wert stehen ließe, fiele hier auf.
     val dueDate = calculated.dueDate
-    val bankHeading = design.bankHeading
+    val bankHeading = words.bankHeading
     if (dueDate != null) {
-        shows("Zahlungsziel", *date(dueDate), *term(calculated.paymentTermDays))
+        shows("Zahlungsziel", *spelling.date(dueDate), *spelling.term(calculated.paymentTermDays))
         bankHeading?.let { shows("Überschrift der Bankverbindung", it) }
         shows("IBAN", config.bank.iban.formatted())
         shows("BIC", config.bank.bic.value)
     } else {
-        lacks("Beschriftung des Zahlungsziels", design.dueDateLabel)
+        lacks("Beschriftung des Zahlungsziels", words.dueDateLabel)
         bankHeading?.let { lacks("Überschrift der Bankverbindung", it) }
     }
 
     // §14 Abs. 4 Satz 1 Nr. 7: das im Voraus vereinbarte Skonto, je Stufe mit
     // Satz und Frist. Die Frist rechnet der Test selbst, aus demselben Grund
     // wie die Werte des Pflichtsatzes.
-    val skonto = invoice.skonto.map { stufe -> rate(stufe.rate) to date(invoice.issueDate.plusDays(stufe.days.toLong())) }
+    val skonto = invoice.skonto.map { stufe -> spelling.rate(stufe.rate) to spelling.date(invoice.issueDate.plusDays(stufe.days.toLong())) }
     skonto.forEach { (rate, term) ->
         shows("Skontosatz", *rate)
         shows("Skontofrist", *term)
@@ -575,7 +674,7 @@ private fun Sheet.verify(
     val settled = calculated.prepayments.isNotEmpty() && calculated.remainingAmount.isZero()
     if (settled) {
         shows("Satz zum ausgeglichenen Restbetrag", SETTLED_NOTE)
-        lacks("Beschriftung des Zahlungsziels", design.dueDateLabel)
+        lacks("Beschriftung des Zahlungsziels", words.dueDateLabel)
         bankHeading?.let { lacks("Überschrift der Bankverbindung", it) }
     } else {
         lacks("Satz zum ausgeglichenen Restbetrag", SETTLED_NOTE)
@@ -589,14 +688,14 @@ private fun Sheet.verify(
     // die eine folgt, sagt das am Ende. Eine Rechnung mit einer Seite trägt
     // nichts davon – „Seite 1 von 1“ sagte nichts.
     if (pages == 1) {
-        lacks("Seitenzahl", design.pageNumber(1, 1))
-        lacks("Fortsetzungshinweis", design.continuationNote)
+        lacks("Seitenzahl", words.pageNumber(1, 1))
+        lacks("Fortsetzungshinweis", words.continuationNote)
     } else {
         for (page in 1..pages) {
             if (page < pages) {
-                showsOnPage(page, "Fortsetzungshinweis", design.continuationNote)
+                showsOnPage(page, "Fortsetzungshinweis", words.continuationNote)
             } else {
-                lacksOnPage(page, "Fortsetzungshinweis", design.continuationNote)
+                lacksOnPage(page, "Fortsetzungshinweis", words.continuationNote)
             }
             showsOnPage(page, "Rechnungssteller im Fuß", config.companyName)
             showsOnPage(page, "USt-IdNr. im Fuß", config.vatId.value, config.vatId.formatted())
@@ -606,9 +705,9 @@ private fun Sheet.verify(
             showsOnPage(page, "IBAN im Fuß", config.bank.iban.formatted())
             showsOnPage(page, "BIC im Fuß", config.bank.bic.value)
             if (page == 1) continue
-            showsOnPage(page, "Seitenzahl", design.pageNumber(page, pages))
+            showsOnPage(page, "Seitenzahl", words.pageNumber(page, pages))
             showsOnPage(page, "Rechnungsnummer", invoice.number)
-            showsOnPage(page, "Rechnungsdatum", *date(invoice.issueDate))
+            showsOnPage(page, "Rechnungsdatum", *spelling.date(invoice.issueDate))
         }
 
         // Jede Seite mit Positionen trägt den Spaltenkopf, und die Summen
@@ -617,9 +716,9 @@ private fun Sheet.verify(
         invoice.items
             .mapNotNull { pageWith(it.name) }
             .distinct()
-            .forEach { showsOnPage(it, "Spaltenkopf", design.columnHeading) }
+            .forEach { showsOnPage(it, "Spaltenkopf", words.columnHeading) }
         pageWith(invoice.items.last().name)?.let {
-            showsOnPage(it, "Gesamtbetrag bei der letzten Position", amount(calculated.grossTotal))
+            showsOnPage(it, "Gesamtbetrag bei der letzten Position", spelling.amount(calculated.grossTotal))
         }
 
         // Schlusssatz, Grußformel und Name brechen nicht auseinander: Der Satz
@@ -627,14 +726,14 @@ private fun Sheet.verify(
         val closingLine = invoice.note ?: config.closingLine(invoice.language)
         val page = pageWith(closingLine)
         withClue("Schlusssatz steht auf keiner Seite vollständig: $closingLine") { (page != null) shouldBe true }
-        val greeting = design.greeting
+        val greeting = words.greeting
         if (page != null && greeting != null) {
             showsOnPage(page, "Grußformel beim Schlusssatz", greeting)
             showsOnPage(page, "Name beim Schlusssatz", config.ownerName)
         }
         // Ohne Skonto ist die Zahlungsfrist der Satz direkt vor dem Schlusssatz.
         if (page != null && design.closingLineAtPaymentTerm && dueDate != null && invoice.skonto.isEmpty()) {
-            showsOnPage(page, "Zahlungsfrist beim Schlusssatz", design.dueDateLabel)
+            showsOnPage(page, "Zahlungsfrist beim Schlusssatz", words.dueDateLabel)
         }
 
         // Kein Hinweis auf eine Steuerbefreiung bricht über zwei Seiten: Der
@@ -644,7 +743,7 @@ private fun Sheet.verify(
             val reason = group.exemptionReason ?: return@forEach
             val reasonPage = pageWith(reason)
             withClue("Befreiungsgrund steht auf keiner Seite vollständig: $reason") { (reasonPage != null) shouldBe true }
-            if (reasonPage != null) showsOnPage(reasonPage, "Entgelt beim Befreiungsgrund", amount(group.base))
+            if (reasonPage != null) showsOnPage(reasonPage, "Entgelt beim Befreiungsgrund", spelling.amount(group.base))
         }
 
         // Ebenso wenig die übrigen fachlichen Sätze: Pflichtsatz und Satz zum
@@ -670,14 +769,14 @@ private fun Sheet.verify(
             withClue("Skonto steht nicht mit allen Stufen auf einer Seite") { common.isNotEmpty() shouldBe true }
         }
         if (dueDate != null) {
-            val dueDatePage = pageWith(design.dueDateLabel)
+            val dueDatePage = pageWith(words.dueDateLabel)
             withClue("Beschriftung des Zahlungsziels auf keiner Seite") { (dueDatePage != null) shouldBe true }
             if (dueDatePage != null) {
                 showsOnPage(
                     dueDatePage,
                     "Zahlungsziel bei seiner Beschriftung",
-                    *date(dueDate),
-                    *term(calculated.paymentTermDays),
+                    *spelling.date(dueDate),
+                    *spelling.term(calculated.paymentTermDays),
                 )
             }
         }
@@ -696,40 +795,119 @@ private const val SETTLED_NOTE =
 
 // --- Schreibweisen ----------------------------------------------------------
 // Bewusst unabhängig von DateFormat, siehe oben. Jede Funktion liefert alle
-// Schreibweisen, die ein Design wählen darf.
+// Schreibweisen, die ein Design in der Sprache der Rechnung wählen darf. Ohne
+// `else` über die Sprache: Eine neue sagt hier, wie sie schreibt.
 
-// Eine negative Zahl trägt das Minuszeichen U+2212, in jedem Design (#320).
-// Hier eigens gesetzt und nicht aus DateFormat übernommen: Es ist die
-// Erwartung an das Blatt, und Locale.GERMANY brächte den Bindestrich mit.
-private val SYMBOLS = DecimalFormatSymbols(Locale.GERMANY).apply { minusSign = '\u2212' }
+/**
+ * Die Schreibweisen einer Sprache, wie das Blatt sie tragen muss.
+ *
+ * Eine negative Zahl trägt das Minuszeichen U+2212, in jeder Sprache (#320).
+ * Hier eigens gesetzt und nicht aus DateFormat übernommen: Es ist die
+ * Erwartung an das Blatt, und das JDK brächte den Bindestrich mit.
+ *
+ * Beträge ohne €, weil ein Design das Zeichen in den Spaltenkopf stellen
+ * darf. Im Englischen steht es aber zwischen Minus und Zahl, `−€200.00`; ohne
+ * € stünde `−200.00` nirgends auf dem Blatt. Ein negativer Betrag nennt es
+ * dort deshalb mit.
+ */
+private class Spelling(
+    private val language: Language,
+) {
+    private val symbols =
+        when (language) {
+            Language.GERMAN -> DecimalFormatSymbols(Locale.GERMANY)
+            Language.BRITISH_ENGLISH -> DecimalFormatSymbols(Locale.UK)
+        }.apply { minusSign = '\u2212' }
 
-private fun number(
-    value: BigDecimal,
-    minFraction: Int,
-): String =
-    DecimalFormat("#,##0", SYMBOLS)
-        .apply {
-            minimumFractionDigits = minFraction
-            maximumFractionDigits = maxOf(value.stripTrailingZeros().scale(), minFraction)
-        }.format(value)
+    val short: DateTimeFormatter =
+        when (language) {
+            Language.GERMAN -> DateTimeFormatter.ofPattern("dd.MM.yyyy", language.locale)
+            Language.BRITISH_ENGLISH -> DateTimeFormatter.ofPattern("yyyy-MM-dd", language.locale)
+        }
+    val long: DateTimeFormatter =
+        when (language) {
+            Language.GERMAN -> DateTimeFormatter.ofPattern("d. MMMM yyyy", language.locale)
+            Language.BRITISH_ENGLISH -> DateTimeFormatter.ofPattern("d MMMM yyyy", language.locale)
+        }
+    private val month = DateTimeFormatter.ofPattern("MMMM", language.locale)
+    private val monthYear = DateTimeFormatter.ofPattern("MMMM yyyy", language.locale)
 
-private fun amount(money: Money): String = number(money.value, minFraction = 2)
+    private fun number(
+        value: BigDecimal,
+        minFraction: Int,
+    ): String =
+        DecimalFormat("#,##0", symbols)
+            .apply {
+                minimumFractionDigits = minFraction
+                maximumFractionDigits = maxOf(value.stripTrailingZeros().scale(), minFraction)
+            }.format(value)
 
-private fun price(price: Price): String = number(price.value, minFraction = 2)
+    fun amount(money: Money): String {
+        val digits = number(money.value, minFraction = 2)
+        return when (language) {
+            Language.GERMAN -> digits
+            Language.BRITISH_ENGLISH -> if (money.isNegative()) "\u2212€" + digits.removePrefix("\u2212") else digits
+        }
+    }
 
-private fun quantity(value: BigDecimal): String = number(value, minFraction = 0)
+    fun price(price: Price): String = number(price.value, minFraction = 2)
 
-private fun rate(percent: Percent): Array<String> {
-    val formatted = number(percent.valueAsPercentage, minFraction = 0)
-    return arrayOf("$formatted %", "$formatted%")
+    fun quantity(value: BigDecimal): String = number(value, minFraction = 0)
+
+    fun rate(percent: Percent): Array<String> {
+        val formatted = number(percent.valueAsPercentage, minFraction = 0)
+        return arrayOf("$formatted %", "$formatted%")
+    }
+
+    fun date(value: LocalDate): Array<String> = arrayOf(short.format(value), long.format(value))
+
+    /** Das Zahlungsziel als Frist ab Rechnungsdatum statt als Datum (#211). */
+    fun term(days: Int): Array<String> =
+        when (language) {
+            Language.GERMAN -> {
+                when (days) {
+                    0 -> arrayOf("sofort fällig")
+                    1 -> arrayOf("1 Tag nach Rechnungsdatum")
+                    else -> arrayOf("$days Tage nach Rechnungsdatum")
+                }
+            }
+            Language.BRITISH_ENGLISH -> {
+                when (days) {
+                    0 -> arrayOf("due immediately")
+                    1 -> arrayOf("1 day after the invoice date")
+                    else -> arrayOf("$days days after the invoice date")
+                }
+            }
+        }
+
+    /**
+     * Ein Zeitraum auf den Tag genau oder – wo er ganze Kalendermonate füllt –
+     * in Monaten (§31 Abs. 4 UStDV, UStAE 14.8 Abs. 1 und 4).
+     */
+    fun zeitraum(
+        start: LocalDate,
+        end: LocalDate,
+    ): Array<String> {
+        val until =
+            when (language) {
+                Language.GERMAN -> "bis"
+                Language.BRITISH_ENGLISH -> "to"
+            }
+        val days = listOf("–", "-", until).map { "${short.format(start)} $it ${short.format(end)}" }
+        val wholeMonths = start.dayOfMonth == 1 && end == end.withDayOfMonth(end.lengthOfMonth())
+        if (!wholeMonths) return days.toTypedArray()
+        val months =
+            if (YearMonth.from(start) == YearMonth.from(end)) {
+                listOf(monthYear.format(start))
+            } else {
+                listOf(
+                    "${month.format(start)} $until ${monthYear.format(end)}",
+                    "${monthYear.format(start)} $until ${monthYear.format(end)}",
+                )
+            }
+        return (days + months).toTypedArray()
+    }
 }
-
-private val SHORT = DateTimeFormatter.ofPattern("dd.MM.yyyy", Locale.GERMANY)
-private val LONG = DateTimeFormatter.ofPattern("d. MMMM yyyy", Locale.GERMANY)
-private val MONTH = DateTimeFormatter.ofPattern("MMMM", Locale.GERMANY)
-private val MONTH_YEAR = DateTimeFormatter.ofPattern("MMMM yyyy", Locale.GERMANY)
-
-private fun date(value: LocalDate): Array<String> = arrayOf(SHORT.format(value), LONG.format(value))
 
 /** Ein Wortlaut als Klartext, wie ihn pdftotext liest, mit einer Schreibweise des Datums. */
 private fun <V> TextTemplate<V>.plainText(
@@ -745,34 +923,3 @@ private fun <V> TextTemplate<V>.plainText(
             }
         },
     ).joinToString("")
-
-/** Das Zahlungsziel als Frist ab Rechnungsdatum statt als Datum (#211). */
-private fun term(days: Int): Array<String> =
-    when (days) {
-        0 -> arrayOf("sofort fällig")
-        1 -> arrayOf("1 Tag nach Rechnungsdatum")
-        else -> arrayOf("$days Tage nach Rechnungsdatum")
-    }
-
-/**
- * Ein Zeitraum auf den Tag genau oder – wo er ganze Kalendermonate füllt – in
- * Monaten (§31 Abs. 4 UStDV, UStAE 14.8 Abs. 1 und 4).
- */
-private fun zeitraum(
-    start: LocalDate,
-    end: LocalDate,
-): Array<String> {
-    val days = listOf("–", "-", "bis").map { "${SHORT.format(start)} $it ${SHORT.format(end)}" }
-    val wholeMonths = start.dayOfMonth == 1 && end == end.withDayOfMonth(end.lengthOfMonth())
-    if (!wholeMonths) return days.toTypedArray()
-    val months =
-        if (YearMonth.from(start) == YearMonth.from(end)) {
-            listOf(MONTH_YEAR.format(start))
-        } else {
-            listOf(
-                "${MONTH.format(start)} bis ${MONTH_YEAR.format(end)}",
-                "${MONTH_YEAR.format(start)} bis ${MONTH_YEAR.format(end)}",
-            )
-        }
-    return (days + months).toTypedArray()
-}

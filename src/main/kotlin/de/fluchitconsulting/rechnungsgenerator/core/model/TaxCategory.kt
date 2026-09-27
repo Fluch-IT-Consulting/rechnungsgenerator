@@ -192,7 +192,7 @@ enum class TaxCategory(
             Language.BRITISH_ENGLISH -> {
                 when (this) {
                     STANDARD, ZERO_RATED, EXEMPT, OUT_OF_SCOPE -> null
-                    REVERSE_CHARGE, INTRA_COMMUNITY, EXPORT -> language.notYet("Der Befreiungsgrund der Kategorie $code")
+                    REVERSE_CHARGE, INTRA_COMMUNITY, EXPORT -> language.notYet("Den Befreiungsgrund der Kategorie $code")
                 }
             }
         }
