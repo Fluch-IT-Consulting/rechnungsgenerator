@@ -24,13 +24,15 @@
 \usepackage{etoolbox}  %% \ifblank für die Angaben, die leer sein dürfen
 \usepackage{tikz}      %% das Logo
 
-%% Die Schreibweise der Zahlen (ADR-0021): Komma, Punkt als Tausendertrenner,
-%% ab vier Stellen. Die übrigen Einstellungen von siunitx setzt die Grundlage.
-\sisetup{
-  output-decimal-marker = {,},
-  group-separator       = {.},
-  group-minimum-digits  = 4,
-}
+%% Die Schreibweise der Zahlen (ADR-0021): gruppiert ab vier Stellen. Welche
+%% Zeichen trennen und wo das € steht, hängt an der Sprache und steht in der
+%% Sprachdatei, die übrigen Einstellungen von siunitx setzt die Grundlage.
+\sisetup{group-minimum-digits = 4}
+
+%% Die Sprachdatei (#377), wie in helsinki.tex: die Wörter dieses Designs und
+%% die Schreibweise der Zahlen in der Sprache der Rechnung. Nach etoolbox und
+%% siunitx, denn sie braucht beide.
+\input{sprache}
 
 %% Fira Sans, aus TeX Live.
 \setmainfont{FiraSans}[
@@ -58,7 +60,7 @@
 \fancypagestyle{erste}{\fancyhf{}\renewcommand{\headrulewidth}{0pt}\fancyfoot[C]{\fuss}\fancyfoot[R]{\fortsetzung}}
 \fancypagestyle{folge}{\fancyhf{}\renewcommand{\headrulewidth}{0pt}%
   \fancyhead[L]{\small <<DOKUMENTART>> <<RECHNUNGSNUMMER>> · <<RECHNUNGSDATUM>>}%
-  \fancyhead[R]{\small Seite \thepage\ von \pageref*{LastPage}}%
+  \fancyhead[R]{\small \wortseitevon{\thepage}{\pageref*{LastPage}}}%
   \fancyfoot[C]{\fuss}\fancyfoot[R]{\fortsetzung}}
 \pagestyle{folge}
 
@@ -68,7 +70,7 @@
 %% dem Ende des Textbereichs, der \footskip über der Grundlinie des Fußes
 %% endet.
 \newcommand{\fortsetzung}{\wennweitereseite{%
-  \raisebox{\dimexpr\footskip-3mm\relax}[0pt][0pt]{\small Fortsetzung auf der nächsten Seite}}}
+  \raisebox{\dimexpr\footskip-3mm\relax}[0pt][0pt]{\small \wortfortsetzung}}}
 \raggedright
 
 %% Keine Silbentrennung, aus demselben Grund wie in helsinki.tex: Eigennamen,
@@ -95,10 +97,8 @@
 \newcommand{\zusammen}[1]{\mbox{#1}}
 %% Das Land unter der Anschrift, in Versalien nach DIN 5008.
 \newcommand{\landzeile}[1]{\MakeUppercase{#1}}
-%% Die Zahlen, gesetzt nach \sisetup oben. Das €-Zeichen und das Prozentzeichen
-%% hängen mit festem Leerzeichen an der Zahl. Einzelpreise nehmen \betrag.
-\newcommand{\betrag}[1]{\num{#1}~€}
-\newcommand{\prozent}[1]{\num{#1}~\%}
+%% Die Mengen, gesetzt nach \sisetup. \betrag und \prozent stehen in der
+%% Sprachdatei: Wo das €-Zeichen steht, hängt an der Sprache.
 \newcommand{\menge}[1]{\num{#1}}
 
 %% Eine Zeile oben rechts: Beschriftung und Wert als Tabellenzeile. Ist der Wert
@@ -148,7 +148,7 @@
 
 %% Der Kopf der Positionstabelle, auf der ersten Seite und auf jeder Folgeseite.
 \newcommand{\positionskopf}{\hline
-  \textbf{Pos.} & \textbf{Bezeichnung} & \textbf{Menge} & \textbf{Einheit} & \textbf{Einzelpreis}\mitrabatt{ & \textbf{Rabatt}} & \textbf{Gesamt}\\
+  \textbf{\wortpos} & \textbf{\wortbezeichnung} & \textbf{\wortmenge} & \textbf{\worteinheit} & \textbf{\worteinzelpreis}\mitrabatt{ & \textbf{\wortrabatt}} & \textbf{\wortgesamt}\\
   \hline}
 
 %% Wie viele Spalten die Positionstabelle hat: sechs, mit Rabattspalte sieben.
@@ -163,13 +163,12 @@
 \newcommand{\abschlusszeile}[2]{\\\hline\textbf{#1} & \textbf{#2}}
 
 %% Die Zeilen des Summenblocks mit ihren Beschriftungen (#217). Die Wörter
-%% gehören zum Design; Kotlin liefert nur Satz und Beträge. prag nennt die
-%% Steuer ausgeschrieben und den Satz dahinter, wie auf der Rechnung vor dem
-%% Generator, der dieses Design folgt.
-\newcommand{\nettozeile}[1]{\summenzeile{Zwischensumme (netto)}{#1}}
-%% Die Grundlage nur bei mehreren Steuergruppen (#218), sonst ist sie leer.
-\newcommand{\steuerzeile}[3]{\summenzeile{Umsatzsteuer #1\ifblank{#2}{}{ auf #2}}{#3}}
-\newcommand{\gesamtzeile}[1]{\abschlusszeile{Gesamtbetrag}{#1}}
+%% gehören zum Design und stehen in seiner Sprachdatei; Kotlin liefert nur
+%% Satz und Beträge. prag nennt die Steuer ausgeschrieben und den Satz
+%% dahinter, wie auf der Rechnung vor dem Generator, der dieses Design folgt.
+\newcommand{\nettozeile}[1]{\summenzeile{\wortzwischensumme}{#1}}
+\newcommand{\steuerzeile}[3]{\summenzeile{\wortsteuer{#1}{#2}}{#3}}
+\newcommand{\gesamtzeile}[1]{\abschlusszeile{\wortgesamtbetrag}{#1}}
 
 %% Die Bankverbindung setzt prag nicht als eigenen Block: Sie steht im Fuß,
 %% auf jedem Dokument, als Angabe des Briefbogens und nicht als
@@ -213,7 +212,7 @@
 \end{minipage}%
 \hfill
 \begin{minipage}[t]{0.34\linewidth}\raggedright
-  USt-IdNr.: <<USTID>>\ifblank{<<STEUERNUMMER>>}{}{\\Steuernummer: <<STEUERNUMMER>>}\ifblank{<<REGISTERGERICHT>>}{}{\\Registergericht: <<REGISTERGERICHT>>\ifblank{<<REGISTERNUMMER>>}{}{, <<REGISTERNUMMER>>}}\ifblank{<<GESCHAEFTSFUEHRUNG>>}{}{\\Geschäftsführung: <<GESCHAEFTSFUEHRUNG>>}
+  \wortustid: <<USTID>>\ifblank{<<STEUERNUMMER>>}{}{\\\wortsteuernummer: <<STEUERNUMMER>>}\ifblank{<<REGISTERGERICHT>>}{}{\\\wortregistergericht: <<REGISTERGERICHT>>\ifblank{<<REGISTERNUMMER>>}{}{, <<REGISTERNUMMER>>}}\ifblank{<<GESCHAEFTSFUEHRUNG>>}{}{\\\wortgeschaeftsfuehrung: <<GESCHAEFTSFUEHRUNG>>}
 \end{minipage}%
 \hfill
 \begin{minipage}[t]{0.28\linewidth}\raggedright
@@ -246,13 +245,13 @@
 \hfill
 \begin{tabular}[t]{@{}r@{\hspace{3mm}}l@{}}
   \multicolumn{2}{@{}r@{}}{\LARGE\bfseries <<DOKUMENTART>>}\\[2mm]
-  \kopfangabe{Rechnungsnr.:}{<<RECHNUNGSNUMMER>>}
-  \kopfangabe{Kundennr.:}{<<KUNDENNUMMER>>}
-  \kopfangabe{Unsere Auftragsnr.:}{<<AUFTRAGSNUMMER>>}
-  \kopfangabe{Datum:}{<<RECHNUNGSDATUM>>}
+  \kopfangabe{\wortrechnungsnr}{<<RECHNUNGSNUMMER>>}
+  \kopfangabe{\wortkundennr}{<<KUNDENNUMMER>>}
+  \kopfangabe{\wortauftragsnr}{<<AUFTRAGSNUMMER>>}
+  \kopfangabe{\wortdatum}{<<RECHNUNGSDATUM>>}
   \kopfangabe{<<ZEITRAUM_BESCHRIFTUNG>>:}{<<LEISTUNGSZEITRAUM>>}
-  \kopfangabe{Vereinnahmt am:}{<<VEREINNAHMT_AM>>}
-  \kopfangabe{Ihre Referenz:}{<<KUNDENREFERENZ>>}
+  \kopfangabe{\wortvereinnahmtam}{<<VEREINNAHMT_AM>>}
+  \kopfangabe{\wortreferenz}{<<KUNDENREFERENZ>>}
 \end{tabular}
 
 \vspace{12mm}
@@ -262,7 +261,7 @@
 %% Absender. Die Person unter der Firmierung nur ohne Geschäftsführung, wie in
 %% helsinki; die Geschäftsführung steht hier im Fuß.
 \begin{minipage}[t]{0.5\linewidth}\raggedright
-  <<EMPFAENGER>>\ifblank{<<KUNDE_USTID>>}{}{\\[2mm]USt-IdNr.: <<KUNDE_USTID>>}
+  <<EMPFAENGER>>\ifblank{<<KUNDE_USTID>>}{}{\\[2mm]\wortustid: <<KUNDE_USTID>>}
 \end{minipage}%
 \hfill
 \begin{minipage}[t]{0.45\linewidth}\raggedleft

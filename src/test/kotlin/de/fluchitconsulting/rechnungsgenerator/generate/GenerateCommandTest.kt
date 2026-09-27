@@ -6,6 +6,7 @@ import com.github.ajalt.clikt.core.parse
 import de.fluchitconsulting.rechnungsgenerator.RechnungsgeneratorCommand
 import de.fluchitconsulting.rechnungsgenerator.core.model.Root
 import de.fluchitconsulting.rechnungsgenerator.generate.render.Foundation
+import de.fluchitconsulting.rechnungsgenerator.generate.render.Template
 import de.fluchitconsulting.rechnungsgenerator.generate.toolchain.FakeTypesetter
 import de.fluchitconsulting.rechnungsgenerator.generate.toolchain.Typesetter
 import de.fluchitconsulting.rechnungsgenerator.runCli
@@ -538,7 +539,7 @@ class GenerateCommandTest : FunSpec({
 
                     generate(fake, "-o", target("logo-$design"), sellerConfigFile = sellerConfigWithLogo(design))
 
-                    fake.sources!!.files.keys shouldBe setOf(Foundation.FILE_NAME, "logo.tex")
+                    fake.sources!!.files.keys shouldBe setOf(Foundation.FILE_NAME, Template.LANGUAGE_FILE_NAME, "logo.tex")
                     fake.sources!!
                         .files
                         .getValue("logo.tex")

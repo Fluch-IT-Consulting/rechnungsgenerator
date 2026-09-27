@@ -1,0 +1,47 @@
+%% Die Sprachdatei von prag für de-DE (#377). Was eine Sprachdatei ist und
+%% welche Regeln für sie gelten, steht im Kopf von helsinki-de-de.tex.
+
+%% ---------------------------------------------------------------- Zahlen
+%% Dezimalkomma und Punkt als Tausendertrenner (ADR-0021). Ab wie vielen
+%% Stellen gruppiert wird, wählt die Vorlage.
+\sisetup{
+  output-decimal-marker = {,},
+  group-separator       = {.},
+}
+%% Das €-Zeichen und das Prozentzeichen hängen mit festem Leerzeichen an der
+%% Zahl. Einzelpreise nehmen \betrag.
+\newcommand{\betrag}[1]{\num{#1}~€}
+\newcommand{\prozent}[1]{\num{#1}~\%}
+
+%% ------------------------------------------------------------- Seiten
+\newcommand{\wortseitevon}[2]{Seite #1 von #2}
+\newcommand{\wortfortsetzung}{Fortsetzung auf der nächsten Seite}
+
+%% ------------------------------------------------------------ Kopfangaben
+\newcommand{\wortrechnungsnr}{Rechnungsnr.:}
+\newcommand{\wortkundennr}{Kundennr.:}
+\newcommand{\wortauftragsnr}{Unsere Auftragsnr.:}
+\newcommand{\wortdatum}{Datum:}
+\newcommand{\wortvereinnahmtam}{Vereinnahmt am:}
+\newcommand{\wortreferenz}{Ihre Referenz:}
+
+%% ----------------------------------------------------- Positionen, Summen
+\newcommand{\wortpos}{Pos.}
+\newcommand{\wortbezeichnung}{Bezeichnung}
+\newcommand{\wortmenge}{Menge}
+\newcommand{\worteinheit}{Einheit}
+\newcommand{\worteinzelpreis}{Einzelpreis}
+\newcommand{\wortrabatt}{Rabatt}
+\newcommand{\wortgesamt}{Gesamt}
+\newcommand{\wortzwischensumme}{Zwischensumme (netto)}
+%% Satz und, bei mehreren Steuergruppen, ihre Grundlage – sonst ist sie leer.
+\newcommand{\wortsteuer}[2]{Umsatzsteuer #1\ifblank{#2}{}{ auf #2}}
+\newcommand{\wortgesamtbetrag}{Gesamtbetrag}
+
+%% --------------------------------------------------------------------- Fuß
+%% Die Beschriftungen stehen ohne Doppelpunkt, den setzt die Vorlage: Im
+%% Fuß und unter der Anschrift des Kunden folgt er jeder Beschriftung.
+\newcommand{\wortustid}{USt-IdNr.}
+\newcommand{\wortsteuernummer}{Steuernummer}
+\newcommand{\wortregistergericht}{Registergericht}
+\newcommand{\wortgeschaeftsfuehrung}{Geschäftsführung}

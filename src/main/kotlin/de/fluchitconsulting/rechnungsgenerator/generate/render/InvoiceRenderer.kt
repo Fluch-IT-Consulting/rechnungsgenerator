@@ -35,7 +35,8 @@ object InvoiceRenderer {
     private const val LOGO_NAME = "logo"
 
     fun render(acceptedInvoice: AcceptedInvoice): RenderedInvoice {
-        val template = Template.of(acceptedInvoice.calculated.config.design)
+        val calculated = acceptedInvoice.calculated
+        val template = Template.of(calculated.config.design, calculated.invoice.language)
         val logo = includedLogo(template, acceptedInvoice)
         // Die Auskunft folgt aus dem eingebundenen Logo und nicht aus den
         // Dateien: Neben ihm liegt immer die Grundlage (#203).
@@ -46,7 +47,7 @@ object InvoiceRenderer {
                     xmpMetadata = renderMetadata(acceptedInvoice),
                     // Das Rechnungsdatum und nicht die Uhr: Eine neu erzeugte
                     // Rechnung soll nicht jünger aussehen als die verschickte.
-                    creationDate = acceptedInvoice.calculated.invoice.issueDate,
+                    creationDate = calculated.invoice.issueDate,
                     files = template.files + logo?.let { mapOf("$LOGO_NAME.${it.extension}" to it.content) }.orEmpty(),
                 ),
             includesLogo = logo != null,

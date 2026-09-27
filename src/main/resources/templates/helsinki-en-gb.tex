@@ -1,0 +1,57 @@
+%% Die Sprachdatei von helsinki für en-GB (#377). Was eine Sprachdatei ist und
+%% welche Regeln für sie gelten, steht im Kopf von helsinki-de-de.tex.
+
+%% ---------------------------------------------------------------- Zahlen
+%% Dezimalpunkt und Komma als Tausendertrenner (ADR-0021). Ab wie vielen
+%% Stellen gruppiert wird, wählt die Vorlage.
+\sisetup{
+  output-decimal-marker = {.},
+  group-separator       = {,},
+}
+%% Das €-Zeichen steht britisch vor der Zahl und ohne Abstand, das Minus
+%% davor: −€200.00. siunitx setzt kein Zeichen vor die Zahl, deshalb trennt
+%% \betrag@zeichen das Vorzeichen ab und setzt es selbst, als \textminus wie
+%% siunitx (#320). Das erste Zeichen genügt: Kotlin liefert die Ziffern mit
+%% Punkt und einem Minus davor, nie ein Plus oder Leerraum (ADR-0021).
+%%
+%% Das @ im Namen macht die Hilfe zu einem Makro allein dieser Datei; die
+%% übrigen Sprachdateien brauchen sie nicht zu kennen.
+\makeatletter
+\newcommand{\betrag}[1]{\betrag@zeichen#1\relax}
+\def\betrag@zeichen#1#2\relax{\ifx-#1\textminus€\num{#2}\else€\num{#1#2}\fi}
+\makeatother
+%% Das Prozentzeichen ohne Abstand: 19%.
+\newcommand{\prozent}[1]{\num{#1}\%}
+
+%% ------------------------------------------------------------- Seiten
+\newcommand{\wortseitevon}[2]{Page #1 of #2}
+\newcommand{\wortfortsetzung}{Continued on the next page}
+
+%% ------------------------------------------------------ Kopf und Anschrift
+\newcommand{\wortgeschaeftsfuehrung}{Managing director}
+\newcommand{\wortustid}{VAT ID}
+\newcommand{\wortkundennr}{Customer no.:}
+\newcommand{\wortauftragsnr}{Our order no.:}
+\newcommand{\wortvereinnahmtam}{Payment received on}
+\newcommand{\wortreferenz}{Your reference:}
+%% "Due in full" für "ohne Abzug": Es sagt dasselbe, ohne dass jemand nach
+%% einem Abzug fragt.
+\newcommand{\wortzahlbarbis}{Due in full by}
+
+%% ----------------------------------------------------- Positionen, Summen
+\newcommand{\wortbeschreibung}{Description}
+\newcommand{\wortmenge}{Quantity}
+\newcommand{\worteinzelpreis}{Unit price}
+\newcommand{\wortrabatt}{Discount}
+\newcommand{\wortbetrag}{Amount}
+\newcommand{\wortnettobetrag}{Net amount}
+%% Satz und, bei mehreren Steuergruppen, ihre Grundlage – sonst ist sie leer.
+\newcommand{\wortsteuer}[2]{plus #1 VAT\ifblank{#2}{}{ on #2}}
+\newcommand{\wortgesamtbetrag}{Total amount}
+
+%% --------------------------------------------------------- Schluss und Fuß
+\newcommand{\wortgruss}{Kind regards}
+\newcommand{\wortbankverbindung}{Bank details}
+\newcommand{\wortkontoinhaber}{Account holder}
+\newcommand{\wortinstitut}{Bank}
+\newcommand{\wortregistergericht}{Registry court}
