@@ -26,5 +26,7 @@ class PlainTextTest : FunSpec({
     test("das Datum in der Sprache des Wortlauts (#377)") {
         TextTemplate.parse<Variable>("Invoice <<NUMMER>> dated <<DATUM>>.").toPlainText(Language.BRITISH_ENGLISH, resolver) shouldBe
             "Invoice R26-042 & Co. dated 4 August 2026."
+        TextTemplate.parse<Variable>("Invoice <<NUMMER>> dated <<DATUM>>.").toPlainText(Language.AMERICAN_ENGLISH, resolver) shouldBe
+            "Invoice R26-042 & Co. dated August 4, 2026."
     }
 })

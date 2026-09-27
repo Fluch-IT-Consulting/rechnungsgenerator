@@ -160,10 +160,12 @@ enum class InvoiceType(
                 "Diese Stornorechnung hebt die Rechnung <<URSPRUNGSNUMMER>> vom <<URSPRUNGSDATUM>> vollständig auf. " +
                     "Ein bereits gezahlter Betrag wird erstattet.",
             ),
-        // "dated" ist die englische Wendung für "vom".
+        // "dated" ist die englische Wendung für "vom". Das Datum steht am
+        // Satzende, damit der Satz in beiden Varianten stimmt: Mitten im Satz
+        // verlangte das Amerikanische nach dem Jahr ein Komma (#407).
         englishMandatoryNote =
             TextTemplate.parse(
-                "This cancellation invoice cancels invoice <<URSPRUNGSNUMMER>> dated <<URSPRUNGSDATUM>> in full. " +
+                "This cancellation invoice fully cancels invoice <<URSPRUNGSNUMMER>> dated <<URSPRUNGSDATUM>>. " +
                     "Any amount already paid will be refunded.",
             ),
     ),
