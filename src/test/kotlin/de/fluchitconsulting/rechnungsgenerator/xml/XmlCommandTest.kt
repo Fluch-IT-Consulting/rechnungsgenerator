@@ -138,11 +138,14 @@ class XmlCommandTest : FunSpec({
 
     /**
      * Eine E-Rechnung, die nicht vom Generator stammt: Mustang schreibt sie
-     * aus seinem eigenen Modell im Profil EN16931. Der Prüfer erkennt das
-     * Profil am XML, und das PDF gibt sich als das PDF/A-3 aus, das Mustang
-     * daraus macht.
+     * aus seinem eigenen Modell im [profile] nach [target] und gibt ihr XML
+     * zurück. Der Prüfer erkennt das Profil am XML, und das PDF gibt sich als
+     * das PDF/A-3 aus, das Mustang daraus macht.
      */
-    test("eine fremde E-Rechnung im Profil EN16931 nimmt es an") {
+    fun foreignEInvoice(
+        profile: String,
+        target: Path,
+    ): ByteArray {
         fun date(day: Int) = Date.from(LocalDate.of(2026, 8, day).atStartOfDay(ZoneOffset.UTC).toInstant())
         val invoice =
             Invoice()
@@ -156,16 +159,38 @@ class XmlCommandTest : FunSpec({
                         .addBankDetails(BankDetails("DE89370400440532013000", "MUSTDEFFXXX")),
                 ).setRecipient(TradeParty("Kunde A GmbH", "Beispielstraße 2", "10115", "Berlin", "DE"))
                 .addItem(Item(Product("Beratung", "", "HUR", BigDecimal("19")), BigDecimal("120.00"), BigDecimal("8")))
-        val target = dir.resolve("en16931.pdf")
-        val exporter = ZUGFeRDExporterFromA1().setZUGFeRDVersion(2).setProfile("EN16931").load(a1b.toString())
+        val exporter = ZUGFeRDExporterFromA1().setZUGFeRDVersion(2).setProfile(profile).load(a1b.toString())
         exporter.setTransaction(invoice)
         exporter.export(target.toString())
+        return exporter.provider.xml
+    }
+
+    test("eine fremde E-Rechnung im Profil EN16931 nimmt es an") {
+        val target = dir.resolve("en16931.pdf")
+        val written = foreignEInvoice("EN16931", target)
 
         val result = runProgram("xml", target.toString())
 
         withClue(result.err) { result.exitCode shouldBe 0 }
-        result.out.contentEquals(exporter.provider.xml) shouldBe true
+        result.out.contentEquals(written) shouldBe true
         result.out.decodeToString() shouldContain "urn:cen.eu:en16931:2017"
+    }
+
+    // Mustang findet an BASIC-WL nichts auszusetzen: Das Profil erlaubt eine
+    // Rechnung ohne Positionen. Eine E-Rechnung ist sie trotzdem nicht (#399).
+    test("eine fremde Rechnung im Profil BASIC-WL besteht beide Prüfer und wird trotzdem abgelehnt") {
+        val target = dir.resolve("basicwl.pdf")
+        foreignEInvoice("BASICWL", target)
+
+        val result = runProgram("xml", target.toString())
+
+        result.exitCode shouldBe 1
+        result.out.size shouldBe 0
+        result.err shouldContain "basicwl.pdf ist keine gültige E-Rechnung nach ZUGFeRD."
+        result.err shouldContain
+            "Das XML in factur-x.xml folgt urn:factur-x.eu:1p0:basicwl und nicht der EN 16931 (urn:cen.eu:en16931:2017)"
+        result.err shouldNotContain "ist ungültig"
+        result.err shouldNotContain "verletzt:"
     }
 
     test("eine Datei, die kein PDF ist, bricht mit einer Meldung ab") {

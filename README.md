@@ -145,11 +145,14 @@ rechnungsgenerator xml Rechnungen/2026/R26-042.pdf > R26-042.xml
 ```
 
 Das geht mit jeder E-Rechnung nach ZUGFeRD oder Factur-X, nicht nur mit den
-eigenen: in jedem Profil, das der Prüfer kennt, von MINIMUM bis EXTENDED, und
-mit dem Anhang unter jedem Namen, den die Fassungen vorsehen (`factur-x.xml`,
-`zugferd-invoice.xml`, `xrechnung.xml`, `ZUGFeRD-invoice.xml`). Geprüft wird
-das PDF gegen das PDF/A-3, als das es sich ausgibt (a, b oder u), und das XML
-gegen Schema und Regeln seines Profils.
+eigenen: in jedem Profil, das der EN 16931 genügt – BASIC, EN16931, EXTENDED
+und XRECHNUNG –, und mit dem Anhang unter jedem Namen, den die Fassungen
+vorsehen (`factur-x.xml`, `zugferd-invoice.xml`, `xrechnung.xml`,
+`ZUGFeRD-invoice.xml`). Geprüft wird das PDF gegen das PDF/A-3, als das es
+sich ausgibt (a, b oder u), und das XML gegen Schema und Regeln seines
+Profils. MINIMUM, BASIC-WL und ZUGFeRD 1 werden abgelehnt, auch wenn beide
+Prüfungen bestehen: Sie tragen nicht alle Pflichtangaben und sind nach dem
+BMF-Schreiben vom 15.10.2024 keine E-Rechnung.
 
 Besteht die Datei eine Prüfung nicht, bleibt stdout leer, der Exitcode ist 1,
 und auf stderr stehen alle Gründe auf einmal:
