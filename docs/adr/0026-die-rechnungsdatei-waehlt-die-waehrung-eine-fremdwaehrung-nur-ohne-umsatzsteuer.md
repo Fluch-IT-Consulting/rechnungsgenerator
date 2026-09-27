@@ -84,7 +84,7 @@ die ganze Ablage liest.
 - **Die Umsatzsteuer in Euro umrechnen**, mit Kurs und Quelle in der
   Rechnungsdatei. Der Kurs hängt an der Art der Rechnung und an der
   Versteuerung des Rechnungsstellers und steht beim Erzeugen oft noch nicht
-  fest. Das ist ein eigenes Vorhaben, kein Teil dieses.
+  fest. Das ist ein eigenes Vorhaben, kein Teil dieses: #418.
 - **`US$` oder der ISO-Code auf dem Blatt**, `1.000,00 USD`. Eindeutig, aber
   nicht das Zeichen, das der Empfänger erwartet, und in der Betragsspalte
   breiter.
@@ -118,7 +118,6 @@ die ganze Ablage liest.
 - **Die Meldung bei einem unbekannten Code** nennt Datei, Wert und die
   zulässigen Codes, aber nicht den Schlüssel, so wie bei `sprache`.
 - **Eine Rechnung mit Umsatzsteuer in Fremdwährung** geht heute nicht. Wer
-  sie braucht, stellt sie in Euro, bis die Umrechnung ein eigenes Vorhaben
-  wird.
+  sie braucht, stellt sie in Euro, bis die Umrechnung kommt (#418).
 
 Umgesetzt in #409.
