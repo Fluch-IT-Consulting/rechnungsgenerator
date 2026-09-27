@@ -1,7 +1,5 @@
 package de.fluchitconsulting.rechnungsgenerator.generate.render
 
-import de.fluchitconsulting.rechnungsgenerator.core.accepted.AcceptedInvoice
-import de.fluchitconsulting.rechnungsgenerator.core.accepted.Verdict
 import de.fluchitconsulting.rechnungsgenerator.core.accepted.accepted
 import de.fluchitconsulting.rechnungsgenerator.core.calculation.CalculatedInvoice
 import de.fluchitconsulting.rechnungsgenerator.core.model.CheckMethod
@@ -21,7 +19,6 @@ import de.fluchitconsulting.rechnungsgenerator.core.model.testInvoice
 import de.fluchitconsulting.rechnungsgenerator.core.model.testItem
 import de.fluchitconsulting.rechnungsgenerator.core.model.testPrepayment
 import de.fluchitconsulting.rechnungsgenerator.core.model.testSellerConfig
-import de.fluchitconsulting.rechnungsgenerator.core.rules.Rule
 import de.fluchitconsulting.rechnungsgenerator.core.values.CountryCode
 import de.fluchitconsulting.rechnungsgenerator.core.values.Design
 import de.fluchitconsulting.rechnungsgenerator.core.values.Language
@@ -194,13 +191,8 @@ class InvoiceRendererTest : FunSpec({
      * `sprache: en-GB` wie im Pflichtangaben-Netz. Die Freitexte der Datei
      * bleiben deutsch; festgehalten ist, was aus Kotlin kommt – Name des
      * Dokuments, Pflichtsatz, Absetzung, Daten, Einheiten.
-     *
-     * Eine Art, die Englisch noch ablehnt, hat keine Datei, und abgelehnt wird
-     * sie allein wegen der Sprache. So führt der Test keine eigene Liste der
-     * Arten, die es auf Englisch gibt, und eine neue Art bekommt ihre Datei
-     * mit dem Schritt, der ihren Ausschluss aufhebt.
      */
-    test("jede Rechnungsart, die es auf Englisch gibt, bekommt die Werte wie festgehalten") {
+    test("jede Rechnungsart bekommt auf Englisch die Werte wie festgehalten") {
         val seller = YamlLoader.parseSellerConfig(resource("stammdaten.yaml"))
 
         exampleInvoices.values.forEach { name ->
@@ -208,15 +200,7 @@ class InvoiceRendererTest : FunSpec({
             val expected = "$name-en-gb-inhalt.tex"
 
             withClue(name) {
-                when (val verdict = AcceptedInvoice.check(CalculatedInvoice(invoice, seller))) {
-                    is Verdict.Rejected -> {
-                        verdict.aborts.map { it.rule }.toSet() shouldBe setOf(Rule.SPRACHE_NOCH_NICHT_MOEGLICH)
-                        InvoiceRendererTest::class.java.getResource("/$expected") shouldBe null
-                    }
-                    is Verdict.Accepted -> {
-                        contentOf(InvoiceRenderer.values(verdict.invoice)) shouldBe resource(expected)
-                    }
-                }
+                contentOf(InvoiceRenderer.values(CalculatedInvoice(invoice, seller).accepted())) shouldBe resource(expected)
             }
         }
     }

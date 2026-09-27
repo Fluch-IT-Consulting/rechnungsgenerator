@@ -170,9 +170,9 @@ enum class TaxCategory(
     /**
      * Bringt die Kategorie einen Grund mit, wenn die Position keinen nennt?
      *
-     * Ohne Sprache, weil BEFREIUNGSGRUND_FEHLT auch auf einer Rechnung prüft,
-     * deren Sprache den Grund noch nicht kennt – die lehnt
-     * SPRACHE_NOCH_NICHT_MOEGLICH ab, nicht ein fehlender Grund.
+     * Ohne Sprache: Ob eine Kategorie einen Grund mitbringt, ist eine
+     * Frage der Kategorie und nicht der Sprache, nur sein Wortlaut hängt an
+     * ihr. Ein Test hält [defaultReason] in jeder Sprache daran fest.
      */
     val hasDefaultReason: Boolean get() = germanDefaultReason != null
 
