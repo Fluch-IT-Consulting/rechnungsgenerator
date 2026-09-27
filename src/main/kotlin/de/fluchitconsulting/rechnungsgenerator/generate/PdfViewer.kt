@@ -22,8 +22,6 @@ interface PdfViewer {
 
 /** Ob sich das PDF öffnen ließ – und wenn nicht, warum. */
 sealed interface ViewerResult {
-    // `data object`: ein Singleton wie `object`, aber mit lesbarem toString()
-    // ("Opened" statt "ViewerResult$Opened@1b2c3d") – praktisch in Testmeldungen.
     data object Opened : ViewerResult
 
     data class Failed(val reason: String) : ViewerResult

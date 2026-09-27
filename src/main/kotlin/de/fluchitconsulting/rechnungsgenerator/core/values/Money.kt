@@ -76,8 +76,7 @@ class Money(value: BigDecimal) : Comparable<Money> {
 }
 
 // Verlängert die stdlib-Konvention (sumOf/sum gibt es dort nur für eingebaute
-// Zahlentypen) auf Money. `inline` kopiert das Lambda in die Aufrufstelle –
-// stdlib-Gewohnheit bei kleinen Helfern mit Funktionsparameter.
+// Zahlentypen) auf Money.
 inline fun <T> Iterable<T>.sumOf(selector: (T) -> Money): Money = fold(Money.ZERO) { acc, element -> acc + selector(element) }
 
 // YAML ↔ Money: "95.00" ↔ Money("95.00"). Als String-Primitive serialisiert,

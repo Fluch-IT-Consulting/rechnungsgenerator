@@ -34,8 +34,6 @@ object PrepaymentBlock {
         entries: List<CollectedPrepayment>,
     ): String = (listOf(header, "abschlaege:") + entries.flatMap(::entryLines)).joinToString("\n")
 
-    // flatMap: Jeder Abschlag liefert mehrere Zeilen, und flatMap hängt diese
-    // Listen aneinander, statt eine Liste von Listen zu bauen.
     private fun entryLines(entry: CollectedPrepayment): List<String> {
         val abschlag = entry.prepayment
         return listOf(

@@ -103,7 +103,6 @@ value class Root private constructor(val directory: Path) {
          */
         fun of(invoiceFiles: List<Path>): Root {
             require(invoiceFiles.isNotEmpty()) { "Ohne Rechnungsdatei gibt es keine Wurzel zu suchen." }
-            // associateWith: zu jeder Datei ihre Wurzel, in der übergebenen Reihenfolge.
             val roots = invoiceFiles.associateWith { of(it) }
             val distinct = roots.values.distinct()
             if (distinct.size > 1) {

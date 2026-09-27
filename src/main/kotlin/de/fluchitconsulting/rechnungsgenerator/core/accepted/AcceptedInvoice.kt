@@ -65,9 +65,6 @@ class AcceptedInvoice private constructor(
             val hasAbort = findings.any { it.severity == Severity.ABORT }
             return when (kindCheck) {
                 is InvoiceKindRules.Result.Built -> {
-                    // Eine lokale val, damit der Compiler nach der Prüfung auf
-                    // null weiß, dass sie ein String ist (Smart Cast). Bei
-                    // einem Getter wie calculated.fileBaseName darf er das nicht.
                     val fileBaseName = calculated.fileBaseName
                     if (hasAbort || fileBaseName == null) {
                         Verdict.Rejected(findings)
@@ -86,10 +83,6 @@ class AcceptedInvoice private constructor(
 /**
  * Das Urteil der Prüfung ([AcceptedInvoice.check]): angenommen oder abgelehnt,
  * wie im Glossar.
- *
- * `sealed`: Es gibt genau diese beiden Fälle, und der Compiler weiß das. Ein
- * `when` darüber braucht deshalb keinen `else`-Zweig – und kommt ein dritter
- * Fall dazu, wird jedes `when` ohne ihn zum Übersetzungsfehler.
  */
 sealed interface Verdict {
     /** Alle Befunde der Prüfung, in der Reihenfolge der Regelgruppen (#49). */

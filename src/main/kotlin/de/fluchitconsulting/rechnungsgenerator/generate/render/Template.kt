@@ -107,8 +107,6 @@ class Template private constructor(
      * zeigte sich erst bei der Rechnung mit dieser Zeile.
      */
     private fun checkLineBreaks(values: Map<TemplateValue, Latex>) {
-        // `(key, value)` zerlegt jeden Eintrag der Map in seine zwei Teile
-        // ("destructuring"), statt it.key und it.value zu schreiben.
         values.forEach { (key, value) ->
             check("\\\\" !in value.tex) {
                 "Der Renderer liefert für ${key.placeholder} ein rohes \\\\. Zeilenwechsel stehen in der Vorlage, " +
@@ -117,8 +115,6 @@ class Template private constructor(
         }
     }
 
-    // Die Fabriken stehen im Companion, weil nur er den privaten Konstruktor
-    // rufen darf.
     companion object {
         /** Der Name, unter dem die Sprachdatei neben der `.tex` liegt. */
         const val LANGUAGE_FILE_NAME = "sprache.tex"
