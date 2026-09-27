@@ -32,7 +32,7 @@ internal object ItemBlocks {
                         "${index + 1}".escapeLatex(),
                         describeItem(item, calculatedInvoice.invoice.type),
                         Numbers.quantity(item.quantity),
-                        item.unit.label.escapeLatex(),
+                        item.unit.nameFor(item.quantity).escapeLatex(),
                         Numbers.price(item.unitPrice),
                         // In der Spalte steht, was vereinbart wurde: der Satz
                         // oder der Betrag, und der ohne Vorzeichen – das trägt

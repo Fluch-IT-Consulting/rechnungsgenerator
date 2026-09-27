@@ -6,6 +6,7 @@ import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.string.shouldContain
+import java.math.BigDecimal
 
 class IdentifiersTest : FunSpec({
 
@@ -126,6 +127,30 @@ class IdentifiersTest : FunSpec({
 
         test("ist unempfindlich gegen Groß- und Kleinschreibung") {
             unit("STD.") shouldBe Unit.HOUR
+        }
+
+        context("auf dem Blatt") {
+            val quantities = listOf("1", "-1", "1.00", "2", "0.5").map(::BigDecimal)
+
+            test("steht bei genau einer Einheit in der Einzahl, sonst in der Mehrzahl") {
+                // −1 wegen des Stornos, 1.00 wegen compareTo statt equals.
+                fun forms(unit: Unit) = quantities.map(unit::nameFor)
+                assertSoftly {
+                    forms(Unit.DAY) shouldBe listOf("Tag", "Tag", "Tag", "Tage", "Tage")
+                    forms(Unit.WEEK) shouldBe listOf("Woche", "Woche", "Woche", "Wochen", "Wochen")
+                    forms(Unit.MONTH) shouldBe listOf("Monat", "Monat", "Monat", "Monate", "Monate")
+                }
+            }
+
+            // Über alle übrigen Einträge und nicht über eine Liste: Eine neue
+            // Einheit mit Einzahl fällt hier auf, statt ungeprüft zu bleiben.
+            test("bleibt bei jeder anderen Einheit gleich") {
+                assertSoftly {
+                    (Unit.entries - setOf(Unit.DAY, Unit.WEEK, Unit.MONTH)).forEach { unit ->
+                        quantities.map(unit::nameFor).toSet() shouldBe setOf(unit.label)
+                    }
+                }
+            }
         }
 
         test("eine unbekannte Einheit nennt die zulässigen") {
