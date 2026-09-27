@@ -164,7 +164,6 @@ fun Iterable<Latex>.joinToLatex(separator: String = ""): Latex = Latex.raw(joinT
 
 /**
  * Dasselbe mit einem Trenner, der selbst ein Fragment ist – etwa ein Makro der
- * Vorlage wie `\positionstrenner{}`. Eine Überladung: Kotlin wählt nach dem Typ
- * des Arguments, welche Fassung gilt.
+ * Vorlage wie `\positionstrenner{}`.
  */
 fun Iterable<Latex>.joinToLatex(separator: Latex): Latex = joinToLatex(separator.tex)

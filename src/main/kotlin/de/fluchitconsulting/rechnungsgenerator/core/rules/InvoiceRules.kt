@@ -28,7 +28,6 @@ internal object InvoiceRules {
      * es jemand merkt (#105).
      */
     fun check(calculated: CalculatedInvoice, kindCheck: InvoiceKindRules.Result): List<Finding> =
-        // `flatten` macht aus der Liste von Listen eine einzige.
         listOf(
             InvoiceNumberRules.check(calculated),
             FreeTextRules.check(calculated),

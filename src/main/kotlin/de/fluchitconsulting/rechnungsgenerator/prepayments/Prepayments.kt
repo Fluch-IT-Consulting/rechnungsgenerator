@@ -33,10 +33,8 @@ data class CollectedPrepayment(val name: String, val prepayment: Prepayment)
  * Was beim Zusammentragen herauskommt: alle Abschläge – oder die Gründe, warum
  * keiner geschrieben wird (#118).
  *
- * `sealed` wie [Verdict]: genau diese beiden Fälle, und ein `when` darüber
- * braucht keinen `else`. Die Liste gibt es nur, wenn sie vollständig ist
- * (ADR-0003: alles oder nichts), und die Zusage hält der Typ, nicht ein Filter
- * im Aufrufer.
+ * Die Liste gibt es nur, wenn sie vollständig ist (ADR-0003: alles oder
+ * nichts), und die Zusage hält der Typ, nicht ein Filter im Aufrufer.
  *
  * Hinweise trägt keiner der beiden Fälle: Die der einzelnen Abschlagsrechnungen
  * fallen weg (ADR-0003), und die Regeln des Zusammentragens selbst sind alle
@@ -99,12 +97,9 @@ fun prepaymentsOf(prepaymentInvoices: List<NamedInvoice>, config: SellerConfig):
                 )
         }
 
-    // mapNotNull: wie map, aber was `null` ergibt, fällt aus der Liste – hier
-    // die abgelehnten Abschlagsrechnungen. Die Liste zählt am Ende nur, wenn
-    // dabei kein Befund entstanden ist; sonst gibt es sie gar nicht.
-    //
-    // `(name, abschlagsrechnung)` in der Lambda-Parameterliste zerlegt das
-    // NamedInvoice in seine beiden Felder ("destructuring").
+    // Heraus fallen die abgelehnten Abschlagsrechnungen. Die Liste zählt am
+    // Ende nur, wenn dabei kein Befund entstanden ist; sonst gibt es sie gar
+    // nicht.
     val entries =
         prepaymentInvoices.mapNotNull { (name, prepaymentInvoice) ->
             // Keine Regel der Schlussrechnung kennt die Art des Dokuments, aus dem

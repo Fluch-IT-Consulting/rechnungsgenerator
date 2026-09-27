@@ -27,8 +27,7 @@ internal object DeductionBlocks {
         val calculatedInvoice = acceptedInvoice.calculated
         // Nur eine Schlussrechnung setzt ab. Die übrigen Varianten stehen
         // ausgeschrieben da statt als `else`: Eine neue muss hier sagen, ob sie
-        // absetzt (#128). `return` ist in Kotlin ein Ausdruck und passt deshalb
-        // als Wert eines Zweigs.
+        // absetzt (#128).
         val deductions =
             when (val kind = acceptedInvoice.kind) {
                 is InvoiceKind.FinalInvoice -> kind.deductions
