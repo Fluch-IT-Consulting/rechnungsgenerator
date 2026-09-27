@@ -39,12 +39,34 @@ class EInvoiceValidatorTest : FunSpec({
         result.errors.any { "[BR-09]" in it } shouldBe true
     }
 
-    // Mustang meldet das als exception und nicht als error. Gelesen würde
-    // sonst nur der ganze Bericht, und der Grund stünde irgendwo darin.
     test("was gar kein XML ist, ist ungültig, und der Grund steht allein da") {
         val result = EInvoiceValidator.validate("Das ist Text und kein XML, auch wenn er lang genug ist.".toByteArray())
 
         result.valid shouldBe false
-        result.errors shouldBe listOf("File does not look like PDF nor XML (contains neither %PDF nor <?xml)")
+        result.errors shouldBe listOf("Kein wohlgeformtes XML (Zeile 1, Spalte 1): Content is not allowed in prolog.")
+    }
+
+    // Mustang sagte dazu "File does not look like PDF nor XML", und vorher
+    // stand die Zeile [Fatal Error] seines Parsers auf stderr (#395).
+    test("ein Zeichen, das XML verbietet, nennt Ort und Grund und schreibt nichts auf stderr") {
+        val withControlCharacter = xml.replaceFirst("IT-Beratungsleistungen", "IT-Beratung\u000Bleistungen")
+
+        val (result, stderr) = capturingStandardError { EInvoiceValidator.validate(withControlCharacter.toByteArray()) }
+
+        result.valid shouldBe false
+        result.errors.single() shouldContain "Kein wohlgeformtes XML (Zeile 21, Spalte 30)"
+        result.errors.single() shouldContain "0xb"
+        stderr shouldBe ""
+    }
+
+    // Mustang parst mit Namensräumen. Prüfte die Vorprüfung ohne, käme ein
+    // unbekanntes Präfix an ihr vorbei und bei Mustang wieder auf stderr.
+    test("ein unbekanntes Präfix ist nicht wohlgeformt") {
+        val withUnknownPrefix = xml.replaceFirst("<ram:CountryID>", "<unbekannt:CountryID>")
+
+        val (result, stderr) = capturingStandardError { EInvoiceValidator.validate(withUnknownPrefix.toByteArray()) }
+
+        result.errors.single() shouldContain "Kein wohlgeformtes XML"
+        stderr shouldBe ""
     }
 })

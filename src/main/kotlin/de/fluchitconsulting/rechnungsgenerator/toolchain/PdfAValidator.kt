@@ -10,8 +10,6 @@ import org.verapdf.pdfa.validation.profiles.ValidationProfile
 import org.w3c.dom.Element
 import java.io.IOException
 import java.nio.file.Path
-import javax.xml.XMLConstants
-import javax.xml.parsers.DocumentBuilderFactory
 import kotlin.io.path.absolutePathString
 
 /**
@@ -266,15 +264,7 @@ class ExternalPdfAValidator(private val runner: ProcessRunner) : PdfAValidator {
 
     /** Die verletzten Regeln aus dem Bericht; bestandene Regeln stehen dort auch drin. */
     private fun parseViolations(xml: String): List<PdfAViolation> {
-        val factory =
-            DocumentBuilderFactory.newInstance().apply {
-                // Externe Entitäten abschalten: Standard-Hygiene beim XML-Parsen,
-                // auch wenn die Eingabe hier aus dem eigenen Prozess stammt.
-                setFeature(XMLConstants.FEATURE_SECURE_PROCESSING, true)
-                setAttribute(XMLConstants.ACCESS_EXTERNAL_DTD, "")
-                setAttribute(XMLConstants.ACCESS_EXTERNAL_SCHEMA, "")
-            }
-        val document = factory.newDocumentBuilder().parse(xml.byteInputStream())
+        val document = XmlParser.parse(xml.toByteArray())
         val rules = document.getElementsByTagName("rule")
         return (0 until rules.length)
             .map { rules.item(it) as Element }

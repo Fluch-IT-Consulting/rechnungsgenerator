@@ -1,6 +1,7 @@
 package de.fluchitconsulting.rechnungsgenerator.generate.toolchain
 
 import de.fluchitconsulting.rechnungsgenerator.toolchain.ToolchainException
+import de.fluchitconsulting.rechnungsgenerator.toolchain.XmlParser
 import org.apache.pdfbox.Loader
 import org.apache.pdfbox.cos.COSDictionary
 import org.apache.pdfbox.pdmodel.PDDocument
@@ -15,8 +16,6 @@ import java.io.ByteArrayInputStream
 import java.io.ByteArrayOutputStream
 import java.io.IOException
 import java.nio.file.Path
-import javax.xml.XMLConstants
-import javax.xml.parsers.DocumentBuilderFactory
 import javax.xml.transform.OutputKeys
 import javax.xml.transform.TransformerFactory
 import javax.xml.transform.dom.DOMSource
@@ -141,17 +140,7 @@ object EInvoiceEmbedder {
             }.toByteArray()
     }
 
-    private fun parse(bytes: ByteArray): Document =
-        DocumentBuilderFactory
-            .newInstance()
-            .apply {
-                isNamespaceAware = true
-                // Externe Entitäten abschalten, wie beim Bericht von veraPDF.
-                setFeature(XMLConstants.FEATURE_SECURE_PROCESSING, true)
-                setAttribute(XMLConstants.ACCESS_EXTERNAL_DTD, "")
-                setAttribute(XMLConstants.ACCESS_EXTERNAL_SCHEMA, "")
-            }.newDocumentBuilder()
-            .parse(ByteArrayInputStream(bytes))
+    private fun parse(bytes: ByteArray): Document = XmlParser.parse(bytes, namespaceAware = true)
 
     private fun NodeList.elements(): List<Element> = (0 until length).map { item(it) as Element }
 

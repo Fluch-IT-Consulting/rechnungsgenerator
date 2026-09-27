@@ -3,9 +3,7 @@ package de.fluchitconsulting.rechnungsgenerator.toolchain
 import org.mustangproject.validator.ZUGFeRDValidator
 import org.w3c.dom.Document
 import org.w3c.dom.Element
-import java.io.ByteArrayInputStream
-import javax.xml.XMLConstants
-import javax.xml.parsers.DocumentBuilderFactory
+import org.xml.sax.SAXParseException
 
 /**
  * Was Mustang über das XML einer E-Rechnung sagt: die Fehler, die es ungültig
@@ -35,6 +33,7 @@ data class EInvoiceValidationResult(
  */
 object EInvoiceValidator {
     fun validate(xml: ByteArray): EInvoiceValidationResult {
+        notWellFormed(xml)?.let { return EInvoiceValidationResult(errors = listOf(it), warnings = emptyList()) }
         val validator = ZUGFeRDValidator()
         val report = validator.validate(xml, "factur-x.xml")
         val document = parse(report)
@@ -49,15 +48,23 @@ object EInvoiceValidator {
         )
     }
 
-    private fun parse(report: String): Document =
-        DocumentBuilderFactory
-            .newInstance()
-            .apply {
-                setFeature(XMLConstants.FEATURE_SECURE_PROCESSING, true)
-                setAttribute(XMLConstants.ACCESS_EXTERNAL_DTD, "")
-                setAttribute(XMLConstants.ACCESS_EXTERNAL_SCHEMA, "")
-            }.newDocumentBuilder()
-            .parse(ByteArrayInputStream(report.toByteArray()))
+    /**
+     * Mustang parst das XML zuerst selbst, ohne `ErrorHandler`: Ist es nicht
+     * wohlgeformt, druckt der Parser des JDK `[Fatal Error]` auf stderr, und
+     * Mustang meldet statt des Grundes, die Datei sehe weder nach PDF noch
+     * nach XML aus (#395). Deshalb bekommt Mustang nur wohlgeformtes XML, und
+     * den Grund nennt diese Prüfung. Mit Namensräumen wie bei Mustang, sonst
+     * käme ein unbekanntes Präfix hier durch und dort wieder auf stderr.
+     */
+    private fun notWellFormed(xml: ByteArray): String? =
+        try {
+            XmlParser.parse(xml, namespaceAware = true)
+            null
+        } catch (e: SAXParseException) {
+            "Kein wohlgeformtes XML (Zeile ${e.lineNumber}, Spalte ${e.columnNumber}): ${e.message}"
+        }
+
+    private fun parse(report: String): Document = XmlParser.parse(report.toByteArray())
 
     private fun messages(
         document: Document,

@@ -2,6 +2,7 @@ package de.fluchitconsulting.rechnungsgenerator.xml
 
 import de.fluchitconsulting.rechnungsgenerator.generate.toolchain.EInvoiceEmbedder
 import de.fluchitconsulting.rechnungsgenerator.toolchain.PdfAProfile
+import de.fluchitconsulting.rechnungsgenerator.toolchain.capturingStandardError
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.nulls.shouldBeNull
 import io.kotest.matchers.shouldBe
@@ -104,7 +105,10 @@ class PdfAIdentificationTest : FunSpec({
         identificationOf(xmp).shouldBeNull()
     }
 
-    test("ein XMP, das kein XML ist, gibt es nicht als PDF/A aus") {
-        identificationOf("<x:xmpmeta pdfaid:part=\"3\">").shouldBeNull()
+    test("ein XMP, das kein XML ist, gibt es nicht als PDF/A aus und schreibt nichts auf stderr") {
+        val (identification, stderr) = capturingStandardError { identificationOf("<x:xmpmeta pdfaid:part=\"3\">") }
+
+        identification.shouldBeNull()
+        stderr shouldBe ""
     }
 })
