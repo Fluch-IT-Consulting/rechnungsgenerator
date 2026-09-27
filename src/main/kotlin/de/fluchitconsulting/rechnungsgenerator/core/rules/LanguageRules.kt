@@ -8,8 +8,8 @@ import de.fluchitconsulting.rechnungsgenerator.core.values.Language
  * Was eine Sprache schon setzen kann (#377).
  *
  * Eine Sprache kommt schrittweise, wie ZUGFeRD (ADR-0023). Englisch gibt es
- * für jede Rechnungsart (#405), aber noch ohne die Kategorien AE, K und G und
- * ohne Skonto. Deren Sätze haben rechtliche Folgen – ein Befreiungsgrund mit
+ * für jede Rechnungsart (#405) und mit AE (#406), aber noch ohne die
+ * Kategorien K und G und ohne Skonto. Deren Sätze haben rechtliche Folgen – ein Befreiungsgrund mit
  * gesetzlichem Wortlaut, die im Voraus vereinbarte Minderung –, und ihr
  * englischer Wortlaut wird je in einem eigenen Schritt entschieden statt
  * nebenbei übersetzt.
@@ -64,10 +64,12 @@ internal object LanguageRules {
     //
     // S, Z, E und O ja: Bei E und O schreibt der Rechnungssteller den Grund
     // selbst, und O – die Leistung an einen Unternehmer im Drittland – ist der
-    // häufigste Fall einer englischen Rechnung.
+    // häufigste Fall einer englischen Rechnung. AE ja, weil die Verwaltung
+    // für seinen Grund einen englischen Wortlaut zulässt (TaxCategory).
     private fun supportsCategory(category: TaxCategory): Boolean =
         when (category) {
             TaxCategory.STANDARD, TaxCategory.ZERO_RATED, TaxCategory.EXEMPT, TaxCategory.OUT_OF_SCOPE -> true
-            TaxCategory.REVERSE_CHARGE, TaxCategory.INTRA_COMMUNITY, TaxCategory.EXPORT -> false
+            TaxCategory.REVERSE_CHARGE -> true
+            TaxCategory.INTRA_COMMUNITY, TaxCategory.EXPORT -> false
         }
 }

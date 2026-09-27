@@ -723,10 +723,17 @@ class InvoiceRendererTest : FunSpec({
             )
 
         test("eine Position ohne Umsatzsteuer bekommt ihren Grund genannt") {
-            // BT-120. Bei Reverse Charge verlangt §14a Abs. 5 UStG den Hinweis
+            // BT-120. Bei Reverse Charge verlangen §14a Abs. 1 und 5 UStG den Hinweis
             // ausdrücklich auf der Rechnung.
             render(withReverseCharge()) shouldContain
                 "Auf \\betrag{200.00} entfällt keine Umsatzsteuer: Steuerschuldnerschaft des Leistungsempfängers (Reverse Charge)."
+        }
+
+        // „Reverse charge“ ist der englische Begriff aus Anlage 8 zum UStAE
+        // (BMF vom 17.09.2025), zulässig statt des deutschen (#406).
+        test("auf Englisch heißt der Grund bei Reverse Charge Reverse charge") {
+            render(withReverseCharge().copy(language = Language.BRITISH_ENGLISH)) shouldContain
+                "No VAT is charged on \\betrag{200.00}: Reverse charge."
         }
 
         test("eine Steuergruppe ohne Steuerbetrag steht nicht in den Summen") {

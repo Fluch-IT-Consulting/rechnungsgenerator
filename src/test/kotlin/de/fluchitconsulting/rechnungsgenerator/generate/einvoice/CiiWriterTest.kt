@@ -190,6 +190,15 @@ class CiiWriterTest : FunSpec({
             }
         }
 
+        // Der Begriff aus Anlage 8 zum UStAE ist selbst die zulässige Angabe,
+        // auch in der maßgeblichen Fassung (#406).
+        test("AE trägt auf Englisch den Grund Reverse charge") {
+            val xml = invoiceIn(TaxCategory.REVERSE_CHARGE, "AT", language = Language.BRITISH_ENGLISH).xml()
+
+            xml.occurrencesOf("<ram:ExemptionReason>Reverse charge</ram:ExemptionReason>") shouldBe 2
+            xml.shouldBeValidExtended()
+        }
+
         // Das Lieferland füllt den Lieferblock, und damit entfällt auch die
         // Warnung zum leeren Element.
         test("K nennt das Land des Kunden als Lieferland") {
@@ -491,8 +500,13 @@ private fun invoiceIn(
     category: TaxCategory,
     country: String = "DE",
     reason: String? = null,
+    language: Language = Language.GERMAN,
 ): AcceptedInvoice {
-    val invoice = testInvoice(items = listOf(testItem(vatRate = "0", taxCategory = category, taxExemptionReason = reason)))
+    val invoice =
+        testInvoice(
+            items = listOf(testItem(vatRate = "0", taxCategory = category, taxExemptionReason = reason)),
+            language = language,
+        )
     val customer =
         invoice.customer.copy(
             address = invoice.customer.address.copy(countryCode = CountryCode(country)),

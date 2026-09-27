@@ -65,7 +65,7 @@ class TaxCategoryRulesTest : FunSpec({
         val totals = CalculatedInvoice(invoice, config)
 
         totals.grossTotal shouldBe Money("1000.00")
-        // §14a Abs. 5 UStG verlangt genau diesen Hinweis; ohne eigene Angabe
+        // §14a Abs. 1 und 5 UStG verlangen genau diesen Hinweis; ohne eigene Angabe
         // setzt ihn die Kategorie selbst ein.
         totals.vatGroups.single().exemptionReason!! shouldContain "Steuerschuldnerschaft des Leistungsempfängers"
     }
