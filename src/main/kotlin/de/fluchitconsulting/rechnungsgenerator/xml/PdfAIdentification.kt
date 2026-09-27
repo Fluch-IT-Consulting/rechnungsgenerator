@@ -1,13 +1,11 @@
 package de.fluchitconsulting.rechnungsgenerator.xml
 
 import de.fluchitconsulting.rechnungsgenerator.toolchain.PdfAProfile
+import de.fluchitconsulting.rechnungsgenerator.toolchain.XmlParser
 import org.apache.pdfbox.pdmodel.PDDocument
 import org.w3c.dom.Document
 import org.w3c.dom.Element
 import org.xml.sax.SAXException
-import java.io.ByteArrayInputStream
-import javax.xml.XMLConstants
-import javax.xml.parsers.DocumentBuilderFactory
 
 /**
  * Als welches PDF/A sich ein Dokument ausgibt: Teil und Konformitätsstufe aus
@@ -65,15 +63,7 @@ data class PdfAIdentification(
         // Dass es die Norm verletzt, meldet der Prüfer.
         private fun parse(xmp: ByteArray): Document? =
             try {
-                DocumentBuilderFactory
-                    .newInstance()
-                    .apply {
-                        isNamespaceAware = true
-                        setFeature(XMLConstants.FEATURE_SECURE_PROCESSING, true)
-                        setAttribute(XMLConstants.ACCESS_EXTERNAL_DTD, "")
-                        setAttribute(XMLConstants.ACCESS_EXTERNAL_SCHEMA, "")
-                    }.newDocumentBuilder()
-                    .parse(ByteArrayInputStream(xmp))
+                XmlParser.parse(xmp, namespaceAware = true)
             } catch (_: SAXException) {
                 null
             }
