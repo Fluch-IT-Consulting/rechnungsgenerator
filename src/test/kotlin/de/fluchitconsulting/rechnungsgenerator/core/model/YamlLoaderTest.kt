@@ -2,10 +2,12 @@ package de.fluchitconsulting.rechnungsgenerator.core.model
 
 import de.fluchitconsulting.rechnungsgenerator.core.calculation.CalculatedInvoice
 import de.fluchitconsulting.rechnungsgenerator.core.values.Design
+import de.fluchitconsulting.rechnungsgenerator.core.values.Language
 import de.fluchitconsulting.rechnungsgenerator.core.values.Money
 import de.fluchitconsulting.rechnungsgenerator.core.values.Percent
 import de.fluchitconsulting.rechnungsgenerator.core.values.Price
 import de.fluchitconsulting.rechnungsgenerator.core.values.RgbColor
+import io.kotest.assertions.assertSoftly
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.assertions.withClue
 import io.kotest.core.spec.style.FunSpec
@@ -154,6 +156,38 @@ class YamlLoaderTest : FunSpec({
     test("eine unbekannte art wird abgelehnt") {
         shouldThrow<Exception> {
             YamlLoader.parseInvoice(resource("rechnung.yaml").replace("nummer:", "art: anzahlung\nnummer:"))
+        }
+    }
+
+    context("sprache (#377)") {
+        fun invoiceIn(language: String): String = resource("rechnung.yaml").replace("nummer:", "sprache: $language\nnummer:")
+
+        test("ohne sprache ist die Rechnung deutsch") {
+            YamlLoader.parseInvoice(resource("rechnung.yaml")).language shouldBe Language.GERMAN
+        }
+
+        test("sprache wählt die Sprache, ohne Rücksicht auf die Schreibweise") {
+            assertSoftly {
+                YamlLoader.parseInvoice(invoiceIn("en-GB")).language shouldBe Language.BRITISH_ENGLISH
+                YamlLoader.parseInvoice(invoiceIn("EN-GB")).language shouldBe Language.BRITISH_ENGLISH
+                YamlLoader.parseInvoice(invoiceIn("de-de")).language shouldBe Language.GERMAN
+            }
+        }
+
+        test("ohne Variante oder ausgeschrieben bricht das Lesen ab und nennt Datei und Wert") {
+            // Die Variante gehört zum Wert: en wäre später en-GB oder en-US.
+            listOf("en", "englisch", "de", "en-US").forEach { language ->
+                withClue(language) {
+                    val file = createTempDirectory("loader-test").resolve("rechnung.yaml")
+                    file.writeText(invoiceIn(language))
+
+                    val failure = shouldThrow<InputFileException> { YamlLoader.loadInvoice(file) }
+
+                    failure.message!! shouldContain file.toString()
+                    failure.message!! shouldContain "Unbekannte Sprache '$language'"
+                    failure.message!! shouldContain "de-DE, en-GB"
+                }
+            }
         }
     }
     test("skonto liest die Skontostufen in der Reihenfolge der Datei") {

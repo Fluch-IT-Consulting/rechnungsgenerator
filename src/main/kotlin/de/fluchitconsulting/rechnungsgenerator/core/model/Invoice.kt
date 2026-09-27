@@ -1,6 +1,7 @@
 package de.fluchitconsulting.rechnungsgenerator.core.model
 
 import de.fluchitconsulting.rechnungsgenerator.core.values.Discount
+import de.fluchitconsulting.rechnungsgenerator.core.values.Language
 import de.fluchitconsulting.rechnungsgenerator.core.values.Money
 import de.fluchitconsulting.rechnungsgenerator.core.values.Percent
 import de.fluchitconsulting.rechnungsgenerator.core.values.Price
@@ -19,6 +20,10 @@ data class Invoice(
     // BT-3. Ohne Angabe die gewöhnliche Rechnung – so bleibt jede
     // Rechnungsdatei gültig, die den Schlüssel nicht kennt.
     @SerialName("art") val type: InvoiceType = InvoiceType.INVOICE,
+    // Die Sprache des ganzen Dokuments (#377), deshalb neben der Art und nicht
+    // beim Kunden. In der Rechnung und nicht in den Stammdaten: Das Design
+    // gehört zum Rechnungssteller, die Sprache zum Kunden.
+    @SerialName("sprache") val language: Language = Language.GERMAN,
     // Leistungszeitraum: Pflichtangabe nach §14 UStG, EN 16931 BT-73/BT-74.
     @SerialName("leistungszeitraum") val servicePeriod: ServicePeriod,
     // EN 16931 BT-14, die Auftragsreferenz, vom Verkäufer vergeben: die eigene
