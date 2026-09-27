@@ -11,6 +11,7 @@ import java.util.concurrent.TimeUnit
 import kotlin.io.path.copyTo
 import kotlin.io.path.createDirectories
 import kotlin.io.path.createTempDirectory
+import kotlin.io.path.readLines
 import kotlin.io.path.readText
 import kotlin.io.path.writeText
 
@@ -32,39 +33,56 @@ class OffeneAbschlaegeSkriptTest : FunSpec({
 
     data class ScriptRun(val exitCode: Int, val stdout: String, val stderr: String)
 
-    fun prepaymentInvoice(number: String, date: String) =
-        """
-        nummer: $number
-        art: abschlagsrechnung
-        datum: $date
-        kunde:
-          name: $customer
-        """.trimIndent()
+    // Die Zeile, die eine Rechnung in US-Dollar trägt, gelesen aus einem
+    // Beispiel, das der Generator liest (#409): Benennt er den Schlüssel um,
+    // muss das Beispiel mit, und diese Tests merken es – aus demselben Grund
+    // wie die Beispieltests ganz unten (#139).
+    val inDollar =
+        Path
+            .of("src/test/resources/amerikanische-rechnung.yaml")
+            .readLines()
+            .single { it.startsWith("waehrung:") }
+            .also { check(it.endsWith("USD")) { "Das Beispiel steht nicht mehr in US-Dollar: $it" } }
 
-    fun finalInvoice(number: String, vararg deducted: String) =
-        """
-        nummer: $number
-        art: schlussrechnung
-        datum: 2026-11-05
-        kunde:
-          name: $customer
-        abschlaege:
-        """.trimIndent() +
+    // Ohne Währung die Vorgabe EUR, mit ihr die Zeile davor.
+    fun currencyLine(dollar: Boolean) = if (dollar) "$inDollar\n" else ""
+
+    fun prepaymentInvoice(number: String, date: String, dollar: Boolean = false) =
+        currencyLine(dollar) +
+            """
+            nummer: $number
+            art: abschlagsrechnung
+            datum: $date
+            kunde:
+              name: $customer
+            """.trimIndent()
+
+    fun finalInvoice(number: String, vararg deducted: String, dollar: Boolean = false) =
+        currencyLine(dollar) +
+            """
+            nummer: $number
+            art: schlussrechnung
+            datum: 2026-11-05
+            kunde:
+              name: $customer
+            abschlaege:
+            """.trimIndent() +
             deducted.joinToString("") {
                 "\n  - rechnungsnummer: $it"
             }
 
-    fun cancellation(number: String, cancelled: String) =
-        """
-        nummer: $number
-        art: stornorechnung
-        datum: 2026-11-10
-        storniert:
-          rechnungsnummer: $cancelled
-          rechnungsdatum: 2026-06-15
-        kunde:
-          name: $customer
-        """.trimIndent()
+    fun cancellation(number: String, cancelled: String, dollar: Boolean = false) =
+        currencyLine(dollar) +
+            """
+            nummer: $number
+            art: stornorechnung
+            datum: 2026-11-10
+            storniert:
+              rechnungsnummer: $cancelled
+              rechnungsdatum: 2026-06-15
+            kunde:
+              name: $customer
+            """.trimIndent()
 
     // Der Dateiname bestimmt die Reihenfolge, in der das Skript liest – deshalb
     // steht er in den Tests und wird nicht aus der Nummer abgeleitet.
@@ -198,6 +216,65 @@ class OffeneAbschlaegeSkriptTest : FunSpec({
 
         result.stdout shouldBe ""
         result.stderr shouldContain "Achtung: R26-009 ist durch R26-010 storniert, wird aber in der Schlussrechnung R26-014 abgesetzt."
+    }
+
+    context("Währung (#409)") {
+        // Der Generator sieht beides nicht: Die Schlussrechnung liest ihre
+        // Abschlagsrechnungen nicht, das Storno seine Ursprungsrechnung
+        // nicht (ADR-0001).
+
+        test("eine Schlussrechnung, die einen Abschlag anderer Währung absetzt, wird gemeldet") {
+            val dir =
+                archive(
+                    "r009.yaml" to prepaymentInvoice("R26-009", "2026-06-15", dollar = true),
+                    "r014.yaml" to finalInvoice("R26-014", "R26-009"),
+                )
+
+            val result = runScript(dir)
+
+            result.stdout shouldBe ""
+            result.stderr shouldContain "Achtung: R26-009 steht in USD, wird aber in der Schlussrechnung R26-014 in EUR abgesetzt."
+        }
+
+        test("ein Storno in anderer Währung als seine Abschlagsrechnung wird gemeldet") {
+            val dir =
+                archive(
+                    "r009.yaml" to prepaymentInvoice("R26-009", "2026-06-15", dollar = true),
+                    "r010.yaml" to cancellation("R26-010", "R26-009"),
+                )
+
+            val result = runScript(dir)
+
+            result.stderr shouldContain "Achtung: Das Storno R26-010 steht in EUR, die stornierte Rechnung R26-009 in USD."
+        }
+
+        test("ein Storno in anderer Währung als seine Schlussrechnung wird gemeldet, einmal") {
+            // Die Schlussrechnung setzt zwei Abschläge ab; der Befund gilt
+            // ihr, nicht jedem Abschlag.
+            val dir =
+                archive(
+                    "r009.yaml" to prepaymentInvoice("R26-009", "2026-06-15", dollar = true),
+                    "r011.yaml" to prepaymentInvoice("R26-011", "2026-07-15", dollar = true),
+                    "r014.yaml" to finalInvoice("R26-014", "R26-009", "R26-011", dollar = true),
+                    "r015.yaml" to cancellation("R26-015", "R26-014"),
+                )
+
+            val result = runScript(dir)
+
+            result.stderr.split("Das Storno R26-015 steht in EUR, die stornierte Rechnung R26-014 in USD.").size shouldBe 2
+        }
+
+        test("in derselben Währung meldet das Skript nichts, auch klein geschrieben") {
+            val dir =
+                archive(
+                    "r009.yaml" to prepaymentInvoice("R26-009", "2026-06-15", dollar = true),
+                    "r010.yaml" to cancellation("R26-010", "R26-009").replace("nummer:", "waehrung: usd\nnummer:"),
+                    "r011.yaml" to prepaymentInvoice("R26-011", "2026-07-15", dollar = true),
+                    "r014.yaml" to finalInvoice("R26-014", "R26-011", dollar = true),
+                )
+
+            runScript(dir).stderr shouldNotContain "Achtung"
+        }
     }
 
     test("ohne Storno bleibt die Schlussmeldung, wie sie war") {

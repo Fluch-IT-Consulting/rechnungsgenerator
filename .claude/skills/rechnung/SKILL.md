@@ -122,6 +122,15 @@ Was du dir selbst beschaffen kannst, solltest du auch selbst beschaffen:
   Skonto. Bei AE, K und G setzt der Generator den Grund auch auf Englisch
   selbst ein – bei AE „Reverse charge“ –, schreib dafür keinen
   `steuerbefreiungsgrund`.
+- **Währung** (#409): Übernimm `waehrung` aus der letzten Rechnung an
+  denselben Kunden; steht dort keine, ist sie in Euro, und der Schlüssel
+  bleibt weg. Bei einem neuen Kunden frag nur, wenn sein Land nicht `DE`
+  ist, und schlag bei `US` `USD` vor, bei `GB` `GBP`, sonst `EUR`. Die
+  Währung hängt nicht an der Sprache: `de-DE` in `USD` geht ebenso wie
+  `en-GB` in `EUR`. `USD` und `GBP` gehen nur ohne Umsatzsteuer, also mit
+  jeder Kategorie außer `S`. Trägt eine Position `S`, bricht der Generator
+  ab (`WAEHRUNG_MIT_UMSATZSTEUER`), und die Rechnung gehört in Euro. Die
+  Bankverbindung bleibt die aus den Stammdaten, gleich in welcher Währung.
 - **Kundennummer**: Steht in der letzten Rechnung an denselben Kunden, dann
   übernimm sie. Sonst bleibt das Feld weg – erfinde keine, und frag nur, wenn
   der Nutzer von einer Kundennummer spricht.
@@ -203,6 +212,7 @@ soll die Zahlen prüfen können, ohne die Datei zu öffnen.
 nummer: R26-012
 art: rechnung                       # optional, Vorgabe: rechnung
 sprache: de-DE                      # optional, Vorgabe: de-DE; sonst en-GB oder en-US
+waehrung: EUR                       # optional, Vorgabe: EUR; sonst USD oder GBP, nur ohne Kategorie S
 datum: 2026-09-02
 leistungszeitraum:
   von: 2026-08-01
@@ -328,7 +338,8 @@ positionen:
 ```
 
 Übernimm die Positionen der Ursprungsrechnung unverändert und setze nur vor die
-Menge ein Minus. Der Einzelpreis bleibt positiv: EN 16931 verbietet den
+Menge ein Minus. Ebenso `sprache` und `waehrung`: Ein Storno hebt die Beträge
+auf, die dastanden, in derselben Währung. Der Einzelpreis bleibt positiv: EN 16931 verbietet den
 negativen Einzelpreis (BR-27), weil er offenließe, ob Gutschrift, Rabatt oder
 Erfassungsfehler gemeint ist. Ein Storno über einen positiven Gesamtbetrag
 bricht ab.
