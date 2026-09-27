@@ -8,11 +8,10 @@ import de.fluchitconsulting.rechnungsgenerator.core.values.Language
  * Was eine Sprache schon setzen kann (#377).
  *
  * Eine Sprache kommt schrittweise, wie ZUGFeRD (ADR-0023). Englisch gibt es
- * für jede Rechnungsart (#405) und mit AE (#406), aber noch ohne die
- * Kategorien K und G und ohne Skonto. Deren Sätze haben rechtliche Folgen – ein Befreiungsgrund mit
- * gesetzlichem Wortlaut, die im Voraus vereinbarte Minderung –, und ihr
- * englischer Wortlaut wird je in einem eigenen Schritt entschieden statt
- * nebenbei übersetzt.
+ * für jede Rechnungsart (#405), mit AE und mit Skonto (#406), aber noch
+ * ohne die Kategorien K und G. Ihr Befreiungsgrund hat eine rechtliche
+ * Folge, und sein englischer Wortlaut wird in einem eigenen Schritt
+ * entschieden statt nebenbei übersetzt.
  *
  * Die Ausschlüsse stehen hier ausdrücklich, je als `when` ohne `else`. Aus den
  * Sätzen selbst ableiten lassen sie sich nicht: Die stehen zum Teil im Rand
@@ -44,15 +43,6 @@ internal object LanguageRules {
                                 ),
                             )
                         }
-                    }
-                    if (invoice.skonto.isNotEmpty()) {
-                        add(
-                            Finding(
-                                Rule.SPRACHE_NOCH_NICHT_MOEGLICH,
-                                Subject.WholeInvoice,
-                                "Skonto gibt es auf $language noch nicht. Bitte 'skonto' oder 'sprache' weglassen.",
-                            ),
-                        )
                     }
                 }
             }

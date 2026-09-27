@@ -639,7 +639,13 @@ class InvoiceRendererTest : FunSpec({
         fun english(
             items: List<LineItem> = listOf(testItem()),
             paymentTermDaysOverride: Int? = null,
-        ) = testInvoice(items = items, paymentTermDaysOverride = paymentTermDaysOverride, language = Language.BRITISH_ENGLISH)
+            skonto: List<SkontoTier> = emptyList(),
+        ) = testInvoice(
+            items = items,
+            paymentTermDaysOverride = paymentTermDaysOverride,
+            skonto = skonto,
+            language = Language.BRITISH_ENGLISH,
+        )
 
         test("Name des Dokuments und Beschriftung des Zeitraums") {
             valueOf(TemplateValue.DOKUMENTART, english()) shouldBe "Invoice"
@@ -653,6 +659,22 @@ class InvoiceRendererTest : FunSpec({
                 "\\hinweisabsatz{Payment is due 1 day after the invoice date.}"
             valueOf(TemplateValue.ZAHLUNGSFRIST, english(paymentTermDaysOverride = 0)) shouldBe
                 "\\hinweisabsatz{Payment is due immediately.}"
+        }
+
+        // "in full" wie das "Due in full by" im Kopf von helsinki (#406).
+        test("die Zahlungsfrist mit Skonto") {
+            valueOf(TemplateValue.ZAHLUNGSFRIST, english(skonto = listOf(SkontoTier(rate = Percent("2"), days = 7)))) shouldBe
+                "\\hinweisabsatz{Payment is due in full 14 days after the invoice date.}"
+        }
+
+        // "of 2%" und nicht "a 2%": Der Artikel hinge an der Aussprache der
+        // Zahl – a 2%, an 8%, an 11% (#406).
+        test("Skonto mit zwei Stufen, nach der Frist sortiert") {
+            val skonto = listOf(SkontoTier(rate = Percent("1.5"), days = 10), SkontoTier(rate = Percent("2"), days = 7))
+
+            valueOf(TemplateValue.SKONTO, english(skonto = skonto)) shouldBe
+                "\\hinweisabsatz{For payment by~\\zusammen{21~August 2026}, an early payment discount of \\prozent{2} " +
+                "may be deducted; for payment by~\\zusammen{24~August 2026}, \\prozent{1.5}.}"
         }
 
         test("die Einheit und der Zeitraum einer Position") {

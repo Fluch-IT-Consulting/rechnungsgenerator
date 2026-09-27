@@ -81,8 +81,13 @@ class LanguageRulesTest : FunSpec({
         findings.first().message shouldContain "K (innergemeinschaftliche Lieferung)"
     }
 
-    test("auf Englisch bricht Skonto ab") {
-        languageFindings(testInvoice(skonto = skonto, language = english)).map { it.subject } shouldBe
-            listOf(Subject.WholeInvoice)
+    // Auf den beiden Arten, die Skonto überhaupt tragen dürfen
+    // (SKONTO_AUF_DIESER_ART_NICHT_MOEGLICH), #406.
+    test("auf Englisch wird Skonto angenommen, auf Rechnung und Teilrechnung") {
+        listOf(InvoiceType.INVOICE, InvoiceType.PARTIAL).forEach { type ->
+            withClue(type) {
+                calculated(testInvoice(type = type, skonto = skonto, language = english)).aborts().shouldBeEmpty()
+            }
+        }
     }
 })

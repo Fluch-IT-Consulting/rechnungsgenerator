@@ -289,6 +289,22 @@ class PflichtangabenTest : FunSpec({
 
             calculated.invoice.skonto.size shouldBe 2
         }
+
+        // Dieselbe Datei auf Englisch (#406). Satz und Frist jeder Stufe prüft
+        // verify mit den Schreibweisen der Sprache; der Anfang des Satzes und
+        // "in full" stehen hier wörtlich, weil verify keine Sätze kennt.
+        test("Skonto auf Englisch im Design ${design.name}: gültig, mit Satz und Frist jeder Stufe") {
+            val input = workDir.resolve("skonto-englisch.yaml")
+            input.writeText("sprache: en-GB\n" + Path.of("src/test/resources/skonto.yaml").readText())
+
+            val (calculated, sheet) =
+                typesetAndCheck("skonto", design, design.sellerConfig, targetName = "${design.name}-skonto-englisch", input = input)
+
+            calculated.invoice.language shouldBe Language.BRITISH_ENGLISH
+            sheet.shows("Skonto", "For payment by 21 August 2026, an early payment discount of 2%")
+            if (design.closingLineAtPaymentTerm) sheet.shows("Zahlungsfrist", "Payment is due in full 14 days after the invoice date.")
+            sheet.lacks("Deutsch auf dem Blatt", "Skonto", "ohne Abzug")
+        }
     }
 
     // Eine Schlussrechnung, deren Abschläge den Gesamtbetrag genau decken
