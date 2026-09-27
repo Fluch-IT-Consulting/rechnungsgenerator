@@ -530,7 +530,7 @@ private fun Sheet.verify(
     // Die Werte holt der Test selbst und nicht über den InvoiceVariableResolver:
     // Holte der das falsche Datum, sähe der Test sonst dasselbe falsche Datum.
     val mandatoryNote =
-        invoice.type.mandatoryNote?.let { template ->
+        invoice.type.mandatoryNote(invoice.language)?.let { template ->
             val values =
                 VariableResolver<InvoiceVariable> { variable ->
                     val original = checkNotNull(invoice.cancelled) { "<<$variable>> ohne Ursprungsrechnung" }

@@ -3,11 +3,13 @@ package de.fluchitconsulting.rechnungsgenerator.generate.render
 import de.fluchitconsulting.rechnungsgenerator.core.accepted.AcceptedInvoice
 import de.fluchitconsulting.rechnungsgenerator.core.accepted.InvoiceVariableResolver
 import de.fluchitconsulting.rechnungsgenerator.core.calculation.CalculatedInvoice
+import de.fluchitconsulting.rechnungsgenerator.core.model.Invoice
 import de.fluchitconsulting.rechnungsgenerator.core.model.InvoiceType
 import de.fluchitconsulting.rechnungsgenerator.core.model.InvoiceVariable
 import de.fluchitconsulting.rechnungsgenerator.core.model.LineItem
 import de.fluchitconsulting.rechnungsgenerator.core.model.SkontoTier
 import de.fluchitconsulting.rechnungsgenerator.core.values.Discount
+import de.fluchitconsulting.rechnungsgenerator.core.values.Language
 
 /**
  * Positionstabelle, Summenblock und die Hinweise darunter: Steuerbefreiungen,
@@ -30,9 +32,9 @@ internal object ItemBlocks {
                     TemplateMacro.POSITIONSZEILE,
                     listOf(
                         "${index + 1}".escapeLatex(),
-                        describeItem(item, calculatedInvoice.invoice.type),
+                        describeItem(item, calculatedInvoice.invoice),
                         Numbers.quantity(item.quantity),
-                        item.unit.nameFor(item.quantity).escapeLatex(),
+                        item.unit.nameFor(item.quantity, calculatedInvoice.invoice.language).escapeLatex(),
                         Numbers.price(item.unitPrice),
                         // In der Spalte steht, was vereinbart wurde: der Satz
                         // oder der Betrag, und der ohne Vorzeichen – das trägt
@@ -66,7 +68,8 @@ internal object ItemBlocks {
      * ein Absatz. Ein \\ darin würde die Tabellenzeile beenden statt die
      * Textzeile.
      */
-    private fun describeItem(item: LineItem, type: InvoiceType): Latex {
+    private fun describeItem(item: LineItem, invoice: Invoice): Latex {
+        val type = invoice.type
         val details =
             buildList {
                 item.description?.let { add(it.escapeLatex()) }
@@ -74,7 +77,7 @@ internal object ItemBlocks {
                 // Auch hier die Beschriftung der Rechnungsart: Auf einer
                 // Abschlagsrechnung ist der Zeitraum einer Position genauso eine
                 // Prognose wie der Zeitraum der ganzen Rechnung.
-                item.servicePeriod?.let { add("${type.itemPeriodLabel}: ".escapeLatex() + servicePeriod(it, type)) }
+                item.servicePeriod?.let { add("${type.itemPeriodLabel(invoice.language)}: ".escapeLatex() + servicePeriod(it, type)) }
             }
         val name = item.name.escapeLatex()
         if (details.isEmpty()) return name
@@ -126,7 +129,8 @@ internal object ItemBlocks {
      * zählt [InvoiceVariable] auf, woher sie kommen, [InvoiceVariableResolver].
      */
     fun typeNote(acceptedInvoice: AcceptedInvoice): Latex =
-        acceptedInvoice.calculated.invoice.type.mandatoryNote
+        acceptedInvoice.calculated.invoice
+            .let { it.type.mandatoryNote(it.language) }
             ?.let { Latex.macro(TemplateMacro.HINWEISABSATZ, listOf(it.toLatex(InvoiceVariableResolver(acceptedInvoice)))) }
             ?: Latex.EMPTY
 
@@ -147,14 +151,31 @@ internal object ItemBlocks {
         if (calculatedInvoice.dueDate == null) return Latex.EMPTY
 
         val days = calculatedInvoice.paymentTermDays
-        val withoutDeduction = if (calculatedInvoice.skonto.isEmpty()) "" else "ohne Abzug "
-        val deadline =
-            when (days) {
-                0 -> "sofort"
-                1 -> "${withoutDeduction}1 Tag nach Rechnungsdatum"
-                else -> "$withoutDeduction$days Tage nach Rechnungsdatum"
+        val withSkonto = calculatedInvoice.skonto.isNotEmpty()
+        // Ohne `else`: Eine neue Sprache schreibt ihren eigenen Satz, denn die
+        // Reihenfolge der Teile ist je Sprache eine andere.
+        val sentence =
+            when (val language = calculatedInvoice.invoice.language) {
+                Language.GERMAN -> {
+                    val withoutDeduction = if (withSkonto) "ohne Abzug " else ""
+                    val deadline =
+                        when (days) {
+                            0 -> "sofort"
+                            1 -> "${withoutDeduction}1 Tag nach Rechnungsdatum"
+                            else -> "$withoutDeduction$days Tage nach Rechnungsdatum"
+                        }
+                    "Die Zahlung ist $deadline fällig."
+                }
+                Language.BRITISH_ENGLISH -> {
+                    if (withSkonto) language.notYet("„Ohne Abzug“")
+                    when (days) {
+                        0 -> "Payment is due immediately."
+                        1 -> "Payment is due 1 day after the invoice date."
+                        else -> "Payment is due $days days after the invoice date."
+                    }
+                }
             }
-        return Latex.macro(TemplateMacro.HINWEISABSATZ, listOf("Die Zahlung ist $deadline fällig.".escapeLatex()))
+        return Latex.macro(TemplateMacro.HINWEISABSATZ, listOf(sentence.escapeLatex()))
     }
 
     /**
@@ -178,6 +199,12 @@ internal object ItemBlocks {
     fun skontoNote(calculatedInvoice: CalculatedInvoice): Latex {
         val stufen = calculatedInvoice.skonto
         if (stufen.isEmpty()) return Latex.EMPTY
+        when (val language = calculatedInvoice.invoice.language) {
+            Language.GERMAN -> {}
+            Language.BRITISH_ENGLISH -> {
+                language.notYet("Skonto")
+            }
+        }
 
         fun deadline(stufe: SkontoTier): Latex = together(GermanFormat.date(calculatedInvoice.skontoUntil(stufe)))
 
@@ -215,10 +242,18 @@ internal object ItemBlocks {
         calculatedInvoice.vatGroups
             .mapNotNull { group ->
                 group.exemptionReason?.let { reason ->
+                    // "No VAT is charged" und nicht "VAT exempt": O ist nicht
+                    // steuerbar, und das ist etwas anderes als befreit.
                     val sentence =
-                        "Auf ".escapeLatex() + Numbers.amount(group.base) +
-                            " entfällt keine Umsatzsteuer: ".escapeLatex() + reason.escapeLatex() +
-                            ".".escapeLatex()
+                        when (calculatedInvoice.invoice.language) {
+                            Language.GERMAN -> {
+                                "Auf ".escapeLatex() + Numbers.amount(group.base) +
+                                    " entfällt keine Umsatzsteuer: ".escapeLatex()
+                            }
+                            Language.BRITISH_ENGLISH -> {
+                                "No VAT is charged on ".escapeLatex() + Numbers.amount(group.base) + ": ".escapeLatex()
+                            }
+                        } + reason.escapeLatex() + ".".escapeLatex()
                     Latex.macro(TemplateMacro.STEUERHINWEIS, listOf(sentence))
                 }
             }.joinToLatex("\n")

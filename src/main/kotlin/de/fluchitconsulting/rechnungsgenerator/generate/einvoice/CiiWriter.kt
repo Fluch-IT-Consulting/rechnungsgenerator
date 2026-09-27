@@ -66,7 +66,8 @@ object CiiWriter {
                 // eine Rechnung über die Leistung da und das Storno ohne den
                 // Satz, dass es die Ursprungsrechnung aufhebt.
                 val mandatoryNote =
-                    calculated.invoice.type.mandatoryNote
+                    calculated.invoice.type
+                        .mandatoryNote(calculated.invoice.language)
                         ?.toPlainText(InvoiceVariableResolver(acceptedInvoice))
                 listOfNotNull(calculated.invoice.introduction, calculated.invoice.note, mandatoryNote).forEach { note ->
                     element("ram:IncludedNote") { element("ram:Content", note) }

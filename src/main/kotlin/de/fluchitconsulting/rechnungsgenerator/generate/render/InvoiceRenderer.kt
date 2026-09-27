@@ -160,7 +160,7 @@ object InvoiceRenderer {
                     .escapeLatex()
             }
             TemplateValue.DOKUMENTART -> {
-                invoice.type.documentName.escapeLatex()
+                invoice.type.documentName(invoice.language).escapeLatex()
             }
             TemplateValue.RECHNUNGSNUMMER -> {
                 invoice.number.escapeLatex()
@@ -191,7 +191,7 @@ object InvoiceRenderer {
             // Vorlage, die dort fest "Leistungszeitraum" schriebe, wäre falsch.
             // Den Doppelpunkt setzt die Vorlage.
             TemplateValue.ZEITRAUM_BESCHRIFTUNG -> {
-                invoice.type.servicePeriodLabel.escapeLatex()
+                invoice.type.servicePeriodLabel(invoice.language).escapeLatex()
             }
             // Pflichtangabe nach §14 Abs. 4 Nr. 6 UStG, geschrieben wie die Art
             // es verlangt.

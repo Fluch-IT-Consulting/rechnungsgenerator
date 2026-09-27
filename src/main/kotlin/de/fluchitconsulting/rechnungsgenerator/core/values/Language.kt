@@ -44,6 +44,19 @@ enum class Language(
      */
     val ranges: List<String> get() = listOf(tag, tag.substringBefore('-'))
 
+    /**
+     * Der Zweig eines Satzes, dessen Wortlaut es in dieser Sprache noch nicht
+     * gibt.
+     *
+     * Erreichen darf ihn keine Rechnung: SPRACHE_NOCH_NICHT_MOEGLICH lehnt sie
+     * vorher ab, und ein Test hält die beiden Hälften zusammen (#377). Wirft
+     * er doch, laufen Regel und Sätze auseinander – ein Fehler im Programm,
+     * deshalb `error` und keine Meldung an den Rechnungssteller. Kein leerer
+     * Satz statt des Wurfs: Der fehlte still auf dem Blatt.
+     */
+    fun notYet(what: String): Nothing =
+        error("$what gibt es auf $tag noch nicht. SPRACHE_NOCH_NICHT_MOEGLICH hätte die Rechnung ablehnen müssen.")
+
     override fun toString(): String = tag
 
     companion object {

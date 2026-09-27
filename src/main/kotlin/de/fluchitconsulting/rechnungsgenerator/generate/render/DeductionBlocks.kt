@@ -3,6 +3,7 @@ package de.fluchitconsulting.rechnungsgenerator.generate.render
 import de.fluchitconsulting.rechnungsgenerator.core.accepted.AcceptedInvoice
 import de.fluchitconsulting.rechnungsgenerator.core.rules.Deduction
 import de.fluchitconsulting.rechnungsgenerator.core.rules.InvoiceKind
+import de.fluchitconsulting.rechnungsgenerator.core.values.Language
 
 /**
  * Die Absetzung der vereinnahmten Abschläge – der Block unter dem
@@ -33,6 +34,14 @@ internal object DeductionBlocks {
                 is InvoiceKind.FinalInvoice -> kind.deductions
                 is InvoiceKind.Ordinary, is InvoiceKind.PrepaymentInvoice, is InvoiceKind.Cancellation -> return Latex.EMPTY
             }
+        // Die Wörter der Absetzung – Abschlag, vereinnahmt, Restbetrag – haben
+        // auf Englisch noch keinen Wortlaut (#377).
+        when (val language = calculatedInvoice.invoice.language) {
+            Language.GERMAN -> {}
+            Language.BRITISH_ENGLISH -> {
+                language.notYet("Die Absetzung der Abschläge")
+            }
+        }
 
         // Derselbe Trenner wie bei den Positionen: Jede Zeile hat eine
         // Zusatzzeile, genau wie eine Position mit Beschreibung.

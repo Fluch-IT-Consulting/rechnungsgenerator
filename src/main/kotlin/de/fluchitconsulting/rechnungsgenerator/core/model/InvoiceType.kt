@@ -2,6 +2,7 @@ package de.fluchitconsulting.rechnungsgenerator.core.model
 
 import de.fluchitconsulting.rechnungsgenerator.core.serialization.enumSerializer
 import de.fluchitconsulting.rechnungsgenerator.core.text.TextTemplate
+import de.fluchitconsulting.rechnungsgenerator.core.values.Language
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.Serializable
 
@@ -67,8 +68,11 @@ enum class InvoiceType(
      * [InvoiceVariable]. Zerlegt wird der Satz schon hier, sodass ein
      * vertippter Name wirft, sobald diese Klasse geladen wird; eingesetzt
      * werden die Werte erst beim Setzen, und der Satz selbst bleibt ohne LaTeX.
+     *
+     * Der deutsche Wortlaut; welcher auf der Rechnung steht, sagt
+     * [mandatoryNote] mit ihrer Sprache.
      */
-    val mandatoryNote: TextTemplate<InvoiceVariable>?,
+    private val germanMandatoryNote: TextTemplate<InvoiceVariable>?,
 ) {
     // Benannte Argumente, obwohl die Reihenfolge eindeutig ist: Ein nacktes
     // `false, true, null` ließe sich nur mit der Parameterliste daneben lesen.
@@ -77,7 +81,7 @@ enum class InvoiceType(
         "380",
         servicePeriodIsForecast = false,
         chargesForService = true,
-        mandatoryNote = null,
+        germanMandatoryNote = null,
     ),
 
     // Der Code heißt in der Liste "Prepayment invoice"; das Wort dieses
@@ -88,7 +92,7 @@ enum class InvoiceType(
         "386",
         servicePeriodIsForecast = true,
         chargesForService = true,
-        mandatoryNote =
+        germanMandatoryNote =
             TextTemplate.parse(
                 "Die Leistung ist noch nicht erbracht. Über die Gesamtleistung folgt eine " +
                     "Schlussrechnung, in der dieser Abschlag abgesetzt wird.",
@@ -107,7 +111,7 @@ enum class InvoiceType(
         "380",
         servicePeriodIsForecast = false,
         chargesForService = true,
-        mandatoryNote = null,
+        germanMandatoryNote = null,
     ),
 
     // Ändert nur den Code und nichts an der Rechnung. Aufgenommen, damit die
@@ -119,7 +123,7 @@ enum class InvoiceType(
         "326",
         servicePeriodIsForecast = false,
         chargesForService = true,
-        mandatoryNote = null,
+        germanMandatoryNote = null,
     ),
 
     // 384 ("Corrected invoice") und nicht 381: Die KoSIT führt 384 für Korrektur
@@ -134,7 +138,7 @@ enum class InvoiceType(
         "384",
         servicePeriodIsForecast = false,
         chargesForService = false,
-        mandatoryNote =
+        germanMandatoryNote =
             TextTemplate.parse(
                 "Diese Stornorechnung hebt die Rechnung <<URSPRUNGSNUMMER>> vom <<URSPRUNGSDATUM>> vollständig auf. " +
                     "Ein bereits gezahlter Betrag wird erstattet.",
@@ -142,25 +146,82 @@ enum class InvoiceType(
     ),
     ;
 
+    /**
+     * Der Pflichtsatz in [language], oder `null`, wenn diese Art keinen hat.
+     *
+     * Ohne `else`, über Sprache und Art: Eine neue Sprache übersetzt erst,
+     * wenn jede Art ihren Satz hat oder ausdrücklich keinen. Englisch hat
+     * Abschlag und Storno noch nicht (#377) – ihr Wortlaut sagt etwas
+     * Rechtliches und wird je in einem eigenen Schritt entschieden.
+     */
+    fun mandatoryNote(language: Language): TextTemplate<InvoiceVariable>? =
+        when (language) {
+            Language.GERMAN -> {
+                germanMandatoryNote
+            }
+            Language.BRITISH_ENGLISH -> {
+                when (this) {
+                    INVOICE, FINAL, PARTIAL -> null
+                    PREPAYMENT, CANCELLATION -> language.notYet("Der Pflichtsatz der $documentName")
+                }
+            }
+        }
+
     /** Die Beschriftung des Zeitraums der ganzen Rechnung. */
-    val servicePeriodLabel: String
-        get() = if (servicePeriodIsForecast) "Voraussichtlicher Leistungszeitraum" else "Leistungszeitraum"
+    fun servicePeriodLabel(language: Language): String =
+        when (language) {
+            Language.GERMAN -> {
+                if (servicePeriodIsForecast) "Voraussichtlicher Leistungszeitraum" else "Leistungszeitraum"
+            }
+            // "Service period" und nicht "Period of supply" oder "Tax point":
+            // Beide sind im britischen VAT eigene Begriffe.
+            Language.BRITISH_ENGLISH -> {
+                if (servicePeriodIsForecast) language.notYet("Der voraussichtliche Leistungszeitraum") else "Service period"
+            }
+        }
 
     /**
      * Dieselbe Beschriftung, kürzer: für den abweichenden Zeitraum einer
      * einzelnen Position (BG-26). Sie steht klein unter der Bezeichnung, wo die
      * lange Fassung die Zeile sprengte.
      */
-    val itemPeriodLabel: String
-        get() = if (servicePeriodIsForecast) "Voraussichtlicher Zeitraum" else "Zeitraum"
+    fun itemPeriodLabel(language: Language): String =
+        when (language) {
+            Language.GERMAN -> {
+                if (servicePeriodIsForecast) "Voraussichtlicher Zeitraum" else "Zeitraum"
+            }
+            Language.BRITISH_ENGLISH -> {
+                if (servicePeriodIsForecast) language.notYet("Der voraussichtliche Zeitraum") else "Period"
+            }
+        }
 
     /**
-     * Der Name des Dokuments, wie CONTEXT.md ihn führt – für Titelbalken,
-     * Jobname und die XMP-Metadaten. Abgeleitet statt als eigenes Feld
-     * geführt: Er ist das Label mit großem Anfangsbuchstaben, und zwei Felder
-     * mit derselben Aussage laufen irgendwann auseinander.
+     * Der Name des Dokuments, wie CONTEXT.md ihn führt – für die Meldungen an
+     * den Rechnungssteller und den Jobnamen. Deutsch in jeder Sprache: Die
+     * Meldungen sind es, und am Jobnamen hängt die DocumentID (ADR-0005), die
+     * nicht an der Sprache hängen soll.
+     *
+     * Abgeleitet statt als eigenes Feld geführt: Er ist das Label mit großem
+     * Anfangsbuchstaben, und zwei Felder mit derselben Aussage laufen
+     * irgendwann auseinander.
      */
     val documentName: String get() = label.replaceFirstChar { it.uppercase() }
+
+    /** Der Name des Dokuments auf dem Blatt und in den Metadaten, in [language]. */
+    fun documentName(language: Language): String =
+        when (language) {
+            Language.GERMAN -> {
+                documentName
+            }
+            // "Invoice" und nicht "Bill" (CONTEXT.md). Die übrigen Arten
+            // bekommen ihren Namen mit ihrem Schritt.
+            Language.BRITISH_ENGLISH -> {
+                when (this) {
+                    INVOICE -> "Invoice"
+                    PARTIAL, PREPAYMENT, FINAL, CANCELLATION -> language.notYet("Der Name der $documentName")
+                }
+            }
+        }
 
     override fun toString(): String = label
 }

@@ -134,7 +134,7 @@ class IdentifiersTest : FunSpec({
 
             test("steht bei genau einer Einheit in der Einzahl, sonst in der Mehrzahl") {
                 // −1 wegen des Stornos, 1.00 wegen compareTo statt equals.
-                fun forms(unit: Unit) = quantities.map(unit::nameFor)
+                fun forms(unit: Unit) = quantities.map { unit.nameFor(it, Language.GERMAN) }
                 assertSoftly {
                     forms(Unit.DAY) shouldBe listOf("Tag", "Tag", "Tag", "Tage", "Tage")
                     forms(Unit.WEEK) shouldBe listOf("Woche", "Woche", "Woche", "Wochen", "Wochen")
@@ -147,8 +147,21 @@ class IdentifiersTest : FunSpec({
             test("bleibt bei jeder anderen Einheit gleich") {
                 assertSoftly {
                     (Unit.entries - setOf(Unit.DAY, Unit.WEEK, Unit.MONTH)).forEach { unit ->
-                        quantities.map(unit::nameFor).toSet() shouldBe setOf(unit.label)
+                        quantities.map { unit.nameFor(it, Language.GERMAN) }.toSet() shouldBe setOf(unit.label)
                     }
+                }
+            }
+
+            test("auf Englisch nach derselben Regel, auch bei 0.5 days (#377)") {
+                fun forms(unit: Unit) = quantities.map { unit.nameFor(it, Language.BRITISH_ENGLISH) }
+                assertSoftly {
+                    forms(Unit.HOUR) shouldBe listOf("hr", "hr", "hr", "hrs", "hrs")
+                    forms(Unit.DAY) shouldBe listOf("day", "day", "day", "days", "days")
+                    forms(Unit.WEEK) shouldBe listOf("week", "week", "week", "weeks", "weeks")
+                    forms(Unit.MONTH) shouldBe listOf("month", "month", "month", "months", "months")
+                    forms(Unit.PIECE) shouldBe listOf("pc", "pc", "pc", "pcs", "pcs")
+                    forms(Unit.FLAT_RATE).toSet() shouldBe setOf("flat rate")
+                    forms(Unit.KILOMETRE).toSet() shouldBe setOf("km")
                 }
             }
         }
