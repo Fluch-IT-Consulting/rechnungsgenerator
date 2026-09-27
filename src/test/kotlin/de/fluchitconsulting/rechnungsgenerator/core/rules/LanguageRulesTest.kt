@@ -10,6 +10,7 @@ import de.fluchitconsulting.rechnungsgenerator.core.model.testItem
 import de.fluchitconsulting.rechnungsgenerator.core.model.testSellerConfig
 import de.fluchitconsulting.rechnungsgenerator.core.values.Language
 import de.fluchitconsulting.rechnungsgenerator.core.values.Percent
+import de.fluchitconsulting.rechnungsgenerator.core.values.VatId
 import io.kotest.assertions.withClue
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.collections.shouldBeEmpty
@@ -38,10 +39,13 @@ class LanguageRulesTest : FunSpec({
             testItem(vatRate = "0", taxCategory = TaxCategory.ZERO_RATED),
             testItem(vatRate = "0", taxCategory = TaxCategory.EXEMPT, taxExemptionReason = "Steuerfrei nach §4 Nr. 21 UStG"),
             testItem(vatRate = "0", taxCategory = TaxCategory.OUT_OF_SCOPE, taxExemptionReason = "Not subject to German VAT"),
+            testItem(vatRate = "0", taxCategory = TaxCategory.REVERSE_CHARGE),
         )
 
-    test("eine englische Rechnung mit S, Z, E und O wird angenommen") {
-        calculated(testInvoice(items = supportedItems, language = english)).aborts().shouldBeEmpty()
+    test("eine englische Rechnung mit S, Z, E, O und AE wird angenommen") {
+        val invoice = testInvoice(items = supportedItems, customerVatId = VatId("ATU12345678"), language = english)
+
+        calculated(invoice).aborts().shouldBeEmpty()
     }
 
     test("Deutsch kann alles, was das Programm kann") {
@@ -63,19 +67,18 @@ class LanguageRulesTest : FunSpec({
         }
     }
 
-    test("auf Englisch bricht jede Position mit AE, K oder G ab und nennt sie") {
+    test("auf Englisch bricht jede Position mit K oder G ab und nennt sie") {
         val items =
             listOf(
                 testItem(),
-                testItem(vatRate = "0", taxCategory = TaxCategory.REVERSE_CHARGE),
                 testItem(vatRate = "0", taxCategory = TaxCategory.INTRA_COMMUNITY),
                 testItem(vatRate = "0", taxCategory = TaxCategory.EXPORT),
             )
 
         val findings = languageFindings(testInvoice(items = items, language = english))
 
-        findings.map { it.subject } shouldBe (1..3).map { Subject.Item(it, "Testposition") }
-        findings.first().message shouldContain "AE"
+        findings.map { it.subject } shouldBe (1..2).map { Subject.Item(it, "Testposition") }
+        findings.first().message shouldContain "K (innergemeinschaftliche Lieferung)"
     }
 
     test("auf Englisch bricht Skonto ab") {

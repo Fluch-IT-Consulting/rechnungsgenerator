@@ -11,6 +11,7 @@ import de.fluchitconsulting.rechnungsgenerator.core.model.testItem
 import de.fluchitconsulting.rechnungsgenerator.core.model.testSellerConfig
 import de.fluchitconsulting.rechnungsgenerator.core.values.CountryCode
 import de.fluchitconsulting.rechnungsgenerator.core.values.EuMemberStates
+import de.fluchitconsulting.rechnungsgenerator.core.values.Language
 import de.fluchitconsulting.rechnungsgenerator.core.values.VatId
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.collections.shouldBeEmpty
@@ -56,6 +57,15 @@ class VatIdCheckRulesTest : FunSpec({
     test("Reverse Charge in die EU ohne Nachweis wird abgelehnt") {
         CalculatedInvoice(invoice("AT", TaxCategory.REVERSE_CHARGE), config)
             .messageOf(Rule.BESTAETIGUNGSABFRAGE_FEHLT) shouldContain "Bestätigungsabfrage"
+    }
+
+    // Der Nachweis gehört in die eigene Akte und hängt an keiner Sprache (#406).
+    test("die Bestätigungsabfrage gilt auf Englisch wie auf Deutsch") {
+        val english = invoice("AT", TaxCategory.REVERSE_CHARGE).copy(language = Language.BRITISH_ENGLISH)
+
+        CalculatedInvoice(english, config).rules() shouldContain Rule.BESTAETIGUNGSABFRAGE_FEHLT
+        CalculatedInvoice(english.copy(customer = english.customer.copy(vatIdCheck = checked)), config)
+            .rules() shouldNotContain Rule.BESTAETIGUNGSABFRAGE_FEHLT
     }
 
     test("Reverse Charge in die EU mit Nachweis geht durch") {

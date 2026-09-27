@@ -130,7 +130,7 @@ enum class TaxCategory(
         requiresZeroRate = true,
         requiresCustomerVatId = true,
         vatIdConfirmation = VatIdConfirmation.IN_EU,
-        // §14a Abs. 5 UStG verlangt genau diese Angabe im Wortlaut.
+        // §14a Abs. 1 und 5 UStG verlangen genau diese Angabe im Wortlaut.
         germanDefaultReason = "Steuerschuldnerschaft des Leistungsempfängers (Reverse Charge)",
     ),
 
@@ -180,9 +180,16 @@ enum class TaxCategory(
      * Der vorgesehene Grund in [language], oder `null`, wenn die Kategorie
      * keinen hat.
      *
-     * Englisch hat die Gründe von AE, K und G noch nicht (#377): Sie haben
-     * einen gesetzlichen Wortlaut, und dessen englische Fassung ist erst
-     * nachzulesen. Ohne `else`: Eine neue Kategorie sagt, ob sie einen hat.
+     * Bei AE "Reverse charge" und nichts dazu: Statt des deutschen Wortlauts
+     * lässt die Verwaltung den Begriff zu, den Art. 226 Nr. 11a MwStSystRL in
+     * der englischen Fassung verwendet (Abschnitt 14a.1 Abs. 6 und Anlage 8
+     * UStAE, BMF vom 17.09.2025). Er gilt damit auch im XML (BT-120), und ein
+     * deutscher Zusatz ist nicht nötig. Eine eigene Übersetzung wäre ein
+     * Wortlaut, den keine Liste der Verwaltung kennt.
+     *
+     * K und G hat Englisch noch nicht (#406): Anlage 8 nennt sie nicht, und
+     * ihr englischer Grund darf fachlich nichts anderes sagen als der deutsche.
+     * Ohne `else`: Eine neue Kategorie sagt, ob sie einen hat.
      */
     fun defaultReason(language: Language): String? =
         when (language) {
@@ -192,7 +199,8 @@ enum class TaxCategory(
             Language.BRITISH_ENGLISH -> {
                 when (this) {
                     STANDARD, ZERO_RATED, EXEMPT, OUT_OF_SCOPE -> null
-                    REVERSE_CHARGE, INTRA_COMMUNITY, EXPORT -> language.notYet("Den Befreiungsgrund der Kategorie $code")
+                    REVERSE_CHARGE -> "Reverse charge"
+                    INTRA_COMMUNITY, EXPORT -> language.notYet("Den Befreiungsgrund der Kategorie $code")
                 }
             }
         }

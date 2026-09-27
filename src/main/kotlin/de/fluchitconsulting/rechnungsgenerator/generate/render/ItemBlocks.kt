@@ -230,7 +230,7 @@ internal object ItemBlocks {
     /**
      * Die Begründungen für Positionen ohne Umsatzsteuer – EN 16931 BT-120.
      *
-     * Bei Reverse Charge ist das keine Höflichkeit: §14a Abs. 5 UStG verlangt
+     * Bei Reverse Charge ist das keine Höflichkeit: §14a Abs. 1 und 5 UStG verlangen
      * den Hinweis auf die Steuerschuldnerschaft des Leistungsempfängers
      * ausdrücklich auf der Rechnung.
      *
