@@ -180,8 +180,9 @@ PDF/A-Prüfung über veraPDF.
   Gruppierung, `toPlainString()` und nie `toString()`, sonst läse siunitx
   `1E+3` als Exponenten. Die Vorlage setzt sie mit siunitx und wählt nur die
   Schreibweise: ab wie vielen Stellen gruppiert wird in ihrem `\sisetup`,
-  Dezimalzeichen, Tausendertrenner und die Stellung des € samt `\betrag` und
-  `\prozent` in ihrer Sprachdatei – `8.337,50 €`, `€8,337.50`. Was siunitx
+  Dezimalzeichen, Tausendertrenner und die Stellung des Währungszeichens samt
+  `\betrag` und `\prozent` in ihrer Sprachdatei – `8.337,50 €`, `€8,337.50`
+  (ADR-0026). Was siunitx
   sonst still falsch setzte, etwa `0,033.5` statt `0,0335`, steht in der
   Grundlage. Nach dem Komma wird nie getrennt, weder durch Punkt noch durch
   Leerraum. `DateFormat` formatiert nur noch Daten, je Sprache. Den Vertrag
@@ -257,6 +258,33 @@ PDF/A-Prüfung über veraPDF.
   Deutsch bleibt, was sich an den Rechnungssteller richtet – Befunde,
   Meldungen, YAML-Schlüssel und -Werte –, dazu der Jobname
   (`InvoiceType.documentName` ohne Sprache, ADR-0005) und BT-33 im XML.
+
+- **Währung** (ADR-0026): Jede Rechnung steht in einer Währung, gewählt in
+  der Rechnungsdatei neben `sprache` – `waehrung: USD`, ohne Eintrag `EUR`.
+  `Currency` in `core.values` ist eine geschlossene Menge von Codes nach
+  ISO 4217: `EUR`, `USD`, `GBP`. Unabhängig von der Sprache: Die Sprache
+  bestimmt die Schreibweise, die Währung das Zeichen. Sie gehört zur
+  Rechnung und nicht zum Betrag, deshalb tragen `Money` und `Price` keine.
+
+  Eine Fremdwährung nur ohne Umsatzsteuer: Eine Position der Kategorie S
+  bricht dann ab (`WAEHRUNG_MIT_UMSATZSTEUER`), denn die geschuldete Steuer
+  müsste umgerechnet in Euro dastehen (Art. 230 MwStSystRL, §16 Abs. 6
+  UStG), und den Kurs kennt der Generator nicht. Auf dem Blatt kommt die
+  Währung als Platzhalter `<<WAEHRUNG>>`, die Vorlage reicht ihn als
+  `\waehrung` an die Sprachdatei, und die setzt das Zeichen – `\zeichenEUR`,
+  `\zeichenUSD`, `\zeichenGBP` – in `\betrag` an die Stelle ihrer Sprache.
+  `Template.of` verlangt jedes Zeichen in jeder Sprachdatei: `\csname` setzte
+  für ein fehlendes still nichts. Im XML tragen BT-5 und die `currencyID` der
+  Steuersumme den Code, BT-6 fehlt. `abschlaege` bricht bei gemischten
+  Währungen ab (`ABSCHLAGSRECHNUNGEN_VERSCHIEDENE_WAEHRUNGEN`) und nennt die
+  Währung auf stderr, wenn sie nicht Euro ist; der Block selbst nennt keine.
+  Dass Schlussrechnung und Storno zu ihren Abschlägen und ihrer
+  Ursprungsrechnung passen, sieht nur `offene-abschlaege.py`. Eine
+  Bankverbindung je Währung gibt es bewusst nicht.
+
+  Die englische Beispielrechnung steht in Pfund, die amerikanische in
+  US-Dollar, dazu `dollar-auf-deutsch.yaml`; das Pflichtangaben-Netz prüft
+  Zeichen und Stellung an allen dreien.
 
 - **Designs** (ADR-0011): Die Stammdaten wählen das Design, `design: helsinki`
   oder `design: prag`, ohne Eintrag `helsinki`. Jedes ist eine eingebaute
