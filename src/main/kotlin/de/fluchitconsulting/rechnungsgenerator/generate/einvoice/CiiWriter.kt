@@ -190,8 +190,15 @@ object CiiWriter {
                 element("ram:Name", config.companyName)
                 // Die Registernummer allein ist nicht eindeutig, erst mit dem
                 // Gericht; BT-30 hat aber nur ein Feld, das Gericht steht
-                // deshalb in BT-33 und so wie im Fuß des Blatts.
-                config.registerCourt?.let { element("ram:Description", "Registergericht $it") }
+                // deshalb in BT-33. Dort auch die Geschäftsführung, die das
+                // Blatt nennt (§35a GmbHG): Das XML ist die maßgebliche
+                // Fassung (ADR-0023). BT-33 gibt es nur einmal; getrennt wird
+                // mit Semikolon, weil mehrere Namen schon Kommas tragen.
+                listOfNotNull(
+                    config.registerCourt?.let { "Registergericht $it" },
+                    config.managingDirector?.let { "Geschäftsführung: $it" },
+                ).takeIf { it.isNotEmpty() }
+                    ?.let { element("ram:Description", it.joinToString("; ")) }
                 config.registerNumber?.let { number ->
                     element("ram:SpecifiedLegalOrganization") { element("ram:ID", number) }
                 }

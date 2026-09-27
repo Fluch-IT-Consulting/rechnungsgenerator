@@ -111,6 +111,29 @@ class CiiWriterTest : FunSpec({
 
         xml shouldNotContain "Registergericht"
         xml shouldNotContain "ram:SpecifiedLegalOrganization"
+        xml shouldNotContain "Geschäftsführung"
+    }
+
+    context("BT-33 nennt Registergericht und Geschäftsführung wie das Blatt") {
+        fun description(registerCourt: String?, managingDirector: String?): String {
+            val config = testSellerConfig().copy(registerCourt = registerCourt, managingDirector = managingDirector)
+            val xml = CalculatedInvoice(testInvoice(), config).accepted().xml()
+            xml.shouldBeValidExtended()
+            return xml.substringAfter("<ram:Description>").substringBefore("</ram:Description>")
+        }
+
+        test("beide, getrennt durch ein Semikolon, weil mehrere Namen selbst Kommas tragen") {
+            description("Würzburg", "Dr. Erika Musterfrau, Max Beispiel") shouldBe
+                "Registergericht Würzburg; Geschäftsführung: Dr. Erika Musterfrau, Max Beispiel"
+        }
+
+        test("nur das Registergericht") {
+            description("Würzburg", null) shouldBe "Registergericht Würzburg"
+        }
+
+        test("nur die Geschäftsführung") {
+            description(null, "Dr. Erika Musterfrau") shouldBe "Geschäftsführung: Dr. Erika Musterfrau"
+        }
     }
 
     context("die Steuerkategorien außer S") {
