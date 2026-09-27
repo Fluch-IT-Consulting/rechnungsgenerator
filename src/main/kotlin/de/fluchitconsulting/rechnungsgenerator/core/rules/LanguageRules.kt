@@ -78,8 +78,8 @@ internal object LanguageRules {
     // ist. Kommt eine dritte mit anderem Umfang, bekommen sie die Sprache.
     private fun supportsType(type: InvoiceType): Boolean =
         when (type) {
-            InvoiceType.INVOICE, InvoiceType.PARTIAL -> true
-            InvoiceType.PREPAYMENT, InvoiceType.FINAL, InvoiceType.CANCELLATION -> false
+            InvoiceType.INVOICE, InvoiceType.PARTIAL, InvoiceType.CANCELLATION -> true
+            InvoiceType.PREPAYMENT, InvoiceType.FINAL -> false
         }
 
     // S, Z, E und O ja: Bei E und O schreibt der Rechnungssteller den Grund

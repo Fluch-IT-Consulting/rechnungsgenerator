@@ -41,11 +41,19 @@ Das Dokument, das eine bereits ausgestellte Rechnung vollständig aufhebt. Es
 nennt die Ursprungsrechnung, wiederholt deren Positionen mit negativer Menge und
 fordert nicht zur Zahlung auf.
 _Vermeiden_: Gutschrift, Rechnungskorrektur, Stornobeleg, Negativrechnung
+_Englisch_: Cancellation invoice – _Vermeiden_: Credit note, Corrected invoice,
+Corrective invoice, Reversal invoice, Self-billing invoice
 
 „Gutschrift" ist hier besonders heikel: Umsatzsteuerlich ist das eine Rechnung,
 die der **Leistungsempfänger** ausstellt (§14 Abs. 2 Satz 2 UStG), also etwas
 ganz anderes. „Rechnungskorrektur" wiederum ist das Dokument, das einzelne
 Angaben ändert, statt alles aufzuheben – dieses Projekt kennt es nicht.
+
+Im Englischen liegen dieselben Fallen anders: „Credit note" heißt Code 381,
+die kaufmännische Gutschrift ohne Bezug, die das Storno bewusst nicht trägt
+(ADR-0006), und „Self-billing" ist die Gutschrift im Sinne des Gesetzes.
+„Corrected invoice" heißt zwar Code 384, den das Storno trägt, behauptete auf
+dem Blatt aber eine Rechnungskorrektur.
 
 **Ursprungsrechnung**:
 Die Rechnung, auf die sich eine Stornorechnung bezieht. Genannt wird sie mit
