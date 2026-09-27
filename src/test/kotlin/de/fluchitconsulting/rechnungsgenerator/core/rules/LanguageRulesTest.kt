@@ -16,7 +16,7 @@ import io.kotest.matchers.collections.shouldBeEmpty
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.string.shouldContain
 
-/** Was Englisch im ersten Schritt schon setzen kann (#377). */
+/** Was Englisch schon setzen kann (#377, #405). */
 class LanguageRulesTest : FunSpec({
 
     val config = testSellerConfig()
@@ -54,24 +54,12 @@ class LanguageRulesTest : FunSpec({
         }
     }
 
-    // Die Arten, die es auf Englisch schon gibt; mit jedem Schritt eine mehr (#405).
-    val englishTypes =
-        setOf(InvoiceType.INVOICE, InvoiceType.PARTIAL, InvoiceType.PREPAYMENT, InvoiceType.CANCELLATION)
-
-    test("auf Englisch wird jede Art angenommen, deren Sätze übersetzt sind") {
-        englishTypes.forEach { type ->
+    // Jede Art hat ihren englischen Namen und Pflichtsatz (#405). Kein Befund
+    // dieser Regel, auch wo die Art eigene Regeln verletzte – ein Storno ohne
+    // Bezug etwa.
+    test("auf Englisch wird jede Art angenommen") {
+        InvoiceType.entries.forEach { type ->
             withClue(type) { languageFindings(testInvoice(type = type, language = english)).shouldBeEmpty() }
-        }
-    }
-
-    test("auf Englisch bricht jede übrige Art ab, mit einem Befund") {
-        (InvoiceType.entries - englishTypes).forEach { type ->
-            withClue(type) {
-                val findings = languageFindings(testInvoice(type = type, language = english))
-
-                findings.map { it.subject } shouldBe listOf(Subject.WholeInvoice)
-                findings.single().message shouldContain type.documentName
-            }
         }
     }
 

@@ -307,6 +307,24 @@ class PflichtangabenTest : FunSpec({
             calculated.prepayments.size shouldBe 2
             calculated.remainingAmount.isZero() shouldBe true
         }
+
+        // Dieselbe Datei auf Englisch (#405): Die Beispiele je Art laufen dort
+        // unten auch, aber keines ist ausgeglichen.
+        test("ausgeglichene Schlussrechnung auf Englisch im Design ${design.name}: gültig, mit dem englischen Satz") {
+            val input = workDir.resolve("schlussrechnung-ausgeglichen-englisch.yaml")
+            input.writeText("sprache: en-GB\n" + Path.of("src/test/resources/schlussrechnung-ausgeglichen.yaml").readText())
+
+            val (calculated, _) =
+                typesetAndCheck(
+                    "schlussrechnung-ausgeglichen",
+                    design,
+                    design.sellerConfig,
+                    targetName = "${design.name}-ausgeglichen-englisch",
+                    input = input,
+                )
+
+            calculated.invoice.language shouldBe Language.BRITISH_ENGLISH
+        }
     }
 
     // Eine Rechnung ins Ausland (#374): Unter dem Ort steht das Land,
@@ -672,12 +690,13 @@ private fun Sheet.verify(
     // Setzte das Programm ein Zahlungsziel, obwohl nichts offen ist, sähe der
     // Zweig oben es als Forderung.
     val settled = calculated.prepayments.isNotEmpty() && calculated.remainingAmount.isZero()
+    val settledNote = settledNote(invoice.language)
     if (settled) {
-        shows("Satz zum ausgeglichenen Restbetrag", SETTLED_NOTE)
+        shows("Satz zum ausgeglichenen Restbetrag", settledNote)
         lacks("Beschriftung des Zahlungsziels", words.dueDateLabel)
         bankHeading?.let { lacks("Überschrift der Bankverbindung", it) }
     } else {
-        lacks("Satz zum ausgeglichenen Restbetrag", SETTLED_NOTE)
+        lacks("Satz zum ausgeglichenen Restbetrag", settledNote)
     }
 
     // Die Folgeseiten (ADR-0020): Jede trägt Rechnungsnummer, Datum und
@@ -758,7 +777,7 @@ private fun Sheet.verify(
         }
         if (settled) {
             withClue("Satz zum ausgeglichenen Restbetrag steht auf keiner Seite vollständig") {
-                (pageWith(SETTLED_NOTE) != null) shouldBe true
+                (pageWith(settledNote) != null) shouldBe true
             }
         }
         if (skonto.isNotEmpty()) {
@@ -784,14 +803,17 @@ private fun Sheet.verify(
 }
 
 /**
- * Der Satz, der bei ausgeglichenem Restbetrag statt einer Zahl dasteht.
- * Abgeschrieben und nicht aus `DeductionBlocks` gelesen: Ändert sich der
- * Wortlaut, wird das Netz rot, und das ist eine Frage wie bei den
+ * Der Satz, der bei ausgeglichenem Restbetrag statt einer Zahl dasteht, in
+ * jeder Sprache. Abgeschrieben und nicht aus `DeductionBlocks` gelesen: Ändert
+ * sich der Wortlaut, wird das Netz rot, und das ist eine Frage wie bei den
  * Vergleichsdateien. Er ist ein Satz des Programms und keiner eines Designs,
- * deshalb steht er hier und nicht in [Design].
+ * deshalb steht er hier und nicht in [Words].
  */
-private const val SETTLED_NOTE =
-    "Der Rechnungsbetrag ist durch die vereinnahmten Abschläge ausgeglichen; es verbleibt kein Restbetrag."
+private fun settledNote(language: Language): String =
+    when (language) {
+        Language.GERMAN -> "Der Rechnungsbetrag ist durch die vereinnahmten Abschläge ausgeglichen; es verbleibt kein Restbetrag."
+        Language.BRITISH_ENGLISH -> "The invoice amount is settled by the advance payments received; no balance remains."
+    }
 
 // --- Schreibweisen ----------------------------------------------------------
 // Bewusst unabhängig von DateFormat, siehe oben. Jede Funktion liefert alle

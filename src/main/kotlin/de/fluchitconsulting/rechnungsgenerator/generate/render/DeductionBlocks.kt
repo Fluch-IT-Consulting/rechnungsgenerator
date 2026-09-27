@@ -34,14 +34,7 @@ internal object DeductionBlocks {
                 is InvoiceKind.FinalInvoice -> kind.deductions
                 is InvoiceKind.Ordinary, is InvoiceKind.PrepaymentInvoice, is InvoiceKind.Cancellation -> return Latex.EMPTY
             }
-        // Die Wörter der Absetzung – Abschlag, vereinnahmt, Restbetrag – haben
-        // auf Englisch noch keinen Wortlaut (#377).
-        when (val language = calculatedInvoice.invoice.language) {
-            Language.GERMAN -> {}
-            Language.BRITISH_ENGLISH -> {
-                language.notYet("Die Absetzung der Abschläge")
-            }
-        }
+        val language = calculatedInvoice.invoice.language
 
         // Derselbe Trenner wie bei den Positionen: Jede Zeile hat eine
         // Zusatzzeile, genau wie eine Position mit Beschreibung.
@@ -58,7 +51,7 @@ internal object DeductionBlocks {
                         Latex.macro(
                             TemplateMacro.SUMMENZEILE,
                             listOf(
-                                describePrepayment(deduction),
+                                describePrepayment(deduction, language),
                                 Numbers.amount(-deduction.deducted.gross),
                             ),
                         )
@@ -73,21 +66,13 @@ internal object DeductionBlocks {
                 Latex.EMPTY to
                     Latex.macro(
                         TemplateMacro.HINWEISABSATZ,
-                        listOf(
-                            (
-                                "Der Rechnungsbetrag ist durch die vereinnahmten Abschläge ausgeglichen; " +
-                                    "es verbleibt kein Restbetrag."
-                            ).escapeLatex(),
-                        ),
+                        listOf(settledNote(language).escapeLatex()),
                     )
             } else {
-                summaryRow("Restbetrag", calculatedInvoice.remainingAmount) to Latex.EMPTY
+                summaryRow(remainingLabel(language), calculatedInvoice.remainingAmount) to Latex.EMPTY
             }
 
-        return Latex.macro(
-            TemplateMacro.ABSETZUNGSKOPF,
-            listOf("Abzüglich der berechneten und vereinnahmten Abschläge:".escapeLatex()),
-        ) +
+        return Latex.macro(TemplateMacro.ABSETZUNGSKOPF, listOf(heading(language).escapeLatex())) +
             Latex.raw("\n") +
             Latex.macro(TemplateMacro.ABSETZUNGSTABELLE, listOf(Latex.raw("\n") + rows + closingRow + Latex.raw("\n"))) +
             trailingNote
@@ -98,22 +83,62 @@ internal object DeductionBlocks {
      * der ersten Zeile, die Aufteilung in Netto und Steuer klein darunter –
      * dieselbe Zweizeiligkeit wie bei einer Position.
      */
-    private fun describePrepayment(deduction: Deduction): Latex {
+    private fun describePrepayment(
+        deduction: Deduction,
+        language: Language,
+    ): Latex {
         val abschlag = deduction.deducted.prepayment
-        val vereinnahmtAm = deduction.receivedOn
-        // Deutsch, weil die Absetzung auf Englisch vorher wirft.
-        val format = DateFormat(Language.GERMAN)
+        val format = DateFormat(language)
+        val number = abschlag.invoiceNumber.escapeLatex()
+        val issued = format.shortDate(abschlag.issueDate)
+        val vereinnahmtAm = format.shortDate(deduction.receivedOn)
+        // "received" wie \wortvereinnahmtam in den Sprachdateien.
         val heading =
-            "Abschlagsrechnung ".escapeLatex() + abschlag.invoiceNumber.escapeLatex() + " vom ".escapeLatex() +
-                format.shortDate(abschlag.issueDate) + ", vereinnahmt am ".escapeLatex() +
-                format.shortDate(vereinnahmtAm)
+            when (language) {
+                Language.GERMAN -> {
+                    "Abschlagsrechnung ".escapeLatex() + number + " vom ".escapeLatex() + issued +
+                        ", vereinnahmt am ".escapeLatex() + vereinnahmtAm
+                }
+                Language.BRITISH_ENGLISH -> {
+                    "Advance payment invoice ".escapeLatex() + number + " dated ".escapeLatex() + issued +
+                        ", received on ".escapeLatex() + vereinnahmtAm
+                }
+            }
         val anteile =
             abschlag.taxShares
                 .map { anteil ->
-                    "netto ".escapeLatex() + Numbers.amount(anteil.net) + " zzgl. ".escapeLatex() +
-                        Numbers.percent(anteil.vatRate) + " USt. ".escapeLatex() +
-                        Numbers.amount(anteil.vat)
+                    val net = Numbers.amount(anteil.net)
+                    val rate = Numbers.percent(anteil.vatRate)
+                    val vat = Numbers.amount(anteil.vat)
+                    when (language) {
+                        Language.GERMAN -> "netto ".escapeLatex() + net + " zzgl. ".escapeLatex() + rate + " USt. ".escapeLatex() + vat
+                        Language.BRITISH_ENGLISH -> "net ".escapeLatex() + net + " plus ".escapeLatex() + rate + " VAT ".escapeLatex() + vat
+                    }
                 }.joinToLatex(" · ")
         return heading + Latex.macro(TemplateMacro.ABSETZUNGSDETAIL, listOf(anteile))
     }
+
+    // "Less" ist das britische "abzüglich" einer Aufstellung.
+    private fun heading(language: Language): String =
+        when (language) {
+            Language.GERMAN -> "Abzüglich der berechneten und vereinnahmten Abschläge:"
+            Language.BRITISH_ENGLISH -> "Less advance payments invoiced and received:"
+        }
+
+    // "Balance due" und nicht "Amount due": Das wäre der ganze Rechnungsbetrag.
+    private fun remainingLabel(language: Language): String =
+        when (language) {
+            Language.GERMAN -> "Restbetrag"
+            Language.BRITISH_ENGLISH -> "Balance due"
+        }
+
+    private fun settledNote(language: Language): String =
+        when (language) {
+            Language.GERMAN -> {
+                "Der Rechnungsbetrag ist durch die vereinnahmten Abschläge ausgeglichen; es verbleibt kein Restbetrag."
+            }
+            Language.BRITISH_ENGLISH -> {
+                "The invoice amount is settled by the advance payments received; no balance remains."
+            }
+        }
 }

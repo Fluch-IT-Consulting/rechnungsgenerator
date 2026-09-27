@@ -545,6 +545,21 @@ class InvoiceRendererTest : FunSpec({
         test("eine gewöhnliche Rechnung bekommt keine Absetzung") {
             renderWith(testItem()) shouldNotContain "Abzüglich"
         }
+
+        // Der Restbetrag steht in schlussrechnung-en-gb-inhalt.tex, der Satz
+        // statt der Null in keiner Inhalts-Datei (#405).
+        test("auf Englisch bekommt ein Restbetrag von null den englischen Satz") {
+            val invoice =
+                testInvoice(
+                    type = InvoiceType.FINAL,
+                    items = listOf(testItem(quantity = "1", unitPrice = "4000.00")),
+                    prepayments = listOf(testPrepayment()),
+                    language = Language.BRITISH_ENGLISH,
+                )
+
+            InvoiceRenderer.render(CalculatedInvoice(invoice, config).accepted()).sources.tex shouldContain
+                "\\hinweisabsatz{The invoice amount is settled by the advance payments received; no balance remains.}"
+        }
     }
 
     context("Skonto") {
