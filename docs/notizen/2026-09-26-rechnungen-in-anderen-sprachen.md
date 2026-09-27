@@ -33,7 +33,8 @@ eigenen Abschnitt.
   Deutschen hängt das Datum an der Variante, `de-AT` schreibt „14. Jänner
   2026“ (nachgemessen mit dem JDK). So gilt eine Regel ohne Ausnahme – jeder
   Wert nennt seine Variante –, auch wenn eine zweite deutsche nicht absehbar
-  ist.
+  ist. Die Regel gilt für `sprache:`; die Schlüssel des Schlusssatzes sind
+  etwas anderes, siehe dort.
 - **Der Schlusssatz steht je Sprache in den Stammdaten**, als Tabelle:
   `schlusssatz: {de-DE: …, en-GB: …}`. Er ist eine Höflichkeit des
   Rechnungsstellers und auf jeder seiner Rechnungen derselbe, nur eben je
@@ -46,6 +47,33 @@ eigenen Abschnitt.
   Abbruch: „Leer scheitert laut“ gilt in den Stammdaten für Angaben, die
   falsch schaden, etwa die Bankverbindung. Ein allgemeiner Dank schadet nicht,
   und in der falschen Sprache steht er so nie da.
+- **Die Schlüssel der Tabelle sind Sprachbereiche, keine Sprachen.**
+  `sprache:` sagt, in welcher Sprache eine Rechnung *ist*, und das ist genau
+  eine. Ein Schlüssel des Schlusssatzes sagt, für welche Rechnungen ein Satz
+  *gilt* – deshalb darf dort auch die Hauptsprache allein stehen, `de` oder
+  `en`. Gesucht wird wie beim Lookup aus RFC 4647: erst der genaue Code, dann
+  die Hauptsprache, und erst wenn beide fehlen, die Vorgabe aus Kotlin. Für
+  `en-US` also `en-US`, dann `en`, dann die Vorgabe für `en-US`; ein
+  allgemeiner Satz des Rechnungsstellers geht der genauen Vorgabe des
+  Programms vor. Seitwärts wird nicht gesucht, `en-US` fällt nie auf `en-GB`.
+  Stehen beide da, `{en: …, en-GB: …}`, ist das kein Fehler, sondern der
+  Zweck: britisch dies, jedes andere Englisch das. Der Gewinn: Stammdaten
+  schreibt man einmal, Sprachen kommen nach und nach dazu, und ein `en:` gilt
+  ohne Änderung auch für eine spätere Variante.
+- **Als Schlüssel erlaubt sind nur unterstützte Sprachen und ihre
+  Hauptsprache**, im ersten Schritt `de`, `de-DE`, `en` und `en-GB`. Jeder
+  andere bricht beim Einlesen ab, mit Datei und Schlüssel – auch `fr` und
+  `en-US`: Ein Satz, den keine Rechnung je verwendet, ist derselbe stille
+  Fehler wie ein vertippter Schlüssel. Die Schreibweise ist so streng wie bei
+  `sprache:`.
+- **Der Rückfall gilt nur für Tabellen, die der Rechnungssteller schreibt.**
+  Die Sprachdateien der Designs und die fachlichen Sätze in Kotlin bleiben
+  genau: Dort soll eine fehlende Übersetzung auffallen, durch den Test über die
+  Makros der Sprachdateien und durch das `when` ohne `else`.
+- **Die Vorlage von `einrichten` nennt die genauen Codes**, `de-DE` und
+  `en-GB`. Sie zeigt die Vorgaben, und die gelten je genauer Sprache. Stünde
+  die britische unter `en` und bliebe stehen, verdrängte sie später die
+  Vorgabe für `en-US`. Den allgemeinen Schlüssel schreibt, wer ihn will.
 - **Das kurze Datum ist im Englischen ISO 8601**, `2026-07-01`. Britisch wäre
   `01/07/2026`, und das liest ein amerikanischer Leser als 7. Januar. Das
   lange Datum bleibt britisch, `14 August 2026`: Mit ausgeschriebenem Monat
@@ -109,6 +137,11 @@ eigenen Abschnitt.
   jeder Satz einen Wortlaut hat – derselbe Zug wie `InvoiceType` ohne
   Vorgabewerte (ADR-0009).
 - **`GermanFormat` wird ein Format je Sprache.**
+- **Die Kette des Schlusssatzes kennt `Language` selbst**, als eigene kleine
+  Funktion über die geschlossene Aufzählung, nicht über `Locale.lookupTag`
+  aus dem JDK. Sie ist zwei Glieder lang, und die Schreibweise der Schlüssel
+  bleibt so streng wie die von `sprache:`, statt der Nachsicht des JDK bei
+  Groß- und Kleinschreibung zu folgen.
 - **Erster Schritt wie bei ZUGFeRD (ADR-0023)** (#377): Englisch zuerst nur
   für `rechnung`, und ohne die Kategorien AE, K und G und ohne Skonto. Alles
   andere lehnt ein Befund ab, etwa `SPRACHE_NOCH_NICHT_MOEGLICH`, bis sein
