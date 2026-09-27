@@ -88,7 +88,7 @@ class YamlLoaderTest : FunSpec({
         }
 
         test("ein unbekannter oder doppelter Schlüssel bricht ab, mit Datei und Schlüssel") {
-            listOf("  fr: Merci.\n", "  en-US: Thanks.\n", "  de-DE: Danke.\n  DE-de: Vielen Dank.\n").forEach { table ->
+            listOf("  fr: Merci.\n", "  en-AU: Thanks.\n", "  de-DE: Danke.\n  DE-de: Vielen Dank.\n").forEach { table ->
                 withClue(table) {
                     val file = createTempDirectory("loader-test").resolve("stammdaten.yaml")
                     file.writeText(resource("stammdaten.yaml") + "schlusssatz:\n$table")
@@ -202,13 +202,14 @@ class YamlLoaderTest : FunSpec({
             assertSoftly {
                 YamlLoader.parseInvoice(invoiceIn("en-GB")).language shouldBe Language.BRITISH_ENGLISH
                 YamlLoader.parseInvoice(invoiceIn("EN-GB")).language shouldBe Language.BRITISH_ENGLISH
+                YamlLoader.parseInvoice(invoiceIn("en-us")).language shouldBe Language.AMERICAN_ENGLISH
                 YamlLoader.parseInvoice(invoiceIn("de-de")).language shouldBe Language.GERMAN
             }
         }
 
         test("ohne Variante oder ausgeschrieben bricht das Lesen ab und nennt Datei und Wert") {
-            // Die Variante gehört zum Wert: en wäre später en-GB oder en-US.
-            listOf("en", "englisch", "de", "en-US").forEach { language ->
+            // Die Variante gehört zum Wert: en ließe offen, ob en-GB oder en-US.
+            listOf("en", "englisch", "de", "en-AU").forEach { language ->
                 withClue(language) {
                     val file = createTempDirectory("loader-test").resolve("rechnung.yaml")
                     file.writeText(invoiceIn(language))
@@ -217,7 +218,7 @@ class YamlLoaderTest : FunSpec({
 
                     failure.message!! shouldContain file.toString()
                     failure.message!! shouldContain "Unbekannte Sprache '$language'"
-                    failure.message!! shouldContain "de-DE, en-GB"
+                    failure.message!! shouldContain "de-DE, en-GB, en-US"
                 }
             }
         }

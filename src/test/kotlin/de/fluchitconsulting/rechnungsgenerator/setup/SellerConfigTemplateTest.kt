@@ -124,7 +124,8 @@ class SellerConfigTemplateTest : FunSpec({
     }
 
     test("der Schlusssatz steht je Sprache unter ihrem genauen Code") {
-        // Unter "en" verdrängte die britische Vorgabe später die für en-US.
+        // Unter "en" stünde die britische Vorgabe auch für en-US, ob die
+        // beiden gleich lauten oder nicht.
         keysIn(template.get<YamlMap>("schlusssatz")!!) shouldBe Language.entries.map { it.tag }.toSet()
     }
 

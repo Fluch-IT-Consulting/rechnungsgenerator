@@ -1,0 +1,51 @@
+%% Die Sprachdatei von helsinki für en-US (#407). Was eine Sprachdatei ist und
+%% welche Regeln für sie gelten, steht im Kopf von helsinki-de-de.tex.
+%%
+%% Jedes Wort wie in helsinki-en-gb.tex, auch die Schreibweise der Zahlen: Wo
+%% sich die Varianten auf dem Blatt unterscheiden, im langen Datum, schreibt
+%% Kotlin. Trotzdem eine eigene Datei und kein Rückfall auf die britische,
+%% damit eine fehlende Übersetzung auffällt (ADR-0025).
+
+%% ---------------------------------------------------------------- Zahlen
+%% Wie in helsinki-en-gb.tex, wo steht, warum \betrag das Vorzeichen selbst
+%% setzt: €8,337.50 und −€200.00.
+\sisetup{
+  output-decimal-marker = {.},
+  group-separator       = {,},
+}
+\makeatletter
+\newcommand{\betrag}[1]{\betrag@zeichen#1\relax}
+\def\betrag@zeichen#1#2\relax{\ifx-#1\textminus€\num{#2}\else€\num{#1#2}\fi}
+\makeatother
+\newcommand{\prozent}[1]{\num{#1}\%}
+
+%% ------------------------------------------------------------- Seiten
+\newcommand{\wortseitevon}[2]{Page #1 of #2}
+\newcommand{\wortfortsetzung}{Continued on the next page}
+
+%% ------------------------------------------------------ Kopf und Anschrift
+\newcommand{\wortgeschaeftsfuehrung}{Managing director}
+\newcommand{\wortustid}{VAT ID}
+\newcommand{\wortkundennr}{Customer no.:}
+\newcommand{\wortauftragsnr}{Our order no.:}
+\newcommand{\wortvereinnahmtam}{Payment received on}
+\newcommand{\wortreferenz}{Your reference:}
+\newcommand{\wortzahlbarbis}{Due in full by}
+
+%% ----------------------------------------------------- Positionen, Summen
+\newcommand{\wortbeschreibung}{Description}
+\newcommand{\wortmenge}{Quantity}
+\newcommand{\worteinzelpreis}{Unit price}
+\newcommand{\wortrabatt}{Discount}
+\newcommand{\wortbetrag}{Amount}
+\newcommand{\wortnettobetrag}{Net amount}
+%% Satz und, bei mehreren Steuergruppen, ihre Grundlage – sonst ist sie leer.
+\newcommand{\wortsteuer}[2]{plus #1 VAT\ifblank{#2}{}{ on #2}}
+\newcommand{\wortgesamtbetrag}{Total amount}
+
+%% --------------------------------------------------------- Schluss und Fuß
+\newcommand{\wortgruss}{Kind regards}
+\newcommand{\wortbankverbindung}{Bank details}
+\newcommand{\wortkontoinhaber}{Account holder}
+\newcommand{\wortinstitut}{Bank}
+\newcommand{\wortregistergericht}{Registry court}
