@@ -175,6 +175,13 @@ mindert.
 _Vermeiden_: Skontoprozent, Skontorate
 _Englisch_: Discount rate – _Vermeiden_: Discount percentage
 
+**Währung**:
+Die Währung, in der jeder Betrag einer Rechnung steht – genau eine je
+Rechnung, auch für die abgesetzten Abschläge. Sie hängt nicht an der Sprache.
+Eine Rechnung in einer anderen Währung als Euro weist keine Umsatzsteuer aus.
+_Vermeiden_: Devise, Valuta
+_Englisch_: Currency
+
 **Steueraufschlüsselung**:
 Die Aufstellung der Bemessungsgrundlagen und Steuerbeträge, gruppiert nach
 Steuerkategorie und Steuersatz.
