@@ -254,8 +254,13 @@ object CiiWriter {
         val deductions = deductionsOf(acceptedInvoice)
         val bank = calculated.config.bank
         val servicePeriod = calculated.invoice.servicePeriod
+        val currency = calculated.invoice.currency.name
         element("ram:ApplicableHeaderTradeSettlement") {
-            element("ram:InvoiceCurrencyCode", "EUR")
+            // BT-5, die Währung jedes Betrags (#409). Keine Währung der
+            // Umsatzsteuer (BT-6): Eine Rechnung in Fremdwährung weist keine
+            // aus (WAEHRUNG_MIT_UMSATZSTEUER), und ohne BT-6 verlangt BR-53
+            // keine Steuersumme in Euro.
+            element("ram:InvoiceCurrencyCode", currency)
             if (calculated.requestsPayment) {
                 element("ram:SpecifiedTradeSettlementPaymentMeans") {
                     // 58: SEPA-Überweisung (UNTDID 4461)
@@ -302,7 +307,7 @@ object CiiWriter {
             element("ram:SpecifiedTradeSettlementHeaderMonetarySummation") {
                 element("ram:LineTotalAmount", amount(calculated.netTotal))
                 element("ram:TaxBasisTotalAmount", amount(calculated.netTotal))
-                element("ram:TaxTotalAmount", amount(calculated.vatTotal), "currencyID" to "EUR")
+                element("ram:TaxTotalAmount", amount(calculated.vatTotal), "currencyID" to currency)
                 element("ram:GrandTotalAmount", amount(calculated.grossTotal))
                 if (deductions.isNotEmpty()) {
                     element("ram:TotalPrepaidAmount", amount(calculated.prepaymentTotal))
