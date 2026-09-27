@@ -235,15 +235,15 @@ enum class InvoiceType(
             // 381, den das Storno bewusst nicht trägt (ADR-0006). "Advance
             // payment invoice" und nicht "Prepayment invoice", obwohl Code
             // 386 so heißt – aus demselben Grund, aus dem das Deutsche die
-            // Anzahlung meidet. Die Schlussrechnung bekommt ihren Namen mit
-            // ihrem Schritt.
+            // Anzahlung meidet. "Final invoice", wie der Pflichtsatz der
+            // Abschlagsrechnung sie ankündigt.
             Language.BRITISH_ENGLISH -> {
                 when (this) {
                     INVOICE -> "Invoice"
                     PARTIAL -> "Partial invoice"
                     CANCELLATION -> "Cancellation invoice"
                     PREPAYMENT -> "Advance payment invoice"
-                    FINAL -> language.notYet("Den Namen der $documentName")
+                    FINAL -> "Final invoice"
                 }
             }
         }

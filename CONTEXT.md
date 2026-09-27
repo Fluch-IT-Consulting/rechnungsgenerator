@@ -29,6 +29,8 @@ invoice, Progress invoice, Pro forma invoice (die ist gar keine Rechnung)
 Rechnung über die vollständig erbrachte Leistung, in der die vereinnahmten
 Abschläge abgesetzt werden.
 _Vermeiden_: Endrechnung, Restrechnung, Abschlussrechnung
+_Englisch_: Final invoice, wie der Pflichtsatz der Abschlagsrechnung sie
+ankündigt – _Vermeiden_: Closing invoice, Balance invoice, Settlement invoice
 
 **Teilrechnung**:
 Endgültige Rechnung über eine abgeschlossene Teilleistung. Sie wird nie
@@ -126,16 +128,22 @@ Umsatzsteuer entstehen und erlaubt die Absetzung – ein berechneter, aber nicht
 bezahlter Abschlag ist eine offene Forderung, kein Abschlag im Sinne der
 Schlussrechnung.
 _Vermeiden_: Zahlungseingang, Bezahlung
+_Englisch_: received (on), wie die Beschriftung der Designs – _Vermeiden_:
+paid, collected
 
 **Absetzung**:
 Das Abziehen der vereinnahmten Abschläge in der Schlussrechnung, mit Nettobetrag
 und Steuerbetrag getrennt und unterhalb der Steueraufschlüsselung.
 _Vermeiden_: Verrechnung, Abzug, Gutschrift, Anrechnung
+_Englisch_: Deduction, auf dem Blatt „Less …" – _Vermeiden_: Offset, Credit,
+Set-off
 
 **Restbetrag**:
 Was nach der Absetzung vom Bruttobetrag der Schlussrechnung noch zu zahlen ist.
 Null ist zulässig, negativ nicht.
 _Vermeiden_: Zahlbetrag, offener Betrag, Saldo, Differenz
+_Englisch_: Balance due – _Vermeiden_: Amount due (der ganze
+Rechnungsbetrag), Outstanding amount (klingt nach überfällig), Remainder
 
 **Rabatt**:
 Eine Minderung des Positionsbetrags, sofort und ohne Bedingung – vereinbart als
