@@ -170,11 +170,12 @@ internal object ItemBlocks {
                     "Die Zahlung ist $deadline fällig."
                 }
                 Language.BRITISH_ENGLISH -> {
-                    if (withSkonto) language.notYet("„Ohne Abzug“")
+                    // "in full" wie das "Due in full by" im Kopf von helsinki.
+                    val withoutDeduction = if (withSkonto) "in full " else ""
                     when (days) {
                         0 -> "Payment is due immediately."
-                        1 -> "Payment is due 1 day after the invoice date."
-                        else -> "Payment is due $days days after the invoice date."
+                        1 -> "Payment is due ${withoutDeduction}1 day after the invoice date."
+                        else -> "Payment is due $withoutDeduction$days days after the invoice date."
                     }
                 }
             }
@@ -202,28 +203,39 @@ internal object ItemBlocks {
     fun skontoNote(calculatedInvoice: CalculatedInvoice): Latex {
         val stufen = calculatedInvoice.skonto
         if (stufen.isEmpty()) return Latex.EMPTY
-        when (val language = calculatedInvoice.invoice.language) {
-            Language.GERMAN -> {}
-            Language.BRITISH_ENGLISH -> {
-                language.notYet("Skonto")
-            }
-        }
 
-        val format = DateFormat(calculatedInvoice.invoice.language)
+        val language = calculatedInvoice.invoice.language
+        val format = DateFormat(language)
 
         fun deadline(stufe: SkontoTier): Latex = together(format.date(calculatedInvoice.skontoUntil(stufe)))
 
         val firstTier = stufen.first()
+        val furtherTiers = stufen.drop(1)
+        // Ohne `else`: Eine neue Sprache schreibt ihren eigenen Satz, wie bei
+        // der Zahlungsfrist.
         val sentence =
-            "Bei Zahlung bis\u00A0".escapeLatex() + deadline(firstTier) + " können ".escapeLatex() +
-                Numbers.percent(firstTier.rate) + " Skonto abgezogen werden".escapeLatex() +
-                stufen
-                    .drop(1)
-                    .map { stufe ->
-                        ", bei Zahlung bis\u00A0".escapeLatex() + deadline(stufe) + " ".escapeLatex() +
-                            Numbers.percent(stufe.rate)
-                    }.joinToLatex() +
-                ".".escapeLatex()
+            when (language) {
+                Language.GERMAN -> {
+                    "Bei Zahlung bis\u00A0".escapeLatex() + deadline(firstTier) + " können ".escapeLatex() +
+                        Numbers.percent(firstTier.rate) + " Skonto abgezogen werden".escapeLatex() +
+                        furtherTiers
+                            .map { stufe ->
+                                ", bei Zahlung bis\u00A0".escapeLatex() + deadline(stufe) + " ".escapeLatex() +
+                                    Numbers.percent(stufe.rate)
+                            }.joinToLatex()
+                }
+                // "of 2%" und nicht "a 2%": Der Artikel hinge an der Aussprache
+                // der Zahl – a 2%, an 8%, an 11%.
+                Language.BRITISH_ENGLISH -> {
+                    "For payment by\u00A0".escapeLatex() + deadline(firstTier) + ", an early payment discount of ".escapeLatex() +
+                        Numbers.percent(firstTier.rate) + " may be deducted".escapeLatex() +
+                        furtherTiers
+                            .map { stufe ->
+                                "; for payment by\u00A0".escapeLatex() + deadline(stufe) + ", ".escapeLatex() +
+                                    Numbers.percent(stufe.rate)
+                            }.joinToLatex()
+                }
+            } + ".".escapeLatex()
         return Latex.macro(TemplateMacro.HINWEISABSATZ, listOf(sentence))
     }
 
