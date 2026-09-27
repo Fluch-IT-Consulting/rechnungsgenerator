@@ -53,7 +53,7 @@ enum class Unit(val label: String, val code: String) {
                     HOUR, PIECE, FLAT_RATE, KILOMETRE -> label
                 }
             }
-            Language.BRITISH_ENGLISH -> {
+            Language.BRITISH_ENGLISH, Language.AMERICAN_ENGLISH -> {
                 when (this) {
                     HOUR -> if (one) "hr" else "hrs"
                     DAY -> if (one) "day" else "days"

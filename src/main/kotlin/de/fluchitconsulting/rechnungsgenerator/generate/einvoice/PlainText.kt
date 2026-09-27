@@ -16,6 +16,7 @@ private fun datePattern(language: Language): DateTimeFormatter =
     when (language) {
         Language.GERMAN -> DateTimeFormatter.ofPattern("d. MMMM yyyy", language.locale)
         Language.BRITISH_ENGLISH -> DateTimeFormatter.ofPattern("d MMMM yyyy", language.locale)
+        Language.AMERICAN_ENGLISH -> DateTimeFormatter.ofPattern("MMMM d, yyyy", language.locale)
     }
 
 /**

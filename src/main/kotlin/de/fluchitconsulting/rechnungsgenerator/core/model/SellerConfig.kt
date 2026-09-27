@@ -79,7 +79,7 @@ data class SellerConfig(
         closingLines[language]
             ?: when (language) {
                 Language.GERMAN -> "Ich bedanke mich für das Vertrauen und die angenehme Zusammenarbeit."
-                Language.BRITISH_ENGLISH -> "Thank you for your trust and the pleasant collaboration."
+                Language.BRITISH_ENGLISH, Language.AMERICAN_ENGLISH -> "Thank you for your trust and the pleasant collaboration."
             }
 }
 

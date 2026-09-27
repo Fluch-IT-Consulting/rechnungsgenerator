@@ -29,10 +29,11 @@ class DateFormat(
     private val language: Language,
 ) {
     /**
-     * Ausgeschriebenes Datum: `14. August 2026`, `14 August 2026`.
+     * Ausgeschriebenes Datum: `14. August 2026`, `14 August 2026`,
+     * `August 14, 2026`.
      *
-     * Hinter dem Tag ein geschütztes Leerzeichen, das [escapeLatex] zu `~`
-     * macht: ein fester Wortzwischenraum. Im Deutschen ist der Punkt nach dem
+     * Zwischen Tag und Monat ein geschütztes Leerzeichen, das [escapeLatex] zu
+     * `~` macht: ein fester Wortzwischenraum. Im Deutschen ist der Punkt nach dem
      * Tag kein Satzende, und ohne `~` bekäme er dort, wo die Vorlage den
      * breiten Satzabstand setzt, eine Lücke wie nach einem Satz (#143). In
      * jeder Sprache bricht das Datum so nicht zwischen Tag und Monat um.
@@ -79,7 +80,7 @@ class DateFormat(
         val until =
             when (language) {
                 Language.GERMAN -> "bis"
-                Language.BRITISH_ENGLISH -> "to"
+                Language.BRITISH_ENGLISH, Language.AMERICAN_ENGLISH -> "to"
             }
         val fillsWholeMonths = start.dayOfMonth == 1 && end == end.withDayOfMonth(end.lengthOfMonth())
         if (!fillsWholeMonths) return servicePeriod(start, end)
@@ -97,19 +98,21 @@ class DateFormat(
 
     // Ohne Maskierung, für den Zusammenbau innerhalb dieser Klasse.
     //
-    // Im Englischen ISO 8601 und nicht britisch: 01/07/2026 läse ein
-    // amerikanischer Leser als 7. Januar. Das lange Datum bleibt britisch, mit
-    // ausgeschriebenem Monat versteht es jeder.
+    // Im Englischen ISO 8601, in beiden Varianten: 01/07/2026 läse ein
+    // amerikanischer Leser als 7. Januar, 07/01/2026 ein britischer als
+    // 7. Juli. Das lange Datum folgt der Variante; mit ausgeschriebenem Monat
+    // ist es in jeder eindeutig.
     private fun shortDateText(date: LocalDate): String =
         when (language) {
             Language.GERMAN -> format("dd.MM.yyyy", date)
-            Language.BRITISH_ENGLISH -> format("yyyy-MM-dd", date)
+            Language.BRITISH_ENGLISH, Language.AMERICAN_ENGLISH -> format("yyyy-MM-dd", date)
         }
 
     private fun longDatePattern(space: String): String =
         when (language) {
             Language.GERMAN -> "d.${space}MMMM yyyy"
             Language.BRITISH_ENGLISH -> "d${space}MMMM yyyy"
+            Language.AMERICAN_ENGLISH -> "MMMM${space}d, yyyy"
         }
 
     private fun format(pattern: String, date: LocalDate): String =

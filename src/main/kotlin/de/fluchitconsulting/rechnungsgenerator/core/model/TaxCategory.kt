@@ -203,7 +203,7 @@ enum class TaxCategory(
             Language.GERMAN -> {
                 germanDefaultReason
             }
-            Language.BRITISH_ENGLISH -> {
+            Language.BRITISH_ENGLISH, Language.AMERICAN_ENGLISH -> {
                 when (this) {
                     STANDARD, ZERO_RATED, EXEMPT, OUT_OF_SCOPE -> null
                     REVERSE_CHARGE -> "Reverse charge"

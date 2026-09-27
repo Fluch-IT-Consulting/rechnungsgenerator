@@ -169,7 +169,7 @@ internal object ItemBlocks {
                         }
                     "Die Zahlung ist $deadline fällig."
                 }
-                Language.BRITISH_ENGLISH -> {
+                Language.BRITISH_ENGLISH, Language.AMERICAN_ENGLISH -> {
                     // "in full" wie das "Due in full by" im Kopf von helsinki.
                     val withoutDeduction = if (withSkonto) "in full " else ""
                     when (days) {
@@ -226,7 +226,7 @@ internal object ItemBlocks {
                 }
                 // "of 2%" und nicht "a 2%": Der Artikel hinge an der Aussprache
                 // der Zahl – a 2%, an 8%, an 11%.
-                Language.BRITISH_ENGLISH -> {
+                Language.BRITISH_ENGLISH, Language.AMERICAN_ENGLISH -> {
                     "For payment by\u00A0".escapeLatex() + deadline(firstTier) + ", an early payment discount of ".escapeLatex() +
                         Numbers.percent(firstTier.rate) + " may be deducted".escapeLatex() +
                         furtherTiers
@@ -267,7 +267,7 @@ internal object ItemBlocks {
                                 "Auf ".escapeLatex() + Numbers.amount(group.base) +
                                     " entfällt keine Umsatzsteuer: ".escapeLatex()
                             }
-                            Language.BRITISH_ENGLISH -> {
+                            Language.BRITISH_ENGLISH, Language.AMERICAN_ENGLISH -> {
                                 "No VAT is charged on ".escapeLatex() + Numbers.amount(group.base) + ": ".escapeLatex()
                             }
                         } + reason.escapeLatex() + ".".escapeLatex()
