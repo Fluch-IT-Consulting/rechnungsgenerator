@@ -111,6 +111,16 @@ Was du dir selbst beschaffen kannst, solltest du auch selbst beschaffen:
 - **Rechnungsdatum**: heute, sofern nichts anderes gesagt wird.
 - **Leistungszeitraum**: Wird ein Monat genannt ("August"), nimm den ganzen
   Monat. Frage nach, wenn gar kein Zeitraum genannt wurde.
+- **Sprache** (ADR-0025): Übernimm `sprache` aus der letzten Rechnung an
+  denselben Kunden; steht dort keine, ist sie deutsch, und der Schlüssel
+  bleibt weg. Bei einem neuen Kunden frag nur, wenn sein Land nicht `DE` ist.
+  Eine englische Rechnung ist `sprache: en-GB`, und dann schreibst du alles,
+  was aufs Blatt kommt, auf Englisch: Bezeichnungen, Beschreibungen,
+  Einleitung, Befreiungsgrund. Die Schlüssel und `einheit: Std.` bleiben
+  deutsch. Englisch geht bisher nur mit `art: rechnung`, ohne Skonto und ohne
+  die Kategorien AE, K und G – sonst bricht der Generator mit
+  `SPRACHE_NOCH_NICHT_MOEGLICH` ab; frag dann, ob die Rechnung deutsch sein
+  soll.
 - **Kundennummer**: Steht in der letzten Rechnung an denselben Kunden, dann
   übernimm sie. Sonst bleibt das Feld weg – erfinde keine, und frag nur, wenn
   der Nutzer von einer Kundennummer spricht.
@@ -191,6 +201,7 @@ soll die Zahlen prüfen können, ohne die Datei zu öffnen.
 ```yaml
 nummer: R26-012
 art: rechnung                       # optional, Vorgabe: rechnung
+sprache: en-GB                      # optional, Vorgabe: de-DE; sonst nur en-GB
 datum: 2026-09-02
 leistungszeitraum:
   von: 2026-08-01

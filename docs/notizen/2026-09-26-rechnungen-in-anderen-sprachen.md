@@ -9,6 +9,10 @@ Die Rechtslage unten stammt aus dem Gespräch und ist **nicht** gegen die
 Quellen nachgelesen. Was vor dem Umsetzen zu prüfen ist, steht in einem
 eigenen Abschnitt.
 
+Der erste Schritt ist entschieden, in ADR-0025 (#377): Englisch für die
+gewöhnliche Rechnung. Offen bleibt, was dort unter „Nicht in diesem Schritt“
+steht.
+
 ## Festgelegt
 
 - **Einsprachig.** Jede Rechnung steht ganz in einer Sprache. Das Programm
