@@ -1,6 +1,7 @@
 package de.fluchitconsulting.rechnungsgenerator.core.model
 
 import de.fluchitconsulting.rechnungsgenerator.core.calculation.CalculatedInvoice
+import de.fluchitconsulting.rechnungsgenerator.core.values.Currency
 import de.fluchitconsulting.rechnungsgenerator.core.values.Design
 import de.fluchitconsulting.rechnungsgenerator.core.values.Language
 import de.fluchitconsulting.rechnungsgenerator.core.values.Money
@@ -219,6 +220,38 @@ class YamlLoaderTest : FunSpec({
                     failure.message!! shouldContain file.toString()
                     failure.message!! shouldContain "Unbekannte Sprache '$language'"
                     failure.message!! shouldContain "de-DE, en-GB, en-US"
+                }
+            }
+        }
+    }
+
+    context("waehrung (#409)") {
+        fun invoiceIn(currency: String): String = resource("rechnung.yaml").replace("nummer:", "waehrung: $currency\nnummer:")
+
+        test("ohne waehrung ist die Rechnung in Euro") {
+            YamlLoader.parseInvoice(resource("rechnung.yaml")).currency shouldBe Currency.EUR
+        }
+
+        test("waehrung wählt die Währung, ohne Rücksicht auf die Schreibweise") {
+            assertSoftly {
+                YamlLoader.parseInvoice(invoiceIn("USD")).currency shouldBe Currency.USD
+                YamlLoader.parseInvoice(invoiceIn("gbp")).currency shouldBe Currency.GBP
+                YamlLoader.parseInvoice(invoiceIn("EUR")).currency shouldBe Currency.EUR
+            }
+        }
+
+        test("eine andere Währung bricht das Lesen ab und nennt Datei und Wert") {
+            // Auch das Zeichen ist kein Code: $ ließe offen, welcher Dollar.
+            listOf("CHF", "$", "Euro").forEach { currency ->
+                withClue(currency) {
+                    val file = createTempDirectory("loader-test").resolve("rechnung.yaml")
+                    file.writeText(invoiceIn("'$currency'"))
+
+                    val failure = shouldThrow<InputFileException> { YamlLoader.loadInvoice(file) }
+
+                    failure.message!! shouldContain file.toString()
+                    failure.message!! shouldContain "Unbekannte Währung '$currency'"
+                    failure.message!! shouldContain "EUR, USD, GBP"
                 }
             }
         }

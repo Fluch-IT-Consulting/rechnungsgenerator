@@ -1,5 +1,6 @@
 package de.fluchitconsulting.rechnungsgenerator.core.model
 
+import de.fluchitconsulting.rechnungsgenerator.core.values.Currency
 import de.fluchitconsulting.rechnungsgenerator.core.values.Discount
 import de.fluchitconsulting.rechnungsgenerator.core.values.Language
 import de.fluchitconsulting.rechnungsgenerator.core.values.Money
@@ -24,6 +25,10 @@ data class Invoice(
     // beim Kunden. In der Rechnung und nicht in den Stammdaten: Das Design
     // gehört zum Rechnungssteller, die Sprache zum Kunden.
     @SerialName("sprache") val language: Language = Language.GERMAN,
+    // BT-5, unabhängig von der Sprache: Die Sprache bestimmt die Schreibweise,
+    // die Währung das Zeichen (#409). Keine Vorgabe in den Stammdaten, sie
+    // landete still auf jeder Rechnung.
+    @SerialName("waehrung") val currency: Currency = Currency.EUR,
     // Leistungszeitraum: Pflichtangabe nach §14 UStG, EN 16931 BT-73/BT-74.
     @SerialName("leistungszeitraum") val servicePeriod: ServicePeriod,
     // EN 16931 BT-14, die Auftragsreferenz, vom Verkäufer vergeben: die eigene
