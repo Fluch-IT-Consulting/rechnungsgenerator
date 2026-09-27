@@ -11,6 +11,7 @@ class DateFormatTest : FunSpec({
 
     val german = DateFormat(Language.GERMAN)
     val english = DateFormat(Language.BRITISH_ENGLISH)
+    val american = DateFormat(Language.AMERICAN_ENGLISH)
 
     // Sicherstellen, dass die Formatierung nicht am Standard-Locale der JVM hängt:
     // Unter en_US wären Punkt und Komma vertauscht.
@@ -78,6 +79,18 @@ class DateFormatTest : FunSpec({
                 english.monthPeriod(LocalDate.of(2026, 12, 1), LocalDate.of(2027, 3, 31)).tex shouldBe
                     "December 2026 to March 2027"
             }
+        }
+    }
+
+    context("Amerikanisches Englisch (#407)") {
+        test("das lange Datum mit dem Monat vorn, ohne Umbruch zwischen Monat und Tag") {
+            american.date(LocalDate.of(2026, 8, 14)).tex shouldBe "August~14, 2026"
+            american.dateInMetadata(LocalDate.of(2026, 8, 14)).tex shouldBe "August 14, 2026"
+        }
+
+        test("das kurze Datum nach ISO 8601 wie im Britischen, der Monat ausgeschrieben") {
+            american.shortDate(LocalDate.of(2026, 7, 1)).tex shouldBe "2026-07-01"
+            american.servicePeriod(LocalDate.of(2026, 7, 1), LocalDate.of(2026, 7, 31)).tex shouldBe "July 2026"
         }
     }
 })

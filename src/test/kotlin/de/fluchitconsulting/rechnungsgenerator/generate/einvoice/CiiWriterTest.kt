@@ -76,7 +76,21 @@ class CiiWriterTest : FunSpec({
         val xml = CalculatedInvoice(invoice, seller).accepted().xml()
 
         xml shouldContain
-            "<ram:Content>This cancellation invoice cancels invoice R26-042 dated 14 August 2026 in full. " +
+            "<ram:Content>This cancellation invoice fully cancels invoice R26-042 dated 14 August 2026. " +
+            "Any amount already paid will be refunded.</ram:Content>"
+        xml.shouldBeValidExtended()
+    }
+
+    // Auf en-US steht dort das amerikanische Datum (#407), sonst derselbe
+    // Satz. Keine eigene Vergleichsdatei: Das XML unterscheidet sich in nichts
+    // anderem.
+    test("das Storno auf en-US nennt das Datum amerikanisch, und das XML ist gültig") {
+        val seller = YamlLoader.parseSellerConfig(resource("stammdaten.yaml"))
+        val invoice = YamlLoader.parseInvoice("sprache: en-US\n" + resource("stornorechnung.yaml"))
+        val xml = CalculatedInvoice(invoice, seller).accepted().xml()
+
+        xml shouldContain
+            "<ram:Content>This cancellation invoice fully cancels invoice R26-042 dated August 14, 2026. " +
             "Any amount already paid will be refunded.</ram:Content>"
         xml.shouldBeValidExtended()
     }

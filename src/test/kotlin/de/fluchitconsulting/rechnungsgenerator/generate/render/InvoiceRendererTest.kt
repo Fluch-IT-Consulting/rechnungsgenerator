@@ -187,20 +187,22 @@ class InvoiceRendererTest : FunSpec({
     }
 
     /**
-     * Dieselben Beispiele auf Englisch (#405), mit vorangestelltem
-     * `sprache: en-GB` wie im Pflichtangaben-Netz. Die Freitexte der Datei
-     * bleiben deutsch; festgehalten ist, was aus Kotlin kommt – Name des
-     * Dokuments, Pflichtsatz, Absetzung, Daten, Einheiten.
+     * Dieselben Beispiele auf Englisch (#405), in beiden Varianten (#407),
+     * mit vorangestelltem `sprache:` wie im Pflichtangaben-Netz. Die Freitexte
+     * der Datei bleiben deutsch; festgehalten ist, was aus Kotlin kommt – Name
+     * des Dokuments, Pflichtsatz, Absetzung, Daten, Einheiten.
      */
     test("jede Rechnungsart bekommt auf Englisch die Werte wie festgehalten") {
         val seller = YamlLoader.parseSellerConfig(resource("stammdaten.yaml"))
 
-        exampleInvoices.values.forEach { name ->
-            val invoice = YamlLoader.parseInvoice("sprache: en-GB\n" + resource("$name.yaml"))
-            val expected = "$name-en-gb-inhalt.tex"
+        listOf(Language.BRITISH_ENGLISH, Language.AMERICAN_ENGLISH).forEach { language ->
+            exampleInvoices.values.forEach { name ->
+                val invoice = YamlLoader.parseInvoice("sprache: ${language.tag}\n" + resource("$name.yaml"))
+                val expected = "$name-${language.tag.lowercase()}-inhalt.tex"
 
-            withClue(name) {
-                contentOf(InvoiceRenderer.values(CalculatedInvoice(invoice, seller).accepted())) shouldBe resource(expected)
+                withClue(expected) {
+                    contentOf(InvoiceRenderer.values(CalculatedInvoice(invoice, seller).accepted())) shouldBe resource(expected)
+                }
             }
         }
     }
@@ -223,22 +225,26 @@ class InvoiceRendererTest : FunSpec({
     }
 
     /**
-     * Je Design der Volltext einer englischen Rechnung (#377), wie der
-     * deutschen oben eine Frage und keine Aufgabe. Was aus Kotlin kommt –
-     * Daten, Einheiten, Sätze, das Land – steht hier wörtlich; die Wörter der
-     * Designs stehen als `\wort…` da und in ihren Sprachdateien.
+     * Je Design der Volltext einer englischen Rechnung (#377) und einer
+     * amerikanischen (#407), wie der deutschen oben eine Frage und keine
+     * Aufgabe. Was aus Kotlin kommt – Daten, Einheiten, Sätze, das Land –
+     * steht hier wörtlich; die Wörter der Designs stehen als `\wort…` da und
+     * in ihren Sprachdateien.
      */
-    test("eine englische Rechnung wird in jedem Design gesetzt wie festgehalten") {
+    test("eine englische und eine amerikanische Rechnung werden in jedem Design gesetzt wie festgehalten") {
         val seller = YamlLoader.parseSellerConfig(resource("stammdaten.yaml"))
-        val invoice = YamlLoader.parseInvoice(resource("englische-rechnung.yaml"))
 
-        mapOf(
-            seller to "englische-rechnung-erwartet.tex",
-            seller.copy(design = Design.PRAG, logo = exampleLogo) to "prag-englische-rechnung-erwartet.tex",
-        ).forEach { (sellerConfig, expected) ->
-            withClue(expected) {
-                InvoiceRenderer.render(CalculatedInvoice(invoice, sellerConfig).accepted()).sources.tex shouldBe
-                    resource(expected)
+        listOf("englische-rechnung", "amerikanische-rechnung").forEach { name ->
+            val invoice = YamlLoader.parseInvoice(resource("$name.yaml"))
+
+            mapOf(
+                seller to "$name-erwartet.tex",
+                seller.copy(design = Design.PRAG, logo = exampleLogo) to "prag-$name-erwartet.tex",
+            ).forEach { (sellerConfig, expected) ->
+                withClue(expected) {
+                    InvoiceRenderer.render(CalculatedInvoice(invoice, sellerConfig).accepted()).sources.tex shouldBe
+                        resource(expected)
+                }
             }
         }
     }
@@ -707,6 +713,15 @@ class InvoiceRendererTest : FunSpec({
         test("ohne Pflichtsatz, mit dem englischen Schlusssatz") {
             valueOf(TemplateValue.ARTHINWEIS, english()) shouldBe ""
             valueOf(TemplateValue.SCHLUSSSATZ, english()) shouldBe "Thank you for your trust and the pleasant collaboration."
+        }
+
+        test("auf en-US das Datum amerikanisch, im Kopf und in den Metadaten (#407)") {
+            val american = english().copy(language = Language.AMERICAN_ENGLISH)
+            val metadata = InvoiceRenderer.render(CalculatedInvoice(american, config).accepted()).sources.xmpMetadata
+
+            valueOf(TemplateValue.RECHNUNGSDATUM, american) shouldBe "August~14, 2026"
+            metadata shouldContain "\\Subject{Invoice R26-001 dated August 14, 2026}"
+            metadata shouldContain "\\Language{en-US}"
         }
     }
 
