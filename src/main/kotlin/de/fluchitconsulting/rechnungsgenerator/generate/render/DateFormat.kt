@@ -40,7 +40,7 @@ class DateFormat(
      *
      * Nicht für die XMP-Metadaten, dort gilt [dateInMetadata].
      */
-    fun date(date: LocalDate): Latex = format(longDatePattern(" "), date).escapeLatex()
+    fun date(date: LocalDate): Latex = format(longDatePattern("\u00A0"), date).escapeLatex()
 
     /**
      * Dasselbe Datum mit gewöhnlichem Leerzeichen, für die .xmpdata-Datei.
@@ -62,7 +62,7 @@ class DateFormat(
         if (start.dayOfMonth == 1 && end == end.withDayOfMonth(end.lengthOfMonth()) && start.withDayOfMonth(1) == end.withDayOfMonth(1)) {
             format(MONTH_WITH_YEAR, start).escapeLatex()
         } else {
-            "${shortDateText(start)} – ${shortDateText(end)}".escapeLatex()
+            "${shortDateText(start)}\u2009–\u2009${shortDateText(end)}".escapeLatex()
         }
 
     /**
