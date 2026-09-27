@@ -41,6 +41,7 @@ internal object InvoiceRules {
             FinalInvoiceRules.check(calculated),
             PaymentTermRules.check(calculated),
             SkontoRules.check(calculated),
+            LanguageRules.check(calculated),
             PlausibilityHints.check(calculated),
             VatIdCheckRules.check(calculated),
         ).flatten()

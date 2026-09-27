@@ -3,6 +3,7 @@ package de.fluchitconsulting.rechnungsgenerator.core.model
 import de.fluchitconsulting.rechnungsgenerator.core.values.Bic
 import de.fluchitconsulting.rechnungsgenerator.core.values.Iban
 import de.fluchitconsulting.rechnungsgenerator.core.values.InvoiceNumberPattern
+import de.fluchitconsulting.rechnungsgenerator.core.values.Language
 import de.fluchitconsulting.rechnungsgenerator.core.values.Money
 import de.fluchitconsulting.rechnungsgenerator.core.values.Percent
 import de.fluchitconsulting.rechnungsgenerator.core.values.Price
@@ -93,10 +94,12 @@ fun testInvoice(
     buyerIdentifier: String? = null,
     salesOrderReference: String? = null,
     introduction: String? = null,
+    language: Language = Language.GERMAN,
 ) = Invoice(
     number = number,
     issueDate = LocalDate.of(2026, 8, 14),
     type = type,
+    language = language,
     receivedOn = receivedOn,
     servicePeriod = ServicePeriod(start = LocalDate.of(2026, 7, 1), end = LocalDate.of(2026, 7, 31)),
     customer =
