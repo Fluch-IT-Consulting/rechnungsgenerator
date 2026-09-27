@@ -68,7 +68,7 @@ object CiiWriter {
                 val mandatoryNote =
                     calculated.invoice.type
                         .mandatoryNote(calculated.invoice.language)
-                        ?.toPlainText(InvoiceVariableResolver(acceptedInvoice))
+                        ?.toPlainText(calculated.invoice.language, InvoiceVariableResolver(acceptedInvoice))
                 listOfNotNull(calculated.invoice.introduction, calculated.invoice.note, mandatoryNote).forEach { note ->
                     element("ram:IncludedNote") { element("ram:Content", note) }
                 }

@@ -2,6 +2,7 @@ package de.fluchitconsulting.rechnungsgenerator.generate.render
 
 import de.fluchitconsulting.rechnungsgenerator.core.text.TextTemplate
 import de.fluchitconsulting.rechnungsgenerator.core.text.TextValue
+import de.fluchitconsulting.rechnungsgenerator.core.values.Language
 import io.kotest.assertions.assertSoftly
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.FunSpec
@@ -59,32 +60,32 @@ class LatexTest : FunSpec({
         test("maskiert festen Text und Werte, jeden Teil genau einmal") {
             TextTemplate
                 .parse<TestVariable>("50 % von <<NUMBER>> & mehr")
-                .toLatex { TextValue.Text("Meier & Söhne") }
+                .toLatex(DateFormat(Language.GERMAN)) { TextValue.Text("Meier & Söhne") }
                 .tex shouldBe "50 \\% von \\zusammen{Meier \\& Söhne} \\& mehr"
         }
 
         test("ein Datum steht ausgeschrieben und zusammengehalten") {
             TextTemplate
                 .parse<TestVariable>("vom <<DATE>>")
-                .toLatex { TextValue.Date(LocalDate.of(2026, 7, 15)) }
+                .toLatex(DateFormat(Language.GERMAN)) { TextValue.Date(LocalDate.of(2026, 7, 15)) }
                 .tex shouldBe "vom \\zusammen{15.~Juli 2026}"
         }
 
         test("ein Wert, der selbst einen Platzhalter enthält, ist Inhalt") {
             TextTemplate
                 .parse<TestVariable>("<<NUMBER>>")
-                .toLatex { TextValue.Text("<<DATE>>") }
+                .toLatex(DateFormat(Language.GERMAN)) { TextValue.Text("<<DATE>>") }
                 .tex shouldBe "\\zusammen{<<DATE>>}"
         }
 
         test("ohne Variablen dasselbe wie escapeLatex(), und der Resolver wird nicht gefragt") {
-            TextTemplate.parse<TestVariable>("Meier & Söhne").toLatex { error("nicht gefragt: $it") } shouldBe
+            TextTemplate.parse<TestVariable>("Meier & Söhne").toLatex(DateFormat(Language.GERMAN)) { error("nicht gefragt: $it") } shouldBe
                 "Meier & Söhne".escapeLatex()
         }
 
         test("kann der Resolver eine Variable nicht auflösen, kommt seine Ausnahme durch") {
             shouldThrow<IllegalStateException> {
-                TextTemplate.parse<TestVariable>("<<DATE>>").toLatex { error("kein Wert für <<$it>>") }
+                TextTemplate.parse<TestVariable>("<<DATE>>").toLatex(DateFormat(Language.GERMAN)) { error("kein Wert für <<$it>>") }
             }.message shouldBe "kein Wert für <<DATE>>"
         }
     }

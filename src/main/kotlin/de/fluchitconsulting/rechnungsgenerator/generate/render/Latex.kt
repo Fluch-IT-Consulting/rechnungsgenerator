@@ -15,7 +15,7 @@ import de.fluchitconsulting.rechnungsgenerator.core.text.VariableResolver
  * kommt nichts ins Dokument, das nicht einen der drei Wege genommen hat:
  *
  *  - [escapeLatex] für alles, was aus den YAML-Dateien stammt,
- *  - [GermanFormat] für Daten, [Numbers] für Beträge, Sätze und Mengen,
+ *  - [DateFormat] für Daten, [Numbers] für Beträge, Sätze und Mengen,
  *  - [raw] für Markup – die eine benannte Luke, absichtlich zählbar.
  *
  * `value class`: Zur Laufzeit bleibt es eine Zeichenkette, es entsteht kein
@@ -100,7 +100,7 @@ fun String.escapeLatex(): Latex =
                     // Diese beiden sind in LaTeX Akzent-Befehle, keine Zeichen.
                     '~' -> append("\\textasciitilde{}")
                     '^' -> append("\\textasciicircum{}")
-                    // Das geschützte Leerzeichen aus GermanFormat wird zur
+                    // Das geschützte Leerzeichen aus DateFormat wird zur
                     // Tilde – die ist in LaTeX kein Zeichen, sondern die
                     // Abkürzung für \nobreakspace (latex.ltx: \def~{...}).
                     // Sie wird also NICHT von der Zeile darüber wieder
@@ -129,7 +129,8 @@ fun String.escapeLatex(): Latex =
 
 /**
  * Setzt einen Wortlaut mit Variablen: den festen Text maskiert, jeden Wert, den
- * [resolver] liefert, so, wie er im Fließtext stehen muss.
+ * [resolver] liefert, so, wie er im Fließtext stehen muss – ein Datum in
+ * [format], der Sprache des Wortlauts.
  *
  * Maskiert wird jeder Teil für sich und genau einmal. Erst einsetzen und dann
  * maskieren hieße, einen schon gesetzten Wert ein zweites Mal anzufassen – aus
@@ -139,13 +140,16 @@ fun String.escapeLatex(): Latex =
  * Jeder Wert steht in \zusammen: Mitten im Satz dürfte "15. Juli 2026" sonst
  * hinter dem Tag umbrechen und eine Nummer wie "R26-042" am Bindestrich.
  */
-fun <V> TextTemplate<V>.toLatex(resolver: VariableResolver<V>): Latex =
+fun <V> TextTemplate<V>.toLatex(
+    format: DateFormat,
+    resolver: VariableResolver<V>,
+): Latex =
     map(
         text = { it.escapeLatex() },
         variable = { variable ->
             when (val value = resolver.resolve(variable)) {
                 is TextValue.Text -> together(value.text.escapeLatex())
-                is TextValue.Date -> together(GermanFormat.date(value.date))
+                is TextValue.Date -> together(format.date(value.date))
             }
         },
     ).joinToLatex()

@@ -30,7 +30,7 @@ fun CalculatedInvoice.verdict(): Verdict =
         }
     }
 
-/** Komma in einer Zahl, Leerzeichen vor dem Prozentzeichen, Währungszeichen – die Form von `GermanFormat`. */
+/** Komma in einer Zahl, Leerzeichen vor dem Prozentzeichen, Währungszeichen – die Form des Blatts. */
 private val REPORT_FORM = Regex("""\d,\d|\d %|€""")
 
 fun CalculatedInvoice.aborts(): List<Finding> = findings().filter { it.severity == Severity.ABORT }

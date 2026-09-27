@@ -77,7 +77,7 @@ internal object ItemBlocks {
                 // Auch hier die Beschriftung der Rechnungsart: Auf einer
                 // Abschlagsrechnung ist der Zeitraum einer Position genauso eine
                 // Prognose wie der Zeitraum der ganzen Rechnung.
-                item.servicePeriod?.let { add("${type.itemPeriodLabel(invoice.language)}: ".escapeLatex() + servicePeriod(it, type)) }
+                item.servicePeriod?.let { add("${type.itemPeriodLabel(invoice.language)}: ".escapeLatex() + servicePeriod(it, invoice)) }
             }
         val name = item.name.escapeLatex()
         if (details.isEmpty()) return name
@@ -131,7 +131,10 @@ internal object ItemBlocks {
     fun typeNote(acceptedInvoice: AcceptedInvoice): Latex =
         acceptedInvoice.calculated.invoice
             .let { it.type.mandatoryNote(it.language) }
-            ?.let { Latex.macro(TemplateMacro.HINWEISABSATZ, listOf(it.toLatex(InvoiceVariableResolver(acceptedInvoice)))) }
+            ?.let {
+                val format = DateFormat(acceptedInvoice.calculated.invoice.language)
+                Latex.macro(TemplateMacro.HINWEISABSATZ, listOf(it.toLatex(format, InvoiceVariableResolver(acceptedInvoice))))
+            }
             ?: Latex.EMPTY
 
     /**
@@ -206,7 +209,9 @@ internal object ItemBlocks {
             }
         }
 
-        fun deadline(stufe: SkontoTier): Latex = together(GermanFormat.date(calculatedInvoice.skontoUntil(stufe)))
+        val format = DateFormat(calculatedInvoice.invoice.language)
+
+        fun deadline(stufe: SkontoTier): Latex = together(format.date(calculatedInvoice.skontoUntil(stufe)))
 
         val firstTier = stufen.first()
         val sentence =

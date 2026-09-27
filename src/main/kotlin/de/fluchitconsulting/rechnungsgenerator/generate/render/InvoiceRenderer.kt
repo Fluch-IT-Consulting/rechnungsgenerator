@@ -2,6 +2,7 @@ package de.fluchitconsulting.rechnungsgenerator.generate.render
 
 import de.fluchitconsulting.rechnungsgenerator.core.accepted.AcceptedInvoice
 import de.fluchitconsulting.rechnungsgenerator.core.model.Logo
+import de.fluchitconsulting.rechnungsgenerator.core.values.Language
 import de.fluchitconsulting.rechnungsgenerator.generate.toolchain.PdfSources
 
 /**
@@ -166,7 +167,7 @@ object InvoiceRenderer {
                 invoice.number.escapeLatex()
             }
             TemplateValue.RECHNUNGSDATUM -> {
-                GermanFormat.date(invoice.issueDate)
+                DateFormat(invoice.language).date(invoice.issueDate)
             }
             TemplateValue.EMPFAENGER -> {
                 MetadataBlocks.recipient(calculatedInvoice)
@@ -196,7 +197,7 @@ object InvoiceRenderer {
             // Pflichtangabe nach §14 Abs. 4 Nr. 6 UStG, geschrieben wie die Art
             // es verlangt.
             TemplateValue.LEISTUNGSZEITRAUM -> {
-                servicePeriod(invoice.servicePeriod, invoice.type)
+                servicePeriod(invoice.servicePeriod, invoice)
             }
             TemplateValue.VEREINNAHMT_AM -> {
                 MetadataBlocks.receivedOn(acceptedInvoice)
@@ -210,7 +211,7 @@ object InvoiceRenderer {
             // Ohne eines bleibt der Wert leer, und die Vorlage lässt die Zeile
             // samt Beschriftung weg.
             TemplateValue.ZAHLUNGSZIEL -> {
-                calculatedInvoice.dueDate?.let { GermanFormat.date(it) } ?: Latex.EMPTY
+                calculatedInvoice.dueDate?.let { DateFormat(invoice.language).date(it) } ?: Latex.EMPTY
             }
             TemplateValue.EINLEITUNG -> {
                 invoice.introduction.orEmpty().escapeLatex()
@@ -264,12 +265,18 @@ object InvoiceRenderer {
     private fun renderMetadata(acceptedInvoice: AcceptedInvoice): String {
         val calculatedInvoice = acceptedInvoice.calculated
         val invoice = calculatedInvoice.invoice
-        val document = invoice.type.documentName.escapeLatex() + " ".escapeLatex() + invoice.number.escapeLatex()
+        val language = invoice.language
+        val document = invoice.type.documentName(language).escapeLatex() + " ".escapeLatex() + invoice.number.escapeLatex()
+        val dated =
+            when (language) {
+                Language.GERMAN -> " vom "
+                Language.BRITISH_ENGLISH -> " dated "
+            }
         return listOf(
             xmpField("Title", document),
             xmpField("Author", calculatedInvoice.config.companyName.escapeLatex()),
-            xmpField("Subject", document + " vom ".escapeLatex() + GermanFormat.dateInMetadata(invoice.issueDate)),
-            xmpField("Language", "de-DE".escapeLatex()),
+            xmpField("Subject", document + dated.escapeLatex() + DateFormat(language).dateInMetadata(invoice.issueDate)),
+            xmpField("Language", language.tag.escapeLatex()),
         ).joinToLatex("\n").tex
     }
 

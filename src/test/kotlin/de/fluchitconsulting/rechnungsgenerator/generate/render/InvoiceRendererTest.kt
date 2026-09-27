@@ -549,8 +549,8 @@ class InvoiceRendererTest : FunSpec({
     }
 
     context("Englisch (#377)") {
-        // Nur die Sätze aus Kotlin. Daten, Beschriftungen der Vorlage und die
-        // Schreibweise der Zahlen folgen der Sprache in eigenen Schritten.
+        // Was aus Kotlin kommt. Beschriftungen der Vorlage und die
+        // Schreibweise der Zahlen stehen in den Sprachdateien der Designs.
         fun english(
             items: List<LineItem> = listOf(testItem()),
             paymentTermDaysOverride: Int? = null,
@@ -587,6 +587,28 @@ class InvoiceRendererTest : FunSpec({
 
             valueOf(TemplateValue.STEUERHINWEISE, english(items = listOf(item))) shouldBe
                 "\\steuerhinweis{No VAT is charged on \\betrag{100.00}: Not subject to German VAT.}"
+        }
+
+        test("Rechnungsdatum, Zahlungsziel und Zeitraum britisch") {
+            valueOf(TemplateValue.RECHNUNGSDATUM, english()) shouldBe "14~August 2026"
+            valueOf(TemplateValue.ZAHLUNGSZIEL, english()) shouldBe "28~August 2026"
+            valueOf(TemplateValue.LEISTUNGSZEITRAUM, english()) shouldBe "July 2026"
+        }
+
+        test("das Land in der Sprache der Rechnung") {
+            val invoice = english()
+            val inBritain =
+                invoice.copy(customer = invoice.customer.copy(address = invoice.customer.address.copy(countryCode = CountryCode("GB"))))
+
+            valueOf(TemplateValue.EMPFAENGER, inBritain) shouldContain "\\landzeile{United Kingdom}"
+        }
+
+        test("die Metadaten nennen Sprache, Titel und Betreff auf Englisch") {
+            val metadata = InvoiceRenderer.render(CalculatedInvoice(english(), config).accepted()).sources.xmpMetadata
+
+            metadata shouldContain "\\Title{Invoice R26-001}"
+            metadata shouldContain "\\Subject{Invoice R26-001 dated 14 August 2026}"
+            metadata shouldContain "\\Language{en-GB}"
         }
 
         test("ohne Pflichtsatz, mit dem englischen Schlusssatz") {

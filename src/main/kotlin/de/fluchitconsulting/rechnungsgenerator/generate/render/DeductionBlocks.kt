@@ -101,10 +101,12 @@ internal object DeductionBlocks {
     private fun describePrepayment(deduction: Deduction): Latex {
         val abschlag = deduction.deducted.prepayment
         val vereinnahmtAm = deduction.receivedOn
+        // Deutsch, weil die Absetzung auf Englisch vorher wirft.
+        val format = DateFormat(Language.GERMAN)
         val heading =
             "Abschlagsrechnung ".escapeLatex() + abschlag.invoiceNumber.escapeLatex() + " vom ".escapeLatex() +
-                GermanFormat.shortDate(abschlag.issueDate) + ", vereinnahmt am ".escapeLatex() +
-                GermanFormat.shortDate(vereinnahmtAm)
+                format.shortDate(abschlag.issueDate) + ", vereinnahmt am ".escapeLatex() +
+                format.shortDate(vereinnahmtAm)
         val anteile =
             abschlag.taxShares
                 .map { anteil ->
