@@ -1,0 +1,38 @@
+# Fiktive Rechnung auf Englisch (#406) an einen Unternehmer in Österreich:
+# Eine sonstige Leistung an einen Unternehmer in einem anderen
+# Mitgliedstaat wird dort ausgeführt, und der Kunde schuldet die Steuer
+# (§3a Abs. 2, §13b Abs. 1 UStG). Kategorie AE ohne eigenen Grund, damit der
+# vorgesehene Wortlaut auf dem Blatt steht, dazu die USt-IdNr. des Kunden
+# und die Bestätigungsabfrage, ohne die AE in die EU abbricht.
+sprache: en-GB
+nummer: R26-052
+datum: 2026-08-14
+leistungszeitraum:
+  von: 2026-07-01
+  bis: 2026-07-31
+kunde:
+  name: Beispiel Software GmbH
+  anschrift:
+    strasse: Ringstraße 1
+    plz: "1010"
+    ort: Wien
+    land: AT
+  umsatzsteuer-id: ATU12345678
+  ust-id-geprueft:
+    am: 2026-08-01
+    verfahren: qualifiziert
+    nachweis: BZSt-Protokoll 2026-08-01-4711
+positionen:
+  - bezeichnung: IT consulting
+    beschreibung: Framework agreement of 1 February 2026
+    menge: 40
+    einheit: Std.
+    einzelpreis: 95.00
+    ust-satz: 0
+    steuerkategorie: AE
+  - bezeichnung: Workshop
+    menge: 1
+    einheit: Tage
+    einzelpreis: 1200.00
+    ust-satz: 0
+    steuerkategorie: AE

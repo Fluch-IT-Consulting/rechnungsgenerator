@@ -4,6 +4,7 @@ import de.fluchitconsulting.rechnungsgenerator.core.accepted.AcceptedInvoice
 import de.fluchitconsulting.rechnungsgenerator.core.accepted.Verdict
 import de.fluchitconsulting.rechnungsgenerator.core.calculation.CalculatedInvoice
 import de.fluchitconsulting.rechnungsgenerator.core.model.InvoiceVariable
+import de.fluchitconsulting.rechnungsgenerator.core.model.TaxCategory
 import de.fluchitconsulting.rechnungsgenerator.core.model.YamlLoader
 import de.fluchitconsulting.rechnungsgenerator.core.model.exampleInvoices
 import de.fluchitconsulting.rechnungsgenerator.core.rules.Rule
@@ -361,6 +362,21 @@ class PflichtangabenTest : FunSpec({
         }
     }
 
+    // Reverse Charge auf Englisch (#406), an einen Unternehmer in Österreich:
+    // neben O der häufigste Fall einer englischen Rechnung. Der Grund steht
+    // hier wörtlich, aus demselben Grund wie ÖSTERREICH oben; dass er
+    // überhaupt dasteht und die USt-IdNr. des Kunden auch, prüft verify.
+    for (design in designs) {
+        test("Reverse Charge auf Englisch im Design ${design.name}: gültig, mit Grund und USt-IdNr. des Kunden") {
+            val (calculated, sheet) =
+                typesetAndCheck("reverse-charge", design, design.sellerConfig, targetName = "${design.name}-reverse-charge")
+
+            calculated.vatGroups.map { it.category } shouldBe listOf(TaxCategory.REVERSE_CHARGE)
+            sheet.shows("Hinweis auf die Steuerschuldnerschaft", "No VAT is charged on €5,000.00: Reverse charge.")
+            sheet.lacks("Deutsch auf dem Blatt", "Steuerschuldnerschaft", "Rechnung", "Umsatzsteuer")
+        }
+    }
+
     // Jedes Beispiel auf Englisch (#377): Es bricht mit
     // SPRACHE_NOCH_NICHT_MOEGLICH ab, oder es entsteht ein PDF, samt E-Rechnung.
     // Ein Drittes gibt es nicht – die Regel und die werfenden Zweige der Sätze
@@ -561,6 +577,9 @@ private fun Sheet.verify(
     shows("Kunde", invoice.customer.name)
     shows("Anschrift Kunde", invoice.customer.address.street)
     shows("Ort Kunde", "${invoice.customer.address.postalCode} ${invoice.customer.address.city}")
+    // Die USt-IdNr. des Kunden (BT-48), Pflicht bei AE und K (§14a Abs. 1
+    // UStG). Das Design setzt sie, sobald die Datei sie nennt.
+    invoice.customer.vatId?.let { shows("USt-IdNr. des Kunden", it.value, it.formatted()) }
 
     // Nr. 2: Steuernummer oder USt-IdNr. – eine genügt.
     shows(
