@@ -168,9 +168,6 @@ enum class Rule(val severity: Severity) {
     SKONTOSTUFE_WERTLOS(Severity.ABORT),
     SKONTOSATZ_UNGUELTIG(Severity.ABORT),
 
-    // Sprache (#377)
-    SPRACHE_NOCH_NICHT_MOEGLICH(Severity.ABORT),
-
     // Bestätigungsabfrage der USt-IdNr.
     BESTAETIGUNGSABFRAGE_FEHLT(Severity.ABORT),
     BESTAETIGUNGSABFRAGE_NACH_RECHNUNGSDATUM(Severity.ABORT),

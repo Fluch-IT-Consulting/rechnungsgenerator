@@ -6,6 +6,7 @@ import de.fluchitconsulting.rechnungsgenerator.core.model.VatIdConfirmation
 import de.fluchitconsulting.rechnungsgenerator.core.model.testInvoice
 import de.fluchitconsulting.rechnungsgenerator.core.model.testItem
 import de.fluchitconsulting.rechnungsgenerator.core.model.testSellerConfig
+import de.fluchitconsulting.rechnungsgenerator.core.values.Language
 import de.fluchitconsulting.rechnungsgenerator.core.values.Money
 import de.fluchitconsulting.rechnungsgenerator.core.values.VatId
 import io.kotest.assertions.withClue
@@ -144,6 +145,19 @@ class TaxCategoryRulesTest : FunSpec({
         // nicht im Renderer.
         TaxCategory.entries.filter { it.requiresReason }.forEach { category ->
             withClue("${category.code} (${category.label})") { category.requiresZeroRate shouldBe true }
+        }
+    }
+
+    test("jede Sprache hat einen Vorgabegrund genau für die Kategorien, die einen mitbringen") {
+        // Darauf verlässt sich BEFREIUNGSGRUND_FEHLT: Es fragt hasDefaultReason
+        // ohne Sprache. Fehlte einer Sprache der Grund einer Kategorie, stünde
+        // auf ihrem Blatt keiner, und keine Regel schlüge an.
+        TaxCategory.entries.forEach { category ->
+            Language.entries.forEach { language ->
+                withClue("${category.code} auf $language") {
+                    (category.defaultReason(language) != null) shouldBe category.hasDefaultReason
+                }
+            }
         }
     }
 

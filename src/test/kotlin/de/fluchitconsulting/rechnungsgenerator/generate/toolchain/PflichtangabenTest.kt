@@ -1,13 +1,11 @@
 package de.fluchitconsulting.rechnungsgenerator.generate.toolchain
 
-import de.fluchitconsulting.rechnungsgenerator.core.accepted.AcceptedInvoice
-import de.fluchitconsulting.rechnungsgenerator.core.accepted.Verdict
+import de.fluchitconsulting.rechnungsgenerator.core.accepted.accepted
 import de.fluchitconsulting.rechnungsgenerator.core.calculation.CalculatedInvoice
 import de.fluchitconsulting.rechnungsgenerator.core.model.InvoiceVariable
 import de.fluchitconsulting.rechnungsgenerator.core.model.TaxCategory
 import de.fluchitconsulting.rechnungsgenerator.core.model.YamlLoader
 import de.fluchitconsulting.rechnungsgenerator.core.model.exampleInvoices
-import de.fluchitconsulting.rechnungsgenerator.core.rules.Rule
 import de.fluchitconsulting.rechnungsgenerator.core.text.TextTemplate
 import de.fluchitconsulting.rechnungsgenerator.core.text.TextValue
 import de.fluchitconsulting.rechnungsgenerator.core.text.VariableResolver
@@ -393,29 +391,18 @@ class PflichtangabenTest : FunSpec({
         }
     }
 
-    // Jedes Beispiel auf Englisch (#377): Es bricht mit
-    // SPRACHE_NOCH_NICHT_MOEGLICH ab, oder es entsteht ein PDF, samt E-Rechnung.
-    // Ein Drittes gibt es nicht – die Regel und die werfenden Zweige der Sätze
-    // stehen an verschiedenen Stellen, und dieser Test hält sie zusammen.
-    // Nimmt die Regel etwas an, dessen Satz noch wirft, bricht er hier mit
-    // der Ausnahme ab; lehnt sie etwas ab, das gesetzt werden könnte, ist
-    // das ein Befund, den man sieht.
+    // Jedes Beispiel auf Englisch (#377, #406): Es entsteht ein PDF, samt
+    // dem XML der E-Rechnung. Die Freitexte der Dateien bleiben deutsch;
+    // geprüft ist, dass jeder Satz aus Kotlin einen englischen Wortlaut hat.
     for ((_, file) in exampleInvoices) {
-        test("$file auf Englisch: Abbruch SPRACHE_NOCH_NICHT_MOEGLICH oder ein PDF") {
+        test("$file auf Englisch: gültiges PDF/A-1b mit allen Pflichtangaben") {
             val input = workDir.resolve("$file-englisch.yaml")
             input.writeText("sprache: en-GB\n" + Path.of("src/test/resources/$file.yaml").readText())
             val calculated = CalculatedInvoice(YamlLoader.loadInvoice(input), YamlLoader.loadSellerConfig(sellerConfig))
 
-            when (val verdict = AcceptedInvoice.check(calculated)) {
-                is Verdict.Rejected -> {
-                    verdict.aborts.map { it.rule }.toSet() shouldBe setOf(Rule.SPRACHE_NOCH_NICHT_MOEGLICH)
-                }
-                is Verdict.Accepted -> {
-                    CiiWriter.write(verdict.invoice)
-                    designs.forEach { design ->
-                        typesetAndCheck(file, design, design.sellerConfig, targetName = "${design.name}-$file-englisch", input = input)
-                    }
-                }
+            CiiWriter.write(calculated.accepted())
+            designs.forEach { design ->
+                typesetAndCheck(file, design, design.sellerConfig, targetName = "${design.name}-$file-englisch", input = input)
             }
         }
     }
