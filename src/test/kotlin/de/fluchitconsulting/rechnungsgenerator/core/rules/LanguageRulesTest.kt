@@ -54,8 +54,17 @@ class LanguageRulesTest : FunSpec({
         }
     }
 
-    test("auf Englisch bricht jede Art außer der Rechnung ab, mit einem Befund") {
-        InvoiceType.entries.filter { it != InvoiceType.INVOICE }.forEach { type ->
+    // Die Arten, die es auf Englisch schon gibt; mit jedem Schritt eine mehr (#405).
+    val englishTypes = setOf(InvoiceType.INVOICE, InvoiceType.PARTIAL)
+
+    test("auf Englisch wird jede Art angenommen, deren Sätze übersetzt sind") {
+        englishTypes.forEach { type ->
+            withClue(type) { languageFindings(testInvoice(type = type, language = english)).shouldBeEmpty() }
+        }
+    }
+
+    test("auf Englisch bricht jede übrige Art ab, mit einem Befund") {
+        (InvoiceType.entries - englishTypes).forEach { type ->
             withClue(type) {
                 val findings = languageFindings(testInvoice(type = type, language = english))
 

@@ -213,12 +213,15 @@ enum class InvoiceType(
             Language.GERMAN -> {
                 documentName
             }
-            // "Invoice" und nicht "Bill" (CONTEXT.md). Die übrigen Arten
-            // bekommen ihren Namen mit ihrem Schritt.
+            // "Invoice" und nicht "Bill" (CONTEXT.md). "Partial invoice", wie
+            // Code 326 in der Codeliste heißt – nicht "Interim invoice" oder
+            // "Progress invoice", die beide nach einem Abschlag klingen. Die
+            // übrigen Arten bekommen ihren Namen mit ihrem Schritt.
             Language.BRITISH_ENGLISH -> {
                 when (this) {
                     INVOICE -> "Invoice"
-                    PARTIAL, PREPAYMENT, FINAL, CANCELLATION -> language.notYet("Den Namen der $documentName")
+                    PARTIAL -> "Partial invoice"
+                    PREPAYMENT, FINAL, CANCELLATION -> language.notYet("Den Namen der $documentName")
                 }
             }
         }

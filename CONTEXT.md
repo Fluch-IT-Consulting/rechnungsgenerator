@@ -32,6 +32,9 @@ Endgültige Rechnung über eine abgeschlossene Teilleistung. Sie wird nie
 abgesetzt und braucht keine Schlussrechnung – der Unterschied zur
 Abschlagsrechnung ist nicht die Höhe, sondern ob die Leistung erbracht ist.
 _Vermeiden_: Zwischenrechnung, Abschlagsrechnung (für diesen Fall)
+_Englisch_: Partial invoice – _Vermeiden_: Interim invoice, Progress invoice
+(beide klingen nach einem Abschlag auf noch nicht Erbrachtes), Instalment
+invoice (klingt nach Ratenzahlung)
 
 **Stornorechnung**:
 Das Dokument, das eine bereits ausgestellte Rechnung vollständig aufhebt. Es
