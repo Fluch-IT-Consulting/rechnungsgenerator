@@ -5,6 +5,7 @@ import de.fluchitconsulting.rechnungsgenerator.core.calculation.CalculatedInvoic
 import de.fluchitconsulting.rechnungsgenerator.core.model.Address
 import de.fluchitconsulting.rechnungsgenerator.core.rules.InvoiceKind
 import de.fluchitconsulting.rechnungsgenerator.core.values.CountryCode
+import de.fluchitconsulting.rechnungsgenerator.core.values.Language
 import java.util.Locale
 
 /**
@@ -15,7 +16,7 @@ import java.util.Locale
  *
  * Eine **einzelne Angabe** steht dagegen direkt im `when` von
  * [InvoiceRenderer.values] – auch mit Formatierschritt (#244). Dort stehen
- * `formatted()` und `GermanFormat.date` seit jeher bei USTID, IBAN und
+ * `formatted()` und `DateFormat.date` seit jeher bei USTID, IBAN und
  * RECHNUNGSDATUM; eine Zwischenstufe daneben, die nur weiterreicht, hieße
  * beim Lesen von `values()` einen Sprung in diese Datei, nur um zu erfahren,
  * dass hier keine Entscheidung steht.
@@ -35,7 +36,7 @@ internal object MetadataBlocks {
         return buildList {
             add(customer.name.escapeLatex())
             customer.contactPoint?.let { add(it.escapeLatex()) }
-            addAll(addressLines(customer.address, showCountry = !calculatedInvoice.isDomestic))
+            addAll(addressLines(customer.address, showCountry = !calculatedInvoice.isDomestic, calculatedInvoice.invoice.language))
         }.joinToLatex(Latex.macro(TemplateMacro.ZEILENWECHSEL))
     }
 
@@ -49,17 +50,20 @@ internal object MetadataBlocks {
     private fun addressLines(
         address: Address,
         showCountry: Boolean,
+        language: Language,
     ): List<Latex> =
         buildList {
             add(address.street.escapeLatex())
             add("${address.postalCode} ${address.city}".escapeLatex())
             // Auf einer Inlandsrechnung wäre die Landzeile überflüssig.
-            if (showCountry) add(Latex.macro(TemplateMacro.LANDZEILE, listOf(countryName(address.countryCode).escapeLatex())))
+            if (showCountry) add(Latex.macro(TemplateMacro.LANDZEILE, listOf(countryName(address.countryCode, language).escapeLatex())))
         }
 
     /**
-     * Der deutsche Name des Landes, so wie das JDK ihn führt – und der Code
-     * selbst, wo es keinen führt (#374).
+     * Der Name des Landes in der Sprache der Rechnung, so wie das JDK ihn
+     * führt – und der Code selbst, wo es keinen führt (#374). Sonst stünde auf
+     * der typischen englischen Rechnung „VEREINIGTES KÖNIGREICH“ über der
+     * Anschrift (#377).
      *
      * Aus dem JDK und nicht aus einer eigenen Liste: [CountryCode] prüft
      * bewusst nur die Form, weil ein Verzeichnis der Staaten still veraltet.
@@ -79,8 +83,8 @@ internal object MetadataBlocks {
      * läuft. Benennt ein neueres eines ein Land um, ergibt dieselbe
      * Rechnungsdatei dort ein anderes Blatt.
      */
-    private fun countryName(code: CountryCode): String =
-        if (code.value in ISO_COUNTRIES) Locale.of("", code.value).getDisplayCountry(Locale.GERMAN) else code.value
+    private fun countryName(code: CountryCode, language: Language): String =
+        if (code.value in ISO_COUNTRIES) Locale.of("", code.value).getDisplayCountry(language.locale) else code.value
 
     private val ISO_COUNTRIES: Set<String> = Locale.getISOCountries().toSet()
 
@@ -94,7 +98,12 @@ internal object MetadataBlocks {
      */
     fun receivedOn(acceptedInvoice: AcceptedInvoice): Latex =
         when (val kind = acceptedInvoice.kind) {
-            is InvoiceKind.PrepaymentInvoice -> kind.receivedOn?.let { GermanFormat.date(it) } ?: Latex.EMPTY
-            is InvoiceKind.Ordinary, is InvoiceKind.FinalInvoice, is InvoiceKind.Cancellation -> Latex.EMPTY
+            is InvoiceKind.PrepaymentInvoice -> {
+                kind.receivedOn?.let { DateFormat(acceptedInvoice.calculated.invoice.language).date(it) }
+                    ?: Latex.EMPTY
+            }
+            is InvoiceKind.Ordinary, is InvoiceKind.FinalInvoice, is InvoiceKind.Cancellation -> {
+                Latex.EMPTY
+            }
         }
 }

@@ -101,7 +101,7 @@ private data class Design(
  *
  *  - Die erwarteten Werte kommen aus der gerechneten Rechnung und den
  *    Stammdaten, nicht als abgeschriebene Zeichenketten.
- *  - Formatiert werden sie hier, nicht mit `GermanFormat` – das liefert LaTeX,
+ *  - Formatiert werden sie hier, nicht mit `DateFormat` – das liefert LaTeX,
  *    und es ist die Schreibweise *eines* Designs.
  *  - Wo Designs verschieden schreiben dürfen, gilt jede der Schreibweisen:
  *    Datum kurz oder lang, Zeitraum in jeder der Formen, Beträge ohne €, weil
@@ -695,11 +695,11 @@ private const val SETTLED_NOTE =
     "Der Rechnungsbetrag ist durch die vereinnahmten Abschläge ausgeglichen; es verbleibt kein Restbetrag."
 
 // --- Schreibweisen ----------------------------------------------------------
-// Bewusst unabhängig von GermanFormat, siehe oben. Jede Funktion liefert alle
+// Bewusst unabhängig von DateFormat, siehe oben. Jede Funktion liefert alle
 // Schreibweisen, die ein Design wählen darf.
 
 // Eine negative Zahl trägt das Minuszeichen U+2212, in jedem Design (#320).
-// Hier eigens gesetzt und nicht aus GermanFormat übernommen: Es ist die
+// Hier eigens gesetzt und nicht aus DateFormat übernommen: Es ist die
 // Erwartung an das Blatt, und Locale.GERMANY brächte den Bindestrich mit.
 private val SYMBOLS = DecimalFormatSymbols(Locale.GERMANY).apply { minusSign = '\u2212' }
 

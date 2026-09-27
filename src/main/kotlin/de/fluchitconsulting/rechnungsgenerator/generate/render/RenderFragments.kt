@@ -1,6 +1,6 @@
 package de.fluchitconsulting.rechnungsgenerator.generate.render
 
-import de.fluchitconsulting.rechnungsgenerator.core.model.InvoiceType
+import de.fluchitconsulting.rechnungsgenerator.core.model.Invoice
 import de.fluchitconsulting.rechnungsgenerator.core.model.ServicePeriod
 import de.fluchitconsulting.rechnungsgenerator.core.values.Money
 
@@ -35,12 +35,15 @@ internal fun summaryRow(label: String, amount: Money): Latex =
         )
 
 /**
- * Ein Zeitraum, geschrieben wie es die Rechnungsart verlangt: die Prognose
- * einer Abschlagsrechnung in Monaten, der tatsächliche Zeitraum auf den Tag.
+ * Ein Zeitraum der Rechnung oder einer ihrer Positionen, geschrieben wie es
+ * ihre Art verlangt – die Prognose einer Abschlagsrechnung in Monaten, der
+ * tatsächliche Zeitraum auf den Tag – und in ihrer Sprache.
  */
-internal fun servicePeriod(period: ServicePeriod, type: InvoiceType): Latex =
-    if (type.servicePeriodIsForecast) {
-        GermanFormat.monthPeriod(period.start, period.end)
+internal fun servicePeriod(period: ServicePeriod, invoice: Invoice): Latex {
+    val format = DateFormat(invoice.language)
+    return if (invoice.type.servicePeriodIsForecast) {
+        format.monthPeriod(period.start, period.end)
     } else {
-        GermanFormat.servicePeriod(period.start, period.end)
+        format.servicePeriod(period.start, period.end)
     }
+}
