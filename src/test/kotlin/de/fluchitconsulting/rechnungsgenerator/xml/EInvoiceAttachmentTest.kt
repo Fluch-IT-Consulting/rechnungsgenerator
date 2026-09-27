@@ -53,4 +53,20 @@ class EInvoiceAttachmentTest : FunSpec({
 
         attachmentsIn(pdf).single().xml.contentEquals(latin1) shouldBe true
     }
+
+    test("liegen die Bytes allein unter /UF, kommen sie von dort") {
+        val pdf = writePdf(dir.resolve("uf.pdf"), mapOf("factur-x.xml" to xml), embeddedUnder = EmbeddedUnder.UF)
+
+        attachmentsIn(pdf).single().xml.contentEquals(xml) shouldBe true
+    }
+
+    // Das PDF nennt ein XML und trägt es nicht – das ist etwas anderes als
+    // gar kein Anhang, und die Meldung soll es auseinanderhalten.
+    test("ein Eintrag ohne eingebettete Datei zählt mit einem leeren XML") {
+        val pdf = writePdf(dir.resolve("ohne-datei.pdf"), mapOf("factur-x.xml" to xml), embeddedUnder = EmbeddedUnder.NONE)
+
+        val found = attachmentsIn(pdf).single()
+        found.name shouldBe "factur-x.xml"
+        found.xml.size shouldBe 0
+    }
 })

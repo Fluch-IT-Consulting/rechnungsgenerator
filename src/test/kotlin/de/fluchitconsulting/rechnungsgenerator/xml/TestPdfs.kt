@@ -33,12 +33,16 @@ fun xmpClaiming(
  *
  * Mit [inKids] stehen die Anhänge nicht an der Wurzel des Namensbaums,
  * sondern in einem Kindknoten, wie bei einem Baum mit vielen Einträgen.
+ *
+ * [embeddedUnder] sagt, unter welchem Schlüssel von `/EF` die Bytes eines
+ * Anhangs liegen. Mit [EmbeddedUnder.NONE] nennt der Eintrag nur den Namen.
  */
 fun writePdf(
     target: Path,
     attachments: Map<String, ByteArray> = emptyMap(),
     xmp: String? = null,
     inKids: Boolean = false,
+    embeddedUnder: EmbeddedUnder = EmbeddedUnder.F,
 ): Path {
     PDDocument().use { document ->
         document.addPage(PDPage())
@@ -49,7 +53,15 @@ fun writePdf(
                     PDComplexFileSpecification().apply {
                         file = name
                         fileUnicode = name
-                        embeddedFile = PDEmbeddedFile(document, bytes.inputStream())
+                        when (embeddedUnder) {
+                            EmbeddedUnder.F -> {
+                                embeddedFile = PDEmbeddedFile(document, bytes.inputStream())
+                            }
+                            EmbeddedUnder.UF -> {
+                                embeddedFileUnicode = PDEmbeddedFile(document, bytes.inputStream())
+                            }
+                            EmbeddedUnder.NONE -> {}
+                        }
                     }
                 }
             val leaf = PDEmbeddedFilesNameTreeNode().apply { names = specifications }
@@ -60,3 +72,6 @@ fun writePdf(
     }
     return target
 }
+
+/** Die Schlüssel von `/EF`, unter denen [writePdf] die Bytes ablegen kann: `/F`, `/UF` oder keiner. */
+enum class EmbeddedUnder { F, UF, NONE }

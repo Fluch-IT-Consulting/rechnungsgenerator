@@ -136,6 +136,25 @@ class XmlCommandTest : FunSpec({
         result.err shouldContain "xrechnung.xml"
     }
 
+    // EInvoiceAttachment reicht den Eintrag mit leerem XML weiter; dass es
+    // abgelehnt wird, sagt erst Mustang. Deshalb von außen geprüft.
+    test("ein Eintrag ohne eingebettete Datei heißt ungültiges XML, nicht kein Anhang") {
+        val pdf =
+            writePdf(
+                dir.resolve("ohne-datei.pdf"),
+                mapOf("factur-x.xml" to xml),
+                xmpClaiming(3, "U"),
+                embeddedUnder = EmbeddedUnder.NONE,
+            )
+
+        val result = runProgram("xml", pdf.toString())
+
+        result.exitCode shouldBe 1
+        result.out.size shouldBe 0
+        result.err shouldContain "Das XML in factur-x.xml ist ungültig:"
+        result.err shouldNotContain "Es trägt kein XML einer E-Rechnung"
+    }
+
     /**
      * Eine E-Rechnung, die nicht vom Generator stammt: Mustang schreibt sie
      * aus seinem eigenen Modell im [profile] nach [target] und gibt ihr XML
