@@ -56,6 +56,24 @@ class PrepaymentsCommandTest : FunSpec({
         CalculatedInvoice(generated, YamlLoader.parseSellerConfig(Path.of(sellerConfig).readText()))
     }
 
+    test("in Fremdwährung erinnert ein Hinweis auf stderr an die Währung der Schlussrechnung (#409)") {
+        // Ohne Umsatzsteuer, sonst bräche WAEHRUNG_MIT_UMSATZSTEUER ab.
+        val inDollar =
+            createTempDirectory("abschlaege-dollar").resolve("abschlagsrechnung.yaml").also {
+                it.writeText(
+                    "waehrung: USD\n" + Path.of(june).readText() +
+                        "    ust-satz: 0\n    steuerkategorie: O\n    steuerbefreiungsgrund: Nicht im Inland steuerbar\n",
+                )
+            }
+
+        val result = runCli("abschlaege", inDollar.toString(), "-s", sellerConfig)
+
+        result.exitCode shouldBe 0
+        result.out shouldContain "R26-009"
+        result.out shouldNotContain "USD"
+        result.err shouldContain "waehrung: USD"
+    }
+
     test("zweimal derselbe Aufruf ergibt zeichengleich dieselbe Ausgabe") {
         runCli("abschlaege", june, august, "-s", sellerConfig).out shouldBe
             runCli("abschlaege", june, august, "-s", sellerConfig).out

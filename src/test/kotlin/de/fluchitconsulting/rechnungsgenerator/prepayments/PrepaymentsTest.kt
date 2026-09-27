@@ -11,6 +11,7 @@ import de.fluchitconsulting.rechnungsgenerator.core.model.testSellerConfig
 import de.fluchitconsulting.rechnungsgenerator.core.rules.Rule
 import de.fluchitconsulting.rechnungsgenerator.core.rules.messageOf
 import de.fluchitconsulting.rechnungsgenerator.core.rules.rules
+import de.fluchitconsulting.rechnungsgenerator.core.values.Currency
 import de.fluchitconsulting.rechnungsgenerator.core.values.Money
 import de.fluchitconsulting.rechnungsgenerator.core.values.Percent
 import io.kotest.core.spec.style.FunSpec
@@ -126,6 +127,42 @@ class PrepaymentsTest : FunSpec({
 
         message shouldContain "Beispiel Software GmbH"
         message shouldContain "Andere Software AG"
+    }
+
+    context("ABSCHLAGSRECHNUNGEN_VERSCHIEDENE_WAEHRUNGEN (#409)") {
+        // In Fremdwährung ohne Umsatzsteuer, sonst bräche schon
+        // WAEHRUNG_MIT_UMSATZSTEUER die Abschlagsrechnung selbst ab.
+        fun inDollar(number: String) =
+            prepaymentInvoice.copy(
+                number = number,
+                currency = Currency.USD,
+                items =
+                    listOf(
+                        testItem(
+                            unitPrice = "4000.00",
+                            vatRate = "0",
+                            taxCategory = TaxCategory.OUT_OF_SCOPE,
+                            taxExemptionReason = "Nicht im Inland steuerbar",
+                        ),
+                    ),
+            )
+
+        test("Abschlagsrechnungen in verschiedenen Währungen werden nicht zusammen abgesetzt") {
+            // Die Schlussrechnung trägt eine Währung für alle Beträge, und
+            // gelesen werden die Abschlagsrechnungen nur hier (ADR-0001).
+            val message =
+                prepaymentsOf(named(prepaymentInvoice, inDollar("R26-002"), inDollar("R26-003")), config)
+                    .rejected()
+                    .aborts
+                    .messageOf(Rule.ABSCHLAGSRECHNUNGEN_VERSCHIEDENE_WAEHRUNGEN)
+
+            message shouldContain "EUR (R26-001)"
+            message shouldContain "USD (R26-002, R26-003)"
+        }
+
+        test("Abschlagsrechnungen in derselben Fremdwährung werden angenommen") {
+            prepaymentsOf(named(inDollar("R26-002"), inDollar("R26-003")), config).complete().entries.size shouldBe 2
+        }
     }
 
     test("dieselbe Nummer zweimal wird abgelehnt") {
