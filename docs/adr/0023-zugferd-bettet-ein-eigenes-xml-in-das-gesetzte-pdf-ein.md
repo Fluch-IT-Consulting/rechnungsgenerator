@@ -334,3 +334,28 @@ Verworfen:
 - **Das XML einlesen oder zeigen.** Aus ihm entsteht weder eine
   Rechnungsdatei noch ein Modell noch eine Sichtfassung; das Kommando reicht
   die Bytes durch.
+
+## Nachtrag vom 27.09.2026: Nur ein Profil der EN 16931 ist eine E-Rechnung
+
+`xml` lehnt seit #399 eine Datei ab, deren XML sich in BT-24
+(`GuidelineSpecifiedDocumentContextParameter`) nicht als EN 16931 ausgibt,
+also nicht mit `urn:cen.eu:en16931:2017` beginnt. Das trifft MINIMUM,
+BASIC-WL und ZUGFeRD 1. Mustang prüft jedes gegen sein eigenes Profil und
+findet nichts; eine E-Rechnung nach §14 Abs. 1 UStG ist aber keines davon
+(BMF-Schreiben vom 15.10.2024). Hieße die Datei trotzdem gültig, bekäme wer
+eine empfangene Rechnung prüft eine falsche Zusage. Der Grund steht wie die
+übrigen auf stderr, und stdout bleibt leer.
+
+Die Kennung liest `SpecificationIdentifier` selbst aus dem XML. Mustang nennt
+das Profil auch in seinem Bericht, aber dessen Format sagt er nirgends zu, das
+Feld dagegen die Norm.
+
+Verworfen:
+
+- **Annehmen und dazu ein Hinweis.** Das XML auszulesen kann auch bei einer
+  sonstigen Rechnung nützlich sein. Dann versprächen aber Kommando und Glossar
+  etwas anderes, als das Programm tut; kommt der Fall, ist er der Schalter
+  ohne Prüfung aus dem vorigen Nachtrag.
+- **Eine Liste der abgelehnten Profile.** Sie deckte genau die heute
+  bekannten ab und ließe ein unbekanntes still durch. Die Frage nach der Norm
+  lehnt es ab.

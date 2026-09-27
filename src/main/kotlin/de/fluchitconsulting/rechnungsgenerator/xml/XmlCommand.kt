@@ -24,6 +24,8 @@ import java.io.OutputStream
  * über das PDF/A, und zwar gegen das Profil, als das es sich ausgibt, Mustang
  * über das XML. Angenommen wird jede E-Rechnung nach ZUGFeRD oder Factur-X,
  * nicht nur die eigene: Das Profil des XML erkennt Mustang am XML selbst.
+ * Ein Profil, das nicht der EN 16931 genügt, besteht die Prüfung von Mustang,
+ * ist aber keine E-Rechnung und wird deshalb abgelehnt (#399).
  *
  * Das XML geht als Bytes auf [standardOutput] und nicht über `echo`: Das
  * schreibt Text, und ein XML in einer anderen Kodierung als UTF-8 käme
@@ -58,6 +60,7 @@ class XmlCommand(
             listOfNotNull(
                 pdfAReason(identification),
                 attachmentReason(attachments),
+                checked?.let { (attachment, _) -> specificationReason(attachment) },
                 checked?.let { (attachment, validation) -> xmlReason(attachment, validation) },
             )
 
@@ -115,6 +118,15 @@ class XmlCommand(
                 ", ",
             ) { it.name }}) und sagt nicht, welches gilt."
         }
+
+    private fun specificationReason(attachment: EInvoiceAttachment): String? =
+        SpecificationIdentifier
+            .of(attachment.xml)
+            ?.takeUnless { it.isEn16931 }
+            ?.let {
+                "Das XML in ${attachment.name} folgt ${it.value} und nicht der EN 16931 (${SpecificationIdentifier.EN_16931}); " +
+                    "eine E-Rechnung nach §14 UStG ist es damit nicht."
+            }
 
     private fun xmlReason(
         attachment: EInvoiceAttachment,

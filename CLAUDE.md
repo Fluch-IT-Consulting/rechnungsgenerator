@@ -319,7 +319,11 @@ PDF/A-Prüfung über veraPDF.
   das Profil aus dem XMP, Mustang über das XML. Besteht die Datei nicht, bleibt
   stdout leer, und auf stderr stehen alle Gründe auf einmal; eine Warnung ist
   ein Hinweis auf stderr, und das XML kommt trotzdem. Angenommen wird jede
-  E-Rechnung nach ZUGFeRD oder Factur-X, nicht nur die eigene. Ausgepackt wird
+  E-Rechnung nach ZUGFeRD oder Factur-X, nicht nur die eigene – aber nur, wenn
+  ihr XML sich in BT-24 als EN 16931 ausgibt (#399): MINIMUM, BASIC-WL und
+  ZUGFeRD 1 bestehen Mustangs Prüfung und sind trotzdem keine E-Rechnung.
+  Gefragt wird nach der Norm, nicht nach einer Liste dieser Profile, damit ein
+  unbekanntes abgelehnt wird statt durchgelassen. Ausgepackt wird
   mit PDFBox und nicht mit Mustangs `ZUGFeRDInvoiceImporter`, der einen
   Lesefehler verschluckt und von mehreren Anhängen still den letzten nimmt.
   Kein `-s`, keine Wurzel, kein LuaLaTeX; `--externe-pdfa-pruefung` kommt erst,
@@ -594,9 +598,9 @@ PDF/A-Prüfung über veraPDF.
   `prepayments` mit dem Zusammentragen der Abschläge und dem YAML-Block,
   `setup` mit der Vorlage der Stammdaten (#276) – es kennt aus dem Kern nur
   `model`, weil `einrichten` den Namen des Wurzelordners braucht und die Frage,
-  ob oberhalb schon eine Wurzel liegt –, und `xml` mit dem Auspacken und dem
-  Lesen des XMP, ganz ohne den Kern, weil es keine Rechnungsdatei liest
-  (#380).
+  ob oberhalb schon eine Wurzel liegt –, und `xml` mit dem Auspacken, dem
+  Lesen des XMP und der Kennung der Spezifikation, ganz ohne den Kern, weil
+  es keine Rechnungsdatei liest (#380).
   Neben den Kommandos liegt der **gemeinsame Rand** `toolchain`: die Prüfer
   (`PdfAValidator` samt Adaptern, `EInvoiceValidator`) und der Prozessläufer
   darunter, die `erzeuge` und `xml` beide brauchen. Er importiert nichts aus
