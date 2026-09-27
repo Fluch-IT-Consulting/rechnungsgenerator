@@ -113,9 +113,10 @@ Was du dir selbst beschaffen kannst, solltest du auch selbst beschaffen:
   Monat. Frage nach, wenn gar kein Zeitraum genannt wurde.
 - **Sprache** (ADR-0025): Übernimm `sprache` aus der letzten Rechnung an
   denselben Kunden; steht dort keine, ist sie deutsch, und der Schlüssel
-  bleibt weg. Bei einem neuen Kunden frag nur, wenn sein Land nicht `DE` ist.
-  Eine englische Rechnung ist `sprache: en-GB`, und dann schreibst du alles,
-  was aufs Blatt kommt, auf Englisch: Bezeichnungen, Beschreibungen,
+  bleibt weg. Bei einem neuen Kunden frag nur, wenn sein Land nicht `DE` ist,
+  und schlag bei `US` `en-US` vor, sonst `en-GB`. Die beiden unterscheiden
+  sich auf dem Blatt nur im Datum. Bei einer englischen Rechnung schreibst
+  du alles, was aufs Blatt kommt, auf Englisch: Bezeichnungen, Beschreibungen,
   Einleitung, Befreiungsgrund. Die Schlüssel und `einheit: Std.` bleiben
   deutsch. Englisch geht mit jeder `art`, jeder Steuerkategorie und mit
   Skonto. Bei AE, K und G setzt der Generator den Grund auch auf Englisch
@@ -201,7 +202,7 @@ soll die Zahlen prüfen können, ohne die Datei zu öffnen.
 ```yaml
 nummer: R26-012
 art: rechnung                       # optional, Vorgabe: rechnung
-sprache: de-DE                      # optional, Vorgabe: de-DE; sonst nur en-GB
+sprache: de-DE                      # optional, Vorgabe: de-DE; sonst en-GB oder en-US
 datum: 2026-09-02
 leistungszeitraum:
   von: 2026-08-01

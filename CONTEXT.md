@@ -239,9 +239,9 @@ _Vermeiden_: Nicht-EU-Land, Ausland (für diesen Fall)
 
 **Sprache**:
 Die Sprache, in der eine Rechnung steht – genau eine je Rechnung, mit ihrer
-Variante: britisches und nicht bloß Englisch. Sie gilt für das Blatt und die
-Freitexte der E-Rechnung, nicht für das, was sich an den Rechnungssteller
-richtet.
+Variante: britisches oder amerikanisches und nicht bloß Englisch. Sie gilt
+für das Blatt und die Freitexte der E-Rechnung, nicht für das, was sich an
+den Rechnungssteller richtet.
 _Vermeiden_: Locale, Übersetzung
 
 **Einleitung**:

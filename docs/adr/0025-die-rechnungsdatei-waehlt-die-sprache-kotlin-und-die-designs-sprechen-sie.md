@@ -245,3 +245,64 @@ einen Unternehmer in Österreich, und `skonto.yaml` läuft je Design auch auf
 Englisch. Jedes Beispiel je Art ergibt auf Englisch ein gültiges PDF, ohne
 den früheren Ausweg des Abbruchs. `verify` prüft an jeder Rechnung die
 USt-IdNr. des Kunden, sobald die Datei sie nennt.
+
+## Nachtrag vom 27.09.2026: amerikanisches Englisch
+
+`sprache: en-US` gibt es jetzt neben `en-GB` (#407). Es ist die erste
+zweite Variante einer Sprache, und damit der Fall, für den jeder Tag von
+Anfang an seine Variante nennt: Keine vorhandene Datei ändert sich, und
+jede Rechnung mit `en-GB` bedeutet dasselbe wie zuvor.
+
+**Die Varianten teilen sich jeden Zweig, außer dem langen Datum.** Jedes
+`when` über die Sprache nennt beide, `BRITISH_ENGLISH, AMERICAN_ENGLISH ->`,
+weiter ohne `else`. Auseinander gehen sie allein im ausgeschriebenen Datum,
+„August 14, 2026“ statt „14 August 2026“ – auf dem Blatt, in der Notiz der
+E-Rechnung und im Betreff der Metadaten. Das kurze Datum bleibt in beiden
+ISO 8601, aus dem Grund, aus dem es für `en-GB` gewählt wurde. Das
+geschützte Leerzeichen steht zwischen Monat und Tag, wie im Britischen
+zwischen Tag und Monat.
+
+**Jede Variante hat ihre Sprachdatei**, `helsinki-en-us.tex` und
+`prag-en-us.tex`, auch wenn sie jedes Wort der britischen übernehmen. Ein
+Rückfall auf die britische ließe eine fehlende Übersetzung verschwinden.
+Entschieden je Wort: „Kind regards“ und „VAT“ bleiben – die Grußformel ist
+auch in den USA gebräuchlich, und auf dem Blatt steht die deutsche
+Umsatzsteuer, für die „VAT“ der eingeführte Begriff ist. „cancelled“ oder
+„canceled“ stellt sich nicht: Das Wort steht nirgends auf dem Blatt.
+
+**Der Schlusssatz** kennt `en-US` als Schlüssel, und ein `en:` gilt für
+beide Varianten. Die Vorgabe lautet wie die britische, und die Vorlage von
+`einrichten` nennt sie unter beiden Codes.
+
+**Der Storno-Satz endet jetzt mit dem Datum**, in beiden Varianten: „This
+cancellation invoice fully cancels invoice … dated ….“ Mitten im Satz, wie
+bisher vor „in full“, verlangte das Amerikanische nach dem Jahr ein Komma.
+Am Satzende braucht keine Variante eines, und beide teilen sich weiter einen
+Satz. Die britische Stornorechnung ändert damit ihren Wortlaut, nicht ihre
+Aussage: „fully cancels“ ist das „vollständig aufheben“ des deutschen.
+
+**Die Anschrift bleibt, wie das Blatt sie setzt**: Postleitzahl vor dem
+Ort, „94105 San Francisco, CA“. Die amerikanische Reihenfolge ist eine
+Frage des Modells, das nur `plz` und `ort` kennt, und keine der Sprache.
+
+**Das Netz**: `amerikanische-rechnung.yaml` geht an einen Unternehmer in den
+USA, mit Skonto, damit das Komma nach dem Jahr im Satz zum Skonto auf dem
+Blatt steht; der Test hält es samt „UNITED STATES“ wörtlich fest. Jedes
+Beispiel je Art läuft in beiden Varianten, mit je einer Inhalts-Datei
+`<art>-en-us-inhalt.tex`, und je Design gibt es einen Volltext der
+amerikanischen Rechnung. Eine eigene Vergleichsdatei für das XML gibt es
+nicht: Es unterscheidet sich allein im Datum des Pflichtsatzes, und das
+prüft Mustang am Storno auf `en-US`.
+
+### Verworfen
+
+- **Die Pflichtsätze als `LanguageTable`**, generisch über den Wert, statt
+  eines Parameters je Sprache in `InvoiceType`. Die Tabelle ist für Texte des
+  Rechnungsstellers gebaut, und bei ihr ist eine fehlende Sprache gewollt:
+  Dann gilt die Vorgabe, und ein `en:` deckt jede Variante. Beim Pflichtsatz
+  wäre genau das ein stiller Fehler. `null` hieße dort zugleich „vergessen“
+  und „diese Art hat keinen“, und `en-US` bekäme den Satz ohne Entscheidung.
+  Die Vollständigkeit hielte eine Prüfung zur Laufzeit statt des Compilers.
+- **Ein eigener amerikanischer Pflichtsatz** für das Komma nach dem Jahr –
+  ein dritter Parameter je Art für ein Satzzeichen, und zwei englische Sätze,
+  die leichter auseinanderlaufen als einer.
