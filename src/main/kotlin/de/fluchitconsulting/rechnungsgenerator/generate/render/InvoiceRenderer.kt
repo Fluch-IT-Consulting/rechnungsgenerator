@@ -243,7 +243,7 @@ object InvoiceRenderer {
                 SellerBlocks.bankDetails(calculatedInvoice)
             }
             TemplateValue.SCHLUSSSATZ -> {
-                (invoice.note ?: config.closingLine).escapeLatex()
+                (invoice.note ?: config.closingLine(invoice.language)).escapeLatex()
             }
         }
     }

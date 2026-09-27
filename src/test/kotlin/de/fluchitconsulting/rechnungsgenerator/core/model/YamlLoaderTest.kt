@@ -70,6 +70,38 @@ class YamlLoaderTest : FunSpec({
         }
     }
 
+    context("schlusssatz (#377)") {
+        fun configWith(table: String): SellerConfig = YamlLoader.parseSellerConfig(resource("stammdaten.yaml") + "schlusssatz:\n$table")
+
+        test("ohne Eintrag gilt die Vorgabe der Sprache") {
+            val config = YamlLoader.parseSellerConfig(resource("stammdaten.yaml"))
+
+            config.closingLine(Language.GERMAN) shouldBe "Ich bedanke mich für das Vertrauen und die angenehme Zusammenarbeit."
+            config.closingLine(Language.BRITISH_ENGLISH) shouldBe "Thank you for your trust and the pleasant collaboration."
+        }
+
+        test("die Tabelle gilt je Sprache, und eine fehlende fällt auf ihre Vorgabe") {
+            val config = configWith("  de: Danke.\n")
+
+            config.closingLine(Language.GERMAN) shouldBe "Danke."
+            config.closingLine(Language.BRITISH_ENGLISH) shouldBe "Thank you for your trust and the pleasant collaboration."
+        }
+
+        test("ein unbekannter oder doppelter Schlüssel bricht ab, mit Datei und Schlüssel") {
+            listOf("  fr: Merci.\n", "  en-US: Thanks.\n", "  de-DE: Danke.\n  DE-de: Vielen Dank.\n").forEach { table ->
+                withClue(table) {
+                    val file = createTempDirectory("loader-test").resolve("stammdaten.yaml")
+                    file.writeText(resource("stammdaten.yaml") + "schlusssatz:\n$table")
+
+                    val failure = shouldThrow<InputFileException> { YamlLoader.loadSellerConfig(file) }
+
+                    failure.message!! shouldContain file.toString()
+                    failure.message!! shouldContain "schlusssatz: "
+                }
+            }
+        }
+    }
+
     test("liest die Rechnung und rechnet End-to-End") {
         val config = YamlLoader.parseSellerConfig(resource("stammdaten.yaml"))
         val invoice = YamlLoader.parseInvoice(resource("rechnung.yaml"))

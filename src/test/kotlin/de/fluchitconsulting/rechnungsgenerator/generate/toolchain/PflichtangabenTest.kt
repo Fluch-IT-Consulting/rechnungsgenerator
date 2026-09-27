@@ -624,7 +624,7 @@ private fun Sheet.verify(
 
         // Schlusssatz, Grußformel und Name brechen nicht auseinander: Der Satz
         // steht ganz auf einer Seite, und Gruß und Name stehen auf derselben.
-        val closingLine = invoice.note ?: config.closingLine
+        val closingLine = invoice.note ?: config.closingLine(invoice.language)
         val page = pageWith(closingLine)
         withClue("Schlusssatz steht auf keiner Seite vollständig: $closingLine") { (page != null) shouldBe true }
         val greeting = design.greeting
