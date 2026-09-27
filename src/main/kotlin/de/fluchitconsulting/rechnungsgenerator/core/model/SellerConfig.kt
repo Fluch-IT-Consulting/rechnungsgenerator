@@ -6,10 +6,13 @@ import de.fluchitconsulting.rechnungsgenerator.core.values.CountryCode
 import de.fluchitconsulting.rechnungsgenerator.core.values.Design
 import de.fluchitconsulting.rechnungsgenerator.core.values.Iban
 import de.fluchitconsulting.rechnungsgenerator.core.values.InvoiceNumberPattern
+import de.fluchitconsulting.rechnungsgenerator.core.values.Language
+import de.fluchitconsulting.rechnungsgenerator.core.values.LanguageTable
 import de.fluchitconsulting.rechnungsgenerator.core.values.RgbColor
 import de.fluchitconsulting.rechnungsgenerator.core.values.RgbColorSerializer
 import de.fluchitconsulting.rechnungsgenerator.core.values.TaxNumber
 import de.fluchitconsulting.rechnungsgenerator.core.values.VatId
+import de.fluchitconsulting.rechnungsgenerator.core.values.languageTableSerializer
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
@@ -55,10 +58,30 @@ data class SellerConfig(
     // `@Transient`: Dieses Feld kennt die Serialisierung nicht, in der YAML gibt
     // es keinen Schlüssel dafür. Es braucht deshalb einen Vorgabewert.
     @Transient val logo: Logo? = null,
-    // Schlusssatz über der Grußformel; überschreibbar pro Rechnung.
-    @SerialName("schlusssatz") val closingLine: String =
-        "Ich bedanke mich für das Vertrauen und die angenehme Zusammenarbeit.",
-)
+    // Der Schlusssatz über der Grußformel je Sprache (#377), überschreibbar pro
+    // Rechnung. Privat wie der Rabatt der Position: Nach draußen geht allein
+    // closingLine, das die Vorgabe kennt.
+    @SerialName("schlusssatz")
+    @Serializable(with = ClosingLineSerializer::class)
+    private val closingLines: LanguageTable = LanguageTable.EMPTY,
+) {
+    /**
+     * Der Schlusssatz für eine Rechnung in [language]: der aus den Stammdaten,
+     * sonst die Vorgabe der Sprache.
+     *
+     * Fehlt er, kein Abbruch: „Leer scheitert laut“ gilt für Angaben, die
+     * falsch schaden, etwa die Bankverbindung. Ein allgemeiner Dank schadet
+     * nicht, und in der falschen Sprache steht er so nie da.
+     *
+     * Ohne `else`: Eine neue Sprache bringt ihre Vorgabe mit.
+     */
+    fun closingLine(language: Language): String =
+        closingLines[language]
+            ?: when (language) {
+                Language.GERMAN -> "Ich bedanke mich für das Vertrauen und die angenehme Zusammenarbeit."
+                Language.BRITISH_ENGLISH -> "Thank you for your trust and the pleasant collaboration."
+            }
+}
 
 @Serializable
 data class Address(
@@ -90,3 +113,5 @@ object AccentColorSerializer :
         "akzentfarbe steht ohne Wert da. Ein # ohne Anführungszeichen beginnt in YAML einen Kommentar – " +
             "die Farbe bitte ohne # schreiben, etwa 31AE34, oder den Schlüssel weglassen.",
     )
+
+object ClosingLineSerializer : KSerializer<LanguageTable> by languageTableSerializer("schlusssatz")

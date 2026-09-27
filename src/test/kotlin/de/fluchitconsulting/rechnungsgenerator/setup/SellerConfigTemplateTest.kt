@@ -7,9 +7,11 @@ import de.fluchitconsulting.rechnungsgenerator.core.model.BankDetails
 import de.fluchitconsulting.rechnungsgenerator.core.model.InputFileException
 import de.fluchitconsulting.rechnungsgenerator.core.model.SellerConfig
 import de.fluchitconsulting.rechnungsgenerator.core.model.YamlLoader
+import de.fluchitconsulting.rechnungsgenerator.core.values.Language
 import io.kotest.assertions.throwables.shouldThrow
+import io.kotest.assertions.withClue
 import io.kotest.core.spec.style.FunSpec
-import io.kotest.matchers.collections.shouldNotBeEmpty
+import io.kotest.matchers.collections.shouldContainAll
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.string.shouldContain
 import kotlinx.serialization.descriptors.SerialDescriptor
@@ -50,12 +52,34 @@ class SellerConfigTemplateTest : FunSpec({
             .toSet()
 
     /**
-     * Die Pflichtfelder mit gültigen Werten – den fiktiven aus den Testdaten.
-     * [extra] sind Zeilen der Vorlage; eingerückte gehören unter `anschrift`,
-     * die übrigen auf die oberste Ebene.
+     * Die freiwilligen Einträge, die eine Vorgabe nennen, nach ihrem Schlüssel
+     * auf oberster Ebene: `design` mit der Zeile `design: helsinki`,
+     * `anschrift` mit `  land: DE`, `schlusssatz` mit einer Zeile je Sprache.
      */
-    fun requiredFields(extra: List<String> = emptyList()): String {
-        val (inAddress, topLevel) = extra.partition { it.startsWith(" ") }
+    val defaults: Map<String, List<String>> =
+        buildMap<String, MutableList<String>> {
+            var parent = ""
+            uncommented(SellerConfigTemplate.text)
+                .lines()
+                .filter { it.isNotBlank() && !it.trimStart().startsWith("#") }
+                .forEach { line ->
+                    if (!line.startsWith(" ")) parent = line.substringBefore(":")
+                    if (line.substringAfter(":", "").isNotBlank()) getOrPut(parent) { mutableListOf() }.add(line)
+                }
+        }
+
+    /**
+     * Die Pflichtfelder mit gültigen Werten – den fiktiven aus den Testdaten –
+     * und dazu [extra], Einträge aus [defaults]. Die unter `anschrift` kommen
+     * in die Anschrift, eingerückte unter ihren eigenen Schlüssel, die übrigen
+     * auf die oberste Ebene.
+     */
+    fun requiredFields(extra: Map<String, List<String>> = emptyMap()): String {
+        val inAddress = extra["anschrift"].orEmpty()
+        val topLevel =
+            extra
+                .filterKeys { it != "anschrift" }
+                .flatMap { (key, lines) -> if (lines.first().startsWith(" ")) listOf("$key:") + lines else lines }
         return (
             listOf(
                 "firma: Muster IT-Consulting UG (haftungsbeschränkt)",
@@ -87,15 +111,21 @@ class SellerConfigTemplateTest : FunSpec({
     }
 
     test("nennt die Vorlage eine Vorgabe, ist es die echte") {
-        // Eine Zeile mit Wert, die kein erklärender Text ist: genau die
-        // freiwilligen Einträge, die eine Vorgabe mitbringen.
-        val defaults =
-            uncommented(SellerConfigTemplate.text)
-                .lines()
-                .filter { !it.trimStart().startsWith("# ") && it.substringAfter(":", "").isNotBlank() }
-        defaults.shouldNotBeEmpty()
+        defaults.keys shouldContainAll listOf("anschrift", "zahlungsziel-tage", "design", "schlusssatz")
 
-        YamlLoader.parseSellerConfig(requiredFields(defaults)) shouldBe YamlLoader.parseSellerConfig(requiredFields())
+        // Der Schlusssatz ist eine Tabelle, und eine volle ist nicht gleich
+        // einer leeren – gleich sein muss, was auf dem Blatt steht.
+        val withDefaults = YamlLoader.parseSellerConfig(requiredFields(defaults))
+        val without = YamlLoader.parseSellerConfig(requiredFields())
+        Language.entries.forEach { language ->
+            withClue(language) { withDefaults.closingLine(language) shouldBe without.closingLine(language) }
+        }
+        YamlLoader.parseSellerConfig(requiredFields(defaults - "schlusssatz")) shouldBe without
+    }
+
+    test("der Schlusssatz steht je Sprache unter ihrem genauen Code") {
+        // Unter "en" verdrängte die britische Vorgabe später die für en-US.
+        keysIn(template.get<YamlMap>("schlusssatz")!!) shouldBe Language.entries.map { it.tag }.toSet()
     }
 
     test("die unausgefüllte Vorlage wird abgelehnt, und die Meldung nennt Datei und Schlüssel") {

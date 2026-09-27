@@ -79,5 +79,10 @@ bank:
 # Beispiel: logo.tex
 #logo:
 
-# Der Satz über der Grußformel; eine Rechnung darf davon abweichen.
-#schlusssatz: Ich bedanke mich für das Vertrauen und die angenehme Zusammenarbeit.
+# Der Satz über der Grußformel, je Sprache der Rechnung; eine Rechnung darf
+# davon abweichen. Ein Schlüssel darf auch nur die Sprache nennen, de oder en:
+# Dann gilt der Satz für jede ihrer Varianten ohne eigenen Eintrag. Fehlt eine
+# Sprache, gilt ihre Vorgabe.
+#schlusssatz:
+  #de-DE: Ich bedanke mich für das Vertrauen und die angenehme Zusammenarbeit.
+  #en-GB: Thank you for your trust and the pleasant collaboration.
