@@ -9,6 +9,7 @@ import com.github.ajalt.clikt.parameters.types.path
 import de.fluchitconsulting.rechnungsgenerator.core.model.Root
 import de.fluchitconsulting.rechnungsgenerator.core.model.YamlLoader
 import de.fluchitconsulting.rechnungsgenerator.core.rules.RejectedException
+import de.fluchitconsulting.rechnungsgenerator.core.values.Currency
 import kotlin.io.path.name
 
 /**
@@ -58,8 +59,25 @@ class PrepaymentsCommand : CoreCliktCommand(name = "abschlaege") {
         // dort gar nichts stehen. Ein halber Block fiele keiner Regel der
         // Schlussrechnung auf.
         when (val collected = prepaymentsOf(prepaymentInvoices, config)) {
-            is CollectedPrepayments.Complete -> echo(PrepaymentBlock.render(collected.entries))
-            is CollectedPrepayments.Rejected -> throw RejectedException(collected.aborts)
+            is CollectedPrepayments.Complete -> {
+                echo(PrepaymentBlock.render(collected.entries))
+                // Der Block nennt die Währung nicht, die Schlussrechnung trägt
+                // sie selbst (#409). Fehlt dort der Eintrag, gilt EUR, und kein
+                // Befund sieht es: Die Abschlagsrechnungen liest nur dieses
+                // Kommando (ADR-0001). Ein Hinweis nach dem Ergebnis und auf
+                // stderr, damit `>>` nur den Block anhängt; bei EUR keiner,
+                // denn das ist schon die Vorgabe.
+                if (collected.currency != Currency.EUR) {
+                    echo(
+                        "Hinweis: Die Abschläge stehen in ${collected.currency}. Die Schlussrechnung braucht " +
+                            "'waehrung: ${collected.currency}', sonst stünde sie in EUR.",
+                        err = true,
+                    )
+                }
+            }
+            is CollectedPrepayments.Rejected -> {
+                throw RejectedException(collected.aborts)
+            }
         }
     }
 }

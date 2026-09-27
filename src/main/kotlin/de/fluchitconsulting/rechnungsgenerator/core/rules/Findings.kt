@@ -177,6 +177,7 @@ enum class Rule(val severity: Severity) {
 
     // Beim Zusammentragen der Abschläge (`rechnungsgenerator abschlaege`)
     ABSCHLAGSRECHNUNGEN_VERSCHIEDENE_KUNDEN(Severity.ABORT),
+    ABSCHLAGSRECHNUNGEN_VERSCHIEDENE_WAEHRUNGEN(Severity.ABORT),
     ABSCHLAGSRECHNUNG_DOPPELT(Severity.ABORT),
     KEINE_ABSCHLAGSRECHNUNG(Severity.ABORT),
 

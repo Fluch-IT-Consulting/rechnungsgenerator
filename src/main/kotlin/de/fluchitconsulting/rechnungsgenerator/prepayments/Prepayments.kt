@@ -12,6 +12,7 @@ import de.fluchitconsulting.rechnungsgenerator.core.rules.Finding
 import de.fluchitconsulting.rechnungsgenerator.core.rules.InvoiceKind
 import de.fluchitconsulting.rechnungsgenerator.core.rules.Rule
 import de.fluchitconsulting.rechnungsgenerator.core.rules.Subject
+import de.fluchitconsulting.rechnungsgenerator.core.values.Currency
 
 // Der fachliche Teil von `rechnungsgenerator abschlaege` (ADR-0003): Aus
 // Abschlagsrechnungen werden die Abschläge einer Schlussrechnung. Ohne Dateien
@@ -41,8 +42,11 @@ data class CollectedPrepayment(val name: String, val prepayment: Prepayment)
  * Abbrüche.
  */
 sealed interface CollectedPrepayments {
-    /** Die Abschläge in der übergebenen Reihenfolge, jeder mit seiner Herkunft. */
-    data class Complete(val entries: List<CollectedPrepayment>) : CollectedPrepayments
+    /**
+     * Die Abschläge in der übergebenen Reihenfolge, jeder mit seiner Herkunft,
+     * und die eine [currency], in der sie alle stehen (#409).
+     */
+    data class Complete(val entries: List<CollectedPrepayment>, val currency: Currency) : CollectedPrepayments
 
     /** Kein Block: die Abbrüche, jeder mit der Rechnung, aus der er stammt. */
     data class Rejected(val aborts: List<Finding>) : CollectedPrepayments
@@ -52,8 +56,9 @@ sealed interface CollectedPrepayments {
  * Die Abschläge aus mehreren Abschlagsrechnungen, in der übergebenen Reihenfolge.
  *
  * Geprüft wird hier, was die Schlussrechnung später nicht mehr sehen kann: dass
- * alle Abschlagsrechnungen an denselben Kunden gingen, dass keine doppelt dabei
- * ist und dass jede wirklich eine Abschlagsrechnung ist.
+ * alle Abschlagsrechnungen an denselben Kunden gingen und in derselben Währung
+ * stehen, dass keine doppelt dabei ist und dass jede wirklich eine
+ * Abschlagsrechnung ist.
  *
  * Ein Dokument anderer Art wird gar nicht erst gerechnet und geprüft: Es fliegt
  * ohnehin aus dem Aufruf, und seine übrigen Befunde hülfen niemandem – sie
@@ -80,6 +85,25 @@ fun prepaymentsOf(prepaymentInvoices: List<NamedInvoice>, config: SellerConfig):
                 Subject.WholeInvoice,
                 "Die Abschlagsrechnungen gingen an verschiedene Kunden: $customers. " +
                     "Eine Schlussrechnung setzt nur Abschläge desselben Kunden ab.",
+            )
+    }
+
+    // Die Schlussrechnung trägt eine Währung für jeden Betrag, auch für die
+    // abgesetzten (#409). Der Block nennt sie nicht, sie steht in der
+    // Schlussrechnung selbst; ob die dieselbe nennt, sieht niemand mehr, der
+    // die Abschlagsrechnungen liest (ADR-0001).
+    val byCurrency = prepaymentInvoices.groupBy { it.invoice.currency }
+    if (byCurrency.size > 1) {
+        val currencies =
+            byCurrency.entries.joinToString(", ") { (currency, invoices) ->
+                "$currency (${invoices.joinToString(", ") { it.invoice.number }})"
+            }
+        findings +=
+            Finding(
+                Rule.ABSCHLAGSRECHNUNGEN_VERSCHIEDENE_WAEHRUNGEN,
+                Subject.WholeInvoice,
+                "Die Abschlagsrechnungen stehen in verschiedenen Währungen: $currencies. " +
+                    "Eine Schlussrechnung setzt nur Abschläge in einer Währung ab.",
             )
     }
 
@@ -133,7 +157,11 @@ fun prepaymentsOf(prepaymentInvoices: List<NamedInvoice>, config: SellerConfig):
             }
         }
 
-    return if (findings.isEmpty()) CollectedPrepayments.Complete(entries) else CollectedPrepayments.Rejected(findings)
+    return if (findings.isEmpty()) {
+        CollectedPrepayments.Complete(entries, byCurrency.keys.single())
+    } else {
+        CollectedPrepayments.Rejected(findings)
+    }
 }
 
 /**
