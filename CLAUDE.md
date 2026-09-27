@@ -24,6 +24,13 @@ PDF/A-Prüfung über veraPDF.
   seine Prüfung nicht besteht. Der Dateiname gehört dorthin, wo gelesen wird:
   kaml nennt nur den falschen Schlüssel, und `erzeuge` liest zwei Dateien.
   Übersetzte jedes Kommando für sich, liefen die Fassungen auseinander (#52).
+  Dort fallen auch **Steuerzeichen** (#391): `ControlCharacters` läuft vor dem
+  Decodieren über alle Werte des Knotenbaums und nennt jede Fundstelle mit
+  YAML-Pfad, Zeile und Zeichen. Abgelehnt ist Unicode Cc außer Tabulator und
+  LF – also auch CR, DEL und C1 – samt dem, was XML 1.0 sonst verbietet. Kein
+  Befund nach ADR-0004: Das Zeichen ist ein Fehler der Datei, und eine Regel
+  müsste jedes Freitextfeld aufzählen. Ungeprüft brach es erst LuaLaTeX oder
+  das XML der E-Rechnung und hieß dort „Fehler des Generators“.
 - **Wurzel der Ablage** (ADR-0015): Ohne `-s` findet der Generator die
   Stammdaten selbst. Ein Verzeichnis mit dem Ordner `.rechnungsgenerator/` ist
   eine **Wurzel**, `stammdaten.yaml` liegt darin, und gesucht wird ab dem

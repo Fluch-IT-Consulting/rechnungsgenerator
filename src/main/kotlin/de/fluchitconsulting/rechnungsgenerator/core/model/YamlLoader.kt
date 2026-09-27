@@ -1,6 +1,7 @@
 package de.fluchitconsulting.rechnungsgenerator.core.model
 
 import com.charleskorn.kaml.Yaml
+import kotlinx.serialization.DeserializationStrategy
 import kotlinx.serialization.SerializationException
 import java.io.IOException
 import java.nio.file.Path
@@ -31,7 +32,7 @@ object YamlLoader {
         return config
     }
 
-    fun parseInvoice(text: String): Invoice = yaml.decodeFromString(Invoice.serializer(), text)
+    fun parseInvoice(text: String): Invoice = decode(Invoice.serializer(), text)
 
     fun loadSellerConfig(path: Path): SellerConfig {
         val config = read(path, ::decodeSellerConfig)
@@ -68,7 +69,30 @@ object YamlLoader {
         }
     }
 
-    private fun decodeSellerConfig(text: String): SellerConfig = yaml.decodeFromString(SellerConfig.serializer(), text)
+    private fun decodeSellerConfig(text: String): SellerConfig = decode(SellerConfig.serializer(), text)
+
+    /**
+     * Die zwei Schritte, aus denen kaml `decodeFromString` baut, getrennt –
+     * dazwischen sieht [ControlCharacters] den Knotenbaum. Alle Fundstellen
+     * stehen auf einmal da; wer nur die erste erfährt, läuft für jede weitere
+     * einmal mehr.
+     */
+    private fun <T> decode(
+        deserializer: DeserializationStrategy<T>,
+        text: String,
+    ): T {
+        val root = yaml.parseToYamlNode(text)
+        val found = ControlCharacters.findIn(root)
+        if (found.isNotEmpty()) {
+            throw SerializationException(
+                "Steuerzeichen gehören weder ins PDF noch in die E-Rechnung:\n" +
+                    found.joinToString("\n") { "  $it" } +
+                    "\nSie entstehen in doppelten Anführungszeichen aus Escapes wie \\x0B oder \\r. " +
+                    "Tabulator und Zeilenumbruch sind erlaubt.",
+            )
+        }
+        return yaml.decodeFromYamlNode(deserializer, root)
+    }
 
     /**
      * Liest das Logo, das die Stammdaten unter [sellerConfig] nennen. Ein

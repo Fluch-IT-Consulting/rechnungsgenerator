@@ -367,4 +367,75 @@ class YamlLoaderTest : FunSpec({
         failure.message!! shouldContain file.toString()
         failure.message!! shouldContain "gibtsnicht"
     }
+
+    context("Steuerzeichen (#391)") {
+        // Ein echtes Steuerzeichen lässt YAML im Text nicht zu, hinein kommt es
+        // über ein Escape in doppelten Anführungszeichen. Die Dateien schreiben
+        // deshalb "\x0B" und nicht das Zeichen selbst.
+        fun invoiceWith(name: String): String =
+            resource("rechnung.yaml").replace("bezeichnung: IT-Beratungsleistungen", "bezeichnung: \"$name\"")
+
+        test("bricht beim Lesen ab und nennt Datei, Feld, Zeile und Zeichen") {
+            val file = createTempDirectory("loader-test").resolve("rechnung.yaml")
+            file.writeText(invoiceWith("IT-Beratung\\x0Bleistungen"))
+
+            val failure = shouldThrow<InputFileException> { YamlLoader.loadInvoice(file) }
+
+            failure.message!! shouldContain file.toString()
+            failure.message!! shouldContain "positionen[0].bezeichnung (Zeile 17, Spalte 18): U+000B"
+        }
+
+        test("nennt alle Fundstellen einer Datei auf einmal") {
+            val text =
+                invoiceWith("IT-Beratung\\x0Bleistungen")
+                    .replace("hinweis: Juli 2026", "hinweis: \"Juli\\x07 2026\"")
+
+            val failure = shouldThrow<SerializationException> { YamlLoader.parseInvoice(text) }
+
+            failure.message!! shouldContain "positionen[0].bezeichnung"
+            failure.message!! shouldContain "positionen[1].hinweis"
+            failure.message!! shouldContain "U+0007"
+        }
+
+        test("prüft auch die Stammdaten") {
+            val text =
+                resource("stammdaten.yaml").replace(
+                    "firma: Muster IT-Consulting UG (haftungsbeschränkt)",
+                    "firma: \"Muster\\x1B IT-Consulting UG\"",
+                )
+
+            val failure = shouldThrow<SerializationException> { YamlLoader.parseSellerConfig(text) }
+
+            failure.message!! shouldContain "firma"
+            failure.message!! shouldContain "U+001B"
+        }
+
+        test("CR, DEL, C1 und was XML 1.0 sonst verbietet, brechen ab") {
+            // CR, weil YAML jedes echte Zeilenende zu LF macht und TeX nach
+            // einem CR den Rest der Zeile verschluckt.
+            listOf(
+                "\\r" to "U+000D",
+                "\\x7F" to "U+007F",
+                "\\N" to "U+0085",
+                "\\uFFFE" to "U+FFFE",
+                "\\uFFFF" to "U+FFFF",
+                "\\uD800" to "U+D800",
+            ).forEach { (escape, codePoint) ->
+                withClue(escape) {
+                    val failure =
+                        shouldThrow<SerializationException> {
+                            YamlLoader.parseInvoice(invoiceWith("IT-Beratung${escape}leistungen"))
+                        }
+
+                    failure.message!! shouldContain codePoint
+                }
+            }
+        }
+
+        test("Tabulator und Zeilenumbruch bleiben erlaubt") {
+            val invoice = YamlLoader.parseInvoice(invoiceWith("IT-Beratung\\tleistungen\\nim Juli"))
+
+            invoice.items.first().name shouldBe "IT-Beratung\tleistungen\nim Juli"
+        }
+    }
 })
