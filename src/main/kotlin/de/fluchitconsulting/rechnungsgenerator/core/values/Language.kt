@@ -28,6 +28,7 @@ enum class Language(
 ) {
     GERMAN("de-DE"),
     BRITISH_ENGLISH("en-GB"),
+    AMERICAN_ENGLISH("en-US"),
     ;
 
     val locale: Locale = Locale.forLanguageTag(tag)
@@ -49,7 +50,7 @@ enum class Language(
     companion object {
         /**
          * Jeder Sprachbereich, unter dem ein Text stehen darf: jede Sprache und
-         * ihre Hauptsprache. Ein anderer – `fr`, `en-US` – gälte für keine
+         * ihre Hauptsprache. Ein anderer – `fr`, `en-AU` – gälte für keine
          * Rechnung und wäre derselbe stille Fehler wie ein vertippter
          * Schlüssel.
          */

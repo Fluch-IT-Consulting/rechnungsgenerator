@@ -99,7 +99,7 @@ internal object DeductionBlocks {
                     "Abschlagsrechnung ".escapeLatex() + number + " vom ".escapeLatex() + issued +
                         ", vereinnahmt am ".escapeLatex() + vereinnahmtAm
                 }
-                Language.BRITISH_ENGLISH -> {
+                Language.BRITISH_ENGLISH, Language.AMERICAN_ENGLISH -> {
                     "Advance payment invoice ".escapeLatex() + number + " dated ".escapeLatex() + issued +
                         ", received on ".escapeLatex() + vereinnahmtAm
                 }
@@ -111,25 +111,29 @@ internal object DeductionBlocks {
                     val rate = Numbers.percent(anteil.vatRate)
                     val vat = Numbers.amount(anteil.vat)
                     when (language) {
-                        Language.GERMAN -> "netto ".escapeLatex() + net + " zzgl. ".escapeLatex() + rate + " USt. ".escapeLatex() + vat
-                        Language.BRITISH_ENGLISH -> "net ".escapeLatex() + net + " plus ".escapeLatex() + rate + " VAT ".escapeLatex() + vat
+                        Language.GERMAN -> {
+                            "netto ".escapeLatex() + net + " zzgl. ".escapeLatex() + rate + " USt. ".escapeLatex() + vat
+                        }
+                        Language.BRITISH_ENGLISH, Language.AMERICAN_ENGLISH -> {
+                            "net ".escapeLatex() + net + " plus ".escapeLatex() + rate + " VAT ".escapeLatex() + vat
+                        }
                     }
                 }.joinToLatex(" · ")
         return heading + Latex.macro(TemplateMacro.ABSETZUNGSDETAIL, listOf(anteile))
     }
 
-    // "Less" ist das britische "abzüglich" einer Aufstellung.
+    // "Less" ist das englische "abzüglich" einer Aufstellung.
     private fun heading(language: Language): String =
         when (language) {
             Language.GERMAN -> "Abzüglich der berechneten und vereinnahmten Abschläge:"
-            Language.BRITISH_ENGLISH -> "Less advance payments invoiced and received:"
+            Language.BRITISH_ENGLISH, Language.AMERICAN_ENGLISH -> "Less advance payments invoiced and received:"
         }
 
     // "Balance due" und nicht "Amount due": Das wäre der ganze Rechnungsbetrag.
     private fun remainingLabel(language: Language): String =
         when (language) {
             Language.GERMAN -> "Restbetrag"
-            Language.BRITISH_ENGLISH -> "Balance due"
+            Language.BRITISH_ENGLISH, Language.AMERICAN_ENGLISH -> "Balance due"
         }
 
     private fun settledNote(language: Language): String =
@@ -137,7 +141,7 @@ internal object DeductionBlocks {
             Language.GERMAN -> {
                 "Der Rechnungsbetrag ist durch die vereinnahmten Abschläge ausgeglichen; es verbleibt kein Restbetrag."
             }
-            Language.BRITISH_ENGLISH -> {
+            Language.BRITISH_ENGLISH, Language.AMERICAN_ENGLISH -> {
                 "The invoice amount is settled by the advance payments received; no balance remains."
             }
         }

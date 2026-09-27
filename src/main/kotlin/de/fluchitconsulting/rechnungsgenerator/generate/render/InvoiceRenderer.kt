@@ -271,7 +271,7 @@ object InvoiceRenderer {
         val dated =
             when (language) {
                 Language.GERMAN -> " vom "
-                Language.BRITISH_ENGLISH -> " dated "
+                Language.BRITISH_ENGLISH, Language.AMERICAN_ENGLISH -> " dated "
             }
         return listOf(
             xmpField("Title", document),

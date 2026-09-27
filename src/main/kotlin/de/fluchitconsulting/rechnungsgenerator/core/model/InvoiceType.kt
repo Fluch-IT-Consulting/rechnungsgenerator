@@ -160,7 +160,7 @@ enum class InvoiceType(
                 "Diese Stornorechnung hebt die Rechnung <<URSPRUNGSNUMMER>> vom <<URSPRUNGSDATUM>> vollständig auf. " +
                     "Ein bereits gezahlter Betrag wird erstattet.",
             ),
-        // "dated" ist die britische Wendung für "vom".
+        // "dated" ist die englische Wendung für "vom".
         englishMandatoryNote =
             TextTemplate.parse(
                 "This cancellation invoice cancels invoice <<URSPRUNGSNUMMER>> dated <<URSPRUNGSDATUM>> in full. " +
@@ -178,7 +178,7 @@ enum class InvoiceType(
     fun mandatoryNote(language: Language): TextTemplate<InvoiceVariable>? =
         when (language) {
             Language.GERMAN -> germanMandatoryNote
-            Language.BRITISH_ENGLISH -> englishMandatoryNote
+            Language.BRITISH_ENGLISH, Language.AMERICAN_ENGLISH -> englishMandatoryNote
         }
 
     /** Die Beschriftung des Zeitraums der ganzen Rechnung. */
@@ -190,7 +190,7 @@ enum class InvoiceType(
             // "Service period" und nicht "Period of supply" oder "Tax point":
             // Beide sind im britischen VAT eigene Begriffe. "Expected" und
             // nicht "Estimated", das nach einer Schätzung klingt.
-            Language.BRITISH_ENGLISH -> {
+            Language.BRITISH_ENGLISH, Language.AMERICAN_ENGLISH -> {
                 if (servicePeriodIsForecast) "Expected service period" else "Service period"
             }
         }
@@ -205,7 +205,7 @@ enum class InvoiceType(
             Language.GERMAN -> {
                 if (servicePeriodIsForecast) "Voraussichtlicher Zeitraum" else "Zeitraum"
             }
-            Language.BRITISH_ENGLISH -> {
+            Language.BRITISH_ENGLISH, Language.AMERICAN_ENGLISH -> {
                 if (servicePeriodIsForecast) "Expected period" else "Period"
             }
         }
@@ -237,7 +237,7 @@ enum class InvoiceType(
             // 386 so heißt – aus demselben Grund, aus dem das Deutsche die
             // Anzahlung meidet. "Final invoice", wie der Pflichtsatz der
             // Abschlagsrechnung sie ankündigt.
-            Language.BRITISH_ENGLISH -> {
+            Language.BRITISH_ENGLISH, Language.AMERICAN_ENGLISH -> {
                 when (this) {
                     INVOICE -> "Invoice"
                     PARTIAL -> "Partial invoice"
