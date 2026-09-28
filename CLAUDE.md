@@ -695,10 +695,14 @@ PDF/A-Prüfung über veraPDF.
   `InvoiceVariableResolver`) → `rules` (Befunde, Regelgruppen, `InvoiceKind`,
   `Deduction`) → `calculation` (`CalculatedInvoice`) → `model` (samt
   `YamlLoader` und den Fachkatalogen `InvoiceType` und `TaxCategory`) →
-  `values`. In `values` liegen nur Werte (#312): Ein Fachkatalog ist technisch
-  ein Enum, aber jeder Eintrag trägt Rechtsfolgen und Wortlaut und weiß, was
-  aus ihm für die Rechnung folgt – das gehört neben `CheckMethod` nach
-  `model`. Zwei Blätter importieren nichts aus dem Projekt: `text`
+  `localization` (`LanguageTable`) → `values`. In `values` liegen nur Werte
+  (#312): Ein Fachkatalog ist technisch ein Enum, aber jeder Eintrag trägt
+  Rechtsfolgen und Wortlaut und weiß, was aus ihm für die Rechnung folgt –
+  das gehört neben `CheckMethod` nach `model`. Ebenso ist die Tabelle der
+  Texte je Sprachbereich kein Wert, sondern ein Werkzeug, und sie nimmt die
+  Suche entlang der Sprachbereiche mit, damit `Language` nur `tag` und
+  `locale` trägt (#432). Sie liegt nicht neben `text`, weil sie `Language`
+  kennt, und nicht in `model`, weil sie nichts von Rechnungen weiß. Zwei Blätter importieren nichts aus dem Projekt: `text`
   (`TextTemplate`, `VariableResolver`, `TextValue`) liegt neben `values`, weil
   es keinen Wert kennt, und `serialization` darunter, das Gerüst, über das
   jeder Werttyp seinen Serializer baut. Die `@Serializable`-Annotationen

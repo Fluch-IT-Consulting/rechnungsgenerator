@@ -33,29 +33,7 @@ enum class Language(
 
     val locale: Locale = Locale.forLanguageTag(tag)
 
-    /**
-     * Die Sprachbereiche, unter denen ein Text für diese Sprache gilt, vom
-     * genauesten an: `en-GB`, dann `en`. Der Lookup aus RFC 4647, aber ohne
-     * seitwärts zu suchen – `en-US` fiele nie auf `en-GB`.
-     *
-     * Eine eigene Funktion über die geschlossene Menge und nicht
-     * `Locale.lookupTag`: Die Kette ist zwei Glieder lang, und welche
-     * Schlüssel es überhaupt gibt, soll [RANGES] sagen und nicht die Nachsicht
-     * des JDK.
-     */
-    val ranges: List<String> get() = listOf(tag, tag.substringBefore('-'))
-
     override fun toString(): String = tag
-
-    companion object {
-        /**
-         * Jeder Sprachbereich, unter dem ein Text stehen darf: jede Sprache und
-         * ihre Hauptsprache. Ein anderer – `fr`, `en-AU` – gälte für keine
-         * Rechnung und wäre derselbe stille Fehler wie ein vertippter
-         * Schlüssel.
-         */
-        val RANGES: List<String> = entries.flatMap { it.ranges }.distinct()
-    }
 }
 
 object LanguageSerializer :

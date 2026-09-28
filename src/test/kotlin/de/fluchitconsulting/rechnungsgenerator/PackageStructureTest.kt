@@ -28,7 +28,7 @@ class PackageStructureTest : FunSpec({
     val root = "de.fluchitconsulting.rechnungsgenerator"
 
     // Der Kern selbst hat keine Zeile: `core` enthält keine Datei, nur seine
-    // fünf Schichten (#310) und die zwei Blätter text und serialization (#312).
+    // sechs Schichten (#310, #432) und die zwei Blätter text und serialization (#312).
     val core = "$root.core"
 
     // Wer darf woher importieren – die Zeichnung aus #107, Zeile für Zeile.
@@ -105,7 +105,10 @@ class PackageStructureTest : FunSpec({
             "$core.accepted" to setOf("$core.rules", "$core.calculation", "$core.model", "$core.values", "$core.text"),
             "$core.rules" to setOf("$core.calculation", "$core.model", "$core.values"),
             "$core.calculation" to setOf("$core.model", "$core.values"),
-            "$core.model" to setOf("$core.values", "$core.text", "$core.serialization"),
+            "$core.model" to setOf("$core.localization", "$core.values", "$core.text", "$core.serialization"),
+            // Die Tabelle der Texte je Sprachbereich: kein Wert, aber auch nicht
+            // neben text, weil sie Language kennt (#432).
+            "$core.localization" to setOf("$core.values"),
             "$core.values" to setOf("$core.serialization"),
             // Die Platzhalter-Texte liegen neben values und nicht darunter:
             // Sie kennen weder Werte noch Vokabular, und gebraucht werden sie

@@ -1,5 +1,6 @@
-package de.fluchitconsulting.rechnungsgenerator.core.values
+package de.fluchitconsulting.rechnungsgenerator.core.localization
 
+import de.fluchitconsulting.rechnungsgenerator.core.values.Language
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.SerializationException
 import kotlinx.serialization.builtins.MapSerializer
@@ -18,13 +19,12 @@ class InvalidLanguageRangeException(message: String) : IllegalArgumentException(
  * Die Schlüssel sind Sprachbereiche und keine Sprachen. `sprache:` sagt, in
  * welcher Sprache eine Rechnung *ist*, und das ist genau eine; ein Schlüssel
  * hier sagt, für welche Rechnungen ein Text *gilt*. Deshalb darf auch die
- * Hauptsprache allein stehen, `en`, und [get] sucht entlang
- * [Language.ranges]. Stehen `en` und `en-GB` beide da, ist das kein Fehler,
- * sondern der Zweck: britisch dies, jedes andere Englisch das.
+ * Hauptsprache allein stehen, `en`, und [get] sucht entlang [ranges].
+ * Stehen `en` und `en-GB` beide da, ist das kein Fehler, sondern der Zweck:
+ * britisch dies, jedes andere Englisch das.
  *
- * Normalisiert wird im Konstruktor, auf die Schreibweise aus
- * [Language.RANGES]. Zwei Schlüssel, die danach derselbe sind, sind ein
- * Widerspruch und kein Vorrang.
+ * Normalisiert wird im Konstruktor, auf die Schreibweise aus [RANGES]. Zwei
+ * Schlüssel, die danach derselbe sind, sind ein Widerspruch und kein Vorrang.
  */
 class LanguageTable(raw: Map<String, String>) {
     private val texts: Map<String, String> =
@@ -51,12 +51,32 @@ class LanguageTable(raw: Map<String, String>) {
     override fun toString(): String = texts.toString()
 
     companion object {
+        /**
+         * Die Sprachbereiche, unter denen ein Text für diese Sprache gilt, vom
+         * genauesten an: `en-GB`, dann `en`. Der Lookup aus RFC 4647, aber ohne
+         * seitwärts zu suchen – `en-US` fiele nie auf `en-GB`.
+         *
+         * Eine eigene Funktion über die geschlossene Menge und nicht
+         * `Locale.lookupTag`: Die Kette ist zwei Glieder lang, und welche
+         * Schlüssel es überhaupt gibt, soll [RANGES] sagen und nicht die
+         * Nachsicht des JDK.
+         */
+        private val Language.ranges: List<String> get() = listOf(tag, tag.substringBefore('-'))
+
+        /**
+         * Jeder Sprachbereich, unter dem ein Text stehen darf: jede Sprache und
+         * ihre Hauptsprache. Ein anderer – `fr`, `en-AU` – gälte für keine
+         * Rechnung und wäre derselbe stille Fehler wie ein vertippter
+         * Schlüssel.
+         */
+        private val RANGES: List<String> = Language.entries.flatMap { it.ranges }.distinct()
+
         val EMPTY = LanguageTable(emptyMap())
 
         private fun canonical(key: String): String =
-            Language.RANGES.firstOrNull { it.equals(key.trim(), ignoreCase = true) }
+            RANGES.firstOrNull { it.equals(key.trim(), ignoreCase = true) }
                 ?: throw InvalidLanguageRangeException(
-                    "Unbekannte Sprache '$key'. Zulässig sind: ${Language.RANGES.joinToString()}",
+                    "Unbekannte Sprache '$key'. Zulässig sind: ${RANGES.joinToString()}",
                 )
     }
 }

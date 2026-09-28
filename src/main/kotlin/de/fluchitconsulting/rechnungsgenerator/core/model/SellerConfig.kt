@@ -1,5 +1,7 @@
 package de.fluchitconsulting.rechnungsgenerator.core.model
 
+import de.fluchitconsulting.rechnungsgenerator.core.localization.LanguageTable
+import de.fluchitconsulting.rechnungsgenerator.core.localization.languageTableSerializer
 import de.fluchitconsulting.rechnungsgenerator.core.serialization.valueWhenPresent
 import de.fluchitconsulting.rechnungsgenerator.core.values.Bic
 import de.fluchitconsulting.rechnungsgenerator.core.values.CountryCode
@@ -7,12 +9,10 @@ import de.fluchitconsulting.rechnungsgenerator.core.values.Design
 import de.fluchitconsulting.rechnungsgenerator.core.values.Iban
 import de.fluchitconsulting.rechnungsgenerator.core.values.InvoiceNumberPattern
 import de.fluchitconsulting.rechnungsgenerator.core.values.Language
-import de.fluchitconsulting.rechnungsgenerator.core.values.LanguageTable
 import de.fluchitconsulting.rechnungsgenerator.core.values.RgbColor
 import de.fluchitconsulting.rechnungsgenerator.core.values.RgbColorSerializer
 import de.fluchitconsulting.rechnungsgenerator.core.values.TaxNumber
 import de.fluchitconsulting.rechnungsgenerator.core.values.VatId
-import de.fluchitconsulting.rechnungsgenerator.core.values.languageTableSerializer
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
