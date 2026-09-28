@@ -13,7 +13,7 @@ import kotlin.io.path.readText
 
 /**
  * Läufe mit den echten Werkzeugen, geteilt von `ToolchainIntegrationTest` und
- * `PflichtangabenTest`. Alles landet in [workDir].
+ * dem Pflichtangaben-Netz ([PflichtangabenRun]). Alles landet in [workDir].
  */
 class ToolchainRun(
     private val workDir: Path,

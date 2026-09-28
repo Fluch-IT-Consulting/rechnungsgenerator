@@ -112,7 +112,7 @@ class ToolchainIntegrationTest : FunSpec({
     }
 
     // Ob jede Rechnungsart ein gültiges PDF/A-1b ergibt, prüft
-    // PflichtangabenTest – für alle Arten, nicht nur für drei.
+    // PflichtangabenArtenTest – für alle Arten, nicht nur für drei.
 
     /**
      * Dieselbe Rechnungsdatei ergibt dasselbe PDF, Byte für Byte – auch wenn

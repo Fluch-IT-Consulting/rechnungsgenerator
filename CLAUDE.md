@@ -186,8 +186,9 @@ PDF/A-Prüfung über veraPDF.
   sonst still falsch setzte, etwa `0,033.5` statt `0,0335`, steht in der
   Grundlage. Nach dem Komma wird nie getrennt, weder durch Punkt noch durch
   Leerraum. `DateFormat` formatiert nur noch Daten, je Sprache. Den Vertrag
-  „jede Ziffer, keine weitere“ hält der `PflichtangabenTest` je Design am
-  fertigen PDF, samt `schreibweise-der-zahlen.yaml`.
+  „jede Ziffer, keine weitere“ hält das Pflichtangaben-Netz je Design am
+  fertigen PDF, samt `schreibweise-der-zahlen.yaml` im
+  `PflichtangabenSonderfaelleTest`.
 
 - **Landzeile** (#374): Eine Auslandsrechnung nennt unter dem Ort das Land
   ausgeschrieben, in der Sprache der Rechnung und in Versalien nach DIN 5008
@@ -293,7 +294,8 @@ PDF/A-Prüfung über veraPDF.
   fachlicher Aussage kommt aus Kotlin (ADR-0017). Ein neues Design ist eine
   Vorlage, die Grundlage und Sprachdatei lädt, je Sprache eine Sprachdatei,
   ein Eintrag in `Design`, je Sprache eine Vergleichsdatei und ein Eintrag im
-  Pflichtangaben-Netz mit seinen Wörtern je Sprache.
+  Pflichtangaben-Netz (`PflichtangabenRun.designs`) mit seinen Wörtern je
+  Sprache.
 
   Die **Akzentfarbe** (ADR-0024) nennen die Stammdaten, `akzentfarbe: 31AE34`,
   sechs Ziffern ohne `#`; die Vorgabe ohne Eintrag hat die Vorlage, nicht
@@ -672,6 +674,16 @@ PDF/A-Prüfung über veraPDF.
   Vergleich der beiden Prüfer –, überspringen sich, wenn es fehlt. Übersprungen
   und nicht bestanden, wie beim Altersnachweis der EU-Liste: Ein Netz, das
   fehlt, soll nicht aussehen wie eines, das hält.
+
+  Das Pflichtangaben-Netz steht in vier Klassen über dem gemeinsamen
+  `PflichtangabenRun` (#434): `PflichtangabenArtenTest` (die Beispiele je
+  Art), `PflichtangabenSonderfaelleTest` (je eine Datei für einen Fall, den
+  kein Beispiel zeigt), `PflichtangabenEnglischTest` (jedes Beispiel auf
+  Englisch) und `PflichtangabenSeitenTest` (mehrere Seiten). Geteilt, weil
+  Gradle Klassen auf die Test-JVMs verteilt und keine teilt – und zwar reihum
+  in alphabetischer Reihenfolge, nicht nach Bedarf. Warum es 6 Forks sind und
+  was eine neue Klasse in `generate.toolchain` daran verschieben kann, steht
+  am Schalter in `build.gradle.kts`.
 - **Paketstruktur**: Ein vertikales Paket je Kommando, mit allem, was
   nur dieses Kommando braucht: `generate` mit dem LaTeX-Satz
   (`generate.render`), dem XML der E-Rechnung (`generate.einvoice`) und Satz

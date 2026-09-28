@@ -10,7 +10,7 @@ import java.math.BigDecimal
 
 /**
  * Welche Ziffern die Vorlage bekommt. Wie sie auf dem Blatt aussehen, prüft
- * der `PflichtangabenTest` je Design am fertigen PDF (ADR-0021).
+ * das Pflichtangaben-Netz je Design am fertigen PDF (ADR-0021).
  */
 class NumbersTest : FunSpec({
 
