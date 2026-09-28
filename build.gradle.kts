@@ -129,8 +129,8 @@ ktlint {
 // 1.3-Zweigs. Der bekommt die Fassungen nicht mehr, die die Advisories aus #158
 // nennen (1.5.25, 1.5.33, 1.5.34), deshalb eine gepflegte Reihe erzwungen.
 // Welche das gerade ist, hält Dependabot nach: zuerst 1.5.38, mit #165 die
-// 1.6-Reihe. Sie verlangt weiterhin nur JDK 11 und bringt SLF4J 2.0.18 mit –
-// dieselbe Reihe, die auch über ktlint hereinkommt.
+// 1.6-Reihe. Sie verlangt weiterhin nur JDK 11 und bringt SLF4J aus der
+// 2.0-Reihe mit – derselben, die auch über ktlint hereinkommt.
 configurations.named("ktlint") {
     resolutionStrategy {
         force("ch.qos.logback:logback-classic:1.6.4", "ch.qos.logback:logback-core:1.6.4")
