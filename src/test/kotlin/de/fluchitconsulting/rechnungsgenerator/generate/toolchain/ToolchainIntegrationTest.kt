@@ -23,7 +23,6 @@ import io.kotest.matchers.doubles.plusOrMinus
 import io.kotest.matchers.ints.shouldBeGreaterThan
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.string.shouldContain
-import io.kotest.matchers.string.shouldNotContain
 import org.apache.pdfbox.Loader
 import java.awt.image.BufferedImage
 import java.nio.file.Path
@@ -112,7 +111,9 @@ class ToolchainIntegrationTest : FunSpec({
     }
 
     // Ob jede Rechnungsart ein gültiges PDF/A-1b ergibt, prüft
-    // PflichtangabenArtenTest – für alle Arten, nicht nur für drei.
+    // PflichtangabenArtenTest – für alle Arten, nicht nur für drei. Dass ein
+    // PDF keine Lesezeichen hat (#321) und der Zeitraum als Text dasteht
+    // (#192), prüft das Pflichtangaben-Netz an jedem seiner PDFs.
 
     /**
      * Dieselbe Rechnungsdatei ergibt dasselbe PDF, Byte für Byte – auch wenn
@@ -204,23 +205,6 @@ class ToolchainIntegrationTest : FunSpec({
 
         first.readBytes().contentEquals(second.readBytes()) shouldBe true
         run.textOf(first) shouldContain "MUSTERIT"
-    }
-
-    /**
-     * Eine Rechnung hat keine Lesezeichen, und das PDF sagt das auch (#321):
-     * Mit Lesezeichen verlangte hyperref ohne Not einen weiteren Lauf, und
-     * `/UseOutlines` öffnete im Viewer eine leere Seitenleiste. Jedes Design:
-     * pdfx lädt zwar die Grundlage, aber was eine Vorlage danach lädt, kann
-     * hyperref noch umstellen.
-     */
-    test("das PDF hat keine Lesezeichen und öffnet keine Lesezeichenleiste") {
-        val pdfs = Design.entries.map { run.generate("rechnung", "lesezeichen-$it", sellerConfig = sellerConfigFor(it)).first }
-
-        pdfs.forEach { pdf ->
-            val text = String(pdf.readBytes(), Charsets.ISO_8859_1)
-            text shouldContain "/PageMode/UseNone"
-            text shouldNotContain "/Outlines"
-        }
     }
 
     /**
@@ -400,17 +384,6 @@ class ToolchainIntegrationTest : FunSpec({
         val (pdf, _) = run.generate("klammer", input = input)
 
         run.textOf(pdf) shouldContain street
-    }
-
-    /**
-     * Ein tagesgenauer Zeitraum steht als Text im PDF. Das schmale Leerzeichen
-     * um den Strich kennt TeX Gyre Heros nicht; roh durchgereicht las
-     * `pdftotext` an seiner Stelle zweimal U+FFFD (#192).
-     */
-    test("ein tagesgenauer Leistungszeitraum steht als Text im PDF") {
-        val (pdf, _) = run.generate("schlussrechnung", targetName = "zeitraum")
-
-        run.textOf(pdf) shouldContain "Leistungszeitraum: 01.06.2026 – 31.10.2026"
     }
 
     /**
