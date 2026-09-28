@@ -67,45 +67,30 @@ sealed interface CollectedPrepayments {
  * Die Hinweise der einzelnen Rechnungen fallen weg: Sie galten der
  * Abschlagsrechnung, als sie entstand, nicht der Schlussrechnung von heute.
  * Ihre Abbrüche kommen mit, mit der Herkunft davor.
+ *
+ * Verlangt mindestens eine Abschlagsrechnung. Eine leere Liste ist ein Fehler
+ * des Aufrufers und kein Befund: Ein leeres [CollectedPrepayments.Complete]
+ * bräuchte eine Währung, und es gäbe keine Datei, aus der sie käme.
  */
 fun prepaymentsOf(prepaymentInvoices: List<NamedInvoice>, config: SellerConfig): CollectedPrepayments {
+    require(prepaymentInvoices.isNotEmpty()) { "Ohne Abschlagsrechnung gibt es keine Abschläge zusammenzutragen." }
     val findings = mutableListOf<Finding>()
 
-    // groupBy bildet eine Map vom Kundennamen auf die Abschlagsrechnungen an
-    // diesen Kunden; mehr als ein Schlüssel heißt: mehr als ein Kunde.
-    val byCustomer = prepaymentInvoices.groupBy { it.invoice.customer.name }
-    if (byCustomer.size > 1) {
-        val customers =
-            byCustomer.entries.joinToString(", ") { (name, invoices) ->
-                "$name (${invoices.joinToString(", ") { it.invoice.number }})"
-            }
-        findings +=
-            Finding(
-                Rule.ABSCHLAGSRECHNUNGEN_VERSCHIEDENE_KUNDEN,
-                Subject.WholeInvoice,
-                "Die Abschlagsrechnungen gingen an verschiedene Kunden: $customers. " +
-                    "Eine Schlussrechnung setzt nur Abschläge desselben Kunden ab.",
-            )
-    }
+    findings +=
+        differing(prepaymentInvoices, Rule.ABSCHLAGSRECHNUNGEN_VERSCHIEDENE_KUNDEN, { it.customer.name }) { customers ->
+            "Die Abschlagsrechnungen gingen an verschiedene Kunden: $customers. " +
+                "Eine Schlussrechnung setzt nur Abschläge desselben Kunden ab."
+        }
 
     // Die Schlussrechnung trägt eine Währung für jeden Betrag, auch für die
     // abgesetzten (#409). Der Block nennt sie nicht, sie steht in der
     // Schlussrechnung selbst; ob die dieselbe nennt, sieht niemand mehr, der
     // die Abschlagsrechnungen liest (ADR-0001).
-    val byCurrency = prepaymentInvoices.groupBy { it.invoice.currency }
-    if (byCurrency.size > 1) {
-        val currencies =
-            byCurrency.entries.joinToString(", ") { (currency, invoices) ->
-                "$currency (${invoices.joinToString(", ") { it.invoice.number }})"
-            }
-        findings +=
-            Finding(
-                Rule.ABSCHLAGSRECHNUNGEN_VERSCHIEDENE_WAEHRUNGEN,
-                Subject.WholeInvoice,
-                "Die Abschlagsrechnungen stehen in verschiedenen Währungen: $currencies. " +
-                    "Eine Schlussrechnung setzt nur Abschläge in einer Währung ab.",
-            )
-    }
+    findings +=
+        differing(prepaymentInvoices, Rule.ABSCHLAGSRECHNUNGEN_VERSCHIEDENE_WAEHRUNGEN, Invoice::currency) { currencies ->
+            "Die Abschlagsrechnungen stehen in verschiedenen Währungen: $currencies. " +
+                "Eine Schlussrechnung setzt nur Abschläge in einer Währung ab."
+        }
 
     // Exakt verglichen wie die Regel der Schlussrechnung (#53).
     // Je Nummer ein Befund, mit ihrer Anzahl – wie in der Schlussrechnung (#152).
@@ -158,10 +143,31 @@ fun prepaymentsOf(prepaymentInvoices: List<NamedInvoice>, config: SellerConfig):
         }
 
     return if (findings.isEmpty()) {
-        CollectedPrepayments.Complete(entries, byCurrency.keys.single())
+        // Ohne ABSCHLAGSRECHNUNGEN_VERSCHIEDENE_WAEHRUNGEN stehen alle in der ersten.
+        CollectedPrepayments.Complete(entries, prepaymentInvoices.first().invoice.currency)
     } else {
         CollectedPrepayments.Rejected(findings)
     }
+}
+
+/**
+ * Ein Befund nach [rule], wenn die Abschlagsrechnungen in [key] auseinandergehen,
+ * sonst keiner. [sentence] bekommt jeden Wert mit den Nummern der Rechnungen,
+ * die ihn tragen: `EUR (R26-001), USD (R26-002, R26-003)`.
+ */
+private fun <K> differing(
+    prepaymentInvoices: List<NamedInvoice>,
+    rule: Rule,
+    key: (Invoice) -> K,
+    sentence: (String) -> String,
+): List<Finding> {
+    val byKey = prepaymentInvoices.groupBy { key(it.invoice) }
+    if (byKey.size <= 1) return emptyList()
+    val values =
+        byKey.entries.joinToString(", ") { (value, invoices) ->
+            "$value (${invoices.joinToString(", ") { it.invoice.number }})"
+        }
+    return listOf(Finding(rule, Subject.WholeInvoice, sentence(values)))
 }
 
 /**

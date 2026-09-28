@@ -14,6 +14,7 @@ import de.fluchitconsulting.rechnungsgenerator.core.rules.rules
 import de.fluchitconsulting.rechnungsgenerator.core.values.Currency
 import de.fluchitconsulting.rechnungsgenerator.core.values.Money
 import de.fluchitconsulting.rechnungsgenerator.core.values.Percent
+import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.collections.shouldNotContain
 import io.kotest.matchers.shouldBe
@@ -77,6 +78,12 @@ class PrepaymentsTest : FunSpec({
                 TaxShare(TaxCategory.STANDARD, Percent("19"), Money("1000.00"), Money("190.00")),
                 TaxShare(TaxCategory.STANDARD, Percent("7"), Money("500.00"), Money("35.00")),
             )
+    }
+
+    test("ohne Abschlagsrechnung ist der Aufruf ein Fehler des Aufrufers und kein Befund") {
+        // Ein leeres Complete bräuchte eine Währung, und es gäbe keine Datei,
+        // aus der sie käme.
+        shouldThrow<IllegalArgumentException> { prepaymentsOf(emptyList(), config) }
     }
 
     test("jeder Eintrag trägt den Namen seiner Rechnung, in der übergebenen Reihenfolge") {
