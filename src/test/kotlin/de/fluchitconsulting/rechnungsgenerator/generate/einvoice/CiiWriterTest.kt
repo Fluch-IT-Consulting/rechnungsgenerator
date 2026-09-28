@@ -189,11 +189,19 @@ class CiiWriterTest : FunSpec({
     }
 
     context("BT-33 nennt Registergericht und Geschäftsführung wie das Blatt") {
+        // Die Positionen stehen im XML vor dem Verkäufer, und ihre
+        // Beschreibung (BT-154) heißt ebenfalls ram:Description. Deshalb trägt
+        // die Rechnung eine, und gelesen wird nur im Verkäufer.
         fun description(registerCourt: String?, managingDirector: String?): String {
             val config = testSellerConfig().copy(registerCourt = registerCourt, managingDirector = managingDirector)
-            val xml = CalculatedInvoice(testInvoice(), config).accepted().xml()
+            val invoice = testInvoice(items = listOf(testItem(description = "Arbeitspaket Nord")))
+            val xml = CalculatedInvoice(invoice, config).accepted().xml()
             xml.shouldBeValidExtended()
-            return xml.substringAfter("<ram:Description>").substringBefore("</ram:Description>")
+            return xml
+                .substringAfter("<ram:SellerTradeParty>")
+                .substringBefore("</ram:SellerTradeParty>")
+                .substringAfter("<ram:Description>")
+                .substringBefore("</ram:Description>")
         }
 
         test("beide, getrennt durch ein Semikolon, weil mehrere Namen selbst Kommas tragen") {

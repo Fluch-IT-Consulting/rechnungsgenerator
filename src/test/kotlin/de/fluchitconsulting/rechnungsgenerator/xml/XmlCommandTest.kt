@@ -7,6 +7,7 @@ import de.fluchitconsulting.rechnungsgenerator.execute
 import de.fluchitconsulting.rechnungsgenerator.generate.einvoice.CiiWriter
 import de.fluchitconsulting.rechnungsgenerator.generate.toolchain.EInvoiceEmbedder
 import de.fluchitconsulting.rechnungsgenerator.generate.toolchain.Toolchain
+import de.fluchitconsulting.rechnungsgenerator.toolchain.capturingStandardError
 import io.kotest.assertions.withClue
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
@@ -151,8 +152,28 @@ class XmlCommandTest : FunSpec({
 
         result.exitCode shouldBe 1
         result.out.size shouldBe 0
-        result.err shouldContain "Das XML in factur-x.xml ist ungültig:"
+        result.err shouldContain
+            "Das XML in factur-x.xml ist ungültig:\n  Kein wohlgeformtes XML (Zeile 1, Spalte 1): Vorzeitiges Dateiende."
         result.err shouldNotContain "Es trägt kein XML einer E-Rechnung"
+    }
+
+    // Ohne eigenen ErrorHandler schreibt der Parser des JDK [Fatal Error]
+    // direkt auf System.err, am Ausgeber von execute() vorbei (#395). Deshalb
+    // wird System.err eigens mitgeschnitten.
+    test("ein XML, das nicht wohlgeformt ist, nennt Ort und Grund, und auf stderr steht nur diese Meldung") {
+        val malformed = xml.decodeToString().replaceFirst("</ram:CountryID>", "</ram:Country>").toByteArray()
+        val pdf = einvoice("nicht-wohlgeformt.pdf", malformed)
+
+        val (result, systemErr) = capturingStandardError { runProgram("xml", pdf.toString()) }
+
+        result.exitCode shouldBe 1
+        result.out.size shouldBe 0
+        result.err shouldBe
+            "$pdf ist keine gültige E-Rechnung nach ZUGFeRD.\n" +
+            "Das XML in factur-x.xml ist ungültig:\n" +
+            "  Kein wohlgeformtes XML (Zeile 93, Spalte 30): " +
+            "Elementtyp \"ram:CountryID\" muss mit dem entsprechenden Endtag \"</ram:CountryID>\" beendet werden.\n"
+        systemErr shouldBe ""
     }
 
     /**
