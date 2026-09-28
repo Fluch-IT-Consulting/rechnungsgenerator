@@ -350,7 +350,7 @@
   {\bfseries\color{haupttext}<<FIRMA>>}\ifblank{<<LOGO>>}{}{\settoheight{\versalhoehe}{\bfseries M}%
     \rlap{\hspace*{-\linewidth}\raisebox{\dimexpr\versalhoehe-\height\relax}[0pt][0pt]{\normalsize\color{haupttext}%
       \resizebox{!}{\logoskalierung\logohoehe}{\begin{tikzpicture}\logozeichnung\end{tikzpicture}}}}}\ifblank{<<GESCHAEFTSFUEHRUNG>>}{\kopfperson{<<INHABER>>}}{}\zeilenwechsel{}%
-  <<STRASSE>> · <<PLZ>> <<ORT>>\ifblank{<<TELEFON>>}{}{\zeilenwechsel{}Tel. <<TELEFON>>}\zeilenwechsel{}<<EMAIL>>\par}
+  <<STRASSE>> · <<PLZ>> <<ORT>>\ifblank{<<TELEFON>>}{}{\zeilenwechsel{}\worttelefon{} <<TELEFON>>}\zeilenwechsel{}<<EMAIL>>\par}
 
 \vspace{18mm}
 
