@@ -244,10 +244,10 @@ PDF/A-Prüfung über veraPDF.
   hier Z. Das Pflichtangaben-Netz setzt jedes Beispiel auch auf Englisch,
   in beiden Varianten, und verlangt ein gültiges PDF – dazu je ein Beispiel
   für jede Kategorie, die einen Grund mitbringt (AE, K, G), in allen drei
-  Sprachen und mit dem Grund wörtlich (#427). Einen Ausschluss für
-  Sätze, die eine Sprache noch nicht hat, gibt es nicht mehr: Kommt eine
-  Sprache schrittweise, bringt sie Regel und werfende Zweige wieder mit
-  (Nachtrag zu ADR-0025).
+  Sprachen und mit dem Grund wörtlich (#427). Eine neue Sprache bringt in
+  jedem `when` einen Wortlaut mit. Kommt sie schrittweise, bringt sie
+  dazu die Regel, die ablehnt, was sie noch nicht sagen kann, und die
+  werfenden Zweige, die diese Regel hält (Nachtrag zu ADR-0025).
 
   Englisch gibt es als `en-GB` und `en-US` (#407). Die Varianten teilen
   sich jeden Zweig, `BRITISH_ENGLISH, AMERICAN_ENGLISH ->`, und gehen allein

@@ -69,7 +69,9 @@ _Vermeiden_: Originalrechnung, vorausgegangene Rechnung, Ausgangsrechnung
 Eine Rechnung, die neben dem Blatt als XML nach ZUGFeRD vorliegt, beides in
 einem PDF/A-3; maßgeblich ist das XML. Keine Rechnungsart, sondern eine Form –
 jede Art kann E-Rechnung sein. Gültig ist sie, wenn das PDF/A die
-PDF/A-Prüfung besteht und das XML die XML-Prüfung.
+PDF/A-Prüfung besteht und das XML die XML-Prüfung, und wenn das XML sich als
+EN 16931 ausgibt (BT-24): BASIC-WL besteht beide Prüfungen und ist trotzdem
+keine.
 _Vermeiden_: ZUGFeRD-Rechnung, Hybridrechnung, PDF-Rechnung, XRechnung (das
 ist XML ohne Blatt)
 
