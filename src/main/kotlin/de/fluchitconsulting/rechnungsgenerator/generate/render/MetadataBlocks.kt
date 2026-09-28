@@ -16,7 +16,7 @@ import java.util.Locale
  *
  * Eine **einzelne Angabe** steht dagegen direkt im `when` von
  * [InvoiceRenderer.values] – auch mit Formatierschritt (#244). Dort stehen
- * `formatted()` und `DateFormat.date` seit jeher bei USTID, IBAN und
+ * `formatted()` und `DateFormat.date` bei USTID, IBAN und
  * RECHNUNGSDATUM; eine Zwischenstufe daneben, die nur weiterreicht, hieße
  * beim Lesen von `values()` einen Sprung in diese Datei, nur um zu erfahren,
  * dass hier keine Entscheidung steht.

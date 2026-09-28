@@ -137,7 +137,7 @@ class XmlCommandTest : FunSpec({
     }
 
     // EInvoiceAttachment reicht den Eintrag mit leerem XML weiter; dass es
-    // abgelehnt wird, sagt erst Mustang. Deshalb von außen geprüft.
+    // abgelehnt wird, sagt erst der Prüfer. Deshalb von außen geprüft.
     test("ein Eintrag ohne eingebettete Datei heißt ungültiges XML, nicht kein Anhang") {
         val pdf =
             writePdf(
