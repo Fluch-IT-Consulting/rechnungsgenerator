@@ -1,16 +1,20 @@
-package de.fluchitconsulting.rechnungsgenerator.core.values
+package de.fluchitconsulting.rechnungsgenerator.core.model
+
+import de.fluchitconsulting.rechnungsgenerator.core.values.Money
+import de.fluchitconsulting.rechnungsgenerator.core.values.Percent
 
 /**
  * Der Rabatt einer Position – EN 16931 BG-27, ein Abschlag auf den
  * Positionsbetrag und nicht auf den Einzelpreis (ADR-0013).
  *
+ * Genau eines von Satz und Betrag: Die Norm lässt Betrag (BT-136), Basis
+ * (BT-137) und Satz (BT-138) nebeneinander zu, vereinbart wird hier eines
+ * (ADR-0013). Stehen in der YAML beide, bricht RABATT_DOPPELT ab.
+ *
  * Versiegelt statt zweier Felder nebeneinander: Wer einen Rabatt auswertet,
  * entscheidet in einem `when` ohne `else`, und eine weitere Form hält der
  * Compiler an jeder dieser Stellen an – dasselbe Muster wie bei der
  * Rechnungsart (#121, #128).
- *
- * Gebaut wird er im Modell aus dem, was in der YAML steht; die Schlüssel dort
- * sind eine Form der Eingabe, der Rabatt ist die Sache.
  */
 sealed interface Discount {
     /**

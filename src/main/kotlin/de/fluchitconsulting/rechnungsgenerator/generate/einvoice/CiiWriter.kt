@@ -7,12 +7,12 @@ import de.fluchitconsulting.rechnungsgenerator.core.calculation.CalculatedLine
 import de.fluchitconsulting.rechnungsgenerator.core.calculation.VatGroup
 import de.fluchitconsulting.rechnungsgenerator.core.model.Address
 import de.fluchitconsulting.rechnungsgenerator.core.model.CancelledInvoice
+import de.fluchitconsulting.rechnungsgenerator.core.model.Discount
 import de.fluchitconsulting.rechnungsgenerator.core.model.InvoiceType
 import de.fluchitconsulting.rechnungsgenerator.core.model.ServicePeriod
 import de.fluchitconsulting.rechnungsgenerator.core.model.TaxCategory
 import de.fluchitconsulting.rechnungsgenerator.core.rules.Deduction
 import de.fluchitconsulting.rechnungsgenerator.core.rules.InvoiceKind
-import de.fluchitconsulting.rechnungsgenerator.core.values.Discount
 import de.fluchitconsulting.rechnungsgenerator.core.values.Money
 import de.fluchitconsulting.rechnungsgenerator.core.values.Percent
 import java.time.LocalDate

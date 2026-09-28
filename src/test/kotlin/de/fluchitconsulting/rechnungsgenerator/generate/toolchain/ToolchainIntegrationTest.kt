@@ -2,8 +2,8 @@ package de.fluchitconsulting.rechnungsgenerator.generate.toolchain
 
 import de.fluchitconsulting.rechnungsgenerator.core.accepted.accepted
 import de.fluchitconsulting.rechnungsgenerator.core.calculation.CalculatedInvoice
+import de.fluchitconsulting.rechnungsgenerator.core.model.Design
 import de.fluchitconsulting.rechnungsgenerator.core.model.YamlLoader
-import de.fluchitconsulting.rechnungsgenerator.core.values.Design
 import de.fluchitconsulting.rechnungsgenerator.generate.einvoice.CiiWriter
 import de.fluchitconsulting.rechnungsgenerator.generate.render.InvoiceRenderer
 import de.fluchitconsulting.rechnungsgenerator.toolchain.BuiltInPdfAValidator

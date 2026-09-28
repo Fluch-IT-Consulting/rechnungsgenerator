@@ -18,7 +18,7 @@ class PflichtangabenArtenTest : FunSpec({
 
     test("jedes Design steht im Netz, in jeder Sprache") {
         designs.map { it.name } shouldBe
-            de.fluchitconsulting.rechnungsgenerator.core.values.Design.entries
+            de.fluchitconsulting.rechnungsgenerator.core.model.Design.entries
                 .map { it.label }
         designs.forEach { design -> withClue(design.name) { design.words.keys shouldBe Language.entries.toSet() } }
     }

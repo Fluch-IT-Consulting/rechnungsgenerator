@@ -707,10 +707,16 @@ PDF/A-Prüfung über veraPDF.
   `InvoiceVariableResolver`) → `rules` (Befunde, Regelgruppen, `InvoiceKind`,
   `Deduction`) → `calculation` (`CalculatedInvoice`) → `model` (samt
   `YamlLoader` und den Fachkatalogen `InvoiceType` und `TaxCategory`) →
-  `localization` (`LanguageTable`) → `values`. In `values` liegen nur Werte
-  (#312): Ein Fachkatalog ist technisch ein Enum, aber jeder Eintrag trägt
-  Rechtsfolgen und Wortlaut und weiß, was aus ihm für die Rechnung folgt –
-  das gehört neben `CheckMethod` nach `model`. Ebenso ist die Tabelle der
+  `localization` (`LanguageTable`) → `values`. In `values` liegen nur Werte:
+  Ein Wert stellt eine Sache dar – einen Betrag, einen Code, eine Kennung –
+  und käme in einem anderen Programm genauso vor, als einzelne Angabe der
+  Norm (`Money`, `Iban`) oder als Code nach einer Norm (`Unit`, `Currency`),
+  auch wenn wir von der Codeliste nur einen Teil zulassen (#431). Nach
+  `model` gehört dagegen ein Fachkatalog, technisch ein Enum, dessen Einträge
+  Rechtsfolgen und Wortlaut tragen und wissen, was aus ihnen für die Rechnung
+  folgt (#312); eine Gruppe, die sagt, woraus ein Teil unserer Rechnung
+  besteht (`Discount`); und ein Katalog des Programms, dessen Einträge es nur
+  hier gibt (`Design`, `CheckMethod`). Ebenso ist die Tabelle der
   Texte je Sprachbereich kein Wert, sondern ein Werkzeug, und sie nimmt die
   Suche entlang der Sprachbereiche mit, damit `Language` nur `tag` und
   `locale` trägt (#432). Sie liegt nicht neben `text`, weil sie `Language`

@@ -1,12 +1,12 @@
 package de.fluchitconsulting.rechnungsgenerator.core.calculation
 
+import de.fluchitconsulting.rechnungsgenerator.core.model.Discount
 import de.fluchitconsulting.rechnungsgenerator.core.model.Invoice
 import de.fluchitconsulting.rechnungsgenerator.core.model.LineItem
 import de.fluchitconsulting.rechnungsgenerator.core.model.Prepayment
 import de.fluchitconsulting.rechnungsgenerator.core.model.SellerConfig
 import de.fluchitconsulting.rechnungsgenerator.core.model.SkontoTier
 import de.fluchitconsulting.rechnungsgenerator.core.model.TaxCategory
-import de.fluchitconsulting.rechnungsgenerator.core.values.Discount
 import de.fluchitconsulting.rechnungsgenerator.core.values.EuMemberStates
 import de.fluchitconsulting.rechnungsgenerator.core.values.Language
 import de.fluchitconsulting.rechnungsgenerator.core.values.Money

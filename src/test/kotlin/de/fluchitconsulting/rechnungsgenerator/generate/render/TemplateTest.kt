@@ -1,7 +1,7 @@
 package de.fluchitconsulting.rechnungsgenerator.generate.render
 
+import de.fluchitconsulting.rechnungsgenerator.core.model.Design
 import de.fluchitconsulting.rechnungsgenerator.core.values.Currency
-import de.fluchitconsulting.rechnungsgenerator.core.values.Design
 import de.fluchitconsulting.rechnungsgenerator.core.values.Language
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.assertions.withClue
