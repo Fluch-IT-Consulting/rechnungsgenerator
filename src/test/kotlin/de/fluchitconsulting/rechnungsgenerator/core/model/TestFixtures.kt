@@ -97,12 +97,14 @@ fun testInvoice(
     introduction: String? = null,
     language: Language = Language.GERMAN,
     currency: Currency = Currency.EUR,
+    conversion: CurrencyConversion? = null,
 ) = Invoice(
     number = number,
     issueDate = LocalDate.of(2026, 8, 14),
     type = type,
     language = language,
     currency = currency,
+    conversion = conversion,
     receivedOn = receivedOn,
     servicePeriod = ServicePeriod(start = LocalDate.of(2026, 7, 1), end = LocalDate.of(2026, 7, 31)),
     customer =

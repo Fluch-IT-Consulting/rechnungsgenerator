@@ -2,6 +2,7 @@ package de.fluchitconsulting.rechnungsgenerator.core.model
 
 import de.fluchitconsulting.rechnungsgenerator.core.calculation.CalculatedInvoice
 import de.fluchitconsulting.rechnungsgenerator.core.values.Currency
+import de.fluchitconsulting.rechnungsgenerator.core.values.ExchangeRate
 import de.fluchitconsulting.rechnungsgenerator.core.values.Language
 import de.fluchitconsulting.rechnungsgenerator.core.values.Money
 import de.fluchitconsulting.rechnungsgenerator.core.values.Percent
@@ -16,6 +17,7 @@ import io.kotest.matchers.string.shouldContain
 import kotlinx.serialization.SerializationException
 import java.nio.file.Path
 import java.time.LocalDate
+import java.time.YearMonth
 import kotlin.io.path.createDirectories
 import kotlin.io.path.createTempDirectory
 import kotlin.io.path.writeText
@@ -255,6 +257,41 @@ class YamlLoaderTest : FunSpec({
             }
         }
     }
+    context("umrechnung (#418)") {
+        fun invoiceWith(conversion: String): String =
+            resource("rechnung.yaml").replace("nummer:", "waehrung: USD\numrechnung:\n$conversion\nnummer:")
+
+        test("ohne umrechnung gibt es keine") {
+            YamlLoader.parseInvoice(resource("rechnung.yaml")).conversion shouldBe null
+        }
+
+        test("umrechnung liest Kurs und Monat") {
+            val conversion = YamlLoader.parseInvoice(invoiceWith("  kurs: 1.1685\n  monat: 2026-08")).conversion
+
+            conversion shouldBe CurrencyConversion(ExchangeRate("1.1685"), YearMonth.of(2026, 8))
+        }
+
+        test("ein Monat ohne führende Null bricht das Lesen ab und nennt Datei und Wert") {
+            val file = createTempDirectory("loader-test").resolve("rechnung.yaml")
+            file.writeText(invoiceWith("  kurs: 1.1685\n  monat: 2026-8"))
+
+            val failure = shouldThrow<InputFileException> { YamlLoader.loadInvoice(file) }
+
+            failure.message!! shouldContain file.toString()
+            failure.message!! shouldContain "Kein gültiger Monat: '2026-8'"
+        }
+
+        test("ein Kurs von null bricht das Lesen ab und nennt Datei und Wert") {
+            val file = createTempDirectory("loader-test").resolve("rechnung.yaml")
+            file.writeText(invoiceWith("  kurs: 0\n  monat: 2026-08"))
+
+            val failure = shouldThrow<InputFileException> { YamlLoader.loadInvoice(file) }
+
+            failure.message!! shouldContain file.toString()
+            failure.message!! shouldContain "Kein gültiger Kurs: '0'"
+        }
+    }
+
     test("skonto liest die Skontostufen in der Reihenfolge der Datei") {
         val yaml =
             resource("rechnung.yaml").replace(

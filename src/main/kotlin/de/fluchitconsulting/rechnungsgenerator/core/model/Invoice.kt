@@ -1,6 +1,7 @@
 package de.fluchitconsulting.rechnungsgenerator.core.model
 
 import de.fluchitconsulting.rechnungsgenerator.core.values.Currency
+import de.fluchitconsulting.rechnungsgenerator.core.values.ExchangeRate
 import de.fluchitconsulting.rechnungsgenerator.core.values.Language
 import de.fluchitconsulting.rechnungsgenerator.core.values.Money
 import de.fluchitconsulting.rechnungsgenerator.core.values.Percent
@@ -28,6 +29,9 @@ data class Invoice(
     // die Währung das Zeichen (#409). Keine Vorgabe in den Stammdaten, sie
     // landete still auf jeder Rechnung.
     @SerialName("waehrung") val currency: Currency = Currency.EUR,
+    // Wie die Steuer einer Rechnung in Fremdwährung in Euro dasteht (#418).
+    // Ausgeschrieben und nicht nachgeschlagen, wie die Abschläge (ADR-0001).
+    @SerialName("umrechnung") val conversion: CurrencyConversion? = null,
     // Leistungszeitraum: Pflichtangabe nach §14 UStG, EN 16931 BT-73/BT-74.
     @SerialName("leistungszeitraum") val servicePeriod: ServicePeriod,
     // EN 16931 BT-14, die Auftragsreferenz, vom Verkäufer vergeben: die eigene
@@ -75,6 +79,21 @@ data class Invoice(
 data class CancelledInvoice(
     @SerialName("rechnungsnummer") val invoiceNumber: String,
     @SerialName("rechnungsdatum") val issueDate: IsoDate,
+)
+
+/**
+ * Die Umrechnung der Umsatzsteuer in Euro: der Kurs und der Monat, für den er
+ * gilt (§16 Abs. 6 UStG).
+ *
+ * Der Monat steht daneben, obwohl er nichts rechnet: Welcher Monat maßgeblich
+ * ist, hängt an der Art der Rechnung und an der Versteuerung des
+ * Rechnungsstellers, und der Generator prüft ihn nicht. Auf dem Blatt macht er
+ * den Kurs nachprüfbar.
+ */
+@Serializable
+data class CurrencyConversion(
+    @SerialName("kurs") val rate: ExchangeRate,
+    @SerialName("monat") val month: IsoMonth,
 )
 
 /**
