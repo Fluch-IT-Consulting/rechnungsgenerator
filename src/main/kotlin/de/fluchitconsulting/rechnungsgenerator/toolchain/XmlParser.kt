@@ -4,6 +4,7 @@ import org.w3c.dom.Document
 import org.xml.sax.ErrorHandler
 import org.xml.sax.SAXParseException
 import java.io.ByteArrayInputStream
+import java.util.Locale
 import javax.xml.XMLConstants
 import javax.xml.parsers.DocumentBuilderFactory
 
@@ -15,9 +16,17 @@ import javax.xml.parsers.DocumentBuilderFactory
  * vorbei, vor der eigenen Meldung und auch dann, wenn der Aufrufer die
  * Ausnahme fängt (#395). Deshalb geht jedes XML, das dieses Programm liest,
  * hier durch; externe DTDs und Schemata lädt keines davon.
+ *
+ * Den Grund eines Fehlers schreibt der Parser in der Sprache der JVM, und er
+ * landet in einer Meldung des Programms – die ist deutsch, auf jedem Rechner
+ * (#425). Die Sprache gilt deshalb für diesen Parser und nicht über
+ * `Locale.setDefault`, das in derselben JVM auch veraPDF und Mustang träfe.
  */
 object XmlParser {
-    /** Wirft [SAXParseException] mit Zeile und Spalte, wenn [xml] nicht wohlgeformt ist. */
+    /** Eigenschaft des Xerces im JDK; die API von `javax.xml` kennt keine Sprache je Parser. */
+    private const val LOCALE = "http://apache.org/xml/properties/locale"
+
+    /** Wirft [SAXParseException] mit Zeile, Spalte und deutschem Grund, wenn [xml] nicht wohlgeformt ist. */
     fun parse(
         xml: ByteArray,
         namespaceAware: Boolean = false,
@@ -29,6 +38,7 @@ object XmlParser {
                 setFeature(XMLConstants.FEATURE_SECURE_PROCESSING, true)
                 setAttribute(XMLConstants.ACCESS_EXTERNAL_DTD, "")
                 setAttribute(XMLConstants.ACCESS_EXTERNAL_SCHEMA, "")
+                setAttribute(LOCALE, Locale.GERMAN)
             }.newDocumentBuilder()
             .apply { setErrorHandler(Silent) }
             .parse(ByteArrayInputStream(xml))

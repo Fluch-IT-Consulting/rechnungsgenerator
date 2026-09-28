@@ -249,7 +249,7 @@ class ExternalPdfAValidator(private val runner: ProcessRunner) : PdfAValidator {
      * Protokoll schreibt veraPDF auf stderr, die JVM ihre Warnungen ebenfalls
      * (#227). Nötig ist das Abschneiden damit nicht – es bleibt als
      * Sicherung, weil ein fremdes Programm jederzeit etwas auf stdout legen
-     * kann und der Parser sonst mit "Content is not allowed in prolog"
+     * kann und der Parser sonst mit "Content ist nicht zulässig in Prolog"
      * abbräche. Drei Zeilen gegen eine Ausnahme, die der Benutzerin als
      * Absturz erschiene.
      *
