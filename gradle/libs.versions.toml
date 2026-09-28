@@ -15,7 +15,9 @@ ktlintCli = "1.8.0"      # ktlint selbst; ohne Eintrag wählte das Plugin 1.5.0 
 konsist = "0.17.3"       # Architekturtests: Schichten der Pakete, Importe (#112)
 verapdf = "1.30.2"       # PDF/A-Prüfung in derselben JVM (#226); dieselbe Fassung, die Homebrew als CLI führt
 mustang = "2.26.0"       # ZUGFeRD: bettet das XML ein und prüft es (ADR-0023)
-slf4j = "2.0.20"         # dieselbe Fassung wie slf4j-api, das Mustang mitbringt
+# slf4j-nop hebt slf4j-api auf seine eigene Fassung. Nicht unter der, die Mustang
+# mitbringt: Sonst gewönne dessen API, und API und Anbindung liefen auseinander.
+slf4j = "2.0.20"
 # Kommt über veraPDF und Mustang, wird aber nie geladen: ein vollständiger Lauf
 # lädt 4455 Klassen, davon 542 aus org.verapdf und keine aus Jackson
 # (nachgemessen in #250; ein ZUGFeRD-Lauf mit Mustang ebenso keine, #363).

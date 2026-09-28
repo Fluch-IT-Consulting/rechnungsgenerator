@@ -89,10 +89,10 @@ Lizenz vom Eltern-POM `istack-commons`.
 
 <https://opensource.org/licenses/MIT>
 
-- `slf4j-api-2.0.18.jar` – SLF4J API
-- `slf4j-nop-2.0.18.jar` – SLF4J NOP Provider
+- `slf4j-api-2.0.20.jar` – SLF4J API
+- `slf4j-nop-2.0.20.jar` – SLF4J NOP Provider
 
-Copyright (c) 2004-2022 QOS.ch Sarl; der Lizenztext liegt beiden JARs als
+Copyright (c) 2004-2023 QOS.ch; der Lizenztext liegt beiden JARs als
 `META-INF/LICENSE.txt` bei.
 
 ## GPL v3 oder höher **oder** MPL 2.0 oder höher
