@@ -13,6 +13,7 @@ import de.fluchitconsulting.rechnungsgenerator.core.model.ServicePeriod
 import de.fluchitconsulting.rechnungsgenerator.core.model.TaxCategory
 import de.fluchitconsulting.rechnungsgenerator.core.rules.Deduction
 import de.fluchitconsulting.rechnungsgenerator.core.rules.InvoiceKind
+import de.fluchitconsulting.rechnungsgenerator.core.values.Currency
 import de.fluchitconsulting.rechnungsgenerator.core.values.Money
 import de.fluchitconsulting.rechnungsgenerator.core.values.Percent
 import java.time.LocalDate
@@ -256,10 +257,11 @@ object CiiWriter {
         val servicePeriod = calculated.invoice.servicePeriod
         val currency = calculated.invoice.currency.name
         element("ram:ApplicableHeaderTradeSettlement") {
-            // BT-5, die Währung jedes Betrags (#409). Keine Währung der
-            // Umsatzsteuer (BT-6): Eine Rechnung in Fremdwährung weist keine
-            // aus (WAEHRUNG_MIT_UMSATZSTEUER), und ohne BT-6 verlangt BR-53
-            // keine Steuersumme in Euro.
+            // BT-6, die Währung der Umsatzsteuer, nur mit einer Umrechnung
+            // (#418): Dann verlangt BR-53 die Steuersumme in Euro darunter.
+            // Das Schema stellt BT-6 vor BT-5.
+            calculated.vatTotalInEuro?.let { element("ram:TaxCurrencyCode", Currency.EUR.name) }
+            // BT-5, die Währung jedes Betrags (#409).
             element("ram:InvoiceCurrencyCode", currency)
             if (calculated.requestsPayment) {
                 element("ram:SpecifiedTradeSettlementPaymentMeans") {
@@ -308,6 +310,9 @@ object CiiWriter {
                 element("ram:LineTotalAmount", amount(calculated.netTotal))
                 element("ram:TaxBasisTotalAmount", amount(calculated.netTotal))
                 element("ram:TaxTotalAmount", amount(calculated.vatTotal), "currencyID" to currency)
+                // BT-111, dieselbe Steuer in Euro. Mustang rechnet sie nicht
+                // nach, er kennt den Kurs nicht; das hält die Vergleichsdatei.
+                calculated.vatTotalInEuro?.let { element("ram:TaxTotalAmount", amount(it), "currencyID" to Currency.EUR.name) }
                 element("ram:GrandTotalAmount", amount(calculated.grossTotal))
                 if (deductions.isNotEmpty()) {
                     element("ram:TotalPrepaidAmount", amount(calculated.prepaymentTotal))
