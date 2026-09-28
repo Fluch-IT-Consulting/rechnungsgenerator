@@ -1,10 +1,12 @@
-# Fiktive Rechnung auf Englisch (#406) an einen Unternehmer in Österreich:
-# Eine sonstige Leistung an einen Unternehmer in einem anderen
-# Mitgliedstaat wird dort ausgeführt, und der Kunde schuldet die Steuer
-# (§3a Abs. 2, §13b Abs. 1 UStG). Kategorie AE ohne eigenen Grund, damit der
-# vorgesehene Wortlaut auf dem Blatt steht, dazu die USt-IdNr. des Kunden
-# und die Bestätigungsabfrage, ohne die AE in die EU abbricht.
-sprache: en-GB
+# Fiktive Rechnung an einen Unternehmer in Österreich (#406, #427): Eine
+# sonstige Leistung an einen Unternehmer in einem anderen Mitgliedstaat wird
+# dort ausgeführt, und der Kunde schuldet die Steuer (§3a Abs. 2, §13b Abs. 1
+# UStG). Kategorie AE ohne eigenen Grund, damit der vorgesehene Wortlaut auf
+# dem Blatt steht, dazu die USt-IdNr. des Kunden und die
+# Bestätigungsabfrage, ohne die AE in die EU abbricht.
+#
+# Ohne `sprache`: Das Pflichtangaben-Netz setzt die Datei in jeder Sprache
+# und stellt die Sprache dafür voran.
 nummer: R26-052
 datum: 2026-08-14
 leistungszeitraum:
@@ -23,8 +25,8 @@ kunde:
     verfahren: qualifiziert
     nachweis: BZSt-Protokoll 2026-08-01-4711
 positionen:
-  - bezeichnung: IT consulting
-    beschreibung: Framework agreement of 1 February 2026
+  - bezeichnung: IT-Beratungsleistungen
+    beschreibung: Rahmenvertrag vom 1. Februar 2026
     menge: 40
     einheit: Std.
     einzelpreis: 95.00

@@ -1,6 +1,5 @@
 package de.fluchitconsulting.rechnungsgenerator.generate.toolchain
 
-import de.fluchitconsulting.rechnungsgenerator.core.model.TaxCategory
 import de.fluchitconsulting.rechnungsgenerator.core.values.Currency
 import de.fluchitconsulting.rechnungsgenerator.core.values.Language
 import io.kotest.core.spec.style.FunSpec
@@ -133,21 +132,6 @@ class PflichtangabenSonderfaelleTest : FunSpec({
             sheet.shows("negativer Betrag", "\u2212£200.00")
             sheet.lacks("Euro auf einer Rechnung in Pfund", "€")
             sheet.lacks("Deutsch auf dem Blatt", "Rechnung", "Leistungszeitraum", "Umsatzsteuer", "Seite")
-        }
-    }
-
-    // Reverse Charge auf Englisch (#406), an einen Unternehmer in Österreich:
-    // neben O der häufigste Fall einer englischen Rechnung. Der Grund steht
-    // hier wörtlich, aus demselben Grund wie ÖSTERREICH oben; dass er
-    // überhaupt dasteht und die USt-IdNr. des Kunden auch, prüft verify.
-    for (design in designs) {
-        test("Reverse Charge auf Englisch im Design ${design.name}: gültig, mit Grund und USt-IdNr. des Kunden") {
-            val (calculated, sheet) =
-                net.typesetAndCheck("reverse-charge", design, design.sellerConfig, targetName = "${design.name}-reverse-charge")
-
-            calculated.vatGroups.map { it.category } shouldBe listOf(TaxCategory.REVERSE_CHARGE)
-            sheet.shows("Hinweis auf die Steuerschuldnerschaft", "No VAT is charged on €5,000.00: Reverse charge.")
-            sheet.lacks("Deutsch auf dem Blatt", "Steuerschuldnerschaft", "Rechnung", "Umsatzsteuer")
         }
     }
 

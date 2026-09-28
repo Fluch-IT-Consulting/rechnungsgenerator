@@ -137,3 +137,17 @@ val exampleInvoices =
         InvoiceType.FINAL to "schlussrechnung",
         InvoiceType.CANCELLATION to "stornorechnung",
     )
+
+/**
+ * Je Steuerkategorie, die einen Grund mitbringt, eine Beispielrechnung, die
+ * nur diese Kategorie trägt und keinen eigenen Grund (#427): So steht der
+ * Wortlaut aus [TaxCategory.defaultReason] auf dem Blatt. Die Dateien nennen
+ * keine `sprache`, damit das Pflichtangaben-Netz jede voranstellen kann. Dass
+ * keine Kategorie fehlt, prüft `TaxCategoryRulesTest` ohne die Werkzeuge.
+ */
+val taxCategoryExamples =
+    mapOf(
+        TaxCategory.REVERSE_CHARGE to "reverse-charge",
+        TaxCategory.INTRA_COMMUNITY to "innergemeinschaftliche-lieferung",
+        TaxCategory.EXPORT to "ausfuhr",
+    )

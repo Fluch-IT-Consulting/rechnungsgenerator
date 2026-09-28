@@ -3,6 +3,8 @@ package de.fluchitconsulting.rechnungsgenerator.core.rules
 import de.fluchitconsulting.rechnungsgenerator.core.calculation.CalculatedInvoice
 import de.fluchitconsulting.rechnungsgenerator.core.model.TaxCategory
 import de.fluchitconsulting.rechnungsgenerator.core.model.VatIdConfirmation
+import de.fluchitconsulting.rechnungsgenerator.core.model.YamlLoader
+import de.fluchitconsulting.rechnungsgenerator.core.model.taxCategoryExamples
 import de.fluchitconsulting.rechnungsgenerator.core.model.testInvoice
 import de.fluchitconsulting.rechnungsgenerator.core.model.testItem
 import de.fluchitconsulting.rechnungsgenerator.core.model.testSellerConfig
@@ -11,8 +13,11 @@ import de.fluchitconsulting.rechnungsgenerator.core.values.Money
 import de.fluchitconsulting.rechnungsgenerator.core.values.VatId
 import io.kotest.assertions.withClue
 import io.kotest.core.spec.style.FunSpec
+import io.kotest.matchers.collections.shouldBeEmpty
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.string.shouldContain
+import java.nio.file.Path
+import kotlin.io.path.readText
 
 /**
  * Die Regeln, die EN 16931 an die Steuerkategorie (BT-151) knüpft. Sie greifen
@@ -156,6 +161,27 @@ class TaxCategoryRulesTest : FunSpec({
             Language.entries.forEach { language ->
                 withClue("${category.code} auf $language") {
                     (category.defaultReason(language) != null) shouldBe category.hasDefaultReason
+                }
+            }
+        }
+    }
+
+    // Das Pflichtangaben-Netz setzt den Wortlaut jeder dieser Kategorien nur,
+    // wenn es für sie eine Beispielrechnung gibt (#427). Hier und nicht dort,
+    // damit eine fehlende auch ohne die Werkzeuge auffällt.
+    test("jede Kategorie mit Vorgabegrund hat eine Beispielrechnung, die in jeder Sprache ohne Abbruch durchrechnet") {
+        taxCategoryExamples.keys shouldBe TaxCategory.entries.filter { it.hasDefaultReason }.toSet()
+
+        val seller = YamlLoader.loadSellerConfig(Path.of("src/test/resources/stammdaten.yaml"))
+        taxCategoryExamples.forEach { (category, file) ->
+            Language.entries.forEach { language ->
+                withClue("$file.yaml auf ${language.tag}") {
+                    val text = "sprache: ${language.tag}\n" + Path.of("src/test/resources/$file.yaml").readText()
+                    val calculated = CalculatedInvoice(YamlLoader.parseInvoice(text), seller)
+
+                    calculated.aborts().shouldBeEmpty()
+                    calculated.vatGroups.map { it.category } shouldBe listOf(category)
+                    calculated.vatGroups.single().exemptionReason shouldBe category.defaultReason(language)
                 }
             }
         }
