@@ -1,6 +1,7 @@
 package de.fluchitconsulting.rechnungsgenerator.toolchain
 
 import io.kotest.core.spec.style.FunSpec
+import io.kotest.inspectors.forAll
 import io.kotest.matchers.collections.shouldBeEmpty
 import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.shouldBe
@@ -57,6 +58,28 @@ class EInvoiceValidatorTest : FunSpec({
         result.errors.single() shouldContain "Kein wohlgeformtes XML (Zeile 21, Spalte 30)"
         result.errors.single() shouldContain "0xb"
         stderr shouldBe ""
+    }
+
+    // Mustang fände kein Profil und bräche mit einer NullPointerException ab,
+    // deren Stacktrace sonst als Grund dastünde (#426). Auch ein leeres
+    // Element trägt keine Kennung.
+    test("ohne Kennung der Spezifikation ist es ungültig, und der Grund steht allein da") {
+        val specification =
+            Regex(
+                "<ram:GuidelineSpecifiedDocumentContextParameter>.*?</ram:GuidelineSpecifiedDocumentContextParameter>",
+                RegexOption.DOT_MATCHES_ALL,
+            )
+
+        listOf(
+            xml.replace(specification, ""),
+            xml.replace(
+                specification,
+                "<ram:GuidelineSpecifiedDocumentContextParameter><ram:ID/></ram:GuidelineSpecifiedDocumentContextParameter>",
+            ),
+        ).forAll {
+            EInvoiceValidator.validate(it.toByteArray()).errors shouldBe
+                listOf("Keine Kennung der Spezifikation (BT-24), gegen die sich das XML prüfen ließe.")
+        }
     }
 
     // Mustang parst mit Namensräumen. Prüfte die Vorprüfung ohne, käme ein

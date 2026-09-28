@@ -624,8 +624,10 @@ PDF/A-Prüfung über veraPDF.
   Datei. Nicht wohlgeformtes XML bekommt Mustang gar nicht erst: Sein eigener
   Parser hat keinen `ErrorHandler`, der des JDK druckte `[Fatal Error]` auf
   stderr, und statt des Grundes hieße es, die Datei sei weder PDF noch XML.
-  Die Vorprüfung nennt Zeile, Spalte und Grund (#395). Jedes XML, das das
-  Programm selbst liest, geht durch `XmlParser` im Rand – still und ohne
+  Die Vorprüfung nennt Zeile, Spalte und Grund (#395). Ebenso wenig ein XML
+  ohne Kennung in BT-24: Mustang fände kein Profil und bräche mit einer
+  `NullPointerException` ab, deren Stacktrace als Grund dastünde (#426).
+  Jedes XML, das das Programm selbst liest, geht durch `XmlParser` im Rand – still und ohne
   externe Entitäten. Mustang setzt dabei die Uhr ein und schreibt das XMP neu; der Embedder
   übernimmt vor dem Speichern XMP, Info-Dictionary und Datum aus dem
   PDF/A-1b. Das hängt an zwei Eigenheiten, die Mustang nirgends zusagt: Das
