@@ -138,7 +138,8 @@ class PrepaymentsTest : FunSpec({
 
     context("ABSCHLAGSRECHNUNGEN_VERSCHIEDENE_WAEHRUNGEN (#409)") {
         // In Fremdwährung ohne Umsatzsteuer, sonst bräche schon
-        // WAEHRUNG_MIT_UMSATZSTEUER die Abschlagsrechnung selbst ab.
+        // WAEHRUNG_MIT_UMSATZSTEUER_AUF_DIESER_ART_NICHT_MOEGLICH die
+        // Abschlagsrechnung selbst ab.
         fun inDollar(number: String) =
             prepaymentInvoice.copy(
                 number = number,

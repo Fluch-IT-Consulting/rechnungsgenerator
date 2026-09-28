@@ -57,7 +57,7 @@ class PrepaymentsCommandTest : FunSpec({
     }
 
     test("in Fremdwährung erinnert ein Hinweis auf stderr an die Währung der Schlussrechnung (#409)") {
-        // Ohne Umsatzsteuer, sonst bräche WAEHRUNG_MIT_UMSATZSTEUER ab.
+        // Ohne Umsatzsteuer, sonst bräche WAEHRUNG_MIT_UMSATZSTEUER_AUF_DIESER_ART_NICHT_MOEGLICH ab.
         val inDollar =
             createTempDirectory("abschlaege-dollar").resolve("abschlagsrechnung.yaml").also {
                 it.writeText(
