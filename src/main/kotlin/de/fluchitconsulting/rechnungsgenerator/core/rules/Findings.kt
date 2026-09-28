@@ -168,8 +168,11 @@ enum class Rule(val severity: Severity) {
     SKONTOSTUFE_WERTLOS(Severity.ABORT),
     SKONTOSATZ_UNGUELTIG(Severity.ABORT),
 
-    // Währung (#409)
+    // Währung (#409) und Umrechnung (#418)
     WAEHRUNG_MIT_UMSATZSTEUER(Severity.ABORT),
+    WAEHRUNG_MIT_UMSATZSTEUER_AUF_DIESER_ART_NICHT_MOEGLICH(Severity.ABORT),
+    UMRECHNUNG_BEI_EURO(Severity.ABORT),
+    UMRECHNUNG_OHNE_UMSATZSTEUER(Severity.ABORT),
 
     // Bestätigungsabfrage der USt-IdNr.
     BESTAETIGUNGSABFRAGE_FEHLT(Severity.ABORT),
