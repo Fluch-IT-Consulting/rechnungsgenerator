@@ -5,6 +5,7 @@ import io.kotest.assertions.assertSoftly
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
 import java.time.LocalDate
+import java.time.YearMonth
 import java.util.Locale
 
 class DateFormatTest : FunSpec({
@@ -28,6 +29,14 @@ class DateFormatTest : FunSpec({
                 "01.07.2026\\,–\\,15.07.2026"
             german.servicePeriod(LocalDate.of(2026, 7, 1), LocalDate.of(2026, 8, 31)).tex shouldBe
                 "01.07.2026\\,–\\,31.08.2026"
+        }
+    }
+
+    test("ein Kalendermonat in jeder Sprache (#418)") {
+        assertSoftly {
+            german.month(YearMonth.of(2026, 3)).tex shouldBe "März 2026"
+            english.month(YearMonth.of(2026, 8)).tex shouldBe "August 2026"
+            american.month(YearMonth.of(2026, 8)).tex shouldBe "August 2026"
         }
     }
 

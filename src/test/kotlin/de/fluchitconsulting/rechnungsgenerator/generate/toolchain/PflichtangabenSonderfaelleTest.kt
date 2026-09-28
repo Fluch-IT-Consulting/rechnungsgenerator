@@ -173,6 +173,42 @@ class PflichtangabenSonderfaelleTest : FunSpec({
         }
     }
 
+    // Umsatzsteuer in US-Dollar (#418): Die Steuer steht umgerechnet in Euro
+    // da, mit Kurs und Monat, in jeder Sprache. Wörtlich, weil hier das
+    // Eurozeichen auf einer Rechnung in Dollar steht, an der Stelle seiner
+    // Sprache – verify prüft nur die Ziffern.
+    val conversionSpellings =
+        mapOf(
+            Language.GERMAN to listOf("1.463,41 €", "1 € = 1,1685 $", "BMF für Juli 2026"),
+            Language.BRITISH_ENGLISH to listOf("€1,463.41", "€1 = $1.1685", "Finance for July 2026"),
+            Language.AMERICAN_ENGLISH to listOf("€1,463.41", "€1 = $1.1685", "Finance for July 2026"),
+        )
+    for ((language, spellings) in conversionSpellings) {
+        for (design in designs) {
+            test("Umsatzsteuer in US-Dollar auf ${language.tag} im Design ${design.name}: gültig, mit der Steuer in Euro") {
+                val input = net.workDir.resolve("umsatzsteuer-in-dollar-${language.tag}.yaml")
+                input.writeText(
+                    "sprache: ${language.tag}\n" + Path.of("src/test/resources/umsatzsteuer-in-dollar.yaml").readText(),
+                )
+
+                val (calculated, sheet) =
+                    net.typesetAndCheck(
+                        "umsatzsteuer-in-dollar",
+                        design,
+                        design.sellerConfig,
+                        targetName = "${design.name}-umsatzsteuer-in-dollar-${language.tag}",
+                        input = input,
+                    )
+
+                calculated.invoice.language shouldBe language
+                val (euro, rate, month) = spellings
+                sheet.shows("Umsatzsteuer in Euro", euro)
+                sheet.shows("Umrechnungskurs", rate)
+                sheet.shows("Monat des Kurses", month)
+            }
+        }
+    }
+
     // Die Schreibweise der Zahlen (ADR-0021): Die Beispiele je Art tragen
     // Einzelpreise mit zwei Nachkommastellen und Mengen unter 1.000. Wie ein
     // Design längere Zahlen gruppiert, zeigte sich an keinem davon.

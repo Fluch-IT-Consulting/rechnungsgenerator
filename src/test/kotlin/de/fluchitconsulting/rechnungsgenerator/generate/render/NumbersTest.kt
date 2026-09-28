@@ -1,5 +1,6 @@
 package de.fluchitconsulting.rechnungsgenerator.generate.render
 
+import de.fluchitconsulting.rechnungsgenerator.core.values.ExchangeRate
 import de.fluchitconsulting.rechnungsgenerator.core.values.Money
 import de.fluchitconsulting.rechnungsgenerator.core.values.Percent
 import de.fluchitconsulting.rechnungsgenerator.core.values.Price
@@ -37,6 +38,22 @@ class NumbersTest : FunSpec({
             Numbers.quantity(BigDecimal("1")).tex shouldBe "\\menge{1}"
             Numbers.percent(Percent("19")).tex shouldBe "\\prozent{19}"
             Numbers.percent(Percent("2.5")).tex shouldBe "\\prozent{2.5}"
+        }
+    }
+
+    test("Beträge in Euro, gleich in welcher Währung die Rechnung steht (#418)") {
+        assertSoftly {
+            Numbers.euroAmount(Money("1355.7")).tex shouldBe "\\eurobetrag{1355.70}"
+            Numbers.euroAmount(Money("-16.26")).tex shouldBe "\\eurobetrag{-16.26}"
+        }
+    }
+
+    test("ein Kurs mit allen Stellen, die er trägt, und ohne aufgefüllte Nullen (#418)") {
+        assertSoftly {
+            Numbers.exchangeRate(ExchangeRate("1.1685")).tex shouldBe "\\eurobetrag{1} = \\betrag{1.1685}"
+            Numbers.exchangeRate(ExchangeRate("1.16853")).tex shouldBe "\\eurobetrag{1} = \\betrag{1.16853}"
+            Numbers.exchangeRate(ExchangeRate("162.40")).tex shouldBe "\\eurobetrag{1} = \\betrag{162.4}"
+            Numbers.exchangeRate(ExchangeRate("1000")).tex shouldBe "\\eurobetrag{1} = \\betrag{1000}"
         }
     }
 

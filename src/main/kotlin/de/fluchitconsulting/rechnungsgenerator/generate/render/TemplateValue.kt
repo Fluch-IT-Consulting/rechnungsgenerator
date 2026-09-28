@@ -124,6 +124,11 @@ enum class TemplateValue(
     SUMMEN(true),
     ARTHINWEIS(true),
     STEUERHINWEISE(true),
+
+    // Die Umsatzsteuer einer Rechnung in Fremdwährung, umgerechnet in Euro
+    // (#418). Pflicht, weil die Steuer in Euro dastehen muss (Art. 230
+    // MwStSystRL); leer auf jeder anderen Rechnung.
+    UMRECHNUNG(true),
     ABSETZUNG(true),
 
     // Das Zahlungsziel als Satz, für prag statt der Kopfzeile (#211). Ein
