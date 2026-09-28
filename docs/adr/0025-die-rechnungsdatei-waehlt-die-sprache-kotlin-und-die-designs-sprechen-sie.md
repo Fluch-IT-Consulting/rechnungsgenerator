@@ -306,3 +306,33 @@ prüft Mustang am Storno auf `en-US`.
 - **Ein eigener amerikanischer Pflichtsatz** für das Komma nach dem Jahr –
   ein dritter Parameter je Art für ein Satzzeichen, und zwei englische Sätze,
   die leichter auseinanderlaufen als einer.
+
+## Nachtrag vom 28.09.2026: AE, K und G in jeder Sprache
+
+Das Netz aus dem Nachtrag „Englisch kann alles“ setzte AE nur auf Englisch
+und K und G gar nicht: Ihren Wortlaut prüften nur Tests an Zeichenketten,
+und ein PDF mit innergemeinschaftlicher Lieferung oder Ausfuhr war in keiner
+Sprache je entstanden (#427).
+
+**Jede Kategorie, die einen Grund mitbringt, hat eine Beispielrechnung**:
+`reverse-charge.yaml` für AE, `innergemeinschaftliche-lieferung.yaml` für K
+und `ausfuhr.yaml` für G, je ohne eigenen Grund, damit der vorgesehene
+Wortlaut auf dem Blatt steht. Keine der drei nennt eine `sprache`, auch
+`reverse-charge.yaml` nicht mehr, die bis dahin eine englische Rechnung war.
+Das Netz stellt die Sprache voran und setzt jede Datei durch dieselbe
+Schleife wie die Beispiele je Art: auf Deutsch im
+`PflichtangabenArtenTest`, in beiden Varianten des Englischen im
+`PflichtangabenEnglischTest`.
+
+**Der Grund steht dort wörtlich** (`defaultReasonOnSheet`) und wird nicht
+aus `TaxCategory` gelesen. `verify` prüft den Grund der gerechneten Gruppe
+und sähe einen falschen Wortlaut als richtig an. Ändert sich der Grund, ist
+das eine Frage wie bei den Vergleichsdateien.
+
+**Konsequenzen**: Welche Dateien es sind, steht in `taxCategoryExamples`
+neben `exampleInvoices`. Dass jede Kategorie mit Vorgabegrund dort steht und
+ihr Beispiel in jeder Sprache ohne Abbruch durchrechnet, prüft
+`TaxCategoryRulesTest` auch ohne die Werkzeuge. Eine neue Kategorie mit
+Grund bringt deshalb eine Beispielrechnung mit, und eine neue Sprache, die
+ins Netz kommt, setzt mit den Beispielen je Art auch die drei Kategorien. Das Netz setzt
+dafür 16 PDFs mehr, und der volle Build dauert 4:07 statt 3:34.
