@@ -43,7 +43,7 @@ class EInvoiceValidatorTest : FunSpec({
         val result = EInvoiceValidator.validate("Das ist Text und kein XML, auch wenn er lang genug ist.".toByteArray())
 
         result.valid shouldBe false
-        result.errors shouldBe listOf("Kein wohlgeformtes XML (Zeile 1, Spalte 1): Content is not allowed in prolog.")
+        result.errors shouldBe listOf("Kein wohlgeformtes XML (Zeile 1, Spalte 1): Content ist nicht zulässig in Prolog.")
     }
 
     // Mustang sagte dazu "File does not look like PDF nor XML", und vorher
