@@ -1,5 +1,6 @@
 package de.fluchitconsulting.rechnungsgenerator.core.calculation
 
+import de.fluchitconsulting.rechnungsgenerator.core.model.CurrencyConversion
 import de.fluchitconsulting.rechnungsgenerator.core.model.InvoiceType
 import de.fluchitconsulting.rechnungsgenerator.core.model.SkontoTier
 import de.fluchitconsulting.rechnungsgenerator.core.model.TaxCategory
@@ -9,11 +10,14 @@ import de.fluchitconsulting.rechnungsgenerator.core.model.testItem
 import de.fluchitconsulting.rechnungsgenerator.core.model.testPrepayment
 import de.fluchitconsulting.rechnungsgenerator.core.model.testSellerConfig
 import de.fluchitconsulting.rechnungsgenerator.core.values.CountryCode
+import de.fluchitconsulting.rechnungsgenerator.core.values.Currency
+import de.fluchitconsulting.rechnungsgenerator.core.values.ExchangeRate
 import de.fluchitconsulting.rechnungsgenerator.core.values.Money
 import de.fluchitconsulting.rechnungsgenerator.core.values.Percent
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
 import java.time.LocalDate
+import java.time.YearMonth
 
 class CalculatedInvoiceTest : FunSpec({
 
@@ -241,6 +245,46 @@ class CalculatedInvoiceTest : FunSpec({
 
             calculated.lines.map { calculated.vatGroupOf(it).category to calculated.vatGroupOf(it).rate } shouldBe
                 calculated.lines.map { it.item.taxCategory to it.item.vatRate }
+        }
+    }
+
+    context("Umsatzsteuer in Euro (#418)") {
+        test("gibt es nur mit einer Umrechnung") {
+            CalculatedInvoice(testInvoice(currency = Currency.USD), config).vatTotalInEuro shouldBe null
+        }
+
+        test("ist die Summe der Umsatzsteuer, geteilt durch den Kurs") {
+            // 1 × 8337.50 × 19 % = 1584.13 $; 1584.13 / 1.1685 = 1355.6953… -> 1355.70 €
+            val invoice =
+                testInvoice(
+                    items = listOf(testItem(quantity = "1", unitPrice = "8337.50")),
+                    currency = Currency.USD,
+                    conversion = CurrencyConversion(ExchangeRate("1.1685"), YearMonth.of(2026, 7)),
+                )
+
+            val calculated = CalculatedInvoice(invoice, config)
+
+            calculated.vatTotal shouldBe Money("1584.13")
+            calculated.vatTotalInEuro shouldBe Money("1355.70")
+        }
+
+        test("rechnet die Summe um und nicht jede Gruppe") {
+            val invoice =
+                testInvoice(
+                    items =
+                        listOf(
+                            testItem(quantity = "1", unitPrice = "5.00", vatRate = "19"),
+                            testItem(quantity = "1", unitPrice = "5.00", vatRate = "7"),
+                        ),
+                    currency = Currency.USD,
+                    conversion = CurrencyConversion(ExchangeRate("0.6"), YearMonth.of(2026, 7)),
+                )
+
+            val calculated = CalculatedInvoice(invoice, config)
+
+            // Summe: 0.95 + 0.35 = 1.30 $, 1.30 / 0.6 = 2.1666… -> 2.17 €.
+            // Je Gruppe wären es 1.5833… -> 1.58 und 0.5833… -> 0.58, zusammen 2.16 €.
+            calculated.vatTotalInEuro shouldBe Money("2.17")
         }
     }
 

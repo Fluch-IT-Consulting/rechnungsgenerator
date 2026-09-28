@@ -180,6 +180,14 @@ data class CalculatedInvoice(
 
     val grossTotal: Money = netTotal + vatTotal
 
+    /**
+     * Die Summe der Umsatzsteuer in Euro, BT-111 – nur mit einer Umrechnung.
+     * Umgerechnet wird die Summe und nicht jede Gruppe: BT-111 ist eine
+     * einzige Zahl, und die Summe umgerechneter Gruppen könnte um einen Cent
+     * von ihr abweichen.
+     */
+    val vatTotalInEuro: Money? = invoice.conversion?.let { it.rate.toEuro(vatTotal) }
+
     /** Die abgesetzten Abschläge, in der Reihenfolge der Rechnungsdatei. */
     val prepayments: List<DeductedPrepayment> =
         invoice.prepayments.map { abschlag ->
