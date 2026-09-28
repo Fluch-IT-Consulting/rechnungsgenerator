@@ -188,6 +188,9 @@ tasks.test {
     // Klassen hintereinander auf einem Fork landen, hängt damit an N und an
     // den Namen der Klassen in generate.toolchain, wo alle fünf liegen – nicht
     // an ihrer Dauer. Eine neue Klasse dort kann die Zuteilung verschieben.
+    // Ebenso ein roter Lauf: Klassen, die zuletzt scheiterten, stellt Gradle
+    // nach vorn (RunPreviousFailedFirstTestDefinitionProcessor) – gemessen
+    // wird deshalb nach einem grünen Lauf, sonst gilt eine andere Zuteilung.
     //
     // 6, gemessen am 28.09.2026 als Dauer der Task test: 296 s mit 4 Forks,
     // 284 s mit 5, 249 s mit 6, 335 s mit 8. Kein N von 4 bis 8 trennt alle

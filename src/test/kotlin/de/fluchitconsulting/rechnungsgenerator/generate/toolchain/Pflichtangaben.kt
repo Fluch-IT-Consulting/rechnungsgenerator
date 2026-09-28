@@ -25,6 +25,7 @@ import java.time.YearMonth
 import java.time.format.DateTimeFormatter
 import java.util.Locale
 import kotlin.io.path.createTempDirectory
+import kotlin.io.path.readBytes
 import kotlin.io.path.readLines
 import kotlin.io.path.writeText
 
@@ -248,9 +249,20 @@ class PflichtangabenRun {
         val (pdf, output) = run.generate(file, targetName = targetName, input = input, sellerConfig = sellerConfig)
         withClue(output.joinToString("\n")) { output shouldContain "PDF/A-1b: gültig" }
 
+        // Eine Rechnung hat keine Lesezeichen, und das PDF sagt das auch (#321):
+        // Mit Lesezeichen verlangte hyperref ohne Not einen weiteren Lauf, und
+        // `/UseOutlines` öffnete im Viewer eine leere Seitenleiste. Geprüft an
+        // den Bytes und nicht am Blatt, deshalb hier und nicht in verify: pdfx
+        // lädt zwar die Grundlage, aber was eine Vorlage oder Sprachdatei
+        // danach lädt, kann hyperref noch umstellen. ISO-8859-1 bildet jedes
+        // Byte auf ein Zeichen ab, so stört der Binärteil beim Suchen nicht.
+        val bytes = String(pdf.readBytes(), Charsets.ISO_8859_1)
         val sheet = Sheet(run.textOf(pdf))
         assertSoftly {
             withClue("Seitenzahl") { sheet.pages shouldBe (design.pages[file] ?: 1) }
+            // Als Wahrheitswert: shouldContain druckte das ganze PDF in die Meldung.
+            withClue("/PageMode/UseNone fehlt im PDF") { ("/PageMode/UseNone" in bytes) shouldBe true }
+            withClue("/Outlines steht im PDF") { ("/Outlines" in bytes) shouldBe false }
             sheet.verify(calculated, design)
         }
         return Typeset(calculated, sheet)
