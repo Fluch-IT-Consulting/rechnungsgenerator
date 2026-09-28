@@ -174,19 +174,29 @@ tasks.test {
     useJUnitPlatform() // JUnit 5/6 statt des alten JUnit-4-Runners
     jvmArgs(jaxbFinalFields) // wie beim ausgelieferten Programm, siehe oben
 
-    // Mehrere Test-JVMs nebeneinander (#223). Die Laufzeit liegt fast
-    // vollständig in zwei Klassen: PflichtangabenTest und
-    // ToolchainIntegrationTest setzen zusammen rund 29 PDFs, und je PDF
-    // braucht veraPDF allein 6,6 s – CPU-Arbeit, an der von außen nichts zu
-    // holen ist. Die 501 übrigen Tests kosten zusammen 6 s.
+    // Mehrere Test-JVMs nebeneinander (#223, #434). Die Laufzeit liegt fast
+    // vollständig in fünf Klassen, die PDFs mit den echten Werkzeugen setzen:
+    // ToolchainIntegrationTest und die vier Klassen des Pflichtangaben-Netzes,
+    // rund 5 s je PDF für zwei Läufe LuaLaTeX und die PDF/A-Prüfung. Die 794
+    // übrigen Tests kosten zusammen rund 50 s.
     //
-    // 4 und nicht 2: Bei 2 Forks teilen sich die beiden schweren Klassen die
-    // Maschine noch mit den leichten und werden messbar langsamer (247 s
-    // gesamt ohne Forks, 186 s mit zweien, 147 s mit vieren). Ab 4 sind die
-    // leichten Klassen nach Sekunden durch, und die Wanduhr ist die längere
-    // der beiden schweren – mehr Forks ändern daran nichts, weil Gradle
-    // innerhalb einer Klasse nicht teilt.
-    maxParallelForks = 4
+    // Gradle verteilt nicht nach Bedarf, sondern im Voraus und reihum: Jede
+    // Klassendatei außer den anonymen – auch jeder Helfer, JUnit Platform hat
+    // keinen Detektor – geht in alphabetischer Pfadreihenfolge an den nächsten
+    // Fork, Klasse k an Fork k mod N, und ein freier Fork übernimmt nichts
+    // (MaxNParallelTestDefinitionProcessor, Gradle 9.8). Ob zwei schwere
+    // Klassen hintereinander auf einem Fork landen, hängt damit an N und an
+    // den Namen der Klassen in generate.toolchain, wo alle fünf liegen – nicht
+    // an ihrer Dauer. Eine neue Klasse dort kann die Zuteilung verschieben.
+    //
+    // 6, gemessen am 28.09.2026 als Dauer der Task test: 296 s mit 4 Forks,
+    // 284 s mit 5, 249 s mit 6, 335 s mit 8. Kein N von 4 bis 8 trennt alle
+    // fünf; bei 6 teilen sich nur die Arten und die Sonderfälle einen Fork.
+    // Mehr Forks machen dafür jede Klasse langsamer, weil sie sich die Kerne
+    // teilen – ToolchainIntegrationTest braucht mit 6 Forks 204 s statt 148 s.
+    // Die Wanduhr ist der längste Fork, und der ist bei 6 am kürzesten; der
+    // volle build braucht damit 3:34 statt 5:01 mit 4 Forks.
+    maxParallelForks = 6
 
     // Damit ein Test nachhalten kann, dass die Fassung, die das Programm nennt,
     // die aus diesem Build ist (#264). Ohne Gradle – etwa im Editor – fehlt die
