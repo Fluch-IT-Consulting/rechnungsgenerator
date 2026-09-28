@@ -1,7 +1,7 @@
 package de.fluchitconsulting.rechnungsgenerator.core.rules
 
 import de.fluchitconsulting.rechnungsgenerator.core.calculation.CalculatedInvoice
-import de.fluchitconsulting.rechnungsgenerator.core.values.Discount
+import de.fluchitconsulting.rechnungsgenerator.core.model.Discount
 import java.math.BigDecimal
 
 /**
