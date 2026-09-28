@@ -21,8 +21,8 @@ slf4j = "2.0.18"         # dieselbe Fassung wie slf4j-api, das Mustang mitbringt
 # (nachgemessen in #250; ein ZUGFeRD-Lauf mit Mustang ebenso keine, #363).
 # Angehoben wegen elf Advisories (#230) – dort auf die Reihe 2.21 festgelegt,
 # weil ein Minor-Sprung Verhalten ändert. Genau das trägt hier nicht, und die
-# beiden PDF/A-Prüfer urteilen mit 2.22.2 weiterhin gleich. 2.22.2 und nicht
-# älter, weil Mustang sie verlangt und die Plattform sonst still überstimmt wäre.
+# beiden PDF/A-Prüfer urteilen mit 2.22.3 weiterhin gleich. Nicht älter als
+# 2.22.2, weil Mustang sie verlangt und die Plattform sonst still überstimmt wäre.
 jackson = "2.22.3"
 
 [libraries]
