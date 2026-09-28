@@ -24,6 +24,7 @@ import de.fluchitconsulting.rechnungsgenerator.core.values.VatId
 import io.kotest.assertions.withClue
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.collections.shouldBeEmpty
+import io.kotest.matchers.ints.shouldBeLessThan
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.string.shouldContain
 import io.kotest.matchers.string.shouldNotContain
@@ -96,6 +97,34 @@ class CiiWriterTest : FunSpec({
     listOf("amerikanische-rechnung", "dollar-auf-deutsch").forEach { name ->
         test("das XML aus $name.yaml ist gültig, mit keiner Warnung außer PEPPOL-EN16931-R008") {
             example(name).xml().shouldBeValidExtended()
+        }
+    }
+
+    // Umsatzsteuer in Fremdwährung (#418): BT-6 und die Steuersumme in Euro
+    // (BT-111), die BR-53 dann verlangt. Mustang rechnet sie nicht nach, er
+    // kennt den Kurs nicht – deshalb die Vergleichsdatei.
+    context("Umrechnung") {
+        test("umsatzsteuer-in-dollar.yaml ergibt das erwartete XML") {
+            example("umsatzsteuer-in-dollar").xml() shouldBe resource("umsatzsteuer-in-dollar-erwartet.xml")
+        }
+
+        test("das XML aus umsatzsteuer-in-dollar.yaml ist gültig, mit keiner Warnung außer PEPPOL-EN16931-R008") {
+            example("umsatzsteuer-in-dollar").xml().shouldBeValidExtended()
+        }
+
+        test("BT-6 steht vor BT-5, und die Steuersumme steht in beiden Währungen da") {
+            val xml = example("umsatzsteuer-in-dollar").xml()
+
+            xml.indexOf("<ram:TaxCurrencyCode>EUR</ram:TaxCurrencyCode>") shouldBeLessThan
+                xml.indexOf("<ram:InvoiceCurrencyCode>USD</ram:InvoiceCurrencyCode>")
+            xml shouldContain "<ram:TaxTotalAmount currencyID=\"USD\">1710.00</ram:TaxTotalAmount>"
+            xml shouldContain "<ram:TaxTotalAmount currencyID=\"EUR\">1463.41</ram:TaxTotalAmount>"
+        }
+
+        test("ohne Umrechnung keine Währung der Umsatzsteuer") {
+            listOf("rechnung", "dollar-auf-deutsch").forEach { name ->
+                withClue(name) { example(name).xml() shouldNotContain "TaxCurrencyCode" }
+            }
         }
     }
 
