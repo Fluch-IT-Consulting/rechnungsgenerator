@@ -21,13 +21,11 @@ class InvalidCountryCodeException(message: String) : IllegalArgumentException(me
  *
  * Hier ist `de` nicht *wie* `DE`, sondern derselbe Wert – normalisiert wird
  * einmal, im Konstruktor. Damit kann die Frage am Vergleichsort gar nicht erst
- * auftauchen, und auch `EuMemberStates` vergleicht ohne eigenes
- * `uppercase()`.
+ * auftauchen, und keine Vergleichsstelle braucht ein eigenes `uppercase()`.
  *
  * Geprüft wird nur die **Form**, nicht gegen ein Verzeichnis der Staaten.
- * Eine solche Liste wäre die zweite, die still veraltet (siehe
- * [EuMemberStates] mit `AS_OF`, einem Test, der nach sechs Monaten rot wird,
- * und einem Laufzeit-Hinweis) – und ein falscher, aber existierender Code (AT
+ * Eine solche Liste wäre eine zweite, die still veraltet und ein eigenes Netz
+ * gegen das Veralten bräuchte – und ein falscher, aber existierender Code (AT
  * statt CH) käme ohnehin durch beide Prüfungen. Was die Formprüfung fängt, ist
  * das, was ein Mensch tatsächlich tippt, wenn er das Feld missversteht:
  * "Deutschland", "D", "GER".
