@@ -3,6 +3,7 @@ package de.fluchitconsulting.rechnungsgenerator.generate.toolchain
 import de.fluchitconsulting.rechnungsgenerator.core.calculation.CalculatedInvoice
 import de.fluchitconsulting.rechnungsgenerator.core.model.Discount
 import de.fluchitconsulting.rechnungsgenerator.core.model.InvoiceVariable
+import de.fluchitconsulting.rechnungsgenerator.core.model.TaxCategory
 import de.fluchitconsulting.rechnungsgenerator.core.model.YamlLoader
 import de.fluchitconsulting.rechnungsgenerator.core.text.TextTemplate
 import de.fluchitconsulting.rechnungsgenerator.core.text.TextValue
@@ -626,6 +627,40 @@ private fun settledNote(language: Language): String =
             "The invoice amount is settled by the advance payments received; no balance remains."
         }
     }
+
+/**
+ * Der Grund, den eine Kategorie ohne eigenen auf das Blatt bringt, in jeder
+ * Sprache (#427). Abgeschrieben und nicht aus `TaxCategory` gelesen: verify
+ * prüft den Grund der gerechneten Gruppe und sähe dort einen falschen
+ * Wortlaut als richtig an. Ändert er sich, wird das Netz rot, und das ist
+ * eine Frage wie bei den Vergleichsdateien.
+ */
+fun defaultReasonOnSheet(
+    category: TaxCategory,
+    language: Language,
+): String {
+    val (german, english) =
+        when (category) {
+            TaxCategory.REVERSE_CHARGE -> {
+                "Steuerschuldnerschaft des Leistungsempfängers (Reverse Charge)" to "Reverse charge"
+            }
+            TaxCategory.INTRA_COMMUNITY -> {
+                "Steuerfreie innergemeinschaftliche Lieferung" to "Exempt intra-Community supply of goods"
+            }
+            TaxCategory.EXPORT -> {
+                "Steuerfreie Ausfuhrlieferung" to "Exempt export of goods"
+            }
+            TaxCategory.STANDARD, TaxCategory.ZERO_RATED, TaxCategory.EXEMPT, TaxCategory.OUT_OF_SCOPE -> {
+                error(
+                    "$category bringt keinen Grund mit",
+                )
+            }
+        }
+    return when (language) {
+        Language.GERMAN -> german
+        Language.BRITISH_ENGLISH, Language.AMERICAN_ENGLISH -> english
+    }
+}
 
 // --- Schreibweisen ----------------------------------------------------------
 // Bewusst unabhängig von DateFormat, siehe oben. Jede Funktion liefert alle

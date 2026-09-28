@@ -1,0 +1,28 @@
+# Fiktive Rechnung über eine Ausfuhrlieferung (#427) an einen Unternehmer in
+# der Schweiz: Die Lieferung von Waren ins Drittland ist steuerfrei (§4 Nr. 1
+# Buchst. a, §6 UStG). Kategorie G ohne eigenen Grund, damit der vorgesehene
+# Wortlaut auf dem Blatt steht. Eine USt-IdNr. des Kunden verlangt G nicht,
+# und eine Bestätigungsabfrage gibt es im Drittland nicht.
+#
+# Ohne `sprache`: Das Pflichtangaben-Netz setzt die Datei in jeder Sprache
+# und stellt die Sprache dafür voran.
+nummer: R26-054
+datum: 2026-08-14
+leistungszeitraum:
+  von: 2026-08-12
+  bis: 2026-08-12
+kunde:
+  name: Beispiel Informatik AG
+  anschrift:
+    strasse: Bahnhofstrasse 10
+    plz: "8001"
+    ort: Zürich
+    land: CH
+positionen:
+  - bezeichnung: Mini-PC für Schulungsräume
+    beschreibung: vorkonfiguriert, mit Netzteil
+    menge: 8
+    einheit: Stück
+    einzelpreis: 480.00
+    ust-satz: 0
+    steuerkategorie: G

@@ -1,0 +1,40 @@
+# Fiktive Rechnung über eine innergemeinschaftliche Lieferung (#427) an einen
+# Unternehmer in den Niederlanden: Die Lieferung von Waren an einen
+# Unternehmer in einem anderen Mitgliedstaat ist steuerfrei (§4 Nr. 1
+# Buchst. b, §6a UStG). Kategorie K ohne eigenen Grund, damit der
+# vorgesehene Wortlaut auf dem Blatt steht, dazu die USt-IdNr. des Kunden
+# und die Bestätigungsabfrage, ohne die K immer abbricht.
+#
+# Ohne `sprache`: Das Pflichtangaben-Netz setzt die Datei in jeder Sprache
+# und stellt die Sprache dafür voran.
+nummer: R26-053
+datum: 2026-08-14
+leistungszeitraum:
+  von: 2026-08-10
+  bis: 2026-08-10
+kunde:
+  name: Voorbeeld Handel B.V.
+  anschrift:
+    strasse: Keizersgracht 1
+    plz: 1015 CJ
+    ort: Amsterdam
+    land: NL
+  umsatzsteuer-id: NL123456789B01
+  ust-id-geprueft:
+    am: 2026-08-07
+    verfahren: qualifiziert
+    nachweis: BZSt-Protokoll 2026-08-07-0815
+positionen:
+  - bezeichnung: Mini-PC für Schulungsräume
+    beschreibung: vorkonfiguriert, mit Netzteil
+    menge: 12
+    einheit: Stück
+    einzelpreis: 480.00
+    ust-satz: 0
+    steuerkategorie: K
+  - bezeichnung: Monitor 27 Zoll
+    menge: 12
+    einheit: Stück
+    einzelpreis: 210.00
+    ust-satz: 0
+    steuerkategorie: K

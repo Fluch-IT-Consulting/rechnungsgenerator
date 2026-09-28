@@ -242,7 +242,9 @@ PDF/A-Prüfung über veraPDF.
   zulässt; K und G haben keinen vorgeschriebenen Wortlaut und sagen mit den
   Wörtern der Richtlinie, was der deutsche sagt – nie „zero-rated“, das ist
   hier Z. Das Pflichtangaben-Netz setzt jedes Beispiel auch auf Englisch,
-  in beiden Varianten, und verlangt ein gültiges PDF. Einen Ausschluss für
+  in beiden Varianten, und verlangt ein gültiges PDF – dazu je ein Beispiel
+  für jede Kategorie, die einen Grund mitbringt (AE, K, G), in allen drei
+  Sprachen und mit dem Grund wörtlich (#427). Einen Ausschluss für
   Sätze, die eine Sprache noch nicht hat, gibt es nicht mehr: Kommt eine
   Sprache schrittweise, bringt sie Regel und werfende Zweige wieder mit
   (Nachtrag zu ADR-0025).
