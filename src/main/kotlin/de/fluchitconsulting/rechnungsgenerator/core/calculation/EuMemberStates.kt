@@ -1,5 +1,6 @@
-package de.fluchitconsulting.rechnungsgenerator.core.values
+package de.fluchitconsulting.rechnungsgenerator.core.calculation
 
+import de.fluchitconsulting.rechnungsgenerator.core.values.CountryCode
 import java.time.LocalDate
 
 /**
@@ -73,7 +74,5 @@ object EuMemberStates {
             "SK",
         ).map(::CountryCode).toSet()
 
-    // Kein Auspacken mehr: Beide Seiten sind Werte, und die Schreibweise ist
-    // schon beim Bauen vereinheitlicht.
     fun contains(country: CountryCode): Boolean = CODES.contains(country)
 }

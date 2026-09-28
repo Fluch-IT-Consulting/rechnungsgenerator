@@ -1,5 +1,6 @@
-package de.fluchitconsulting.rechnungsgenerator.core.values
+package de.fluchitconsulting.rechnungsgenerator.core.calculation
 
+import de.fluchitconsulting.rechnungsgenerator.core.values.CountryCode
 import io.kotest.assertions.assertSoftly
 import io.kotest.assertions.withClue
 import io.kotest.core.spec.style.FunSpec
