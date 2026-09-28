@@ -176,6 +176,32 @@ class XmlCommandTest : FunSpec({
         systemErr shouldBe ""
     }
 
+    // SpecificationIdentifier.of liefert dann null, und specificationReason
+    // schweigt. Dass das XML trotzdem nicht durchgeht, sagt die XML-Prüfung
+    // (#399), und zwar mit einem Grund statt eines Stacktrace (#426).
+    test("ein XML ohne Kennung der Spezifikation lehnt die XML-Prüfung ab") {
+        val withoutSpecification =
+            xml
+                .decodeToString()
+                .replace(
+                    Regex(
+                        "<ram:GuidelineSpecifiedDocumentContextParameter>.*?</ram:GuidelineSpecifiedDocumentContextParameter>",
+                        RegexOption.DOT_MATCHES_ALL,
+                    ),
+                    "",
+                ).toByteArray()
+        val pdf = einvoice("ohne-kennung.pdf", withoutSpecification)
+
+        val result = runProgram("xml", pdf.toString())
+
+        result.exitCode shouldBe 1
+        result.out.size shouldBe 0
+        result.err shouldBe
+            "$pdf ist keine gültige E-Rechnung nach ZUGFeRD.\n" +
+            "Das XML in factur-x.xml ist ungültig:\n" +
+            "  Keine Kennung der Spezifikation (BT-24), gegen die sich das XML prüfen ließe.\n"
+    }
+
     /**
      * Eine E-Rechnung, die nicht vom Generator stammt: Mustang schreibt sie
      * aus seinem eigenen Modell im [profile] nach [target] und gibt ihr XML

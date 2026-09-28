@@ -3,7 +3,10 @@ package de.fluchitconsulting.rechnungsgenerator.toolchain
 import org.mustangproject.validator.ZUGFeRDValidator
 import org.w3c.dom.Document
 import org.w3c.dom.Element
+import org.w3c.dom.NodeList
 import org.xml.sax.SAXParseException
+import javax.xml.xpath.XPathConstants
+import javax.xml.xpath.XPathFactory
 
 /**
  * Was Mustang über das XML einer E-Rechnung sagt: die Fehler, die es ungültig
@@ -33,7 +36,7 @@ data class EInvoiceValidationResult(
  */
 object EInvoiceValidator {
     fun validate(xml: ByteArray): EInvoiceValidationResult {
-        notWellFormed(xml)?.let { return EInvoiceValidationResult(errors = listOf(it), warnings = emptyList()) }
+        unfitForMustang(xml)?.let { return EInvoiceValidationResult(errors = listOf(it), warnings = emptyList()) }
         val validator = ZUGFeRDValidator()
         val report = validator.validate(xml, "factur-x.xml")
         val document = parse(report)
@@ -49,20 +52,36 @@ object EInvoiceValidator {
     }
 
     /**
+     * Was Mustang ablehnte, ohne einen brauchbaren Grund zu nennen. Er bekommt
+     * es gar nicht erst zu sehen, und den Grund nennt diese Prüfung.
+     *
      * Mustang parst das XML zuerst selbst, ohne `ErrorHandler`: Ist es nicht
      * wohlgeformt, druckt der Parser des JDK `[Fatal Error]` auf stderr, und
      * Mustang meldet statt des Grundes, die Datei sehe weder nach PDF noch
-     * nach XML aus (#395). Deshalb bekommt Mustang nur wohlgeformtes XML, und
-     * den Grund nennt diese Prüfung. Mit Namensräumen wie bei Mustang, sonst
-     * käme ein unbekanntes Präfix hier durch und dort wieder auf stderr.
+     * nach XML aus (#395). Mit Namensräumen wie bei Mustang, sonst käme ein
+     * unbekanntes Präfix hier durch und dort wieder auf stderr.
+     *
+     * Fehlt die Kennung der Spezifikation (BT-24), wählt Mustang kein Profil
+     * und bricht mit einer `NullPointerException` ab, die samt Stacktrace im
+     * Bericht stünde (#426). Gesucht wird mit Mustangs eigenem Ausdruck, damit
+     * die Vorprüfung genau dann anschlägt, wenn er kein Profil fände – auch
+     * bei einem leeren Element, das keinen Text trägt.
      */
-    private fun notWellFormed(xml: ByteArray): String? =
-        try {
-            XmlParser.parse(xml, namespaceAware = true)
-            null
-        } catch (e: SAXParseException) {
-            "Kein wohlgeformtes XML (Zeile ${e.lineNumber}, Spalte ${e.columnNumber}): ${e.message}"
-        }
+    private fun unfitForMustang(xml: ByteArray): String? {
+        val document =
+            try {
+                XmlParser.parse(xml, namespaceAware = true)
+            } catch (e: SAXParseException) {
+                return "Kein wohlgeformtes XML (Zeile ${e.lineNumber}, Spalte ${e.columnNumber}): ${e.message}"
+            }
+        val specification = XPathFactory.newInstance().newXPath().evaluate(SPECIFICATION, document, XPathConstants.NODESET) as NodeList
+        return "Keine Kennung der Spezifikation (BT-24), gegen die sich das XML prüfen ließe.".takeIf { specification.length == 0 }
+    }
+
+    /** Wo Mustang das Profil sucht, aus `XMLValidator`: in CII unter BT-24, in UBL unter `CustomizationID`. */
+    private const val SPECIFICATION =
+        "(//*[local-name()=\"GuidelineSpecifiedDocumentContextParameter\"]/*[local-name()=\"ID\"])/text()" +
+            "|//*[local-name()=\"CustomizationID\"]/text()"
 
     private fun parse(report: String): Document = XmlParser.parse(report.toByteArray())
 
