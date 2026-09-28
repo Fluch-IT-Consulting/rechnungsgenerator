@@ -438,6 +438,16 @@ private fun Sheet.verify(
         }
     }
 
+    // Art. 230 MwStSystRL: Die Steuer einer Rechnung in Fremdwährung steht
+    // umgerechnet in Euro da (#418), dazu Kurs und Monat, damit sie sich
+    // nachrechnen lässt. Zeichen und Stellung prüft der Sonderfall wörtlich.
+    calculated.vatTotalInEuro?.let { euro ->
+        val conversion = checkNotNull(invoice.conversion)
+        shows("Umsatzsteuer in Euro", spelling.amount(euro))
+        shows("Umrechnungskurs", spelling.quantity(conversion.rate.value))
+        shows("Monat des Kurses", spelling.month(conversion.month))
+    }
+
     // §14 Abs. 5 Satz 2: Die Schlussrechnung setzt Entgelt und Steuer der
     // vereinnahmten Abschläge ab.
     calculated.prepayments.forEach { abschlag ->
@@ -752,6 +762,8 @@ private class Spelling(
     }
 
     fun date(value: LocalDate): Array<String> = arrayOf(short.format(value), long.format(value))
+
+    fun month(value: YearMonth): String = monthYear.format(value)
 
     /** Das Zahlungsziel als Frist ab Rechnungsdatum statt als Datum (#211). */
     fun term(days: Int): Array<String> =

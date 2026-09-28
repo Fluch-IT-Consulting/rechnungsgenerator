@@ -16,6 +16,8 @@
 \newcommand{\zeichenGBP}{£}
 \newcommand{\waehrungszeichen}{\csname zeichen\waehrung\endcsname}
 \newcommand{\betrag}[1]{\num{#1}~\waehrungszeichen}
+%% Ein Betrag in Euro wie in helsinki-de-de.tex, wo steht, warum.
+\newcommand{\eurobetrag}[1]{\begingroup\def\waehrung{EUR}\betrag{#1}\endgroup}
 \newcommand{\prozent}[1]{\num{#1}~\%}
 
 %% ------------------------------------------------------------- Seiten

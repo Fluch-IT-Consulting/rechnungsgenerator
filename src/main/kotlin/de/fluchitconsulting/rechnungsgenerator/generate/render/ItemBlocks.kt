@@ -240,6 +240,44 @@ internal object ItemBlocks {
     }
 
     /**
+     * Die Umsatzsteuer einer Rechnung in Fremdwährung, umgerechnet in Euro,
+     * als ein Satz unter den Summen: "Umgerechnet in Euro beträgt die
+     * Umsatzsteuer 1.355,70 € (1 € = 1,1685 $, Monatsdurchschnittskurs des
+     * BMF für Juli 2026)." Kurs und Monat stehen dabei, damit sich der Betrag
+     * nachrechnen lässt (#418).
+     *
+     * Der Kurs bricht nicht um: "1 € =" am Zeilenende und "1,1685 $" auf der
+     * nächsten läsen sich wie zwei Angaben.
+     *
+     * Ob eine Umrechnung dastehen darf, fragt der Renderer nicht noch einmal:
+     * Eine angenommene Rechnung trägt sie nur in Fremdwährung und mit
+     * Umsatzsteuer (UMRECHNUNG_BEI_EURO, UMRECHNUNG_OHNE_UMSATZSTEUER).
+     */
+    fun conversionNote(calculatedInvoice: CalculatedInvoice): Latex {
+        val conversion = calculatedInvoice.invoice.conversion ?: return Latex.EMPTY
+        val euro = Numbers.euroAmount(checkNotNull(calculatedInvoice.vatTotalInEuro))
+        val rate = together(Numbers.exchangeRate(conversion.rate))
+        val month = DateFormat(calculatedInvoice.invoice.language).month(conversion.month)
+
+        // Ohne `else`: Eine neue Sprache schreibt ihren eigenen Satz.
+        val sentence =
+            when (calculatedInvoice.invoice.language) {
+                Language.GERMAN -> {
+                    "Umgerechnet in Euro beträgt die Umsatzsteuer ".escapeLatex() + euro + " (".escapeLatex() + rate +
+                        ", Monatsdurchschnittskurs des BMF für ".escapeLatex() + month + ").".escapeLatex()
+                }
+                // Das Ministerium ausgeschrieben: "BMF" kennt nur, wer
+                // deutsche Umsatzsteuer erklärt.
+                Language.BRITISH_ENGLISH, Language.AMERICAN_ENGLISH -> {
+                    "Converted to euros, the VAT amounts to ".escapeLatex() + euro + " (".escapeLatex() + rate +
+                        ", monthly average rate of the German Federal Ministry of Finance for ".escapeLatex() + month +
+                        ").".escapeLatex()
+                }
+            }
+        return Latex.macro(TemplateMacro.HINWEISABSATZ, listOf(sentence))
+    }
+
+    /**
      * Die Begründungen für Positionen ohne Umsatzsteuer – EN 16931 BT-120.
      *
      * Bei Reverse Charge ist das keine Höflichkeit: §14a Abs. 1 und 5 UStG verlangen

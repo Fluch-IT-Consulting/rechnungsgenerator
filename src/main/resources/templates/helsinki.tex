@@ -476,10 +476,12 @@
 %% ihnen. Leer bei jeder anderen Rechnungsart; den Abstand bringt
 %% \absetzungskopf mit.
 %%
+%% Davor die Umsatzsteuer in Euro einer Rechnung in Fremdwährung, als
+%% \hinweisabsatz: Sie gehört zu den Steuerzeilen wie die Steuerhinweise.
 %% Dahinter das Skonto als \hinweisabsatz: nach der Absetzung, weil es das
-%% betrifft, was zu zahlen ist. Auf derselben Zeile, damit eine Rechnung ohne
-%% Skonto kein Zeichen mehr im .tex hat.
-<<ABSETZUNG>><<SKONTO>>
+%% betrifft, was zu zahlen ist. Alles auf derselben Zeile, damit eine Rechnung
+%% ohne Umrechnung und Skonto kein Zeichen mehr im .tex hat.
+<<UMRECHNUNG>><<ABSETZUNG>><<SKONTO>>
 
 \vspace{5mm}
 

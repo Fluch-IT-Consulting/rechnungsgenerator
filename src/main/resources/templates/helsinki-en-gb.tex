@@ -25,6 +25,8 @@
 \newcommand{\betrag}[1]{\betrag@zeichen#1\relax}
 \def\betrag@zeichen#1#2\relax{\ifx-#1\textminus\waehrungszeichen\num{#2}\else\waehrungszeichen\num{#1#2}\fi}
 \makeatother
+%% Ein Betrag in Euro wie in helsinki-de-de.tex, wo steht, warum.
+\newcommand{\eurobetrag}[1]{\begingroup\def\waehrung{EUR}\betrag{#1}\endgroup}
 %% Das Prozentzeichen ohne Abstand: 19%.
 \newcommand{\prozent}[1]{\num{#1}\%}
 

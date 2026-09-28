@@ -235,6 +235,9 @@ object InvoiceRenderer {
             TemplateValue.STEUERHINWEISE -> {
                 ItemBlocks.taxNotes(calculatedInvoice)
             }
+            TemplateValue.UMRECHNUNG -> {
+                ItemBlocks.conversionNote(calculatedInvoice)
+            }
             TemplateValue.ABSETZUNG -> {
                 DeductionBlocks.deductionBlock(acceptedInvoice)
             }

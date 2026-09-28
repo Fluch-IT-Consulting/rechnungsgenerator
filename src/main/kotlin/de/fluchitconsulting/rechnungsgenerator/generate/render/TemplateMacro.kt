@@ -70,6 +70,12 @@ enum class TemplateMacro(val macroName: String, val arity: Int) {
     // setzt sie mit siunitx. Einzelpreise nehmen BETRAG – den Unterschied zu
     // einem Betrag tragen schon die Ziffern.
     BETRAG("betrag", 1),
+
+    // Ein Betrag in Euro, gleich in welcher Währung die Rechnung steht: die
+    // umgerechnete Umsatzsteuer und der Euro eines Kurses (#418). Ein eigenes
+    // Makro und nicht die Währung als Argument von BETRAG, das sonst an jedem
+    // Betrag stünde (ADR-0026).
+    EUROBETRAG("eurobetrag", 1),
     MENGE("menge", 1),
     PROZENT("prozent", 1),
 }

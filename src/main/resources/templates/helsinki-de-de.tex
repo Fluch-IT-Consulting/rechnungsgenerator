@@ -33,6 +33,11 @@
 \newcommand{\zeichenGBP}{£}
 \newcommand{\waehrungszeichen}{\csname zeichen\waehrung\endcsname}
 \newcommand{\betrag}[1]{\num{#1}~\waehrungszeichen}
+%% Ein Betrag in Euro, gleich in welcher Währung die Rechnung steht: die
+%% umgerechnete Umsatzsteuer einer Rechnung in Fremdwährung (#418). \betrag
+%% mit \waehrung auf EUR, in einer Gruppe, damit Zeichen und Stellung dieselben
+%% sind wie bei jedem Betrag und \waehrung danach wieder gilt.
+\newcommand{\eurobetrag}[1]{\begingroup\def\waehrung{EUR}\betrag{#1}\endgroup}
 \newcommand{\prozent}[1]{\num{#1}~\%}
 
 %% ------------------------------------------------------------- Seiten

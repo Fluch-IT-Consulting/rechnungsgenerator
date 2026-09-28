@@ -3,6 +3,7 @@ package de.fluchitconsulting.rechnungsgenerator.generate.render
 import de.fluchitconsulting.rechnungsgenerator.core.accepted.accepted
 import de.fluchitconsulting.rechnungsgenerator.core.calculation.CalculatedInvoice
 import de.fluchitconsulting.rechnungsgenerator.core.model.CheckMethod
+import de.fluchitconsulting.rechnungsgenerator.core.model.CurrencyConversion
 import de.fluchitconsulting.rechnungsgenerator.core.model.Design
 import de.fluchitconsulting.rechnungsgenerator.core.model.Invoice
 import de.fluchitconsulting.rechnungsgenerator.core.model.InvoiceType
@@ -21,6 +22,8 @@ import de.fluchitconsulting.rechnungsgenerator.core.model.testItem
 import de.fluchitconsulting.rechnungsgenerator.core.model.testPrepayment
 import de.fluchitconsulting.rechnungsgenerator.core.model.testSellerConfig
 import de.fluchitconsulting.rechnungsgenerator.core.values.CountryCode
+import de.fluchitconsulting.rechnungsgenerator.core.values.Currency
+import de.fluchitconsulting.rechnungsgenerator.core.values.ExchangeRate
 import de.fluchitconsulting.rechnungsgenerator.core.values.Language
 import de.fluchitconsulting.rechnungsgenerator.core.values.Percent
 import de.fluchitconsulting.rechnungsgenerator.core.values.RgbColor
@@ -36,6 +39,7 @@ import io.kotest.matchers.string.shouldEndWith
 import io.kotest.matchers.string.shouldNotContain
 import java.nio.file.Path
 import java.time.LocalDate
+import java.time.YearMonth
 
 // Testressourcen liegen in src/test/resources und landen im Classpath.
 private fun resource(name: String): String =
@@ -585,6 +589,56 @@ class InvoiceRendererTest : FunSpec({
 
         test("ohne Skonto kein Satz") {
             renderWith(testItem()) shouldNotContain "Skonto"
+        }
+    }
+
+    context("Umrechnung (#418)") {
+        // Eine Position zu 100.00 $ mit 19 %: 19.00 $, geteilt durch 1.1685
+        // sind 16.2601… -> 16.26 €.
+        fun inDollar(
+            language: Language = Language.GERMAN,
+            skonto: List<SkontoTier> = emptyList(),
+        ) = testInvoice(
+            currency = Currency.USD,
+            conversion = CurrencyConversion(ExchangeRate("1.1685"), YearMonth.of(2026, 7)),
+            language = language,
+            skonto = skonto,
+        )
+
+        test("die Umsatzsteuer in Euro wird ein Satz mit Kurs und Monat") {
+            valueOf(TemplateValue.UMRECHNUNG, inDollar()) shouldBe
+                "\\hinweisabsatz{Umgerechnet in Euro beträgt die Umsatzsteuer \\eurobetrag{16.26} " +
+                "(\\zusammen{\\eurobetrag{1} = \\betrag{1.1685}}, Monatsdurchschnittskurs des BMF für Juli 2026).}"
+        }
+
+        test("auf Englisch nennt der Satz das Ministerium ausgeschrieben") {
+            listOf(Language.BRITISH_ENGLISH, Language.AMERICAN_ENGLISH).forEach { language ->
+                withClue(language) {
+                    valueOf(TemplateValue.UMRECHNUNG, inDollar(language)) shouldBe
+                        "\\hinweisabsatz{Converted to euros, the VAT amounts to \\eurobetrag{16.26} " +
+                        "(\\zusammen{\\eurobetrag{1} = \\betrag{1.1685}}, monthly average rate of the " +
+                        "German Federal Ministry of Finance for July 2026).}"
+                }
+            }
+        }
+
+        test("ohne Umrechnung kein Satz") {
+            valueOf(TemplateValue.UMRECHNUNG, testInvoice()) shouldBe ""
+        }
+
+        test("der Satz steht unter den Summen und vor dem Skonto") {
+            Design.entries.forEach { design ->
+                withClue(design) {
+                    val invoice = inDollar(skonto = listOf(SkontoTier(rate = Percent("2"), days = 7)))
+                    val tex =
+                        InvoiceRenderer
+                            .render(CalculatedInvoice(invoice, config.copy(design = design)).accepted())
+                            .sources.tex
+
+                    tex.indexOf("Umgerechnet in Euro") shouldBeGreaterThan tex.indexOf("\\gesamtzeile{")
+                    tex.indexOf("Skonto abgezogen") shouldBeGreaterThan tex.indexOf("Umgerechnet in Euro")
+                }
+            }
         }
     }
 

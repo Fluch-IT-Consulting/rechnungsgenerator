@@ -1,5 +1,6 @@
 package de.fluchitconsulting.rechnungsgenerator.generate.render
 
+import de.fluchitconsulting.rechnungsgenerator.core.values.ExchangeRate
 import de.fluchitconsulting.rechnungsgenerator.core.values.Money
 import de.fluchitconsulting.rechnungsgenerator.core.values.Percent
 import de.fluchitconsulting.rechnungsgenerator.core.values.Price
@@ -25,6 +26,19 @@ object Numbers {
      * Betrag – den Unterschied tragen schon die Ziffern.
      */
     fun price(price: Price): Latex = Latex.macro(TemplateMacro.BETRAG, listOf(digits(price.value, minFraction = 2)))
+
+    /** Ein Betrag in Euro, gleich in welcher Währung die Rechnung steht: `\eurobetrag{1355.70}` */
+    fun euroAmount(money: Money): Latex = Latex.macro(TemplateMacro.EUROBETRAG, listOf(digits(money.value, minFraction = 2)))
+
+    /**
+     * Ein Kurs, wie BMF und EZB ihn notieren: `\eurobetrag{1} = \betrag{1.1685}`,
+     * gesetzt 1 € = 1,1685 $. Mit allen Stellen, die er trägt, und ohne
+     * aufgefüllte Nullen – er ist kein Betrag, auch wenn er das Zeichen der
+     * Währung trägt.
+     */
+    fun exchangeRate(rate: ExchangeRate): Latex =
+        Latex.macro(TemplateMacro.EUROBETRAG, listOf(digits(BigDecimal.ONE, minFraction = 0))) + " = ".escapeLatex() +
+            Latex.macro(TemplateMacro.BETRAG, listOf(digits(rate.value, minFraction = 0)))
 
     /** Eine Menge ohne überflüssige Nullen: `\menge{86.5}`, `\menge{1000}` */
     fun quantity(quantity: BigDecimal): Latex = Latex.macro(TemplateMacro.MENGE, listOf(digits(quantity, minFraction = 0)))

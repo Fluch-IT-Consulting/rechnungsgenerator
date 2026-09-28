@@ -93,6 +93,9 @@ class DateFormat(
         }
     }
 
+    /** Ein Kalendermonat: `August 2026`. */
+    fun month(month: YearMonth): Latex = format(MONTH_WITH_YEAR, month.atDay(1)).escapeLatex()
+
     /** Kurzes Datum für Zeiträume: `01.07.2026`, `2026-07-01`. */
     fun shortDate(date: LocalDate): Latex = shortDateText(date).escapeLatex()
 
