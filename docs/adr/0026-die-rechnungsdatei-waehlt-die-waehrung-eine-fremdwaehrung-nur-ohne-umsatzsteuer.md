@@ -121,3 +121,21 @@ die ganze Ablage liest.
   sie braucht, stellt sie in Euro, bis die Umrechnung kommt (#418).
 
 Umgesetzt in #409.
+
+## Nachtrag vom 28.09.2026: Umsatzsteuer in Fremdwährung mit Umrechnung
+
+Was hier unter „Verworfen“ als eigenes Vorhaben steht, ist mit ADR-0027
+entschieden: Eine Rechnung in Fremdwährung weist Umsatzsteuer aus, wenn die
+Rechnungsdatei Kurs und Monat unter `umrechnung` nennt, und die Steuer steht
+dann auch in Euro da – auf dem Blatt und im XML (BT-6, BT-111). Damit gilt
+dreierlei nicht mehr, wie es oben steht:
+
+- **„Nur ohne Umsatzsteuer“** gilt nur noch auf Abschlags- und
+  Schlussrechnung (`WAEHRUNG_MIT_UMSATZSTEUER_AUF_DIESER_ART_NICHT_MOEGLICH`).
+  `WAEHRUNG_MIT_UMSATZSTEUER` bricht nur noch ab, wenn die Umrechnung fehlt.
+- **„BT-6 bleibt weg“** gilt nur ohne Umrechnung.
+- **„Eine Rechnung mit Umsatzsteuer in Fremdwährung geht heute nicht“**
+  gilt nicht mehr für Rechnung, Teilrechnung und Storno.
+
+Die Gründe dieses ADR bleiben, wie sie sind; der Titel auch, damit Verweise
+auf ihn nicht brechen.

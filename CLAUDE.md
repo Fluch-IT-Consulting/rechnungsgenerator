@@ -269,16 +269,35 @@ PDF/A-Prüfung über veraPDF.
   bestimmt die Schreibweise, die Währung das Zeichen. Sie gehört zur
   Rechnung und nicht zum Betrag, deshalb tragen `Money` und `Price` keine.
 
-  Eine Fremdwährung nur ohne Umsatzsteuer: Eine Position der Kategorie S
-  bricht dann ab (`WAEHRUNG_MIT_UMSATZSTEUER`), denn die geschuldete Steuer
-  müsste umgerechnet in Euro dastehen (Art. 230 MwStSystRL, §16 Abs. 6
-  UStG), und den Kurs kennt der Generator nicht. Auf dem Blatt kommt die
+  Auf dem Blatt kommt die
   Währung als Platzhalter `<<WAEHRUNG>>`, die Vorlage reicht ihn als
   `\waehrung` an die Sprachdatei, und die setzt das Zeichen – `\zeichenEUR`,
   `\zeichenUSD`, `\zeichenGBP` – in `\betrag` an die Stelle ihrer Sprache.
   `Template.of` verlangt jedes Zeichen in jeder Sprachdatei: `\csname` setzte
   für ein fehlendes still nichts. Im XML tragen BT-5 und die `currencyID` der
-  Steuersumme den Code, BT-6 fehlt. `abschlaege` bricht bei gemischten
+  Steuersumme den Code.
+
+  **Umsatzsteuer in Fremdwährung** (ADR-0027) nur mit einer Umrechnung: Die
+  geschuldete Steuer muss in Euro dastehen (Art. 230 MwStSystRL, §16 Abs. 6
+  UStG), und den Kurs nennt die Rechnungsdatei unter `umrechnung` mit `kurs`
+  (Einheiten der Fremdwährung je Euro, wie das BMF notiert) und `monat`.
+  Nachgeschlagen wird er nicht (ADR-0001), und welcher Monat maßgeblich ist,
+  prüft der Generator nicht – das hängt an der Versteuerung des
+  Rechnungsstellers. `CalculatedInvoice.vatTotalInEuro` teilt die Summe der
+  Steuer durch den Kurs, mit einer Rundung und nicht je Gruppe. Kategorie S in
+  Fremdwährung ohne Umrechnung bricht ab (`WAEHRUNG_MIT_UMSATZSTEUER`), auf
+  Abschlags- und Schlussrechnung auch mit
+  (`WAEHRUNG_MIT_UMSATZSTEUER_AUF_DIESER_ART_NICHT_MOEGLICH`): Dort steht der
+  Monat der Vereinnahmung beim Erzeugen nicht fest, und die Absetzung
+  bräuchte einen Kurs je Abschlag. Eine Umrechnung, die nichts umrechnet,
+  bricht ebenso ab (`UMRECHNUNG_BEI_EURO`, `UMRECHNUNG_OHNE_UMSATZSTEUER`).
+  Auf dem Blatt steht ein Satz unter den Summen, `<<UMRECHNUNG>>`, mit Betrag,
+  Kurs und Monat; den Euro-Betrag setzt `\eurobetrag`, das jede Sprachdatei
+  als `\betrag` mit `\waehrung` auf EUR definiert. Im XML stehen BT-6 vor
+  BT-5 und die Steuersumme in Euro (BT-111); Mustang rechnet sie nicht nach,
+  das hält `umsatzsteuer-in-dollar-erwartet.xml`. Den Kurs selbst trägt das
+  XML nicht: `TaxApplicableTradeCurrencyExchange` gibt es nur in EXTENDED,
+  und seine Richtung belegt keine Quelle. `abschlaege` bricht bei gemischten
   Währungen ab (`ABSCHLAGSRECHNUNGEN_VERSCHIEDENE_WAEHRUNGEN`) und nennt die
   Währung auf stderr, wenn sie nicht Euro ist; der Block selbst nennt keine.
   Dass Schlussrechnung und Storno zu ihren Abschlägen und ihrer
@@ -287,7 +306,8 @@ PDF/A-Prüfung über veraPDF.
 
   Die englische Beispielrechnung steht in Pfund, die amerikanische in
   US-Dollar, dazu `dollar-auf-deutsch.yaml`; das Pflichtangaben-Netz prüft
-  Zeichen und Stellung an allen dreien.
+  Zeichen und Stellung an allen dreien, und an `umsatzsteuer-in-dollar.yaml`
+  in jeder Sprache die Steuer in Euro.
 
 - **Designs** (ADR-0011): Die Stammdaten wählen das Design, `design: helsinki`
   oder `design: prag`, ohne Eintrag `helsinki`. Jedes ist eine eingebaute

@@ -180,9 +180,20 @@ _Englisch_: Discount rate – _Vermeiden_: Discount percentage
 **Währung**:
 Die Währung, in der jeder Betrag einer Rechnung steht – genau eine je
 Rechnung, auch für die abgesetzten Abschläge. Sie hängt nicht an der Sprache.
-Eine Rechnung in einer anderen Währung als Euro weist keine Umsatzsteuer aus.
+Jede Währung außer Euro ist eine **Fremdwährung**; eine Rechnung in
+Fremdwährung nennt ihre Umsatzsteuer zusätzlich in Euro.
 _Vermeiden_: Devise, Valuta
-_Englisch_: Currency
+_Englisch_: Currency, Foreign currency
+
+**Umrechnungskurs**:
+Der Kurs, mit dem die Umsatzsteuer einer Rechnung in Fremdwährung in Euro
+umgerechnet wird, notiert als Einheiten der Fremdwährung je Euro, zusammen mit
+dem Monat, für den er gilt. In der Regel der Monatsdurchschnitt, den das BMF
+bekannt gibt.
+_Vermeiden_: Wechselkurs, Devisenkurs, Tageskurs (ein anderer Kurs, den das
+Finanzamt eigens gestatten muss)
+_Englisch_: Exchange rate, auf dem Blatt „monthly average rate" – _Vermeiden_:
+Conversion rate
 
 **Steueraufschlüsselung**:
 Die Aufstellung der Bemessungsgrundlagen und Steuerbeträge, gruppiert nach

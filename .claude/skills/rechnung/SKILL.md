@@ -127,10 +127,30 @@ Was du dir selbst beschaffen kannst, solltest du auch selbst beschaffen:
   bleibt weg. Bei einem neuen Kunden frag nur, wenn sein Land nicht `DE`
   ist, und schlag bei `US` `USD` vor, bei `GB` `GBP`, sonst `EUR`. Die
   Währung hängt nicht an der Sprache: `de-DE` in `USD` geht ebenso wie
-  `en-GB` in `EUR`. `USD` und `GBP` gehen nur ohne Umsatzsteuer, also mit
-  jeder Kategorie außer `S`. Trägt eine Position `S`, bricht der Generator
-  ab (`WAEHRUNG_MIT_UMSATZSTEUER`), und die Rechnung gehört in Euro. Die
-  Bankverbindung bleibt die aus den Stammdaten, gleich in welcher Währung.
+  `en-GB` in `EUR`. Die Bankverbindung bleibt die aus den Stammdaten,
+  gleich in welcher Währung.
+- **Umrechnung** (ADR-0027): Trägt eine Rechnung in `USD` oder `GBP` eine
+  Position der Kategorie `S`, nennt sie darunter den Kurs, mit dem die
+  Umsatzsteuer in Euro umgerechnet wird, und den Monat, für den er gilt:
+
+  ```yaml
+  umrechnung:
+    kurs: 1.1685      # 1 € = 1,1685 $, so notiert wie beim BMF
+    monat: 2026-07
+  ```
+
+  Gemeint ist der Monatsdurchschnittskurs des BMF, in der Regel für den
+  Monat der Leistung; wer nach vereinnahmten Entgelten versteuert, nimmt den
+  Monat der Zahlung. Den Monat prüft der Generator nicht, also frag, wenn
+  keine frühere Rechnung zeigt, wie der Nutzer es hält. Den Kurs nennst du
+  nie aus dem Gedächtnis: Frag danach, oder schlag ihn in der Tabelle des BMF
+  nach und lass ihn bestätigen. Ohne `umrechnung` bricht der Generator ab
+  (`WAEHRUNG_MIT_UMSATZSTEUER`). Eine Abschlags- oder Schlussrechnung mit
+  `S` geht in Fremdwährung gar nicht
+  (`WAEHRUNG_MIT_UMSATZSTEUER_AUF_DIESER_ART_NICHT_MOEGLICH`), die gehört in
+  Euro. Ein Storno übernimmt `umrechnung` unverändert aus der Rechnung, die
+  es aufhebt. Ohne `S` oder in Euro bleibt der Block weg
+  (`UMRECHNUNG_OHNE_UMSATZSTEUER`, `UMRECHNUNG_BEI_EURO`).
 - **Kundennummer**: Steht in der letzten Rechnung an denselben Kunden, dann
   übernimm sie. Sonst bleibt das Feld weg – erfinde keine, und frag nur, wenn
   der Nutzer von einer Kundennummer spricht.
