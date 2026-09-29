@@ -20,10 +20,24 @@ class EInvoiceValidatorTest : FunSpec({
 
     val xml = Path.of("src/test/resources/rechnung-erwartet.xml").readText()
 
-    // Die Warnung zum leeren ApplicableHeaderTradeDelivery trägt jede eigene
-    // Rechnung ohne Lieferland (ADR-0023).
-    test("ein gültiges XML ohne PDF geht durch, und seine Warnung steht im Ergebnis") {
+    test("ein gültiges XML ohne PDF geht durch, ohne Fehler und ohne Warnung") {
         val result = EInvoiceValidator.validate(xml.toByteArray())
+
+        result.valid shouldBe true
+        result.errors.shouldBeEmpty()
+        result.warnings.shouldBeEmpty()
+    }
+
+    // Die eigenen Rechnungen tragen keine Warnung (ADR-0023). Ein leerer
+    // Lieferblock steht für eine fremde, die eine trägt: PEPPOL-EN16931-R008.
+    test("eine Warnung macht das XML nicht ungültig und steht im Ergebnis") {
+        val withoutDelivery =
+            xml.replace(
+                Regex("(?s)<ram:ApplicableHeaderTradeDelivery>.*?</ram:ApplicableHeaderTradeDelivery>"),
+                "<ram:ApplicableHeaderTradeDelivery/>",
+            )
+
+        val result = EInvoiceValidator.validate(withoutDelivery.toByteArray())
 
         result.valid shouldBe true
         result.errors.shouldBeEmpty()
