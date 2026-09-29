@@ -14,63 +14,24 @@ import de.fluchitconsulting.rechnungsgenerator.core.rules.Rule
 import de.fluchitconsulting.rechnungsgenerator.core.rules.Subject
 import de.fluchitconsulting.rechnungsgenerator.core.values.Currency
 
-// Der fachliche Teil von `rechnungsgenerator abschlaege` (ADR-0003): Aus
-// Abschlagsrechnungen werden die Abschläge einer Schlussrechnung. Ohne Dateien
-// und ohne Ausgabe, damit sich jede Regel hier ohne beides prüfen lässt.
+// Ohne Dateien und ohne Ausgabe, damit sich jede Regel ohne beides prüfen lässt (ADR-0003).
 
-/**
- * Eine Rechnung unter dem Namen, unter dem der Aufrufer sie kennt.
- *
- * Im Kommando ist das der Dateiname, und er soll am Ende über jedem Abschlag
- * stehen. Hier heißt er trotzdem nur `name`: Dieses Modul liest keine Dateien
- * und muss nicht wissen, dass es eine ist.
- */
+/** Im Kommando der Dateiname; hier nur `name`, weil dieses Modul keine Dateien liest. */
 data class NamedInvoice(val name: String, val invoice: Invoice)
 
-/** Ein Abschlag und der Name der Rechnung, aus der er stammt. */
 data class CollectedPrepayment(val name: String, val prepayment: Prepayment)
 
-/**
- * Was beim Zusammentragen herauskommt: alle Abschläge – oder die Gründe, warum
- * keiner geschrieben wird (#118).
- *
- * Die Liste gibt es nur, wenn sie vollständig ist (ADR-0003: alles oder
- * nichts), und die Zusage hält der Typ, nicht ein Filter im Aufrufer.
- *
- * Hinweise trägt keiner der beiden Fälle: Die der einzelnen Abschlagsrechnungen
- * fallen weg (ADR-0003), und die Regeln des Zusammentragens selbst sind alle
- * Abbrüche.
- */
+/** Die Liste gibt es nur vollständig, gehalten vom Typ (ADR-0003). Hinweise trägt keiner der beiden Fälle. */
 sealed interface CollectedPrepayments {
-    /**
-     * Die Abschläge in der übergebenen Reihenfolge, jeder mit seiner Herkunft,
-     * und die eine [currency], in der sie alle stehen (#409).
-     */
     data class Complete(val entries: List<CollectedPrepayment>, val currency: Currency) : CollectedPrepayments
 
-    /** Kein Block: die Abbrüche, jeder mit der Rechnung, aus der er stammt. */
     data class Rejected(val aborts: List<Finding>) : CollectedPrepayments
 }
 
 /**
- * Die Abschläge aus mehreren Abschlagsrechnungen, in der übergebenen Reihenfolge.
- *
- * Geprüft wird hier, was die Schlussrechnung später nicht mehr sehen kann: dass
- * alle Abschlagsrechnungen an denselben Kunden gingen und in derselben Währung
- * stehen, dass keine doppelt dabei ist und dass jede wirklich eine
- * Abschlagsrechnung ist.
- *
- * Ein Dokument anderer Art wird gar nicht erst gerechnet und geprüft: Es fliegt
- * ohnehin aus dem Aufruf, und seine übrigen Befunde hülfen niemandem – sie
- * gälten einem Dokument, das hier nichts zu suchen hat.
- *
- * Die Hinweise der einzelnen Rechnungen fallen weg: Sie galten der
- * Abschlagsrechnung, als sie entstand, nicht der Schlussrechnung von heute.
- * Ihre Abbrüche kommen mit, mit der Herkunft davor.
- *
- * Verlangt mindestens eine Abschlagsrechnung. Eine leere Liste ist ein Fehler
- * des Aufrufers und kein Befund: Ein leeres [CollectedPrepayments.Complete]
- * bräuchte eine Währung, und es gäbe keine Datei, aus der sie käme.
+ * Geprüft wird, was die Schlussrechnung nicht mehr sehen kann: derselbe Kunde, dieselbe Währung, keine doppelt,
+ * jede eine Abschlagsrechnung. Deren Hinweise fallen weg, sie galten ihr beim Entstehen; ihre Abbrüche kommen mit.
+ * Eine leere Liste ist ein Fehler des Aufrufers: Ohne Datei gäbe es keine Währung.
  */
 fun prepaymentsOf(prepaymentInvoices: List<NamedInvoice>, config: SellerConfig): CollectedPrepayments {
     require(prepaymentInvoices.isNotEmpty()) { "Ohne Abschlagsrechnung gibt es keine Abschläge zusammenzutragen." }
@@ -82,18 +43,14 @@ fun prepaymentsOf(prepaymentInvoices: List<NamedInvoice>, config: SellerConfig):
                 "Eine Schlussrechnung setzt nur Abschläge desselben Kunden ab."
         }
 
-    // Die Schlussrechnung trägt eine Währung für jeden Betrag, auch für die
-    // abgesetzten (#409). Der Block nennt sie nicht, sie steht in der
-    // Schlussrechnung selbst; ob die dieselbe nennt, sieht niemand mehr, der
-    // die Abschlagsrechnungen liest (ADR-0001).
+    // Ob die Schlussrechnung dieselbe Währung nennt, sieht später niemand mehr (ADR-0001).
     findings +=
         differing(prepaymentInvoices, Rule.ABSCHLAGSRECHNUNGEN_VERSCHIEDENE_WAEHRUNGEN, Invoice::currency) { currencies ->
             "Die Abschlagsrechnungen stehen in verschiedenen Währungen: $currencies. " +
                 "Eine Schlussrechnung setzt nur Abschläge in einer Währung ab."
         }
 
-    // Exakt verglichen wie die Regel der Schlussrechnung (#53).
-    // Je Nummer ein Befund, mit ihrer Anzahl – wie in der Schlussrechnung (#152).
+    // Exakt verglichen, je Nummer ein Befund mit Anzahl, wie in der Schlussrechnung (#53).
     prepaymentInvoices
         .groupBy { it.invoice.number }
         .filterValues { it.size > 1 }
@@ -106,16 +63,9 @@ fun prepaymentsOf(prepaymentInvoices: List<NamedInvoice>, config: SellerConfig):
                 )
         }
 
-    // Heraus fallen die abgelehnten Abschlagsrechnungen. Die Liste zählt am
-    // Ende nur, wenn dabei kein Befund entstanden ist; sonst gibt es sie gar
-    // nicht.
     val entries =
         prepaymentInvoices.mapNotNull { (name, prepaymentInvoice) ->
-            // Keine Regel der Schlussrechnung kennt die Art des Dokuments, aus dem
-            // ein Abschlag stammt – eine gewöhnliche Rechnung ginge dort klaglos
-            // durch. Ein `when` über alle Arten ohne `else` (#281): Eine neue Art
-            // entscheidet hier, ob sie ein Abschlag ist, statt still unter die
-            // übrigen zu fallen.
+            // Keine Regel der Schlussrechnung kennt die Art der Quelle; eine gewöhnliche Rechnung ginge dort durch.
             when (prepaymentInvoice.type) {
                 InvoiceType.PREPAYMENT -> {
                     when (val verdict = AcceptedInvoice.check(CalculatedInvoice(prepaymentInvoice, config))) {
@@ -150,11 +100,7 @@ fun prepaymentsOf(prepaymentInvoices: List<NamedInvoice>, config: SellerConfig):
     }
 }
 
-/**
- * Ein Befund nach [rule], wenn die Abschlagsrechnungen in [key] auseinandergehen,
- * sonst keiner. [sentence] bekommt jeden Wert mit den Nummern der Rechnungen,
- * die ihn tragen: `EUR (R26-001), USD (R26-002, R26-003)`.
- */
+/** [sentence] bekommt jeden Wert mit seinen Rechnungen: `EUR (R26-001), USD (R26-002, R26-003)`. */
 private fun <K> differing(
     prepaymentInvoices: List<NamedInvoice>,
     rule: Rule,
@@ -171,29 +117,8 @@ private fun <K> differing(
 }
 
 /**
- * Aus einer angenommenen Abschlagsrechnung wird der Abschlag, den eine
- * Schlussrechnung absetzt.
- *
- * Die Steueranteile sind die Steueraufschlüsselung der Abschlagsrechnung,
- * Zeile für Zeile – dieselben Zahlen, die auf ihrem PDF stehen, weil sie aus
- * derselben [CalculatedInvoice] kommen.
- *
- * Nur eine [AcceptedInvoice]: Aus einer Abschlagsrechnung mit Abbruch wird kein
- * Abschlag, so wie aus ihr kein PDF wird (ADR-0007).
- *
- * `vereinnahmt-am` wird übernommen, wenn die Abschlagsrechnung es trägt: Dort
- * hält es eine Vereinnahmung vor der Rechnungsstellung fest, dieselbe Tatsache
- * wie im Abschlag.
- *
- * `private`: Der einzige Aufrufer steht darüber, und sein `when` über
- * `InvoiceType` ohne `else` hält fest, dass nur eine Abschlagsrechnung
- * hierherkommt (#281). Der `else`-Zweig unten ist damit unerreichbar und
- * trotzdem gewollt – kein vergessenes `when` wie im Renderer (#128): Dort
- * braucht jede Rechnungsart eine eigene Entscheidung, hier ist genau eine
- * richtig, und eine neue gehört zu Recht zu den übrigen. Ein `when` über
- * `InvoiceKind` ohne `else` bräuchte stattdessen vier Zweige, drei davon tot.
- * Die Vorprüfung am flachen Modell bleibt, damit ein fremdes Dokument gar
- * nicht erst gerechnet wird (#118).
+ * Die Steueranteile sind die Steueraufschlüsselung der Abschlagsrechnung, dieselben Zahlen wie auf ihrem PDF. Der
+ * `else`-Zweig ist gewollt: Hier ist genau eine Art richtig, und das `when` des Aufrufers hält das fest (#281).
  */
 private fun prepaymentOf(prepaymentInvoice: AcceptedInvoice): Prepayment {
     val calculatedInvoice = prepaymentInvoice.calculated

@@ -5,41 +5,23 @@ import org.apache.pdfbox.pdmodel.common.PDNameTreeNode
 import org.apache.pdfbox.pdmodel.common.filespecification.PDComplexFileSpecification
 
 /**
- * Ein Anhang, der nach seinem Namen das XML einer E-Rechnung trägt, samt den
- * Bytes, wie sie eingebettet sind.
- *
- * Gelesen über PDFBox und nicht über Mustangs `ZUGFeRDInvoiceImporter`: Der
- * verschluckt einen Fehler beim Lesen, nimmt von mehreren Anhängen still den
- * letzten und liest eine Datei, die kein PDF ist, als XML (#380). Die Bytes
- * holt er mit demselben `toByteArray()` wie hier.
- *
- * Keine `data class`: Ihr `equals` verglich das [ByteArray] nach Identität.
+ * Über PDFBox und nicht Mustangs `ZUGFeRDInvoiceImporter`: Der verschluckt Lesefehler und nimmt von mehreren
+ * Anhängen still den letzten (#380). Keine `data class` wegen des [ByteArray].
  */
 class EInvoiceAttachment(
     val name: String,
     val xml: ByteArray,
 ) {
     companion object {
-        /**
-         * Die Namen, unter denen die Fassungen das XML anhängen: Factur-X und
-         * ZUGFeRD ab 2.1, ZUGFeRD 2.0, das Profil XRECHNUNG und ZUGFeRD 1.
-         * Verglichen wird genau, auch in der Schreibweise – 2.0 und 1
-         * unterscheiden sich nur darin.
-         */
+        /** Die Namen je Fassung, genau verglichen: ZUGFeRD 2.0 und 1 unterscheiden sich nur in der Schreibweise. */
         val NAMES = listOf("factur-x.xml", "zugferd-invoice.xml", "xrechnung.xml", "ZUGFeRD-invoice.xml")
 
-        /**
-         * Alle Anhänge von [document] mit einem der [NAMES]. Mehr als einer ist
-         * kein Fall zum Aussuchen: Welcher gilt, sagt das PDF nicht, und
-         * entscheiden muss der Aufrufer.
-         */
+        /** Mehr als einer ist kein Fall zum Aussuchen: Welcher gilt, sagt das PDF nicht. */
         fun allIn(document: PDDocument): List<EInvoiceAttachment> {
             val tree = document.documentCatalog.names?.embeddedFiles ?: return emptyList()
             return specifications(tree)
                 .filter { it.filename in NAMES }
-                // Ein Eintrag ohne eingebettete Datei ergibt ein leeres XML,
-                // und das lehnt der Prüfer ab. Übergangen hieße er "kein
-                // Anhang", und das stimmte nicht.
+                // Ohne eingebettete Datei ein leeres XML, das der Prüfer ablehnt; übergangen hieße es fälschlich „kein Anhang“.
                 .map { EInvoiceAttachment(it.filename, (it.embeddedFile ?: it.embeddedFileUnicode)?.toByteArray() ?: ByteArray(0)) }
         }
 
