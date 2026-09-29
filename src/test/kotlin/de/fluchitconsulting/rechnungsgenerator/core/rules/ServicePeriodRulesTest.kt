@@ -14,14 +14,7 @@ import io.kotest.matchers.collections.shouldBeEmpty
 import io.kotest.matchers.string.shouldContain
 import java.time.LocalDate
 
-/**
- * Die Zeiträume einer Rechnung (#47): Ein Zeitraum endet nicht vor seinem
- * Beginn, und eine Rechnung über eine erbrachte Leistung entsteht nicht, bevor
- * die Leistung zu Ende ist.
- *
- * testInvoice trägt den Leistungszeitraum 01.–31.07.2026 und das Rechnungsdatum
- * 14.08.2026.
- */
+/** #47. testInvoice trägt den Leistungszeitraum 01.–31.07.2026 und das Rechnungsdatum 14.08.2026. */
 class ServicePeriodRulesTest : FunSpec({
 
     val config = testSellerConfig()
@@ -63,8 +56,6 @@ class ServicePeriodRulesTest : FunSpec({
         }
 
         test("eine Abschlagsrechnung darf vor dem Ende ihres Zeitraums entstehen") {
-            // Ihr Zeitraum ist eine Prognose: Die Leistung steht noch aus, und
-            // genau darüber stellt sie die Rechnung.
             val item = testItem().copy(servicePeriod = ServicePeriod(LocalDate.of(2026, 9, 1), LocalDate.of(2026, 9, 30)))
             val prepaymentInvoice =
                 testInvoice(type = InvoiceType.PREPAYMENT, items = listOf(item)).copy(issueDate = LocalDate.of(2026, 6, 15))
@@ -73,12 +64,7 @@ class ServicePeriodRulesTest : FunSpec({
         }
 
         test("das Storno einer Abschlagsrechnung darf den Zeitraum der Prognose tragen") {
-            // Ein Storno rechnet nichts ab, es hebt auf (InvoiceType.chargesForService).
-            // Sein Zeitraum stammt aus der Ursprungsrechnung – war die eine
-            // Abschlagsrechnung, ist er eine Prognose und endet nach dem
-            // Rechnungsdatum des Stornos. Ein Abbruch riete, es sei dann eine
-            // Abschlagsrechnung: Das ist die Ursprungsrechnung ja gerade
-            // (#151, #66).
+            // Der Zeitraum stammt aus der Ursprungsrechnung, und die war die Prognose (#151, #66).
             val cancellation =
                 testInvoice(
                     type = InvoiceType.CANCELLATION,

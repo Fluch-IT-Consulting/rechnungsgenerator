@@ -12,12 +12,7 @@ import io.kotest.matchers.collections.shouldNotContain
 import io.kotest.matchers.string.shouldContain
 import java.time.LocalDate
 
-/**
- * Hinweise auf Angaben, die zulässig, aber verdächtig sind (#47): Die Rechnung
- * entsteht, und der Hinweis steht nach dem Ergebnis.
- *
- * testInvoice trägt den Leistungszeitraum 01.–31.07.2026.
- */
+/** #47. testInvoice trägt den Leistungszeitraum 01.–31.07.2026. */
 class PlausibilityHintsTest : FunSpec({
 
     val config = testSellerConfig()
@@ -47,7 +42,7 @@ class PlausibilityHintsTest : FunSpec({
         }
 
         test("die Abschlagsrechnung bricht stattdessen ab") {
-            // ABSCHLAGSRECHNUNG_OHNE_BETRAG sagt es schon, und strenger.
+            // ABSCHLAGSRECHNUNG_OHNE_BETRAG sagt es schon.
             aboveZero(InvoiceType.PREPAYMENT).rules() shouldNotContain Rule.GESAMTBETRAG_NULL
         }
 
@@ -56,7 +51,6 @@ class PlausibilityHintsTest : FunSpec({
         }
 
         test("neben MENGE_NULL bleibt er stehen") {
-            // Der eine fragt nach der Position, der andere nach dem Dokument.
             val rules = CalculatedInvoice(testInvoice(items = listOf(testItem(quantity = "0"))), config).rules()
 
             rules shouldContain Rule.MENGE_NULL
@@ -79,9 +73,7 @@ class PlausibilityHintsTest : FunSpec({
         }
 
         test("er fängt den Tippfehler im Jahr") {
-            // 2062 statt 2026: Die Rechnung entstünde 36 Jahre nach der Leistung.
-            // Der Tippfehler in die andere Richtung, 2016, bricht schon ab: Dann
-            // läge das Rechnungsdatum vor dem Ende der Leistung.
+            // 2062 statt 2026; 2016 bricht schon ab, vor dem Ende der Leistung.
             invoiceOn(LocalDate.of(2062, 8, 14)).messageOf(Rule.RECHNUNG_SPAET) shouldContain "sechs Monate"
         }
 

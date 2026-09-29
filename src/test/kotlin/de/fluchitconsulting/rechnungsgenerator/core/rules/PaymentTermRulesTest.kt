@@ -10,9 +10,7 @@ class PaymentTermRulesTest : FunSpec({
 
     val config = testSellerConfig()
 
-    // Ein negatives Zahlungsziel setzte die Fälligkeit vor das
-    // Rechnungsdatum: "zahlbar bis 9. August" auf einer Rechnung vom
-    // 14. August (#47). Die Meldung nennt, woher der Wert kommt.
+    // #47
     test("ein negatives Zahlungsziel in der Rechnung wird abgelehnt") {
         val message =
             CalculatedInvoice(testInvoice(paymentTermDaysOverride = -5), config)

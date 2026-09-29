@@ -18,15 +18,12 @@ import io.kotest.matchers.collections.shouldNotContain
 import io.kotest.matchers.string.shouldContain
 import java.time.YearMonth
 
-/**
- * Umsatzsteuer in Fremdwährung nur mit einer Umrechnung in Euro (#409, #418).
- */
+/** #409, #418 */
 class CurrencyRulesTest : FunSpec({
 
     fun calculated(invoice: Invoice) = CalculatedInvoice(invoice, testSellerConfig())
 
-    // Je Kategorie ohne Steuerbetrag eine Position, die ihre übrigen Regeln
-    // besteht: Satz 0, und wo die Kategorie ihn verlangt, ein Grund.
+    // Besteht die übrigen Regeln ihrer Kategorie.
     fun untaxed(category: TaxCategory) =
         testItem(
             vatRate = "0",
@@ -36,7 +33,6 @@ class CurrencyRulesTest : FunSpec({
 
     val conversion = CurrencyConversion(ExchangeRate("1.1685"), YearMonth.of(2026, 7))
 
-    // Alle Regeln dieser Gruppe, damit ein Test sagen kann, dass keine anschlägt.
     val currencyRules =
         listOf(
             Rule.WAEHRUNG_MIT_UMSATZSTEUER,
@@ -98,8 +94,7 @@ class CurrencyRulesTest : FunSpec({
                             calculated(testInvoice(type = type, currency = Currency.USD, conversion = umrechnung)).rules()
 
                         rules shouldContain Rule.WAEHRUNG_MIT_UMSATZSTEUER_AUF_DIESER_ART_NICHT_MOEGLICH
-                        // Nur dieser Befund: Ein Satz über die fehlende
-                        // Umrechnung lenkte davon ab, dass keine hilft.
+                        // Nur dieser Befund, denn keine Umrechnung hülfe.
                         rules shouldNotContain Rule.WAEHRUNG_MIT_UMSATZSTEUER
                     }
                 }
@@ -163,7 +158,7 @@ class CurrencyRulesTest : FunSpec({
 
     context("ohne Regelsatz in Fremdwährung") {
         test("jede Kategorie ohne Steuerbetrag ist in Fremdwährung zulässig") {
-            // Auch Z: Der Satz ist null, umzurechnen ist nichts.
+            // Auch Z: umzurechnen ist nichts.
             TaxCategory.entries.filter { it != TaxCategory.STANDARD }.forEach { category ->
                 withClue(category) {
                     calculated(testInvoice(currency = Currency.GBP, items = listOf(untaxed(category))))
@@ -173,8 +168,6 @@ class CurrencyRulesTest : FunSpec({
         }
 
         test("eine Rechnung in Fremdwährung ohne Regelsatz wird angenommen") {
-            // Die Zusage der Regel: Mehr als sie steht einer Rechnung in USD
-            // nicht im Weg.
             calculated(testInvoice(currency = Currency.USD, items = listOf(untaxed(TaxCategory.OUT_OF_SCOPE))))
                 .aborts()
                 .shouldBeEmpty()

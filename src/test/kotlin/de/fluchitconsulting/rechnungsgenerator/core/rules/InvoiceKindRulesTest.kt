@@ -24,10 +24,7 @@ import io.kotest.matchers.string.shouldContain
 import io.kotest.matchers.types.shouldBeInstanceOf
 import java.time.LocalDate
 
-/**
- * Die Rechnungsart als Typ und die Regeln, ohne die er nicht baubar ist
- * (ADR-0008).
- */
+/** ADR-0008 */
 class InvoiceKindRulesTest : FunSpec({
 
     val config = testSellerConfig()
@@ -36,7 +33,6 @@ class InvoiceKindRulesTest : FunSpec({
 
     fun kindOf(invoice: Invoice): InvoiceKind = CalculatedInvoice(invoice, config).accepted().kind
 
-    // Das Gegenstück zur Ursprungsrechnung: dieselbe Position, negative Menge.
     fun cancellation(
         cancelled: CancelledInvoice? = testCancelled(),
         quantity: String = "-1",
@@ -52,8 +48,6 @@ class InvoiceKindRulesTest : FunSpec({
     fun finalInvoice(vararg prepayments: Prepayment) =
         testInvoice(type = InvoiceType.FINAL, items = totalService(), prepayments = prepayments.toList())
 
-    // Je ein Weg, auf dem kein Typ entsteht – die Kennungen selbst stehen nicht
-    // noch einmal hier.
     fun unbuildable(): List<Invoice> =
         listOf(
             cancellation(cancelled = null),
@@ -95,22 +89,16 @@ class InvoiceKindRulesTest : FunSpec({
             val message = messageFor(cancellation(cancelled = null), Rule.STORNO_OHNE_BEZUG)
 
             message shouldContain "'storniert'"
-            // Die Meldung sagt, warum es die Angabe braucht, nicht nur dass sie fehlt.
             message shouldContain "BG-3"
         }
 
         test("ein Bezug ohne Storno wird ebenso abgelehnt, und die Meldung nennt die Art des Dokuments") {
-            // Dieselbe Symmetrie wie bei 'vereinnahmt-am' und der Abschlagsrechnung.
-            //
-            // Geprüft wird der ganze Satzschluss und nicht bloß das Wort "Rechnung":
-            // Das steckt in jedem Dokumentnamen dieses Projekts, und eine Meldung,
-            // die fälschlich immer "Stornorechnung" einsetzte, käme damit durch.
+            // Der ganze Satzschluss, denn "Rechnung" steckt in jedem Dokumentnamen.
             messageFor(testInvoice(cancelled = testCancelled()), Rule.BEZUG_OHNE_STORNO)
                 .shouldContain("'storniert'")
                 .shouldContain("dieses Dokument ist eine Rechnung.")
 
-            // Und mit einer zweiten Art, damit belegt ist, dass der Name wirklich
-            // aus der Rechnung kommt und nicht zufällig passt.
+            // Eine zweite Art, damit der Name nicht zufällig passt.
             messageFor(
                 testInvoice(type = InvoiceType.FINAL, cancelled = testCancelled()),
                 Rule.BEZUG_OHNE_STORNO,
@@ -145,7 +133,6 @@ class InvoiceKindRulesTest : FunSpec({
         }
 
         test("Abschläge gehören auch nicht in ein Storno") {
-            // Ohne neue Regel: Die bestehende sagt "nur in einer Schlussrechnung".
             val message =
                 messageFor(
                     cancellation().copy(prepayments = listOf(testPrepayment())),
@@ -162,8 +149,7 @@ class InvoiceKindRulesTest : FunSpec({
         }
 
         test("ein Abschlag ohne Vereinnahmung wird nicht abgesetzt") {
-            // §14 Abs. 5 Satz 2 UStG setzt ab, was vereinnahmt wurde. Ein
-            // berechneter, aber unbezahlter Abschlag ist eine offene Forderung.
+            // §14 Abs. 5 Satz 2 UStG
             val message = messageFor(finalInvoice(testPrepayment(receivedOn = null)), Rule.ABSCHLAG_OHNE_VEREINNAHMUNG)
 
             message shouldContain "R26-009"
@@ -171,17 +157,14 @@ class InvoiceKindRulesTest : FunSpec({
         }
 
         test("ohne gebaute Rechnungsart wird nicht angenommen") {
-            // Die Voraussetzung von ADR-0008: Eine AcceptedInvoice ohne kind
-            // gibt es nicht, also auch keine Stornorechnung ohne Bezug im Renderer.
+            // ADR-0008
             val verdict = AcceptedInvoice.check(CalculatedInvoice(cancellation(cancelled = null), config))
 
             verdict.shouldBeInstanceOf<Verdict.Rejected>().aborts.rules() shouldContain Rule.STORNO_OHNE_BEZUG
         }
 
         test("was den Typ unbaubar macht, ist ein Abbruch") {
-            // AcceptedInvoice.check lehnt eine Rechnung ohne gebaute Art mit ihren
-            // Abbrüchen ab. Wäre einer dieser Befunde bloß ein Hinweis, stünde
-            // eine Ablehnung ohne Grund da (#93).
+            // Wäre einer bloß ein Hinweis, stünde eine Ablehnung ohne Grund da (#93).
             unbuildable().forEach { invoice ->
                 val notBuilt =
                     InvoiceKindRules
@@ -199,9 +182,7 @@ class InvoiceKindRulesTest : FunSpec({
         }
 
         test("die Ablehnung nennt die Befunde, die den Bau verhindert haben") {
-            // Das Gegenstück zum Test davor: Abbruch sein genügt nicht, der Befund
-            // muss auch in der Ablehnung ankommen (#105). Gebaut wird hier eigens, damit
-            // der Test nicht mitliest, was AcceptedInvoice.check selbst gebaut hat.
+            // #105. Eigens gebaut, damit der Test nicht mitliest, was AcceptedInvoice.check baut.
             unbuildable().forEach { invoice ->
                 val calculated = CalculatedInvoice(invoice, config)
                 val notBuilt = InvoiceKindRules.check(calculated).shouldBeInstanceOf<InvoiceKindRules.Result.NotBuilt>()

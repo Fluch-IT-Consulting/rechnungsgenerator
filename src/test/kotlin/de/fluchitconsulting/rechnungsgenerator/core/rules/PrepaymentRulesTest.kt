@@ -12,10 +12,6 @@ import io.kotest.matchers.shouldBe
 import io.kotest.matchers.string.shouldContain
 import java.time.LocalDate
 
-/**
- * Die Regeln der Abschlagsrechnung. Die Absetzung in der Schlussrechnung ist
- * hier noch nicht dabei – die Abschlagsrechnung steht für sich.
- */
 class PrepaymentRulesTest : FunSpec({
 
     val config = testSellerConfig()
@@ -34,13 +30,7 @@ class PrepaymentRulesTest : FunSpec({
         totals.grossTotal shouldBe Money("4760.00")
     }
 
-    // Dass vereinnahmt-am nur auf eine Abschlagsrechnung gehört, prüft
-    // InvoiceKindRulesTest.
-
     test("eine Vereinnahmung nach dem Rechnungsdatum belegt für diese Rechnung nichts") {
-        // Das Feld ist für den Fall gedacht, dass das Geld schon vor der
-        // Rechnungsstellung da war. Steht der Zeitpunkt noch nicht fest,
-        // bleibt die Angabe weg – ein künftiges Datum wäre eine Behauptung.
         val invoice =
             testInvoice(
                 type = InvoiceType.PREPAYMENT,
@@ -53,10 +43,7 @@ class PrepaymentRulesTest : FunSpec({
     }
 
     test("auf einer anderen Rechnungsart schweigen diese Regeln") {
-        // Dass 'vereinnahmt-am' dort nicht hingehört, meldet InvoiceKindRules.
-        // Eine Meldung über das Datum spräche von einer Vereinnahmung, die es
-        // auf diesem Dokument nicht geben kann (#97). Verglichen wird mit
-        // derselben Rechnung ohne das Feld: Hinzukommen darf nur der eine Befund.
+        // #97. Gegen dieselbe Rechnung ohne das Feld darf nur der eine Befund hinzukommen.
         val absent = CalculatedInvoice(testInvoice(), config)
         val present = CalculatedInvoice(testInvoice(receivedOn = LocalDate.of(2026, 8, 15)), config)
 

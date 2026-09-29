@@ -15,10 +15,7 @@ import io.kotest.matchers.collections.shouldBeEmpty
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.string.shouldContain
 
-/**
- * Das Skonto (#183): Bedingungen, die sich selbst oder dem Zahlungsziel
- * widersprechen, und Rechnungsarten, auf denen es nichts zu suchen hat.
- */
+/** #183 */
 class SkontoRulesTest : FunSpec({
 
     // Zahlungsziel 14 Tage, wie in den Stammdaten der Beispielrechnung.
@@ -31,8 +28,6 @@ class SkontoRulesTest : FunSpec({
 
     fun calculated(invoice: Invoice) = CalculatedInvoice(invoice, config)
 
-    // Nur die Befunde dieser Gruppe – die Rechnungen der anderen Arten dürfen
-    // eigene haben, darum geht es hier nicht.
     fun skontoRules(invoice: Invoice): List<Rule> =
         calculated(invoice).rules().filter { it in SKONTO_RULES }
 
@@ -45,13 +40,11 @@ class SkontoRulesTest : FunSpec({
     }
 
     test("auch auf einer Teilrechnung") {
-        // Sie ist endgültig, wird nie abgesetzt und kennt keine Vereinnahmung.
         calculated(testInvoice(type = InvoiceType.PARTIAL, skonto = listOf(stufe("2", 7)))).aborts().shouldBeEmpty()
     }
 
     context("SKONTO_AUF_DIESER_ART_NICHT_MOEGLICH") {
-        // Jede Stufe ist zusätzlich falsch: Auf der falschen Art bleibt es beim
-        // einen Befund, wie bei den Angaben anderer Rechnungsarten (#97).
+        // Jede Stufe ist zusätzlich falsch, und es bleibt beim einen Befund (#97).
         val invalid = listOf(stufe("2", 30))
 
         test("auf der Abschlagsrechnung") {
@@ -90,7 +83,6 @@ class SkontoRulesTest : FunSpec({
     }
 
     test("SKONTO_OHNE_ZAHLUNGSAUFFORDERUNG: bei Gesamtbetrag null, und nur dieser Befund") {
-        // Ohne Zahlungsziel sagt "Frist nicht vor dem Zahlungsziel" nichts.
         val nothingToPay =
             testInvoice(items = listOf(testItem(quantity = "0")), skonto = listOf(stufe("2", 30)))
 

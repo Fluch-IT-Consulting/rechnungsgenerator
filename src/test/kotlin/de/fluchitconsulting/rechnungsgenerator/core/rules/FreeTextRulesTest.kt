@@ -34,13 +34,10 @@ class FreeTextRulesTest : FunSpec({
         }
 
         test("ein leerer Ansprechpartner wird abgelehnt") {
-            // ansprechpartner: "" nennt niemanden; gemeint war vermutlich jemand.
             withContactPoint("").messageOf(Rule.ANSPRECHPARTNER_LEER) shouldContain "kunde: ansprechpartner"
         }
 
         test("einer aus lauter Leerzeichen ist leer, er trägt nicht bloß Leerraum") {
-            // Genau diese eine Regel zum Ansprechpartner: Wer leer ist, wird
-            // nicht zusätzlich für seinen Leerraum gerügt.
             withContactPoint("   ").rules().filter { it.name.startsWith("ANSPRECHPARTNER_") } shouldBe
                 listOf(Rule.ANSPRECHPARTNER_LEER)
         }
@@ -124,8 +121,6 @@ class FreeTextRulesTest : FunSpec({
         }
 
         test("der Zeilenumbruch am Ende eines Blocks mit | wird abgelehnt, die Meldung nennt >-") {
-            // Die Falle eines langen Werts: `einleitung: |` behält den
-            // Zeilenumbruch am Ende, `>-` nicht.
             val message = withIntroduction("Für Projekt A berechnen wir:\n").messageOf(Rule.EINLEITUNG_MIT_LEERRAUM)
 
             message shouldContain "'>-'"

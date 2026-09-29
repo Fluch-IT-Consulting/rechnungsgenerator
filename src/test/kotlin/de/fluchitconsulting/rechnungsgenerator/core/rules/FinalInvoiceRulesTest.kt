@@ -21,14 +21,7 @@ import io.kotest.matchers.shouldNotBe
 import io.kotest.matchers.string.shouldContain
 import java.time.LocalDate
 
-/**
- * Die Absetzung in der Schlussrechnung: die Abbruchregeln aus Issue #1 und #47
- * und das, was am Ende dabei herauskommen soll.
- *
- * Jede Regel prüft die Meldung mit, nicht nur den Abbruch. Wer eine
- * Schlussrechnung schreibt, sitzt vor Zahlen aus mehreren Monaten – eine
- * Meldung, die nur "ungültig" sagt, lässt ihn suchen.
- */
+/** #1, #47. Jede Regel prüft die Meldung mit, nicht nur den Abbruch. */
 class FinalInvoiceRulesTest : FunSpec({
 
     val config = testSellerConfig()
@@ -42,8 +35,6 @@ class FinalInvoiceRulesTest : FunSpec({
     fun messageFor(invoice: Invoice, rule: Rule): String = CalculatedInvoice(invoice, config).messageOf(rule)
 
     context("die Abbruchregeln") {
-        // Ob Abschläge dort stehen, wo sie hingehören, ob eine Schlussrechnung
-        // welche hat und ob jeder vereinnahmt ist, prüft InvoiceKindRulesTest.
 
         test("vereinnahmt nach dem Rechnungsdatum") {
             val message =
@@ -64,8 +55,6 @@ class FinalInvoiceRulesTest : FunSpec({
         }
 
         test("eine Kombination, die in der Schlussrechnung nicht vorkommt") {
-            // Die Gesamtleistung ist mit 19 % abgerechnet; ein Abschlag mit 7 %
-            // gehört entweder zu einer anderen Rechnung oder war damals falsch.
             val message =
                 messageFor(finalInvoice(testPrepayment(vatRate = "7", vat = "280.00")), Rule.ABSCHLAG_KOMBINATION_FEHLT)
 
@@ -81,9 +70,7 @@ class FinalInvoiceRulesTest : FunSpec({
         }
 
         test("zwei verschiedene Nummern je doppelt geben zwei Befunde") {
-            // ADR-0004 will alle Gründe auf einmal. Mit firstOrNull stünde nur
-            // die erste doppelte Nummer da; die zweite fiele erst im nächsten
-            // Lauf auf (#152).
+            // ADR-0004, #152
             val invoice =
                 finalInvoice(
                     testPrepayment(invoiceNumber = "R26-009"),
@@ -101,7 +88,6 @@ class FinalInvoiceRulesTest : FunSpec({
         }
 
         test("dreimal dieselbe Nummer nennt die Anzahl, nicht zweimal") {
-            // Wer "zweimal" liest und eine Zeile löscht, läuft in denselben Abbruch.
             val message =
                 messageFor(finalInvoice(testPrepayment(), testPrepayment(), testPrepayment()), Rule.ABSCHLAG_DOPPELT)
 
@@ -109,8 +95,7 @@ class FinalInvoiceRulesTest : FunSpec({
         }
 
         test("zweimal dieselbe Nummer heißt: exakt gleich geschrieben") {
-            // Der Generator nimmt nichts über das Schema einer Nummer an (#53):
-            // "r26-009" und "R26-009 " sind andere Nummern als "R26-009".
+            // Der Generator nimmt nichts über das Schema einer Nummer an (#53).
             val invoice =
                 finalInvoice(
                     testPrepayment(invoiceNumber = "R26-009"),
@@ -123,8 +108,6 @@ class FinalInvoiceRulesTest : FunSpec({
         }
 
         test("ein negativer Restbetrag") {
-            // Mehr abgesetzt als berechnet: Das ist keine Rechnung mehr,
-            // sondern ein Fall für eine Rückzahlung.
             val tooLarge = testPrepayment(net = "30000.00", vat = "5700.00")
 
             val message = messageFor(finalInvoice(tooLarge), Rule.RESTBETRAG_NEGATIV)
@@ -133,9 +116,7 @@ class FinalInvoiceRulesTest : FunSpec({
         }
 
         test("ein Abschlag ohne Steueranteile") {
-            // Aus demselben Grund wie ABSCHLAG_PRUEFSUMME: Sonst setzte der
-            // Abschlag still 0,00 € ab, ohne dass die Prüfsumme je etwas zu
-            // prüfen hätte.
+            // Wie ABSCHLAG_PRUEFSUMME: Sonst setzte der Abschlag still 0,00 € ab.
             val message =
                 messageFor(finalInvoice(testPrepayment(taxShares = emptyList())), Rule.ABSCHLAG_OHNE_STEUERANTEILE)
 
@@ -144,10 +125,7 @@ class FinalInvoiceRulesTest : FunSpec({
         }
 
         test("ein Abschlag, der nach der Schlussrechnung datiert ist") {
-            // Das Gegenstück zu ABSCHLAG_NACH_RECHNUNGSDATUM, diesmal für das
-            // Rechnungsdatum (#47): Ein Abschlag geht der Schlussrechnung
-            // voraus. Später datiert ist er ein Tippfehler – oder eine Rechnung,
-            // die nicht hierher gehört.
+            // Das Gegenstück zu ABSCHLAG_NACH_RECHNUNGSDATUM (#47).
             val message =
                 messageFor(
                     finalInvoice(testPrepayment(issueDate = LocalDate.of(2026, 9, 1))),
@@ -160,12 +138,8 @@ class FinalInvoiceRulesTest : FunSpec({
         }
 
         test("auf einer anderen Rechnungsart schweigen die Regeln der Absetzung") {
-            // Dass Abschläge dort nicht hingehören, meldet InvoiceKindRules. Die
-            // Regeln hier sprächen von "dieser Schlussrechnung", auf einem Blatt,
-            // das keine ist (#97). Die Abschläge sind absichtlich falsch: falsche
-            // Prüfsumme, später datiert und vereinnahmt, fremde Kombination.
-            // Verglichen wird mit derselben Rechnung ohne sie, damit auch eine
-            // künftige Regel dieser Gruppe erfasst ist.
+            // #97. Die Abschläge sind absichtlich falsch; der Vergleich mit derselben
+            // Rechnung ohne sie erfasst auch eine künftige Regel dieser Gruppe.
             val abschlaege =
                 listOf(
                     testPrepayment(vat = "670.00"),
@@ -194,8 +168,7 @@ class FinalInvoiceRulesTest : FunSpec({
             val totals = CalculatedInvoice(invoice, config)
 
             totals.grossTotal shouldBe Money("23800.00")
-            // Netto und Steuer bleiben getrennt (ADR-0002) – deshalb hier
-            // einzeln geprüft und nicht nur der Bruttobetrag.
+            // Netto und Steuer getrennt (ADR-0002).
             totals.prepayments.map { it.net } shouldBe listOf(Money("4000.00"), Money("4000.00"))
             totals.prepayments.map { it.vat } shouldBe listOf(Money("760.00"), Money("760.00"))
             totals.prepayments.map { it.gross } shouldBe listOf(Money("4760.00"), Money("4760.00"))
@@ -243,8 +216,7 @@ class FinalInvoiceRulesTest : FunSpec({
 
             totals.remainingAmount shouldBe Money.ZERO
             totals.prepaymentTotal shouldBe totals.grossTotal
-            // Und kein Zahlungsziel: Es gibt nichts mehr zu zahlen. Die
-            // Entscheidung fällt hier, nicht im Renderer.
+            // Die Entscheidung fällt hier, nicht im Renderer.
             totals.dueDate shouldBe null
         }
 
@@ -253,7 +225,6 @@ class FinalInvoiceRulesTest : FunSpec({
 
             totals.prepayments.shouldBeEmpty()
             totals.remainingAmount shouldBe totals.grossTotal
-            // Offener Betrag, also ein Zahlungsziel.
             totals.dueDate shouldNotBe null
         }
     }

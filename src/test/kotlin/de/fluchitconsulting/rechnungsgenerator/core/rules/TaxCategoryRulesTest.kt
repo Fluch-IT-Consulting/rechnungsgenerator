@@ -19,22 +19,14 @@ import io.kotest.matchers.string.shouldContain
 import java.nio.file.Path
 import kotlin.io.path.readText
 
-/**
- * Die Regeln, die EN 16931 an die Steuerkategorie (BT-151) knüpft. Sie greifen
- * beim Rechnen, nicht erst beim Export: Eine widersprüchliche Rechnung soll gar
- * nicht erst als PDF entstehen.
- */
+/** BT-151 */
 class TaxCategoryRulesTest : FunSpec({
 
     val config = testSellerConfig()
 
     test("für jede Kategorie ist entschieden, was sie verlangt") {
-        // Die Tabelle steht absichtlich ausgeschrieben da und wird nicht aus
-        // dem Enum abgeleitet – sie ist die zweite Meinung dazu. Ihr Zweck ist
-        // weniger, die heutigen Werte zu bestätigen, als eine künftige
-        // Kategorie nicht durchrutschen zu lassen: Wer eine ergänzt, ohne hier
-        // eine Zeile hinzuzufügen, bekommt einen roten Test statt einer stillen
-        // Vorgabe.
+        // Ausgeschrieben, nicht aus dem Enum abgeleitet: Eine neue Kategorie ohne
+        // Zeile hier wird rot.
         val expected =
             mapOf(
                 TaxCategory.STANDARD to (false to VatIdConfirmation.NEVER),
@@ -71,8 +63,7 @@ class TaxCategoryRulesTest : FunSpec({
         val totals = CalculatedInvoice(invoice, config)
 
         totals.grossTotal shouldBe Money("1000.00")
-        // §14a Abs. 1 und 5 UStG verlangen genau diesen Hinweis; ohne eigene Angabe
-        // setzt ihn die Kategorie selbst ein.
+        // §14a Abs. 1 und 5 UStG
         totals.vatGroups.single().exemptionReason!! shouldContain "Steuerschuldnerschaft des Leistungsempfängers"
     }
 
@@ -93,16 +84,10 @@ class TaxCategoryRulesTest : FunSpec({
         val message = CalculatedInvoice(invoice, config).messageOf(Rule.SATZ_MUSS_NULL_SEIN)
 
         message shouldContain "verlangt einen Steuersatz von 0"
-        // Der Satz, der beanstandet wird, steht lesbar in der Meldung: "19%"
-        // und nicht "19.0000000%" – sonst sucht der Leser den Fehler bei den
-        // Nullen statt bei seinem Steuersatz.
         message shouldContain "angegeben ist 19%"
     }
 
     test("ein Befreiungsgrund bei einer Kategorie ohne Befreiung wird abgelehnt") {
-        // S ist der Regelsatz. Ein Steuerbefreiungsgrund daneben heißt: Entweder
-        // stimmt die Kategorie nicht oder der Grund gehört nicht dorthin – so
-        // oder so soll es niemand auf dem PDF lesen.
         val invoice = testInvoice(items = listOf(testItem(taxExemptionReason = "Steuerfrei nach §4 Nr. 21 UStG")))
 
         CalculatedInvoice(invoice, config).messageOf(Rule.BEFREIUNGSGRUND_UNZULAESSIG) shouldContain
@@ -116,8 +101,7 @@ class TaxCategoryRulesTest : FunSpec({
     }
 
     test("Steuerbefreiung ohne Grund wird abgelehnt, wenn die Kategorie keinen vorgibt") {
-        // E hat anders als AE keinen vorgesehenen Wortlaut – der Grund hängt
-        // vom Befreiungstatbestand ab und muss deshalb angegeben werden.
+        // E hat anders als AE keinen vorgesehenen Wortlaut.
         val invoice = testInvoice(items = listOf(testItem(vatRate = "0", taxCategory = TaxCategory.EXEMPT)))
 
         CalculatedInvoice(invoice, config).messageOf(Rule.BEFREIUNGSGRUND_FEHLT) shouldContain
@@ -138,25 +122,20 @@ class TaxCategoryRulesTest : FunSpec({
         val calculated = CalculatedInvoice(invoice, config)
 
         calculated.messageOf(Rule.BEFREIUNGSGRUENDE_UNEINHEITLICH) shouldContain "zwei verschiedene"
-        // Die Gruppe kennt beide Gründe und setzt keinen davon aufs PDF.
         calculated.vatGroups.single().reasons shouldBe setOf("Grund A", "Grund B")
         calculated.vatGroups.single().exemptionReason shouldBe null
     }
 
     test("wer einen Befreiungsgrund verlangt, verlangt auch den Satz 0") {
-        // Darauf verlässt sich ItemBlocks.taxNotes: Es fragt nur nach dem Grund
-        // und nicht zusätzlich, ob der Steuerbetrag null ist. Eine Kategorie
-        // mit Grund und Steuer bräche diese Annahme – dann hier entscheiden,
-        // nicht im Renderer.
+        // Darauf verlässt sich ItemBlocks.taxNotes. Eine Kategorie mit Grund und
+        // Steuer wird hier entschieden, nicht im Renderer.
         TaxCategory.entries.filter { it.requiresReason }.forEach { category ->
             withClue("${category.code} (${category.label})") { category.requiresZeroRate shouldBe true }
         }
     }
 
     test("jede Sprache hat einen Vorgabegrund genau für die Kategorien, die einen mitbringen") {
-        // Darauf verlässt sich BEFREIUNGSGRUND_FEHLT: Es fragt hasDefaultReason
-        // ohne Sprache. Fehlte einer Sprache der Grund einer Kategorie, stünde
-        // auf ihrem Blatt keiner, und keine Regel schlüge an.
+        // Darauf verlässt sich BEFREIUNGSGRUND_FEHLT, das hasDefaultReason ohne Sprache fragt.
         TaxCategory.entries.forEach { category ->
             Language.entries.forEach { language ->
                 withClue("${category.code} auf $language") {
@@ -166,9 +145,7 @@ class TaxCategoryRulesTest : FunSpec({
         }
     }
 
-    // Das Pflichtangaben-Netz setzt den Wortlaut jeder dieser Kategorien nur,
-    // wenn es für sie eine Beispielrechnung gibt (#427). Hier und nicht dort,
-    // damit eine fehlende auch ohne die Werkzeuge auffällt.
+    // Hier und nicht im Pflichtangaben-Netz, damit es auch ohne die Werkzeuge auffällt (#427).
     test("jede Kategorie mit Vorgabegrund hat eine Beispielrechnung, die in jeder Sprache ohne Abbruch durchrechnet") {
         taxCategoryExamples.keys shouldBe TaxCategory.entries.filter { it.hasDefaultReason }.toSet()
 
@@ -188,8 +165,6 @@ class TaxCategoryRulesTest : FunSpec({
     }
 
     test("gleicher Satz, verschiedene Kategorien ergeben getrennte Gruppen") {
-        // Beides 0 %, steuerlich aber grundverschieden – deshalb zwei Zeilen in
-        // der Aufschlüsselung, nicht eine.
         val invoice =
             testInvoice(
                 items =

@@ -13,10 +13,7 @@ import io.kotest.matchers.shouldBe
 import io.kotest.matchers.string.shouldContain
 import io.kotest.matchers.string.shouldNotContain
 
-/**
- * Positionen und Beträge (#47): Eine Rechnung hat mindestens eine Position,
- * kein Einzelpreis ist negativ und der Gesamtbetrag auch nicht.
- */
+/** #47 */
 class ItemRulesTest : FunSpec({
 
     val config = testSellerConfig()
@@ -35,7 +32,6 @@ class ItemRulesTest : FunSpec({
     }
 
     test("ein Einzelpreis von null bleibt zulässig") {
-        // Eine Leistung, die ohne Berechnung auf der Rechnung stehen soll.
         CalculatedInvoice(testInvoice(items = listOf(testItem(), testItem(unitPrice = "0.00"))), config)
             .aborts()
             .shouldBeEmpty()
@@ -61,9 +57,7 @@ class ItemRulesTest : FunSpec({
         }
     }
 
-    // Der Rabatt als fester Betrag (#233). Seine Grenze ist die Basis der
-    // Position: Darüber würde der Positionsbetrag negativ, wie beim Satz über
-    // 100 %.
+    // #233
     context("RABATT_BETRAG_AUSSERHALB_BEREICH") {
         // Basis der Testposition: Menge 1 × 100,00.
         listOf("0.00", "-10.00", "100.01", "150.00").forEach { discount ->
@@ -85,17 +79,14 @@ class ItemRulesTest : FunSpec({
             }
         }
 
-        // Im Storno ist die Basis negativ, der Rabatt steht trotzdem positiv
-        // in der Datei – geprüft wird deshalb gegen ihren Betrag. Die Rechnung
-        // hat hier andere Abbrüche (negativer Gesamtbetrag ohne Storno); gefragt
-        // wird nach der Kennung dieser Regel, nicht nach einer leeren Liste.
+        // Im Storno ist die Basis negativ, der Rabatt steht trotzdem positiv in der
+        // Datei. Die Rechnung hat andere Abbrüche, gefragt wird nach der Kennung.
         test("ein Rabattbetrag bis zur Basis bleibt auch bei negativer Menge zulässig") {
             val invoice = testInvoice(items = listOf(testItem(quantity = "-1", discountAmount = "100.00")))
 
             CalculatedInvoice(invoice, config).rules() shouldNotContain Rule.RABATT_BETRAG_AUSSERHALB_BEREICH
         }
 
-        // Bei Menge 0 ist die Basis 0,00 – dann ist jeder Betrag zu groß.
         test("bei Menge 0 wird jeder Rabattbetrag abgelehnt") {
             val invoice = testInvoice(items = listOf(testItem(quantity = "0", discountAmount = "0.01")))
 
@@ -113,27 +104,19 @@ class ItemRulesTest : FunSpec({
     }
 
     test("ein negativer Gesamtbetrag wird abgelehnt") {
-        // Mit dem Einzelpreis ist nur noch eine negative Menge übrig, die dahin
-        // führt. Ein negativer Betrag gehört seit ADR-0006 in eine
-        // Stornorechnung – auf jeder anderen Art bleibt er ein Abbruch.
+        // ADR-0006
         val calculatedInvoice = CalculatedInvoice(testInvoice(items = listOf(testItem(quantity = "-1"))), config)
         val message = calculatedInvoice.messageOf(Rule.GESAMTBETRAG_NEGATIV)
 
         message shouldContain "Gesamtbetrag"
         message shouldContain "Stornorechnung"
-        // Nicht RESTBETRAG_NEGATIV (#47): Seine Meldung spricht von abgesetzten
-        // Abschlägen – bei einer Rechnung, die gar keine hat.
+        // Nicht RESTBETRAG_NEGATIV, dessen Meldung von Abschlägen spricht (#47).
         message shouldNotContain "Abschläge"
-        // Und sie meldet sich auch nicht daneben: Weil alle Befunde erscheinen
-        // (#49), fiele eine zweite, unsinnige Zeile sofort auf.
         calculatedInvoice.rules() shouldNotContain Rule.RESTBETRAG_NEGATIV
     }
 
     test("eine negative Korrekturzeile bleibt zulässig, solange der Gesamtbetrag es ist") {
-        // Die negative Menge ist der von EN 16931 vorgesehene Weg zu einem
-        // negativen Betrag, weil BR-27 den negativen Einzelpreis verbietet
-        // (ADR-0006). Einzeln bleibt sie damit zulässig, solange die Summe
-        // stimmt.
+        // ADR-0006, BR-27
         val invoice =
             testInvoice(items = listOf(testItem(unitPrice = "100.00"), testItem(quantity = "-1", unitPrice = "30.00")))
 
