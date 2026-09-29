@@ -51,8 +51,7 @@ class XmlCommand(
         // Alle Gründe beider Prüfer auf einmal: Wer eine Rechnung zurückweist, soll dem Absender alles nennen können.
         val reasons = listOfNotNull(pdfAViolations?.takeUnless { pdfAIsWarning }?.describe()) + otherReasons
 
-        // Erst hier etwas auf stdout, sonst stünde bei einem Abbruch ein halbes Ergebnis in der Zieldatei. Die erste
-        // Bedingung ist für den Compiler.
+        // Erst hier etwas auf stdout, sonst stünde bei einem Abbruch ein halbes Ergebnis in der Zieldatei.
         if (checked == null || reasons.isNotEmpty()) {
             throw CliktError("$pdf ist keine gültige E-Rechnung nach ZUGFeRD.\n" + reasons.joinToString("\n"))
         }
