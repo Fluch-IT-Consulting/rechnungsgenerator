@@ -8,16 +8,44 @@ Programm das XML wieder aus, sobald sie ihre Prüfung besteht.
 
 Geschrieben in Kotlin, gebaut mit Gradle.
 
-## Voraussetzungen
+## Installation
 
-Zum Erzeugen muss `lualatex` im PATH liegen; das Programm prüft das beim Start
-und sagt es, wenn es fehlt.
+Über Homebrew, aus dem Tap
+[Fluch-IT-Consulting/homebrew-tap](https://github.com/Fluch-IT-Consulting/homebrew-tap).
+Weil dieses Repository privat ist, braucht Homebrew Lesezugriff darauf und
+einen GitHub-Token. Einen eigenen legt man nicht an: Die GitHub-CLI hat ihn
+schon.
 
-- TeX Live mit `lualatex` – <https://tug.org/texlive/>
+```bash
+gh auth login   # falls noch nicht angemeldet
+brew tap fluch-it-consulting/tap
+HOMEBREW_GITHUB_API_TOKEN=$(gh auth token) brew install fluch-it-consulting/tap/rechnungsgenerator
+```
+
+Auch das Anheben lädt ein neues Archiv und braucht den Token:
+
+```bash
+HOMEBREW_GITHUB_API_TOKEN=$(gh auth token) brew upgrade fluch-it-consulting/tap/rechnungsgenerator
+```
+
+Ein `brew upgrade` über alles hinweg, ohne Token, scheitert an dieser Formel
+mit `401`. Mit `403` oder `404` sieht das Konto das Repository nicht – dann
+fehlt der Lesezugriff, oder die Organisation hat die GitHub-CLI nicht
+freigegeben.
+
+Daneben braucht das Programm im PATH:
+
+- ein JDK 21 oder neuer, etwa `brew install openjdk`. Auf macOS 14 und älter
+  baut Homebrew das aus dem Quelltext; dort ist ein fertiges JDK, etwa von
+  [Temurin](https://adoptium.net/), der schnellere Weg.
+- TeX Live mit `lualatex`, etwa `brew install --cask mactex-no-gui`. Das
+  Programm prüft das beim Start und sagt es, wenn es fehlt.
 - nur für `--externe-pdfa-pruefung`: [veraPDF](https://verapdf.org/) –
   `brew install verapdf`. Ohne den Schalter prüft eine eingebaute Fassung
   derselben Bibliothek (ADR-0014).
-- Zum Bauen ein JDK 17+; Gradle lädt das Build-JDK bei Bedarf selbst.
+
+Zum Bauen aus dem Quelltext genügt ein JDK 17+; Gradle lädt das Build-JDK bei
+Bedarf selbst.
 
 Nur für den `rechnung`-Skill in `.claude/skills/`: Python 3 mit
 [PyYAML](https://pyyaml.org/) – `pip3 install pyyaml`. Das Skript
@@ -89,8 +117,7 @@ ist entstanden.
 Beispiel:
 
 ```
-./gradlew installDist
-./build/install/rechnungsgenerator/bin/rechnungsgenerator erzeuge Rechnungen/2026/R26-042.yaml
+rechnungsgenerator erzeuge Rechnungen/2026/R26-042.yaml
 ```
 
 Ausgabe – der Pfad so, wie die Rechnungsdatei angegeben wurde:
@@ -381,6 +408,7 @@ er liest beim Erzeugen eine einzige Datei.
 ./gradlew build          # kompiliert, testet, lintet
 ./gradlew test           # nur Tests
 ./gradlew ktlintFormat   # Formatierung korrigieren
+./gradlew installDist    # Programm nach build/install/rechnungsgenerator/bin/
 ```
 
 Der Build ruft LuaLaTeX und veraPDF wirklich auf: Ein Integrationstest erzeugt
