@@ -23,45 +23,21 @@ import java.io.OutputStream
 import java.io.PrintStream
 import kotlin.system.exitProcess
 
-// Einstiegspunkt. Die JVM sieht `main` als statische Methode der generierten
-// Klasse "MainKt" (daher der Eintrag mainClass in build.gradle.kts).
-//
-// Die eigentliche Arbeit steht in execute(): Sie bekommt die beiden Kanäle
-// gereicht und liefert den Exitcode, statt den Prozess selbst zu beenden. So
-// lässt sich der ganze Weg testen, ohne ein Programm zu starten.
+// execute() bekommt die Kanäle gereicht und liefert den Exitcode, damit sich der ganze Weg ohne Prozess testet.
 fun main(args: Array<String>) {
     exitProcess(execute(args, System.out, System.err))
 }
 
 /**
- * Führt das Programm aus und liefert den Exitcode.
- *
- * Bewusst parse() statt des bequemeren main() von Clikt: Dessen main() fängt die
- * Fehler zwar ab und gibt sie aus, beendet den Prozess aber mit Code 0.
- * Nachgemessen: Ein Tippfehler in der YAML meldete "Exitcode: 0", ein Skript
- * ringsherum hätte den Fehlschlag also nicht bemerkt. Hier bestimmt der
- * statusCode des CliktError den Exitcode – 0 nur bei --help und Erfolg.
- *
- * Der Kanal folgt dem Exitcode: Was mit einem Exitcode ungleich 0 endet, steht
- * auf stderr, stdout trägt nur das Ergebnis. Dafür braucht es drei Stellen:
- *
- *  - einen eigenen Ausgeber. Der von `clikt-core` wirft den Parameter `err`
- *    weg und schreibt alles auf stdout; erst die Vollvariante mit Mordant
- *    beachtet ihn.
- *  - die Übersetzung der Fachfehler in [parseReportingFailures], einmal für
- *    alle Kommandos.
- *  - die Wahl des Kanals für die Fehlermeldung hier unten, statt Clikts
- *    `printError` zu folgen. Das hielte die Hilfe ohne Unterkommando auf
- *    stdout, obwohl der Aufruf mit 1 endet.
+ * parse() statt Clikts main(), das auch im Fehlerfall mit 0 endet. Was nicht mit 0 endet, steht auf stderr; dafür
+ * ein eigener Ausgeber, weil `clikt-core` den Parameter `err` ignoriert, und die Wahl des Kanals hier statt
+ * `printError`, der die Hilfe ohne Unterkommando auf stdout ließe.
  */
 fun execute(
     args: Array<String>,
     out: PrintStream,
     err: PrintStream,
     typesetter: TypesetterFactory = ::LuaLatexTypesetter,
-    // Wie der Typesetter eine Naht für den Test (#153): Nur so lässt sich
-    // prüfen, dass ein gescheiterter Viewer mit Exitcode 0 endet und sein
-    // Hinweis auf stdout steht.
     viewer: PdfViewer = SystemPdfViewer,
 ): Int {
     val command = RechnungsgeneratorCommand(typesetter, viewer, out)
@@ -81,15 +57,7 @@ fun execute(
     }
 }
 
-/**
- * Macht aus den Fachfehlern der Kommandos einen CliktError: Clikt gibt dann die
- * Meldung aus und beendet mit Exitcode 1, ohne Stacktrace. Ein Tippfehler in der
- * YAML soll nicht wie ein Programmabsturz aussehen.
- *
- * Hier und nicht in jedem Kommando (#119): Jedes Kommando, das dazukommt,
- * bekommt die Übersetzung umsonst. Was nur ein Kommando betrifft, bleibt dort,
- * etwa das Schreiben der Zieldatei in `erzeuge`.
- */
+/** Die Fachfehler aller Kommandos an einer Stelle zu einem CliktError, ohne Stacktrace (#119). */
 private fun parseReportingFailures(command: CoreCliktCommand, args: Array<String>) {
     try {
         command.parse(args)
@@ -103,17 +71,9 @@ private fun parseReportingFailures(command: CoreCliktCommand, args: Array<String
 }
 
 /**
- * Die Fassung des Programms. Sie entsteht beim Bauen aus `version` in
- * build.gradle.kts und liegt als Ressource neben den Klassen.
- *
- * Gelesen wie die Vorlagen der Designs (`Template.of`): mit `checkNotNull` und
- * einer Meldung, die sagt, was fehlt. Fehlt die Datei, ist das Programm falsch
- * gebaut und nicht falsch bedient – dann soll es laut abbrechen und nicht
- * "unbekannt" ausgeben.
- *
- * Der Name trägt das Programm, weil die Ressource im Wurzelverzeichnis des
- * Klassenpfads liegt: Dort teilt sie sich den Raum mit jedem mitgelieferten
- * JAR.
+ * Aus `version` in build.gradle.kts, als Ressource; nicht aus dem Manifest, das außerhalb des JARs `null` liefert
+ * (#264). Fehlt sie, ist das Programm falsch gebaut und bricht laut ab. Der Name trägt das Programm, weil sie in
+ * der Wurzel des Klassenpfads liegt.
  */
 private fun programVersion(): String {
     val path = "/rechnungsgenerator.version"
@@ -123,17 +83,8 @@ private fun programVersion(): String {
 }
 
 /**
- * Das Programm selbst. Es verteilt nur an seine Unterkommandos; jedes davon
- * steht in einer eigenen Datei, benannt nach seiner Klasse.
- *
- * Fehlt das Unterkommando, zeigt Clikt von sich aus die Hilfe – und meldet
- * dabei Erfolg: `PrintHelpMessage` trägt den Exitcode 0, auch dort, wo Clikt
- * sie selbst wegen des fehlenden Unterkommandos wirft. Dieselbe Falle wie bei
- * `main()` oben, nur eine Ebene tiefer. Deshalb lässt sich das Kommando auch
- * ohne Unterkommando aufrufen und wirft die Hilfe selbst, mit Exitcode 1.
- *
- * Das Flag `error` der `PrintHelpMessage` bleibt bewusst weg: Es klingt, als
- * lenke es die Hilfe auf stderr, doch in `clikt-core` liest es niemand aus.
+ * Fehlt das Unterkommando, wirft das Kommando die Hilfe selbst mit Exitcode 1: Clikts eigene `PrintHelpMessage`
+ * endet mit 0. Deren Flag `error` bleibt weg, `clikt-core` liest es nicht aus.
  */
 class RechnungsgeneratorCommand(
     typesetter: TypesetterFactory = ::LuaLatexTypesetter,
@@ -145,9 +96,7 @@ class RechnungsgeneratorCommand(
 
     init {
         subcommands(GenerateCommand(typesetter, viewer), PrepaymentsCommand(), SetupCommand(), XmlCommand(standardOutput))
-        // Eager: Clikt gibt die Fassung schon beim Parsen aus und wirft
-        // PrintMessage mit Exitcode 0. Damit greift run() unten gar nicht erst,
-        // und --version endet nicht als "kein Unterkommando" mit Code 1.
+        // Eager: Clikt gibt die Fassung beim Parsen aus, und --version endet nicht als „kein Unterkommando“.
         versionOption(
             programVersion(),
             help = "Die Fassung des Programms ausgeben und beenden",

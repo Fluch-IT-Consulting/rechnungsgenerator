@@ -2,13 +2,7 @@ package de.fluchitconsulting.rechnungsgenerator.core.text
 
 import java.time.LocalDate
 
-/**
- * Der Wert einer Variablen in einem [TextTemplate], noch ohne Format: Wie ein
- * Datum oder eine Nummer aussieht, entscheidet erst, wer ihn einsetzt.
- *
- * Versiegelt, damit jedes Format in einem `when` ohne `else` entscheidet – und
- * eine weitere Art von Wert jedes Format zur Antwort zwingt.
- */
+/** Noch ohne Format: Wie ein Datum aussieht, entscheidet, wer ihn einsetzt. */
 sealed interface TextValue {
     data class Text(val text: String) : TextValue
 

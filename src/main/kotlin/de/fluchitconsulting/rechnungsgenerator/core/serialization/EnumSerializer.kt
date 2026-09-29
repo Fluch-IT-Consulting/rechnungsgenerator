@@ -4,28 +4,9 @@ import kotlinx.serialization.KSerializer
 import kotlinx.serialization.SerializationException
 
 /**
- * Schlägt eine Schreibweise aus der YAML in einem Enum nach und sagt bei einem
- * Fehlschlag, was zulässig gewesen wäre.
+ * Normalisiert Eingabe und Schlüssel mit derselben [normalize], sonst wiche eine Kopie unbemerkt ab.
  *
- * Drei Enums brauchen dieselbe Bauform – Map, Nachschlagen, Meldung. Als
- * Kopie wiche sie leicht ab, ohne dass es auffiele: Schlüsselt die Map roh und
- * wird kleingeschrieben nachgeschlagen, bleibt das folgenlos, solange alle
- * Schreibweisen klein sind, und kein Test bemerkt es. Diese Art Abweichung
- * gibt es nicht, wenn [normalize] nur einmal angewandt wird – hier, auf
- * beiden Seiten.
- *
- * Was die drei **unterschiedlich** machen, bleibt sichtbar und wird nicht
- * eingeebnet: `TaxCategory` schlägt über den Code in Großschreibung nach, weil
- * die Codeliste so geschrieben ist; `Unit` und `InvoiceType` über die
- * Schreibweise in Kleinbuchstaben, weil man sie so in die YAML tippt.
- *
- * @param unknown wie der Satz beginnt: "Unbekannte Einheit". Der Artikel steht
- *   mit dabei, statt aus einem Wort geraten zu werden – "Unbekanntes
- *   Prüfverfahren" wäre sonst nicht zu formulieren.
- * @param normalize wie Eingabe und Schlüssel vergleichbar gemacht werden.
- * @param keyOf welcher Teil des Eintrags der Schlüssel ist.
- * @param describe wie ein zulässiger Wert in der Meldung erscheint; ohne
- *   Angabe der Schlüssel selbst.
+ * @param unknown der Satzanfang samt Artikel: „Unbekanntes Prüfverfahren“ ließe sich nicht raten.
  */
 class CodeLookup<T>(
     private val unknown: String,
@@ -43,31 +24,7 @@ class CodeLookup<T>(
             )
 }
 
-/**
- * Der ganze Weg von einer YAML-Schreibweise zu einem Enum-Wert, an einer
- * Stelle: zulässige Werte, Normalisierung, Meldung bei einem Tippfehler.
- *
- * Ein Aufruf sieht so aus:
- *
- * ```
- * object UnitSerializer : KSerializer<Unit> by enumSerializer(
- *     name = "Unit",
- *     values = Unit.entries,
- *     unknown = "Unbekannte Einheit",
- *     normalize = { it.trim().lowercase() },
- *     keyOf = Unit::label,
- * )
- * ```
- *
- * Was die Enums **unterschiedlich** machen, bleibt dabei sichtbar und wird
- * nicht eingeebnet: `TaxCategory` normalisiert in Großbuchstaben, weil die
- * Codeliste UNCL 5305 so geschrieben ist; `Unit` und `InvoiceType` in
- * Kleinbuchstaben, weil man sie so in die YAML tippt.
- *
- * Gebaut auf [stringSerializer], das die 9 Werttypen ohne Codeliste weiter
- * direkt benutzen – ein Enum ist nur der häufigste Sonderfall davon, nicht der
- * einzige Fall.
- */
+/** Die Unterschiede bleiben sichtbar: `TaxCategory` normalisiert groß wie UNCL 5305, `Unit` und `InvoiceType` klein. */
 fun <T> enumSerializer(
     name: String,
     values: List<T>,
