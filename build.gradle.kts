@@ -14,7 +14,7 @@ plugins {
 //
 // 0.x nach SemVer, obwohl das Programm längst echte Rechnungen schreibt: Seine
 // öffentliche Schnittstelle sind die YAML-Schlüssel der Eingabedateien, und die
-// sind nicht fertig – "Stand" im README nennt drei offene Punkte, und einmal ist
+// sind nicht fertig – "Stand" im README nennt, was noch offen ist, und einmal ist
 // ein Schlüssel schon umbenannt worden (bezahlt-am zu vereinnahmt-am). 1.0.0
 // sagte zu, dass ein Schlüssel erst in 2.0.0 wieder verschwindet.
 //
