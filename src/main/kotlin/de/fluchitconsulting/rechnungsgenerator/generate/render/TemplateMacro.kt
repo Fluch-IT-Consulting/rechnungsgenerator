@@ -1,25 +1,8 @@
 package de.fluchitconsulting.rechnungsgenerator.generate.render
 
 /**
- * Die Makros, die der Renderer aus der Vorlage aufruft – mit ihrer Stelligkeit.
- *
- * Zugegeben eine zweite Liste neben der Vorlage, aber nur der Namen und nicht
- * des Satzes: Wie eine Position aussieht, steht weiterhin ausschließlich in
- * den Vorlagen. Der Zweck ist die Prüfung: Ein vertippter Makroname fällt beim
- * Setzen der Vorlage auf, mit einer Meldung, die den Namen nennt, statt erst im
- * LuaLaTeX-Lauf – dasselbe, was #30 für die Platzhalter tut.
- *
- * Der Renderer ruft kein anderes Makro auf, auch keines von LaTeX selbst:
- * Statt `\mbox` oder `\\[\positionsabstand]` stehen `ZUSAMMEN` und die Trenner
- * (#76), statt `\\` `ZEILENWECHSEL` und das Zeilenende in `ABSCHLUSSZEILE`
- * (#147). Dass keines hineinkommt, prüft [Template.fillIn]. Einzige Ausnahme
- * sind die Felder der pdfx-Metadaten – sie gehören in die .xmpdata-Datei und
- * nicht in diese Vorlage.
- *
- * Die Vorlage darf mehr Makros definieren und nutzen, als hier stehen. Sie
- * setzt Briefkopf, Fuß und Kopfangaben selbst aus einzelnen Werten
- * ([TemplateValue], #188) zusammen; `\kopfperson`, `\blocktrenner` und
- * `\ustidtrenner` ruft nur sie auf.
+ * Die Makros der Vorlage, die der Renderer aufruft, mit ihrer Stelligkeit; geprüft beim Bau der Vorlage
+ * (ADR-0017). Ein anderes ruft er nicht auf, auch keines von LaTeX selbst. Die Vorlage darf mehr definieren.
  */
 enum class TemplateMacro(val macroName: String, val arity: Int) {
     POSITIONSTRENNER("positionstrenner", 0),
@@ -27,18 +10,13 @@ enum class TemplateMacro(val macroName: String, val arity: Int) {
     ZEILENWECHSEL("zeilenwechsel", 0),
     ZUSAMMEN("zusammen", 1),
 
-    // Das Land unter der Anschrift, ausgeschrieben: Ob und wo es steht, ist
-    // Postkonvention und bleibt beim Renderer, die Versalien nach DIN 5008
-    // sind Schreibweise und stehen in der Vorlage (#374).
+    // Ob das Land dasteht, entscheidet der Renderer, die Versalien nach DIN 5008 setzt die Vorlage (#374).
     LANDZEILE("landzeile", 1),
 
-    // Nur für Sätze aus dem Quelltext: Allein hier setzt die Vorlage nach einem
-    // Satzende den breiten Abstand, und in Eingabedaten bekäme ihn auch eine
-    // Abkürzung wie "Dr." (#143).
+    // Nur für Sätze aus dem Quelltext: Hier setzt die Vorlage den breiten Satzabstand, den in Eingabedaten
+    // auch „Dr.“ bekäme (#143).
     HINWEISABSATZ("hinweisabsatz", 1),
 
-    // Der Hinweis auf eine Steuerbefreiung, einer je Satz: So entscheidet die
-    // Vorlage für jeden, dass er nicht über zwei Seiten bricht (ADR-0020).
     // Nicht HINWEISABSATZ, weil der Befreiungsgrund aus den Eingabedaten kommt.
     STEUERHINWEIS("steuerhinweis", 1),
     ABSETZUNGSKOPF("absetzungskopf", 1),
@@ -46,35 +24,24 @@ enum class TemplateMacro(val macroName: String, val arity: Int) {
     ABSETZUNGSDETAIL("absetzungsdetail", 1),
     POSITIONSDETAIL("positionsdetail", 1),
 
-    // Das erste Argument ist die laufende Nummer der Position, das sechste der
-    // Rabatt – leer, wenn die Position keinen hat.
+    // Nummer, Beschreibung, Menge, Einheit, Einzelpreis, Rabatt (leer ohne), Betrag.
     POSITIONSZEILE("positionszeile", 7),
     SUMMENZEILE("summenzeile", 2),
     ABSCHLUSSZEILE("abschlusszeile", 2),
 
-    // Die Zeilen des Summenblocks, ohne Beschriftung: Die setzt die Vorlage
-    // (#217), "Nettobetrag" und "Zwischensumme (netto)" sagen fachlich
-    // dasselbe. Die Steuerzeile bekommt den Satz, weil ihn jedes Design an
-    // einer anderen Stelle seines Wortlauts nennt, und die Grundlage – leer,
-    // wenn es nur eine Steuergruppe gibt (#218). Die Gesamtzeile beendet wie
-    // ABSCHLUSSZEILE die Zeile davor selbst.
+    // Ohne Beschriftung, die setzt die Vorlage (#217). Die Grundlage der Steuerzeile ist bei nur einer Gruppe
+    // leer (#218). Die Gesamtzeile beendet wie ABSCHLUSSZEILE die Zeile davor selbst.
     NETTOZEILE("nettozeile", 1),
     STEUERZEILE("steuerzeile", 3),
     GESAMTZEILE("gesamtzeile", 1),
 
-    // Ohne Argument: Den Inhalt setzt die Vorlage aus den Werten der Bank, der
-    // Renderer entscheidet nur, ob der Block dasteht.
+    // Ohne Argument: Den Inhalt setzt die Vorlage, der Renderer entscheidet nur, ob der Block dasteht.
     BANKBLOCK("bankblock", 0),
 
-    // Die Zahlen (ADR-0021): Der Renderer liefert die Ziffern, die Vorlage
-    // setzt sie mit siunitx. Einzelpreise nehmen BETRAG – den Unterschied zu
-    // einem Betrag tragen schon die Ziffern.
+    // Auch für Einzelpreise, den Unterschied tragen die Ziffern (ADR-0021).
     BETRAG("betrag", 1),
 
-    // Ein Betrag in Euro, gleich in welcher Währung die Rechnung steht: die
-    // umgerechnete Umsatzsteuer und der Euro eines Kurses (#418). Ein eigenes
-    // Makro und nicht die Währung als Argument von BETRAG, das sonst an jedem
-    // Betrag stünde (ADR-0026).
+    // Ein eigenes Makro statt der Währung als Argument, die sonst an jedem Betrag stünde (ADR-0026).
     EUROBETRAG("eurobetrag", 1),
     MENGE("menge", 1),
     PROZENT("prozent", 1),
