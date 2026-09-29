@@ -16,14 +16,6 @@ import kotlin.io.path.writeText
 
 private const val RESOURCES = "src/test/resources"
 
-/**
- * Prüft `rechnungsgenerator abschlaege` von den Argumenten bis zur Ausgabe.
- *
- * Wie aus einer Abschlagsrechnung ein Abschlag wird und wie er hingeschrieben
- * wird, prüfen PrepaymentsTest und PrepaymentBlockTest. Hier geht es darum,
- * dass das Kommando beides mit echten Dateien zusammenbringt – und dass bei
- * einem Fehler nichts auf stdout landet.
- */
 class PrepaymentsCommandTest : FunSpec({
 
     val sellerConfig = "$RESOURCES/stammdaten.yaml"
@@ -35,14 +27,11 @@ class PrepaymentsCommandTest : FunSpec({
 
         result.exitCode shouldBe 0
         result.err shouldBe ""
-        // Je Abschlag der Dateiname, aber nie der Pfad: Der wechselt, sobald die
-        // Datei in einen Jahresordner wandert.
+        // Nie der Pfad: Der wechselt, sobald die Datei in einen Jahresordner wandert.
         result.out shouldContain "  # abschlagsrechnung.yaml"
         result.out shouldNotContain RESOURCES
 
-        // R26-011 wurde erst nach seiner Rechnung vereinnahmt, also bleibt das
-        // Feld leer – ein Mensch trägt es ein, so wie es in der
-        // Beispiel-Schlussrechnung steht.
+        // R26-011 wurde erst nach seiner Rechnung vereinnahmt, das Feld bleibt leer.
         val block =
             result.out.replace(
                 "vereinnahmt-am:                 # Datum der Vereinnahmung eintragen",
@@ -52,7 +41,6 @@ class PrepaymentsCommandTest : FunSpec({
         val generated = YamlLoader.parseInvoice(handwritten.substringBefore("abschlaege:") + block)
 
         generated.prepayments shouldBe YamlLoader.parseInvoice(handwritten).prepayments
-        // Und die Schlussrechnung rechnet damit durch, alle neun Regeln inklusive.
         CalculatedInvoice(generated, YamlLoader.parseSellerConfig(Path.of(sellerConfig).readText()))
     }
 
@@ -80,9 +68,7 @@ class PrepaymentsCommandTest : FunSpec({
     }
 
     test("ist eine Datei keine Abschlagsrechnung, steht nichts auf stdout") {
-        // Alles oder nichts: Der gültige Abschlag aus june käme sonst allein in
-        // die Ausgabe, und der fehlende fiele keiner Regel der Schlussrechnung
-        // auf – nur dem Kunden, der ihn doppelt zahlt.
+        // Alles oder nichts: Den fehlenden Abschlag bemerkte sonst keine Regel.
         val result = runCli("abschlaege", june, "$RESOURCES/rechnung.yaml", "-s", sellerConfig)
 
         result.exitCode shouldBe 1
@@ -98,8 +84,6 @@ class PrepaymentsCommandTest : FunSpec({
     }
 
     test("ein YAML-Fehler nennt die Datei, in der er steckt") {
-        // kaml nennt nur den Schlüssel. Bei mehreren Dateien bliebe offen, in
-        // welcher er steht.
         val broken =
             createTempDirectory("abschlaege-test")
                 .resolve("kaputt.yaml")
@@ -113,12 +97,7 @@ class PrepaymentsCommandTest : FunSpec({
         result.err shouldContain "gibtsnicht"
     }
 
-    // Dass eine unlesbare Datei nicht im Stacktrace endet, hält execute() für
-    // alle Kommandos (#119), geprüft in MainTest – hier steht es nicht noch
-    // einmal eigens.
-
     context("ohne -s kommen die Stammdaten aus der Wurzel (ADR-0015)") {
-        /** Eine Ablage mit den Beispiel-Stammdaten in ihrem Ordner. */
         fun archive(): Path =
             createTempDirectory("wurzel-abschlaege").also {
                 it
@@ -128,7 +107,6 @@ class PrepaymentsCommandTest : FunSpec({
                     .writeText(Path.of(sellerConfig).readText())
             }
 
-        /** Legt [template] unter [name] in die Ablage; die Zwischenordner entstehen mit. */
         fun copyInto(archive: Path, name: String, template: String): Path =
             archive.resolve(name).also {
                 it.parent.createDirectories()
@@ -147,8 +125,6 @@ class PrepaymentsCommandTest : FunSpec({
         }
 
         test("verschiedene Wurzeln brechen ab und nennen beide") {
-            // Abschläge zweier Rechnungssteller in einem Block sind fachlich
-            // sinnlos; "die erste gewinnt" verschleierte das nur.
             val one = archive()
             val other = archive()
             val here = copyInto(one, "abschlagsrechnung.yaml", june)

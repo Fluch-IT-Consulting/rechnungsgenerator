@@ -30,14 +30,7 @@ import kotlin.io.path.createTempDirectory
 import kotlin.io.path.readBytes
 import kotlin.text.Charsets.UTF_8
 
-/**
- * `xml` von außen: Exitcode, stdout als Bytes, stderr als Text.
- *
- * Die E-Rechnungen entstehen ohne LuaLaTeX über den Embedder aus
- * `rechnung-a1b.pdf`, also genau so wie hinter `erzeuge --zugferd`, nur ohne
- * den Satz davor. Allein die Rundreise durch beide Kommandos setzt wirklich
- * und trägt deshalb den Tag [Toolchain].
- */
+/** Die E-Rechnungen entstehen ohne LuaLaTeX über den Embedder; nur die Rundreise setzt wirklich. */
 class XmlCommandTest : FunSpec({
 
     val dir = createTempDirectory("xml-command-test")
@@ -45,8 +38,8 @@ class XmlCommandTest : FunSpec({
     val xml = Path.of("src/test/resources/rechnung-erwartet.xml").readBytes()
     val withoutCountry = xml.decodeToString().replaceFirst("<ram:CountryID>DE</ram:CountryID>", "").toByteArray()
 
-    // Die eigenen Rechnungen tragen keine Warnung (ADR-0023). Ein leerer
-    // Lieferblock steht für eine fremde, die eine trägt: PEPPOL-EN16931-R008.
+    // Die eigenen Rechnungen tragen keine Warnung (ADR-0023), deshalb ein leerer
+    // Lieferblock: PEPPOL-EN16931-R008.
     val withoutDelivery =
         xml
             .decodeToString()
@@ -97,8 +90,7 @@ class XmlCommandTest : FunSpec({
         result.err shouldContain "Es trägt kein XML einer E-Rechnung"
     }
 
-    // Der Embedder prüft selbst nichts (ADR-0023), und so entsteht ein
-    // gültiges PDF/A-3u um ein ungültiges XML.
+    // Der Embedder prüft selbst nichts (ADR-0023).
     test("ein PDF/A-3u, dessen XML BR-09 verletzt, nennt den Verstoß und nicht das PDF/A") {
         val result = runProgram("xml", einvoice("br-09.pdf", withoutCountry).toString())
 
@@ -109,11 +101,8 @@ class XmlCommandTest : FunSpec({
         result.err shouldNotContain "verletzt:"
     }
 
-    // Teil 3 stimmt, die Stufe nicht: Die Meldung nennt die Stufe und
-    // widerspricht sich nicht mit "gibt sich als PDF/A-3 aus … ist ein
-    // PDF/A-3" (#386). Das XML geht von Würzburg nach Nürnberg; die
-    // Nachsicht nach BR-FX-DE-03 greift trotzdem nicht, weil es kein Profil
-    // gibt, gegen das veraPDF prüfen könnte.
+    // #386. Die Nachsicht nach BR-FX-DE-03 greift nicht: Ohne Stufe gibt es kein
+    // Profil, gegen das veraPDF prüfen könnte.
     test("ein PDF/A-3 ohne Konformitätsstufe nennt die fehlende Stufe") {
         val pdf = writePdf(dir.resolve("ohne-stufe.pdf"), mapOf("factur-x.xml" to xml), xmpClaiming(3, null))
 
@@ -136,8 +125,7 @@ class XmlCommandTest : FunSpec({
         result.err shouldContain "Eine E-Rechnung nach ZUGFeRD ist ein PDF/A-3a, -3b oder -3u."
     }
 
-    // Die E-Rechnung des Generators geht von Würzburg nach Nürnberg, und
-    // dann gilt das XML: Fehler im PDF/A sind ein Hinweis (BR-FX-DE-03).
+    // BR-FX-DE-03
     test("innerhalb Deutschlands ist ein PDF, das sich als PDF/A-3u ausgibt, es aber nicht ist, ein Hinweis") {
         val pdf = writePdf(dir.resolve("kein-pdfa-inland.pdf"), mapOf("factur-x.xml" to xml), xmpClaiming(3, "U"))
 
@@ -165,8 +153,7 @@ class XmlCommandTest : FunSpec({
         }
     }
 
-    // Innerhalb Deutschlands, und trotzdem kein Hinweis: Die Nachsicht setzt
-    // ein gültiges XML voraus.
+    // Die Nachsicht setzt ein gültiges XML voraus.
     test("die Gründe beider Prüfer stehen auf einmal da, auch innerhalb Deutschlands") {
         val pdf = writePdf(dir.resolve("beides.pdf"), mapOf("factur-x.xml" to withoutBuyerName), xmpClaiming(3, "B"))
 
@@ -191,8 +178,7 @@ class XmlCommandTest : FunSpec({
         result.err shouldContain "xrechnung.xml"
     }
 
-    // EInvoiceAttachment reicht den Eintrag mit leerem XML weiter; dass es
-    // abgelehnt wird, sagt erst der Prüfer. Deshalb von außen geprüft.
+    // Von außen, weil erst der Prüfer das leere XML ablehnt.
     test("ein Eintrag ohne eingebettete Datei heißt ungültiges XML, nicht kein Anhang") {
         val pdf =
             writePdf(
@@ -211,9 +197,7 @@ class XmlCommandTest : FunSpec({
         result.err shouldNotContain "Es trägt kein XML einer E-Rechnung"
     }
 
-    // Ohne eigenen ErrorHandler schreibt der Parser des JDK [Fatal Error]
-    // direkt auf System.err, am Ausgeber von execute() vorbei (#395). Deshalb
-    // wird System.err eigens mitgeschnitten.
+    // Der Parser des JDK schreibt [Fatal Error] an execute() vorbei (#395).
     test("ein XML, das nicht wohlgeformt ist, nennt Ort und Grund, und auf stderr steht nur diese Meldung") {
         val malformed = xml.decodeToString().replaceFirst("</ram:CountryID>", "</ram:Country>").toByteArray()
         val pdf = einvoice("nicht-wohlgeformt.pdf", malformed)
@@ -230,9 +214,7 @@ class XmlCommandTest : FunSpec({
         systemErr shouldBe ""
     }
 
-    // SpecificationIdentifier.of liefert dann null, und specificationReason
-    // schweigt. Dass das XML trotzdem nicht durchgeht, sagt die XML-Prüfung
-    // (#399), und zwar mit einem Grund statt eines Stacktrace (#426).
+    // #399, #426
     test("ein XML ohne Kennung der Spezifikation lehnt die XML-Prüfung ab") {
         val withoutSpecification =
             xml
@@ -256,12 +238,7 @@ class XmlCommandTest : FunSpec({
             "  Keine Kennung der Spezifikation (BT-24), gegen die sich das XML prüfen ließe.\n"
     }
 
-    /**
-     * Eine E-Rechnung, die nicht vom Generator stammt: Mustang schreibt sie
-     * aus seinem eigenen Modell im [profile] nach [target] und gibt ihr XML
-     * zurück. Der Prüfer erkennt das Profil am XML, und das PDF gibt sich als
-     * das PDF/A-3 aus, das Mustang daraus macht.
-     */
+    // Eine E-Rechnung, die nicht vom Generator stammt, sondern aus Mustangs eigenem Modell.
     fun foreignEInvoice(
         profile: String,
         target: Path,
@@ -296,8 +273,7 @@ class XmlCommandTest : FunSpec({
         result.out.decodeToString() shouldContain "urn:cen.eu:en16931:2017"
     }
 
-    // Mustang findet an BASIC-WL nichts auszusetzen: Das Profil erlaubt eine
-    // Rechnung ohne Positionen. Eine E-Rechnung ist sie trotzdem nicht (#399).
+    // #399: BASIC-WL erlaubt eine Rechnung ohne Positionen.
     test("eine fremde Rechnung im Profil BASIC-WL besteht beide Prüfer und wird trotzdem abgelehnt") {
         val target = dir.resolve("basicwl.pdf")
         foreignEInvoice("BASICWL", target)
@@ -339,14 +315,12 @@ class XmlCommandTest : FunSpec({
     }
 })
 
-/** Was ein Aufruf hinterlässt, stdout als Bytes: Um genau die geht es. */
 private class Run(
     val exitCode: Int,
     val out: ByteArray,
     val err: String,
 )
 
-/** Ruft das Programm über [execute] auf, mit den Werkzeugen des Betriebs. */
 private fun runProgram(vararg args: String): Run {
     val out = ByteArrayOutputStream()
     val err = ByteArrayOutputStream()

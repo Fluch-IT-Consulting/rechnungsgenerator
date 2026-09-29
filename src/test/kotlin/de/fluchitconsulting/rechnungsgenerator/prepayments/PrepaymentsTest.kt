@@ -22,16 +22,10 @@ import io.kotest.matchers.string.shouldContain
 import io.kotest.matchers.string.shouldStartWith
 import java.time.LocalDate
 
-/**
- * Prüft, wie aus Abschlagsrechnungen die Abschläge einer Schlussrechnung
- * werden – ohne Dateien und ohne Kommando, aber über dieselbe Naht wie das
- * Kommando: [prepaymentsOf] mit Namen hinein, [CollectedPrepayments] heraus.
- */
 class PrepaymentsTest : FunSpec({
 
     val config = testSellerConfig()
 
-    // Der Name ist hier nur ein Text; im Kommando ist es der Dateiname.
     fun named(vararg invoices: Invoice): List<NamedInvoice> = invoices.map { NamedInvoice("${it.number}.yaml", it) }
 
     // testInvoice trägt die Nummer R26-001 und das Datum 14.08.2026.
@@ -81,14 +75,12 @@ class PrepaymentsTest : FunSpec({
     }
 
     test("ohne Abschlagsrechnung ist der Aufruf ein Fehler des Aufrufers und kein Befund") {
-        // Ein leeres Complete bräuchte eine Währung, und es gäbe keine Datei,
-        // aus der sie käme.
+        // Ein leeres Complete bräuchte eine Währung, und keine Datei nennte sie.
         shouldThrow<IllegalArgumentException> { prepaymentsOf(emptyList(), config) }
     }
 
     test("jeder Eintrag trägt den Namen seiner Rechnung, in der übergebenen Reihenfolge") {
-        // Den Namen trägt der Eintrag selbst und nicht eine Paarung per zip
-        // im Kommando, die kein Test sähe (#118).
+        // #118
         val second = prepaymentInvoice.copy(number = "R26-002")
 
         val entries = prepaymentsOf(named(second, prepaymentInvoice), config).complete().entries
@@ -98,8 +90,7 @@ class PrepaymentsTest : FunSpec({
     }
 
     test("aus einer gewöhnlichen Rechnung wird kein Abschlag") {
-        // Sonst setzte die Schlussrechnung eine 19-%-Rechnung klaglos ab – keine
-        // ihrer Regeln kennt die Art des Dokuments, aus dem ein Abschlag stammt.
+        // Keine Regel der Schlussrechnung kennt die Art, aus der ein Abschlag stammt.
         val invoice = testInvoice()
 
         val message = prepaymentsOf(named(invoice), config).rejected().aborts.messageOf(Rule.KEINE_ABSCHLAGSRECHNUNG)
@@ -109,17 +100,14 @@ class PrepaymentsTest : FunSpec({
     }
 
     test("ein Dokument anderer Art wird nicht auch noch geprüft") {
-        // Es fliegt ohnehin aus dem Aufruf; seine übrigen Befunde gälten einem
-        // Dokument, das hier nichts zu suchen hat (#118). Der Regelsatz 0 %
-        // würde sonst REGELSATZ_MIT_NULL melden.
+        // #118. Der Regelsatz 0 % würde sonst REGELSATZ_MIT_NULL melden.
         val invoice = testInvoice(items = listOf(testItem(vatRate = "0")))
 
         prepaymentsOf(named(invoice), config).rejected().aborts.rules() shouldBe listOf(Rule.KEINE_ABSCHLAGSRECHNUNG)
     }
 
     test("Abschlagsrechnungen an verschiedene Kunden werden nicht zusammen abgesetzt") {
-        // Die Schlussrechnung kennt die Kunden ihrer Abschläge nicht – prüfen
-        // kann das nur, wer die Abschlagsrechnungen noch in der Hand hat.
+        // Die Schlussrechnung kennt die Kunden ihrer Abschläge nicht.
         val otherCustomer =
             prepaymentInvoice.copy(
                 number = "R26-002",
@@ -137,9 +125,7 @@ class PrepaymentsTest : FunSpec({
     }
 
     context("ABSCHLAGSRECHNUNGEN_VERSCHIEDENE_WAEHRUNGEN (#409)") {
-        // In Fremdwährung ohne Umsatzsteuer, sonst bräche schon
-        // WAEHRUNG_MIT_UMSATZSTEUER_AUF_DIESER_ART_NICHT_MOEGLICH die
-        // Abschlagsrechnung selbst ab.
+        // Ohne Umsatzsteuer, sonst bräche WAEHRUNG_MIT_UMSATZSTEUER_AUF_DIESER_ART_NICHT_MOEGLICH ab.
         fun inDollar(number: String) =
             prepaymentInvoice.copy(
                 number = number,
@@ -156,8 +142,7 @@ class PrepaymentsTest : FunSpec({
             )
 
         test("Abschlagsrechnungen in verschiedenen Währungen werden nicht zusammen abgesetzt") {
-            // Die Schlussrechnung trägt eine Währung für alle Beträge, und
-            // gelesen werden die Abschlagsrechnungen nur hier (ADR-0001).
+            // ADR-0001
             val message =
                 prepaymentsOf(named(prepaymentInvoice, inDollar("R26-002"), inDollar("R26-003")), config)
                     .rejected()
@@ -185,7 +170,7 @@ class PrepaymentsTest : FunSpec({
     }
 
     test("zwei verschiedene Nummern je doppelt geben zwei Befunde") {
-        // Wie in der Schlussrechnung (#152): firstOrNull nannte nur die erste.
+        // #152
         val second = prepaymentInvoice.copy(number = "R26-009")
 
         val duplicates =
@@ -207,8 +192,7 @@ class PrepaymentsTest : FunSpec({
     }
 
     test("anders geschriebene Nummern sind verschiedene Abschlagsrechnungen") {
-        // Der Generator nimmt nichts über das Schema einer Nummer an (#53):
-        // Anderswo können "a-1" und "A-1" zwei verschiedene Rechnungen sein.
+        // #53
         val upper = prepaymentInvoice.copy(number = "R26-009")
         val lower = prepaymentInvoice.copy(number = "r26-009")
 
@@ -218,9 +202,7 @@ class PrepaymentsTest : FunSpec({
     }
 
     test("eine Nummer mit Leerraum ist kein Duplikat, aber auch kein Abschlag") {
-        // Seit ADR-0005 ist Leerraum am Rand ein Abbruch – und aus einer Rechnung mit
-        // Abbruch wird kein Abschlag (ADR-0007), also auch kein Block (#118).
-        // Exakt verglichen wird trotzdem: Als Duplikat von "R26-009" gilt sie nicht.
+        // ADR-0005, ADR-0007, #118
         val upper = prepaymentInvoice.copy(number = "R26-009")
         val padded = prepaymentInvoice.copy(number = "R26-009 ")
 
@@ -231,9 +213,6 @@ class PrepaymentsTest : FunSpec({
     }
 
     test("ein Regelverstoß in einer Abschlagsrechnung nennt ihre Nummer") {
-        // Bei mehreren Abschlagsrechnungen sagte "Position 1 (…)" allein nicht,
-        // in welcher. Die Nummer ist das, woran man die Rechnung wiedererkennt –
-        // sie steht jetzt als Herkunft vor dem Gegenstand des Befunds.
         val contradictory = prepaymentInvoice.copy(number = "R26-002", items = listOf(testItem(vatRate = "0")))
 
         val message =

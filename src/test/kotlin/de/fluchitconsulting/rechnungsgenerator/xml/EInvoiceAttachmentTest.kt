@@ -7,7 +7,6 @@ import org.apache.pdfbox.Loader
 import java.nio.file.Path
 import kotlin.io.path.createTempDirectory
 
-/** Welche Anhänge eines PDF als XML einer E-Rechnung gelten, und mit welchen Bytes. */
 class EInvoiceAttachmentTest : FunSpec({
 
     val dir = createTempDirectory("einvoice-attachment-test")
@@ -60,8 +59,6 @@ class EInvoiceAttachmentTest : FunSpec({
         attachmentsIn(pdf).single().xml.contentEquals(xml) shouldBe true
     }
 
-    // Das PDF nennt ein XML und trägt es nicht – das ist etwas anderes als
-    // gar kein Anhang, und die Meldung soll es auseinanderhalten.
     test("ein Eintrag ohne eingebettete Datei zählt mit einem leeren XML") {
         val pdf = writePdf(dir.resolve("ohne-datei.pdf"), mapOf("factur-x.xml" to xml), embeddedUnder = EmbeddedUnder.NONE)
 

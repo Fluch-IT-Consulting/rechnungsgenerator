@@ -9,10 +9,6 @@ import org.apache.pdfbox.pdmodel.common.filespecification.PDComplexFileSpecifica
 import org.apache.pdfbox.pdmodel.common.filespecification.PDEmbeddedFile
 import java.nio.file.Path
 
-/**
- * Ein XMP, das sich als PDF/A mit Teil [part] und Stufe [conformance] ausgibt,
- * ohne [conformance] nur mit dem Teil.
- */
 fun xmpClaiming(
     part: Int,
     conformance: String?,
@@ -26,16 +22,8 @@ fun xmpClaiming(
     """.trimIndent()
 
 /**
- * Schreibt nach [target] ein PDF mit einer leeren Seite, den [attachments]
- * unter ihren Namen und auf Wunsch einem [xmp]. Sonst hat es nichts, was ein
- * PDF/A verlangt – für die Fälle, in denen es auf die Anhänge ankommt oder
- * darauf, dass ein PDF sich als etwas ausgibt, das es nicht ist.
- *
- * Mit [inKids] stehen die Anhänge nicht an der Wurzel des Namensbaums,
- * sondern in einem Kindknoten, wie bei einem Baum mit vielen Einträgen.
- *
- * [embeddedUnder] sagt, unter welchem Schlüssel von `/EF` die Bytes eines
- * Anhangs liegen. Mit [EmbeddedUnder.NONE] nennt der Eintrag nur den Namen.
+ * Hat sonst nichts, was ein PDF/A verlangt. Mit [inKids] stehen die Anhänge in
+ * einem Kindknoten des Namensbaums, wie bei einem Baum mit vielen Einträgen.
  */
 fun writePdf(
     target: Path,
@@ -73,5 +61,4 @@ fun writePdf(
     return target
 }
 
-/** Die Schlüssel von `/EF`, unter denen [writePdf] die Bytes ablegen kann: `/F`, `/UF` oder keiner. */
 enum class EmbeddedUnder { F, UF, NONE }

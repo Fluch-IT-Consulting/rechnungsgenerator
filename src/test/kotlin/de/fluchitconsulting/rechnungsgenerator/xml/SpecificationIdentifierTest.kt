@@ -7,12 +7,7 @@ import io.kotest.matchers.shouldBe
 import java.nio.file.Path
 import kotlin.io.path.readBytes
 
-/**
- * Die Kennung der Spezifikation (BT-24) und ob sie eine E-Rechnung ergibt.
- *
- * Die Kennungen sind die, die Mustang für seine Profile schreibt, dazu die
- * von ZUGFeRD 2.0, das MINIMUM und BASIC-WL noch unter eigenem Namen führte.
- */
+/** BT-24. Dazu die Kennungen, unter denen ZUGFeRD 2.0 MINIMUM und BASIC-WL führte. */
 class SpecificationIdentifierTest : FunSpec({
 
     fun cii(id: String) =

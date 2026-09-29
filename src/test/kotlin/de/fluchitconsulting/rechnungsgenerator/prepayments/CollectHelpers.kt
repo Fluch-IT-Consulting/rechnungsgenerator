@@ -2,10 +2,7 @@ package de.fluchitconsulting.rechnungsgenerator.prepayments
 
 import de.fluchitconsulting.rechnungsgenerator.core.rules.rules
 
-// Wie die Tests des Zusammentragens an ihr Ergebnis kommen – das Gegenstück zu
-// `accepted()` in `core/accepted/AcceptedHelpers.kt` (#118): Wer mit den
-// Einträgen rechnet, scheitert bei einer Ablehnung hier, mit den Kennungen,
-// statt später an einer Stelle, die davon nichts weiß. Und umgekehrt.
+// Das Gegenstück zu `accepted()` in `core/accepted/AcceptedHelpers.kt` (#118).
 
 fun CollectedPrepayments.complete(): CollectedPrepayments.Complete =
     when (this) {
