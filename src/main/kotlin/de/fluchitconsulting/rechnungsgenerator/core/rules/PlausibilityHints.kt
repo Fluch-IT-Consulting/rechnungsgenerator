@@ -3,18 +3,12 @@ package de.fluchitconsulting.rechnungsgenerator.core.rules
 import de.fluchitconsulting.rechnungsgenerator.core.calculation.CalculatedInvoice
 import de.fluchitconsulting.rechnungsgenerator.core.model.InvoiceType
 
-/**
- * Hinweise, die den Lauf nicht abbrechen: Angaben, die zulässig sind, aber
- * selten gemeint – eine Menge oder ein Gesamtbetrag von null, eine späte
- * Rechnung. Die Hinweise zur Bestätigungsabfrage stehen bei ihr, in
- * [VatIdCheckRules].
- */
+/** Zulässig, aber selten gemeint. Die Hinweise zur Bestätigungsabfrage stehen in [VatIdCheckRules]. */
 internal object PlausibilityHints {
     fun check(calculated: CalculatedInvoice): List<Finding> =
         buildList {
             val invoice = calculated.invoice
 
-            // Menge 0 ist zulässig, aber fast immer ein Tippfehler (#47).
             invoice.items.forEachIndexed { index, item ->
                 if (item.quantity.signum() == 0) {
                     add(
@@ -27,12 +21,8 @@ internal object PlausibilityHints {
                 }
             }
 
-            // Ein Dokument über null kann gewollt sein – eine Leistung, die ganz
-            // erlassen ist –, meist ist es aber ein vergessener Einzelpreis oder
-            // ein Rabatt von 100 statt 10 (#214). Die Abschlagsrechnung bricht
-            // dann ab (ABSCHLAGSRECHNUNG_OHNE_BETRAG), Schlussrechnung und Storno
-            // scheitern schon an ihren Regeln zum Betrag. Ein `when` ohne `else`,
-            // damit eine neue Art hier entscheidet (#121).
+            // Meist ein vergessener Einzelpreis oder ein Rabatt von 100 statt 10 (#214). Die übrigen Arten brechen
+            // schon an ihren eigenen Regeln zum Betrag ab.
             val hintsOnZero =
                 when (invoice.type) {
                     InvoiceType.INVOICE, InvoiceType.PARTIAL -> true
@@ -48,14 +38,8 @@ internal object PlausibilityHints {
                 )
             }
 
-            // §14 Abs. 2 UStG verlangt die Rechnung innerhalb von sechs Monaten nach
-            // Ausführung der Leistung (#47). Verglichen mit dem Ende der Leistung,
-            // nicht mit heute: So ergibt dieselbe Datei jederzeit dieselben
-            // Hinweise, auch wenn sie ein Jahr später noch einmal erzeugt wird. Bei
-            // der Abschlagsrechnung schweigt er, denn ihr Zeitraum ist eine Prognose.
-            // Beim Storno auch: Die Frist gilt dem Ausstellen einer Rechnung, nicht
-            // dem Aufheben – sonst forderte der Hinweis, ein richtiges Datum zu
-            // ändern (siehe InvoiceType.chargesForService).
+            // §14 Abs. 2 UStG. Gegen das Ende der Leistung, nicht gegen heute: So ergibt dieselbe Datei immer dieselben
+            // Hinweise. Nicht bei der Abschlagsrechnung, deren Zeitraum eine Prognose ist, und nicht beim Storno.
             val serviceEnd = invoice.servicePeriod.end
             if (invoice.type.chargesForService &&
                 !invoice.type.servicePeriodIsForecast &&

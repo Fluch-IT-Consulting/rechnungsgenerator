@@ -3,32 +3,15 @@ package de.fluchitconsulting.rechnungsgenerator.core.rules
 import de.fluchitconsulting.rechnungsgenerator.core.calculation.CalculatedInvoice
 
 /**
- * Die Form der Rechnungsnummer (ADR-0005).
- *
- * Warum hier und nicht beim Einlesen: Ob eine Nummer gültig ist, hängt an
- * zwei Dateien – der Rechnung und den Stammdaten. Ein Serialisierer sieht
- * immer nur eine.
- *
- * Warum nicht auch die Nummern der abgesetzten Abschläge: Die stammen aus
- * früheren Rechnungen, womöglich aus der Zeit vor einem Wechsel des Musters.
- * Gegen das heutige Muster geprüft, hielte eine korrekte alte Nummer die
- * Schlussrechnung auf.
- *
- * Eine Regel erübrigt die nächste: Eine fehlende Nummer passt zu keinem Muster,
- * und das zu melden hieße, denselben Fehler zweimal zu nennen. `return` statt
- * eines Mechanismus zur Unterdrückung – dieselbe Wahl wie bei den Abschlägen.
+ * Hier und nicht beim Einlesen: Ob eine Nummer gültig ist, hängt an Rechnung und Stammdaten (ADR-0005). Die
+ * Nummern der Abschläge bleiben ungeprüft, sie stammen womöglich aus der Zeit vor einem anderen Muster.
  */
 internal object InvoiceNumberRules {
     fun check(calculated: CalculatedInvoice): List<Finding> {
         val number = calculated.invoice.number
 
-        // Leer, Leerraum und der Dateiname gelten unabhängig vom Muster, also
-        // auch ohne Eintrag in den Stammdaten (ADR-0005). Andere Dateien nennen
-        // die Nummer später – die Schlussrechnung unter `abschlaege`, das
-        // Storno unter `storniert` –, und verglichen wird Zeichen für Zeichen
-        // (#53): Ein gequotetes ' R26-009' ließe den Verweis still ins Leere
-        // gehen. Aus der Nummer entsteht außerdem der Jobname, und aus dem
-        // bildet pdfx die DocumentID des PDF (#297).
+        // Unabhängig vom Muster: Andere Dateien verweisen Zeichen für Zeichen auf die Nummer (#53), und aus ihr
+        // entsteht der Jobname und damit die DocumentID (#297).
         if (number.isBlank()) {
             return listOf(
                 Finding(
@@ -48,8 +31,7 @@ internal object InvoiceNumberRules {
                 ),
             )
         }
-        // Vor dem Muster, weil es die Ursache nennt: "///" passt zu keinem
-        // vernünftigen Muster, aber ändern muss man die Zeichen (#150).
+        // Vor dem Muster, weil es die Ursache nennt: Ändern muss man die Zeichen (#150).
         if (calculated.fileBaseName == null) {
             return listOf(
                 Finding(
@@ -61,8 +43,6 @@ internal object InvoiceNumberRules {
             )
         }
 
-        // Ohne Muster in den Stammdaten wird die Form nicht geprüft: Welche
-        // Nummern gültig sind, weiß nur der Rechnungssteller.
         val pattern = calculated.config.invoiceNumberPattern ?: return emptyList()
         if (!pattern.matches(number)) {
             return listOf(

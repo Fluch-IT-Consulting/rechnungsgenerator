@@ -3,12 +3,7 @@ package de.fluchitconsulting.rechnungsgenerator.core.rules
 import de.fluchitconsulting.rechnungsgenerator.core.calculation.CalculatedInvoice
 import de.fluchitconsulting.rechnungsgenerator.core.model.TaxCategory
 
-/**
- * Die Regeln, die EN 16931 an die Steuerkategorie knüpft. Sie hier zu prüfen
- * und nicht erst beim ZUGFeRD-Export hat einen praktischen Grund: Eine
- * Rechnung mit "AE" und 19 % ginge sonst als PDF hinaus und fiele erst dem
- * Empfänger auf – dann ist sie schon verschickt.
- */
+/** Vor dem Versand geprüft: Eine Rechnung mit AE und 19 % fiele sonst erst dem Empfänger auf. */
 internal object TaxCategoryRules {
     fun check(calculated: CalculatedInvoice): List<Finding> =
         buildList {
@@ -59,8 +54,7 @@ internal object TaxCategoryRules {
                 }
             }
 
-            // BT-48: Ohne USt-IdNr. des Empfängers lässt sich weder die
-            // Steuerschuldnerschaft noch eine innergemeinschaftliche Lieferung belegen.
+            // BT-48
             val requiringCustomerVatId = calculated.taxCategories.filter { it.requiresCustomerVatId }
             if (requiringCustomerVatId.isNotEmpty() && invoice.customer.vatId == null) {
                 add(
@@ -73,12 +67,8 @@ internal object TaxCategoryRules {
                 )
             }
 
-            // Alle Positionen einer Gruppe müssen sich über den Befreiungsgrund
-            // einig sein: BG-23 trägt genau einen je Kategorie und Satz. Eine
-            // uneinige Gruppe trägt deshalb keinen (VatGroup.exemptionReason) –
-            // gemeldet wird es hier, am fertigen Ergebnis. Nur bei Kategorien
-            // mit Grund: Bei den übrigen meldet BEFREIUNGSGRUND_UNZULAESSIG
-            // schon jede Position.
+            // BG-23 trägt einen Grund je Kategorie und Satz. Nur bei Kategorien mit Grund, sonst meldet
+            // BEFREIUNGSGRUND_UNZULAESSIG schon jede Position.
             calculated.vatGroups.filter { it.category.requiresReason }.forEach { group ->
                 if (group.reasons.size > 1) {
                     add(

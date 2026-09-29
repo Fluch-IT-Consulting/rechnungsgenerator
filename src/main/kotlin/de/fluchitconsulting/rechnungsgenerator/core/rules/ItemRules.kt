@@ -4,18 +4,12 @@ import de.fluchitconsulting.rechnungsgenerator.core.calculation.CalculatedInvoic
 import de.fluchitconsulting.rechnungsgenerator.core.model.Discount
 import java.math.BigDecimal
 
-/**
- * Die Positionen selbst: dass es welche gibt, dass kein Einzelpreis negativ
- * ist und dass der Rabatt in seinem Bereich liegt – der Satz über 0 bis 100 %,
- * der Betrag über 0,00 bis zur Basis der Position. Was an ihrer
- * Steuerkategorie hängt, prüft [TaxCategoryRules].
- */
 internal object ItemRules {
     fun check(calculated: CalculatedInvoice): List<Finding> =
         buildList {
             val items = calculated.invoice.items
 
-            // EN 16931 BR-16. Ohne Position entstünde eine Rechnung über 0,00 €.
+            // BR-16
             if (items.isEmpty()) {
                 add(
                     Finding(
@@ -26,11 +20,10 @@ internal object ItemRules {
                 )
             }
 
-            // Über die gerechneten Zeilen und nicht über die Positionen: Der
-            // Rabattbetrag misst sich an der Basis, und die rechnet die Zeile.
+            // Über die gerechneten Zeilen: Der Rabattbetrag misst sich an ihrer Basis.
             calculated.lines.forEachIndexed { index, line ->
                 val item = line.item
-                // EN 16931 BR-27: Der Einzelpreis ist nie negativ.
+                // BR-27
                 if (item.unitPrice.value.signum() < 0) {
                     add(
                         Finding(
@@ -41,12 +34,7 @@ internal object ItemRules {
                         ),
                     )
                 }
-                // Über 100 % würde der Positionsbetrag negativ, und ein negativer
-                // Rabatt wäre ein Aufschlag. Null lehnen wir ab, weil er die
-                // Spalte einschaltet, ohne etwas zu mindern.
-                // Ein Rabatt wird als Satz oder als Betrag vereinbart. Welcher
-                // der beiden gemeint war, weiß bei zweien niemand – und der
-                // Typ trägt nur einen.
+                // Null schaltet die Rabattspalte ein, ohne etwas zu mindern.
                 if (item.hasBothDiscounts) {
                     add(
                         Finding(
@@ -72,12 +60,7 @@ internal object ItemRules {
                             )
                         }
                     }
-                    // Der Betrag mindert die Basis und kann sie nicht
-                    // übersteigen – darüber würde der Positionsbetrag negativ,
-                    // wie beim Satz über 100 %. Bei Menge 0 ist die Basis
-                    // 0,00, und damit bricht jeder Betrag ab. Geprüft wird
-                    // gegen den Betrag der Basis: Im Storno ist sie negativ,
-                    // der Rabatt steht aber positiv da.
+                    // Gegen den Betrag der Basis: Im Storno ist sie negativ, der Rabatt steht positiv da.
                     is Discount.Amount -> {
                         if (!discount.amount.isPositive() || discount.amount > line.base.abs()) {
                             add(

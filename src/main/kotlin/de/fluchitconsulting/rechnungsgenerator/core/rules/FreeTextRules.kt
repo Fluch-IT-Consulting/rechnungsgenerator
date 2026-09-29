@@ -3,18 +3,8 @@ package de.fluchitconsulting.rechnungsgenerator.core.rules
 import de.fluchitconsulting.rechnungsgenerator.core.calculation.CalculatedInvoice
 
 /**
- * Die Freitextangaben der Rechnung: Ansprechpartner (#196), Kundennummer
- * (#190), die eigene Auftragsnummer (#191) und die Einleitung (#209).
- *
- * Geprüft wird nur, was jeder Freitext erfüllen muss: Steht der Schlüssel da,
- * nennt er etwas, und zwar ohne Leerraum am Rand. Ein Muster gibt es nicht:
- * Kunden- und Auftragsnummern vergibt jeder Rechnungssteller anders, und wie
- * ein Kunde seine Abteilungen nennt, weiß nur er.
- *
- * Leerraum am Rand sieht man im PDF nicht, aber er stünde später wörtlich im
- * ZUGFeRD-XML. Tragen kann ihn ohnehin nur ein gequoteter YAML-Wert oder ein
- * Block mit `|`, der auf einen Zeilenumbruch endet, und dann ist er ein
- * Versehen – dieselbe Überlegung wie bei `RECHNUNGSNUMMER_MIT_LEERRAUM`.
+ * Steht ein Freitext da, nennt er etwas, ohne Leerraum am Rand: Den sähe man im PDF nicht, aber im XML. Ein
+ * Muster gibt es nicht, solche Nummern vergibt jeder anders.
  */
 internal object FreeTextRules {
     fun check(calculated: CalculatedInvoice): List<Finding> {
@@ -52,11 +42,7 @@ internal object FreeTextRules {
         ).flatten()
     }
 
-    /**
-     * Ein optionaler Freitext: fehlt er, ist nichts zu prüfen. Leer ist etwas
-     * anderes als fehlend – `ansprechpartner: ""` nennt niemanden, und wer das
-     * schreibt, wollte vermutlich jemanden nennen.
-     */
+    /** Leer ist nicht fehlend: `ansprechpartner: ""` wollte vermutlich jemanden nennen. */
     private fun freeText(
         value: String?,
         key: String,

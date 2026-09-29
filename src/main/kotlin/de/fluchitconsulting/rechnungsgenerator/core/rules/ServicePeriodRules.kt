@@ -3,25 +3,13 @@ package de.fluchitconsulting.rechnungsgenerator.core.rules
 import de.fluchitconsulting.rechnungsgenerator.core.calculation.CalculatedInvoice
 
 /**
- * Die Zeiträume der Rechnung und ihrer Positionen (#47).
- *
- * Kein Zeitraum endet vor seinem Beginn – EN 16931 BR-29 für die Rechnung,
- * BR-30 für die Position. Und eine Rechnung über eine erbrachte Leistung
- * entsteht nicht, bevor die Leistung zu Ende ist: So definiert das Glossar
- * den Leistungszeitraum.
- *
- * Zwei Arten sind davon ausgenommen, aus verschiedenen Gründen: die
- * Abschlagsrechnung, weil ihr Zeitraum eine Prognose ist, und die
- * Stornorechnung, weil sie gar nichts abrechnet (#151). Das Verdrehen eines
- * Zeitraums bleibt für beide verboten.
+ * BR-29 und BR-30, und eine erbrachte Leistung ist vor ihrer Rechnung zu Ende. Ausgenommen sind die
+ * Abschlagsrechnung, deren Zeitraum eine Prognose ist, und das Storno, das nichts abrechnet (#151).
  */
 internal object ServicePeriodRules {
     fun check(calculated: CalculatedInvoice): List<Finding> =
         buildList {
             val invoice = calculated.invoice
-            // Je Zeitraum, wem er gehört und wie er in der Meldung heißt: Der
-            // Zeitraum der Rechnung trägt seinen Namen selbst, der einer
-            // Position bekommt ihn vom Gegenstand davor.
             val zeitraeume =
                 listOf(Triple(Subject.WholeInvoice, "Der Leistungszeitraum", invoice.servicePeriod)) +
                     invoice.items.mapIndexedNotNull { index, item ->
@@ -38,11 +26,7 @@ internal object ServicePeriodRules {
                         ),
                     )
                 }
-                // chargesForService schließt das Storno aus (#151): Sein
-                // Zeitraum stammt aus der Ursprungsrechnung und wurde dort
-                // geprüft. War die eine Abschlagsrechnung, ist er eine Prognose
-                // und endet nach dem Rechnungsdatum – das brach hier ab, mit
-                // dem Rat, es sei dann eine Abschlagsrechnung.
+                // Der Zeitraum eines Stornos stammt aus der Ursprungsrechnung und kann eine Prognose sein (#151).
                 if (invoice.type.chargesForService &&
                     !invoice.type.servicePeriodIsForecast &&
                     zeitraum.end.isAfter(invoice.issueDate)
