@@ -12,22 +12,7 @@ import kotlin.io.path.createTempDirectory
 import kotlin.time.Duration.Companion.seconds
 import kotlin.time.measureTime
 
-/**
- * Die Wege durch [ExternalTool], die sich nur an einem echten Prozess zeigen:
- * zwei, die schiefgehen, bevor ein Werkzeug überhaupt etwas tut, und die
- * Umgebung, die beim Programm ankommen muss.
- *
- * Sie brauchen weder LuaLaTeX noch veraPDF, sondern nur Programme, die auf
- * jedem Rechner liegen – und trotzdem echte Prozesse: Ein gefälschter bewiese
- * hier nichts. Die Zeitgrenze ist der Grund, warum die Ausgabe in eine Datei
- * umgeleitet wird statt in einen Stream gelesen (siehe das KDoc von
- * [ExternalTool]); ob diese Konstruktion trägt, zeigt sich nur an einem Prozess,
- * der wirklich hängt.
- *
- * Dazu die Meldung über fehlende Programme. Sie startet keinen Prozess, liest
- * aber denselben PATH – und ein Name, den es sicher nicht gibt, fehlt auf jedem
- * Rechner gleich zuverlässig (#238).
- */
+/** Echte Prozesse mit Programmen, die auf jedem Rechner liegen: Ein gefälschter bewiese hier nichts. */
 class ExternalToolTest : FunSpec({
 
     val workDir = createTempDirectory("externaltool-test")
@@ -41,12 +26,7 @@ class ExternalToolTest : FunSpec({
         error.message!! shouldContain "Programm nicht gefunden: gibt-es-nicht-lualatex"
     }
 
-    /**
-     * Steht für alles, woran der Lauf scheitert, bevor das Programm etwas tut:
-     * ein Temp-Verzeichnis, das voll oder schreibgeschützt ist, ein Start, den
-     * das Betriebssystem verweigert. Das ist ein Werkzeugfehler und keiner beim
-     * Schreiben der Rechnung – `erzeuge` meldete ihn sonst als solchen (#300).
-     */
+    // #300
     test("scheitert der Lauf an einer IOException, wird sie zur ToolchainException mit dem Programm") {
         val missing = workDir.resolve("gibt-es-nicht")
 
@@ -69,9 +49,7 @@ class ExternalToolTest : FunSpec({
 
         error.message!! shouldContain "sleep hat nach"
         error.message!! shouldContain "nicht geantwortet und wurde abgebrochen"
-        // Der eigentliche Beweis: Es wurde nicht auf das Ende von sleep
-        // gewartet. Ohne diese Zusicherung wäre der Test auch dann grün, wenn
-        // die Zeitgrenze erst nach dem Prozessende griffe.
+        // Ohne diese Zusicherung bliebe der Test grün, wenn die Zeitgrenze erst nach dem Prozessende griffe.
         withClue("Der Aufruf kehrte erst nach $needed zurück") {
             needed shouldBeLessThan 5.seconds
         }
@@ -89,14 +67,7 @@ class ExternalToolTest : FunSpec({
         result.output shouldContain "angekommen"
     }
 
-    /**
-     * Der Grund für die Trennung steht bei [ToolResult]: `verapdf` schreibt
-     * seinen Bericht auf stdout und sein Protokoll auf stderr, und
-     * zusammengeführt landeten Log-Zeilen mitten im XML (#227).
-     *
-     * Geprüft an `sh`, nicht an veraPDF: Was hier zur Debatte steht, ist die
-     * Hülle um ProcessBuilder, nicht das Werkzeug.
-     */
+    // #227
     test("stdout und stderr kommen getrennt zurück") {
         val result =
             ExternalTool.run(
@@ -107,16 +78,10 @@ class ExternalToolTest : FunSpec({
 
         result.standardOutput.trim() shouldBe "nach-stdout"
         result.errorOutput.trim() shouldBe "nach-stderr"
-        // output gibt es weiter, für Meldungen, die alles wollen.
         result.output shouldContain "nach-stdout"
         result.output shouldContain "nach-stderr"
     }
 
-    /**
-     * `requireAll` wird beim Start aufgerufen: Ein Abbruch mitten im Satz wäre
-     * schwerer zu deuten. Die Meldung muss deshalb sagen, was zu tun ist – der
-     * Name allein hilft niemandem weiter, der das Programm nicht kennt.
-     */
     test("ein fehlendes Programm steht mit seinem Installationshinweis in der Meldung") {
         val error =
             shouldThrow<ToolchainException> {
@@ -128,12 +93,7 @@ class ExternalToolTest : FunSpec({
         error.message!! shouldContain "brew install gibt-es-nicht"
     }
 
-    /**
-     * Alle fehlenden auf einmal, aus demselben Grund wie die Befunde einer
-     * Rechnung (ADR-0004): Zwei fehlende Programme sollen nicht zwei Läufe
-     * brauchen. Ein vorhandenes ist mit dabei – sonst wäre der Test auch dann
-     * grün, wenn `requireAll` gar nicht erst nachsähe.
-     */
+    // Mit einem vorhandenen, sonst bliebe der Test grün, wenn `requireAll` gar nicht nachsähe.
     test("mehrere fehlende Programme stehen alle in der Meldung, ein vorhandenes nicht") {
         val error =
             shouldThrow<ToolchainException> {

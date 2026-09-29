@@ -12,14 +12,8 @@ import java.io.File
 import kotlin.io.path.createTempDirectory
 
 /**
- * Wie der Bericht des Programms `verapdf` gelesen wird – ohne `verapdf`.
- *
- * Betrifft allein den externen Prüfer: Der eingebaute liefert seine Verstöße
- * als Objekte und hat keinen Bericht zu lesen (ADR-0014).
- *
- * `verapdf-nicht-konform.txt` ist ein echter Mitschnitt und bringt zwei
- * Eigenheiten mit, die man sich nicht ausdenkt: die JVM-Warnungen, die vor dem
- * XML stehen, und einen Bericht, der bestandene *und* verletzte Regeln führt.
+ * `verapdf-nicht-konform.txt` ist ein echter Mitschnitt, mit JVM-Warnungen vor
+ * dem XML und einem Bericht, der auch die bestandenen Regeln führt.
  */
 class ExternalPdfAValidatorTest : FunSpec({
 
@@ -32,8 +26,7 @@ class ExternalPdfAValidatorTest : FunSpec({
             FakeProcessRunner(FakeProcessRunner.Run(exitCode, output, errorOutput)),
         ).validate(pdf, PdfAProfile.PDFA_1B)
 
-    // Der einzige erfundene Bericht hier: Für ein konformes PDF gibt es keinen
-    // Mitschnitt, weil dieser Fall im Integrationstest ohnehin echt vorkommt.
+    // Der einzige erfundene Bericht; echt kommt er im Integrationstest vor.
     val compliant =
         """<?xml version="1.0" encoding="utf-8"?>
         |<report><jobs><job><validationReport><details>
@@ -42,12 +35,7 @@ class ExternalPdfAValidatorTest : FunSpec({
         |</details></validationReport></job></jobs></report>
         """.trimMargin()
 
-    /**
-     * Der Regressionstest zu #227: veraPDF schreibt sein Protokoll auf stderr,
-     * und zusammengeführt landete es mitten im Bericht – ein `<jobs>` gefolgt
-     * von einem Zeitstempel, und der Parser brach ab. Gelesen wird deshalb
-     * allein stdout, und was auf stderr steht, darf beliebig sein.
-     */
+    // #227
     test("das Protokoll auf stderr stört den Bericht nicht") {
         val log =
             """
@@ -69,13 +57,9 @@ class ExternalPdfAValidatorTest : FunSpec({
     }
 
     test("Exitcode 1 ist ein Prüfergebnis, kein Fehler") {
-        // veraPDF unterscheidet über den Exitcode: 1 heißt "nicht konform".
-        // Das ist eine Antwort auf unsere Frage und kein Absturz.
         val result = validate(exitCode = 1, output = transcript("verapdf-nicht-konform.txt"))
 
         result.valid shouldBe false
-        // Der Bericht führt bestandene und verletzte Regeln; nur die verletzten
-        // interessieren.
         result.violations shouldHaveSize 7
         result.violations.first().clause shouldContain "6."
         result.violations
@@ -85,9 +69,6 @@ class ExternalPdfAValidatorTest : FunSpec({
     }
 
     test("die JVM-Warnungen vor dem XML stören die Auswertung nicht") {
-        // veraPDF ist selbst eine Java-Anwendung und schreibt Warnungen auf
-        // stderr; der Aufruf führt stderr und stdout zusammen, also stehen sie
-        // vor dem Bericht. Ein Parser, der von vorne liest, bricht daran ab.
         val raw = transcript("verapdf-nicht-konform.txt")
         raw.substringBefore("<?xml") shouldContain "WARNING"
 
@@ -101,8 +82,6 @@ class ExternalPdfAValidatorTest : FunSpec({
     }
 
     test("jeder andere Exitcode ist ein Abbruch des Werkzeugs") {
-        // Alles außer 0 und 1 heißt: veraPDF selbst kam nicht klar, etwa weil
-        // die Datei nicht lesbar war. Dann gibt es kein Prüfergebnis.
         val error = shouldThrow<ToolchainException> { validate(exitCode = 3, output = "Can't read file") }
 
         error.message!! shouldContain "Exitcode 3"
@@ -125,15 +104,7 @@ class ExternalPdfAValidatorTest : FunSpec({
         result.describe() shouldBe "PDF/A-3u: gültig"
     }
 
-    /**
-     * Beide Zweige von `checkAvailable`, und keiner davon fragt die Maschine,
-     * auf der der Test läuft (#245): Die Suche geht seit dem Umbau über
-     * dieselbe Naht wie der Aufruf, und der Fake beantwortet sie.
-     *
-     * Damit fällt auch der Installationshinweis unter Test. Er steht in einer
-     * Meldung, die beim Start kommt – wer sie liest, hat veraPDF gerade nicht
-     * und kennt es womöglich nicht einmal.
-     */
+    // Keiner der beiden Zweige fragt die Maschine, auf der der Test läuft (#245).
     test("fehlt verapdf, nennt die Meldung das Programm und seinen Installationshinweis") {
         val validator = ExternalPdfAValidator(FakeProcessRunner(missing = setOf("verapdf")))
 

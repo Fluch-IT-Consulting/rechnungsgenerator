@@ -4,11 +4,8 @@ import java.io.ByteArrayOutputStream
 import java.io.PrintStream
 
 /**
- * Das Ergebnis von [block] und was er dabei auf `System.err` schrieb.
- *
  * Verlässlich nur für Schreiber, die `System.err` beim Schreiben nachschlagen
- * und nicht beim Laden einer Klasse – wie der `DefaultErrorHandler` des JDK,
- * den jedes Parsen ohne eigenen `ErrorHandler` neu anlegt (#395).
+ * und nicht beim Laden einer Klasse, wie der `DefaultErrorHandler` des JDK (#395).
  */
 fun <T> capturingStandardError(block: () -> T): Pair<T, String> {
     val original = System.err
