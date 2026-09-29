@@ -102,3 +102,12 @@ Repo stand das Wort an acht Stellen in der falschen Bedeutung.
   Rechnungsnummer aus derselben Reihe, nicht die der Ursprungsrechnung.
 
 Umgesetzt in #63.
+
+## Nachtrag vom 29.09.2026: Der Restbetrag null steht nicht in ADR-0002
+
+„Derselbe Zug wie beim Restbetrag null (ADR-0002)“ unter „Konsequenzen“
+verweist ins Leere: ADR-0002 sagt nur, wo die Abschläge abgesetzt werden.
+Begründet ist der Zug im Commit f834085 („Die Schlussrechnung zeigt, was schon
+vereinnahmt ist“): Ein nacktes „0,00 €“ sähe aus wie ein Fehler, also steht ein
+Satz statt einer Zahl, und ein Zahlungsziel daneben wäre eine zweite Aussage
+auf demselben Blatt. Dass dann auch die Bankverbindung entfällt, kam mit #94.
