@@ -1,10 +1,9 @@
 # Das PDF signieren
 
-Notiz vom 14.09.2026, festgehalten für später. **Hier wird nichts entschieden.**
-Anlass war die Frage, ob sich das erzeugte PDF nach der Erstellung signieren
-lässt und ob das einen Mehrwert hätte. Kurz: Technisch geht es gut, fachlich
-gibt es heute keinen Anlass, und es verträgt sich schlecht mit der
-Reproduzierbarkeit des Generators.
+Notiz vom 14.09.2026, Stand 29.09.2026. **Hier wird nichts entschieden.**
+Die Frage war, ob sich das erzeugte PDF signieren lässt und ob das etwas
+brächte. Kurz: Technisch geht es, fachlich gibt es keinen Anlass, und es
+verträgt sich schlecht mit der Reproduzierbarkeit.
 
 Die Rechtslage unten stammt aus dem Gespräch und ist **nicht** gegen die
 Quellen nachgelesen. Wer die Frage neu aufwirft, prüft §14 UStG, die GoBD und
@@ -12,66 +11,54 @@ die Übergangsregeln zur E-Rechnung zuerst.
 
 ## Was technisch geht
 
-Für PDFs gibt es PAdES (PDF Advanced Electronic Signatures). Die Signatur wird
-als inkrementelles Update an das fertige PDF gehängt; das ist mit PDF/A-1b
-vereinbar, veraPDF prüft das Ergebnis weiter. Drei Stufen, nach dem
-Zertifikat:
+PAdES hängt die Signatur als inkrementelles Update an das fertige PDF; das
+ist mit PDF/A vereinbar, veraPDF prüft das Ergebnis weiter. Drei Stufen, nach
+dem Zertifikat:
 
-- **Selbstsigniert** – kostenlos, aber der Empfänger sieht „Identität
-  unbekannt“. Belegt nur, dass sich seit dem Signieren nichts geändert hat.
+- **Selbstsigniert** – kostenlos, der Empfänger sieht „Identität unbekannt“.
+  Belegt nur, dass sich seit dem Signieren nichts geändert hat.
 - **Fortgeschritten** – etwa mit einem Zertifikat aus Adobes Vertrauensliste
   (AATL), dann erscheint der grüne Haken.
 - **Qualifiziert (QES)** – Zertifikat eines Vertrauensdiensteanbieters,
   jährliche Kosten, der eigenhändigen Unterschrift gleichgestellt.
 
-Dazu optional ein Zeitstempel eines Zeitstempeldienstes (RFC 3161). In Kotlin
-kämen Apache PDFBox oder die DSS-Bibliothek der EU in Frage.
+Dazu optional ein Zeitstempel nach RFC 3161. In Kotlin kämen PDFBox, das
+über Mustang ohnehin im Klassenpfad liegt, oder die DSS-Bibliothek der EU in
+Frage.
 
 ## Warum kein Anlass
 
-- **Nicht vorgeschrieben.** §14 Abs. 3 UStG verlangt seit 2011 keine Signatur
-  mehr. Echtheit und Unversehrtheit weist der Empfänger über ein
-  innerbetriebliches Kontrollverfahren nach; die Signatur ist eine mögliche
-  Form, keine Pflicht.
-- **Keine E-Rechnung.** Eine Signatur macht aus dem PDF keine strukturierte
-  Rechnung. Im inländischen B2B-Verkehr ist das reine PDF ab 2027 nur noch
-  unterhalb einer Umsatzgrenze zulässig, ab 2028 gar nicht mehr. Dann trägt
-  ZUGFeRD beziehungsweise XRechnung die Rechnung, und auch die brauchen keine
-  Signatur. Die Arbeit ist beim ZUGFeRD-Export besser angelegt.
-- **Schwacher Schutz gegen Rechnungsbetrug.** Der realistische Angriff ist die
-  ausgetauschte IBAN in einer abgefangenen Mail. Eine Signatur hilft nur, wenn
-  der Empfänger sie prüft – ein gefälschtes PDF wäre schlicht unsigniert, und
-  das bemerkt kaum jemand. Wirksamer: die Bankverbindung einmal auf anderem Weg
-  bestätigen.
-- **Die eigene Ablage.** Unveränderbare Aufbewahrung (GoBD) leistet das Archiv,
-  nicht die Signatur. Die Unversehrtheit der eigenen Kopie belegt auch eine
-  Prüfsumme.
+- **Nicht vorgeschrieben.** §14 Abs. 3 UStG verlangt seit 2011 keine
+  Signatur. Echtheit und Unversehrtheit weist der Empfänger über ein
+  innerbetriebliches Kontrollverfahren nach.
+- **Auch die E-Rechnung braucht keine** (ADR-0023). Innerhalb Deutschlands
+  ist das eingebettete XML die Rechnung (BR-FX-DE-03); eine Signatur über
+  das PDF machte daraus nichts anderes.
+- **Schwacher Schutz gegen Rechnungsbetrug.** Der realistische Angriff ist
+  die ausgetauschte IBAN in einer abgefangenen Mail. Ein gefälschtes PDF wäre
+  schlicht unsigniert, und das bemerkt kaum ein Empfänger. Wirksamer ist, die
+  Bankverbindung einmal auf anderem Weg zu bestätigen.
+- **Die eigene Ablage.** Unveränderbare Aufbewahrung (GoBD) leistet das
+  Archiv; die Unversehrtheit der eigenen Kopie belegt auch eine Prüfsumme.
 
 ## Der Konflikt mit der Reproduzierbarkeit
 
-Dieselben Quellen ergeben heute dasselbe PDF, Byte für Byte
-(`SOURCE_DATE_EPOCH`, Trailer-ID aus der Prüfsumme von `.tex` und
-`.xmpdata`). Eine Signatur trägt den Zeitpunkt des Signierens, ein Zeitstempel
-ohnehin – signiert der Generator selbst, ist die Zusage weg, und mit ihr der
-Abgleich über die Prüfsumme des PDF, den `rechnung-erwartet.tex` vorsieht.
-
-Wenn überhaupt, dann als eigener, nachgelagerter Schritt: Das unsignierte,
-reproduzierbare PDF bleibt das Ergebnis des Generators, die Signatur kommt
-danach dazu.
+Dieselben Quellen ergeben dasselbe PDF, Byte für Byte, auch mit
+eingebettetem XML (ADR-0005, ADR-0023). Darauf baut der Abgleich über die
+Prüfsumme, wenn eine Vergleichsdatei rot wird. Eine Signatur trägt den
+Zeitpunkt des Signierens, ein Zeitstempel ohnehin. Wenn überhaupt, dann als
+eigener Schritt nach dem Generator: Das unsignierte PDF bleibt sein Ergebnis.
 
 ## Erwogen und verworfen
 
-- **Signieren im `Typesetter`.** Liegt nahe, weil dort das PDF entsteht und
-  geprüft wird. Bricht aber genau die Reproduzierbarkeit, und die Naht
-  verspricht „geprüftes PDF“, nicht „unterschriebenes“.
-- **Selbstsigniertes Zertifikat als Zwischenlösung.** Kostet nichts, sagt dem
-  Empfänger aber nichts – und eine Warnung „Identität unbekannt“ wirkt eher
-  verdächtiger als gar keine Signatur.
+- **Signieren im `Typesetter`.** Dort entsteht und prüft sich das PDF, aber
+  die Naht verspricht „geprüftes PDF“, nicht „unterschriebenes“, und die
+  Reproduzierbarkeit wäre weg.
+- **Selbstsigniert als Zwischenlösung.** Sagt dem Empfänger nichts, und
+  „Identität unbekannt“ wirkt eher verdächtiger als gar keine Signatur.
 
 ## Wann die Frage wiederkommt
 
-- Beim ZUGFeRD-Export (PDF/A-3 mit XML): Ob dort signiert werden soll, gehört
-  in dieselbe Entscheidung.
 - Wenn ein Kunde eine signierte Rechnung ausdrücklich verlangt.
-- Als Lernübung (PDFBox, PAdES, Zertifikatsketten) – dann aber außerhalb des
+- Als Übung mit PDFBox, PAdES und Zertifikatsketten – dann außerhalb des
   Generators.
