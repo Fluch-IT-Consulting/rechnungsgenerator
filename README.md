@@ -6,7 +6,7 @@ entsteht eine E-Rechnung nach ZUGFeRD: ein PDF/A-3u, das die Rechnung
 zusätzlich als XML trägt. Aus einer E-Rechnung, auch einer fremden, liest das
 Programm das XML wieder aus, sobald sie ihre Prüfung besteht.
 
-Ein Kotlin/Gradle-Lernprojekt.
+Geschrieben in Kotlin, gebaut mit Gradle.
 
 ## Voraussetzungen
 
@@ -389,12 +389,25 @@ gegen PDF/A-3u. Ohne gültiges PDF/A ist der Build rot.
 
 ## Stand
 
-Layout und Toolchain stehen, ebenso Reverse Charge (§13b UStG), die Abschlags-
-und Schlussrechnung, das Storno, das Skonto und der Rabatt auf eine Position –
-als Satz oder als Betrag. Jede Rechnungsart geht auch als E-Rechnung nach
-ZUGFeRD, und das XML einer E-Rechnung lässt sich wieder auslesen. Offen sind
-ein Nachlass auf die ganze Rechnung und die Rechnungskorrektur – also das
-Berichtigen einzelner Positionen, statt ganz zu stornieren.
+Layout und Toolchain stehen, in zwei Designs zur Wahl (`design: helsinki` oder
+`prag` in den Stammdaten), mit Logo und bei `helsinki` einer eigenen
+Akzentfarbe. Abgerechnet wird als Rechnung, Teilrechnung, Abschlags- und
+Schlussrechnung oder Storno, in sieben Steuerkategorien samt Reverse Charge
+(§13b UStG), mit Skonto und mit einem Rabatt auf eine Position – als Satz oder
+als Betrag. Eine Rechnung, die über mehrere Seiten geht, setzt die Folgeseiten
+mit eigenem Kopf.
+
+Jede Rechnung steht auf Deutsch oder Englisch, britisch oder amerikanisch
+(`sprache: en-GB`), und in Euro, US-Dollar oder Pfund (`waehrung: USD`). Wird
+in einer anderen Währung als Euro Umsatzsteuer berechnet, nennt die Rechnung
+sie zusätzlich in Euro, zum Kurs aus der Rechnungsdatei.
+
+Jede Rechnungsart geht auch als E-Rechnung nach ZUGFeRD, und das XML einer
+E-Rechnung lässt sich wieder auslesen, auch aus einer fremden.
+
+Offen ist ein Nachlass auf die ganze Rechnung. Die Rechnungskorrektur – das
+Berichtigen einzelner Positionen, statt ganz zu stornieren – ist erwogen und
+mangels Anlass zurückgestellt (#64).
 
 ## Lizenz
 

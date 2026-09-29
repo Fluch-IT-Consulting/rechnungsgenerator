@@ -1,6 +1,6 @@
 # Rechnungsgenerator
 
-Kotlin/Gradle-Lernprojekt: erzeugt aus einer YAML-Rechnungsdatei plus
+Kotlin/Gradle-Projekt: erzeugt aus einer YAML-Rechnungsdatei plus
 YAML-Stammdaten-Konfiguration eine deutsche Rechnung als valides
 PDF/A-1b-Dokument, mit `--zugferd` als E-Rechnung (PDF/A-3u mit XML); `xml`
 liest das XML einer geprüften E-Rechnung wieder aus. Satz über
