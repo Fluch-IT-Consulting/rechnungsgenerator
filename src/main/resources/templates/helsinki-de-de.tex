@@ -1,42 +1,20 @@
-%% Die Sprachdatei von helsinki für de-DE (#377): die Wörter des Designs und
-%% die Schreibweise der Zahlen, soweit sie an der Sprache hängt. Der Renderer
-%% legt sie als sprache.tex neben die Vorlage, die sie lädt.
-%%
-%% Jede Sprachdatei eines Designs definiert dieselben Makros, mit derselben
-%% Stelligkeit – das prüft ein Test. Welches Wort ein Design an einer Stelle
-%% setzt, entscheidet das Design; deshalb eine Datei je Design und Sprache
-%% und keine für alle Designs. Ein Satz mit fachlicher Aussage steht nicht
-%% hier, sondern kommt aus Kotlin (ADR-0017). Kein Platzhalter: Die Werte der
-%% Rechnung setzt die Vorlage.
-%%
-%% Die Beschriftungen heißen \wort... nach dem deutschen Wort, damit sie sich
-%% von den Makros unterscheiden, die der Renderer aufruft: \wortbetrag ist
-%% der Spaltenkopf, \betrag die Zahl.
+%% Die Sprachdatei von helsinki für de-DE (ADR-0025). Alle Sprachdateien eines Designs definieren dieselben
+%% Makros, das prüft ein Test. Kein Satz mit fachlicher Aussage (ADR-0017) und kein Platzhalter.
 
 %% ---------------------------------------------------------------- Zahlen
-%% Dezimalkomma und Punkt als Tausendertrenner (ADR-0021). Ab wie vielen
-%% Stellen gruppiert wird, wählt die Vorlage.
+%% Ab wie vielen Stellen gruppiert wird, wählt die Vorlage (ADR-0021).
 \sisetup{
   output-decimal-marker = {,},
   group-separator       = {.},
 }
-%% Das Währungszeichen und das Prozentzeichen hängen mit festem Leerzeichen
-%% an der Zahl. Einzelpreise nehmen \betrag.
-%%
-%% Welches Zeichen, sagt die Währung der Rechnung (#409): Die Vorlage setzt
-%% \waehrung auf ihren Code, und \waehrungszeichen schlägt damit ein Zeichen
-%% je Code nach. Eines für jeden Code aus Currency, das prüft Template.of.
-%% $ und nicht US$ oder USD: das Zeichen, das der Empfänger auf seiner
-%% Rechnung erwartet; welcher Dollar gemeint ist, sagt das XML (BT-5).
+%% Ein Zeichen für jeden Code aus Currency, das prüft Template.of: \csname setzte für ein fehlendes still
+%% nichts. $ und nicht US$: Welcher Dollar gemeint ist, sagt das XML (BT-5).
 \newcommand{\zeichenEUR}{€}
 \newcommand{\zeichenUSD}{\$}
 \newcommand{\zeichenGBP}{£}
 \newcommand{\waehrungszeichen}{\csname zeichen\waehrung\endcsname}
 \newcommand{\betrag}[1]{\num{#1}~\waehrungszeichen}
-%% Ein Betrag in Euro, gleich in welcher Währung die Rechnung steht: die
-%% umgerechnete Umsatzsteuer einer Rechnung in Fremdwährung (#418). \betrag
-%% mit \waehrung auf EUR, in einer Gruppe, damit Zeichen und Stellung dieselben
-%% sind wie bei jedem Betrag und \waehrung danach wieder gilt.
+%% In einer Gruppe, damit danach wieder die Währung der Rechnung gilt.
 \newcommand{\eurobetrag}[1]{\begingroup\def\waehrung{EUR}\betrag{#1}\endgroup}
 \newcommand{\prozent}[1]{\num{#1}~\%}
 
@@ -45,8 +23,7 @@
 \newcommand{\wortfortsetzung}{Fortsetzung auf der nächsten Seite}
 
 %% ------------------------------------------------------ Kopf und Anschrift
-%% "Geschäftsführung" statt "Geschäftsführer": Die Bezeichnung steht neben
-%% einem Namen, dessen Geschlecht die Stammdaten nicht kennen.
+%% „Geschäftsführung“: Das Geschlecht des Namens daneben kennen die Stammdaten nicht.
 \newcommand{\wortgeschaeftsfuehrung}{Geschäftsführung}
 \newcommand{\wortustid}{USt-IdNr.}
 \newcommand{\worttelefon}{Tel.}

@@ -1,22 +1,16 @@
-%% Die Sprachdatei von prag für de-DE (#377). Was eine Sprachdatei ist und
-%% welche Regeln für sie gelten, steht im Kopf von helsinki-de-de.tex.
+%% Die Sprachdatei von prag für de-DE (ADR-0025).
 
 %% ---------------------------------------------------------------- Zahlen
-%% Dezimalkomma und Punkt als Tausendertrenner (ADR-0021). Ab wie vielen
-%% Stellen gruppiert wird, wählt die Vorlage.
+%% Ab wie vielen Stellen gruppiert wird, wählt die Vorlage (ADR-0021).
 \sisetup{
   output-decimal-marker = {,},
   group-separator       = {.},
 }
-%% Das Währungszeichen und das Prozentzeichen hängen mit festem Leerzeichen
-%% an der Zahl. Einzelpreise nehmen \betrag. Die Zeichen je Währung wie in
-%% helsinki-de-de.tex, wo steht, warum.
 \newcommand{\zeichenEUR}{€}
 \newcommand{\zeichenUSD}{\$}
 \newcommand{\zeichenGBP}{£}
 \newcommand{\waehrungszeichen}{\csname zeichen\waehrung\endcsname}
 \newcommand{\betrag}[1]{\num{#1}~\waehrungszeichen}
-%% Ein Betrag in Euro wie in helsinki-de-de.tex, wo steht, warum.
 \newcommand{\eurobetrag}[1]{\begingroup\def\waehrung{EUR}\betrag{#1}\endgroup}
 \newcommand{\prozent}[1]{\num{#1}~\%}
 
@@ -46,8 +40,7 @@
 \newcommand{\wortgesamtbetrag}{Gesamtbetrag}
 
 %% --------------------------------------------------------------------- Fuß
-%% Die Beschriftungen stehen ohne Doppelpunkt, den setzt die Vorlage: Im
-%% Fuß und unter den beiden Anschriften folgt er jeder Beschriftung.
+%% Ohne Doppelpunkt, den setzt die Vorlage hinter jede Beschriftung.
 \newcommand{\wortustid}{USt-IdNr.}
 \newcommand{\worttelefon}{Tel.}
 \newcommand{\wortsteuernummer}{Steuernummer}

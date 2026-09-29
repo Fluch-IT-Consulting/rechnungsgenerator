@@ -1,15 +1,8 @@
-%% Die Sprachdatei von helsinki für en-US (#407). Was eine Sprachdatei ist und
-%% welche Regeln für sie gelten, steht im Kopf von helsinki-de-de.tex.
-%%
-%% Jedes Wort wie in helsinki-en-gb.tex, auch die Schreibweise der Zahlen: Wo
-%% sich die Varianten auf dem Blatt unterscheiden, im langen Datum, schreibt
-%% Kotlin. Trotzdem eine eigene Datei und kein Rückfall auf die britische,
-%% damit eine fehlende Übersetzung auffällt (ADR-0025).
+%% Die Sprachdatei von helsinki für en-US (ADR-0025).
+%% Jedes Wort wie en-GB, aber eine eigene Datei ohne Rückfall, damit eine fehlende Übersetzung auffällt.
 
 %% ---------------------------------------------------------------- Zahlen
-%% Wie in helsinki-en-gb.tex, wo steht, warum \betrag das Vorzeichen selbst
-%% setzt: €8,337.50 und −€200.00. Die Zeichen je Währung wie in
-%% helsinki-de-de.tex, wo steht, warum.
+%% \betrag wie in helsinki-en-gb.tex: €8,337.50 und −€200.00.
 \sisetup{
   output-decimal-marker = {.},
   group-separator       = {,},
@@ -22,7 +15,6 @@
 \newcommand{\betrag}[1]{\betrag@zeichen#1\relax}
 \def\betrag@zeichen#1#2\relax{\ifx-#1\textminus\waehrungszeichen\num{#2}\else\waehrungszeichen\num{#1#2}\fi}
 \makeatother
-%% Ein Betrag in Euro wie in helsinki-de-de.tex, wo steht, warum.
 \newcommand{\eurobetrag}[1]{\begingroup\def\waehrung{EUR}\betrag{#1}\endgroup}
 \newcommand{\prozent}[1]{\num{#1}\%}
 

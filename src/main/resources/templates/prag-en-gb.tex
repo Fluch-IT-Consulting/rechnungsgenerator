@@ -1,11 +1,7 @@
-%% Die Sprachdatei von prag für en-GB (#377). Was eine Sprachdatei ist und
-%% welche Regeln für sie gelten, steht im Kopf von helsinki-de-de.tex.
+%% Die Sprachdatei von prag für en-GB (ADR-0025).
 
 %% ---------------------------------------------------------------- Zahlen
-%% Dezimalpunkt und Komma als Tausendertrenner, das Währungszeichen vor der
-%% Zahl und das Minus davor, wie in helsinki-en-gb.tex, wo auch steht, warum
-%% \betrag das Vorzeichen selbst setzt. Die Zeichen je Währung wie in
-%% helsinki-de-de.tex, wo steht, warum.
+%% \betrag wie in helsinki-en-gb.tex: das Zeichen vor der Zahl, das Minus davor.
 \sisetup{
   output-decimal-marker = {.},
   group-separator       = {,},
@@ -18,7 +14,6 @@
 \newcommand{\betrag}[1]{\betrag@zeichen#1\relax}
 \def\betrag@zeichen#1#2\relax{\ifx-#1\textminus\waehrungszeichen\num{#2}\else\waehrungszeichen\num{#1#2}\fi}
 \makeatother
-%% Ein Betrag in Euro wie in helsinki-de-de.tex, wo steht, warum.
 \newcommand{\eurobetrag}[1]{\begingroup\def\waehrung{EUR}\betrag{#1}\endgroup}
 \newcommand{\prozent}[1]{\num{#1}\%}
 
@@ -35,8 +30,7 @@
 \newcommand{\wortreferenz}{Your reference:}
 
 %% ----------------------------------------------------- Positionen, Summen
-%% Kurze Wörter im Spaltenkopf: Die Spalten des Gitters sind so schmal wie
-%% ihr deutscher Kopf, "Quantity" passte nicht über die Menge.
+%% Kurze Wörter im Spaltenkopf: „Quantity“ passte nicht über die schmale Spalte des Gitters.
 \newcommand{\wortpos}{No.}
 \newcommand{\wortbezeichnung}{Item}
 \newcommand{\wortmenge}{Qty}
