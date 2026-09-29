@@ -1,7 +1,5 @@
-# Fiktive Rechnung mit 40 Positionen, mehr als auf eine Seite passen (#318).
-# Die Namen sind zweistellig nummeriert: "Arbeitspaket 04" steckt nicht in
-# "Arbeitspaket 40", sonst fände das Netz eine fehlende Position im Namen
-# einer anderen wieder.
+# Fiktive Rechnung mit 40 Positionen (#318). Zweistellig nummeriert, sonst
+# steckte "Arbeitspaket 4" in "Arbeitspaket 40".
 nummer: R26-044
 datum: 2026-08-14
 leistungszeitraum:

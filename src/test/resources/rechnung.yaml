@@ -12,8 +12,8 @@ kunde:
     ort: Nürnberg
   referenz: BST-2026-0815
 positionen:
-  # bezeichnung ist die Art der Leistung (BT-153), beschreibung ihr Umfang
-  # (BT-154), hinweis der Abrechnungskontext (BT-127). Nur bezeichnung ist Pflicht.
+  # bezeichnung BT-153, beschreibung BT-154, hinweis BT-127; nur bezeichnung ist
+  # Pflicht. Die Zeilen hier zählt YamlLoaderTest mit.
   - bezeichnung: IT-Beratungsleistungen
     beschreibung: Rahmenvertrag vom 01.02.2026
     menge: 86.5

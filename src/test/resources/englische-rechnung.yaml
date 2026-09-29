@@ -1,17 +1,7 @@
-# Fiktive Rechnung auf Englisch (#377) an einen Unternehmer im Vereinigten
-# Königreich: der häufigste Fall einer englischen Rechnung. Eine sonstige
-# Leistung an einen Unternehmer im Drittland ist in Deutschland nicht
-# steuerbar (§3a Abs. 2 UStG), deshalb Kategorie O mit Grund.
-#
-# Die Positionen tragen, was auf Englisch anders geschrieben wird: Beträge
-# über 1.000 mit Tausendertrenner, einen Einzelpreis mit drei
-# Nachkommastellen, einen Rabatt, eine negative Position für das Minus vor
-# dem Währungszeichen, und die Einheiten in Einzahl, Mehrzahl und Bruchteil –
-# 1 hr, 1 day, 2 days, 0.5 days.
-#
-# In Pfund, der Währung des Kunden (#409): Das zeigt ein anderes Zeichen als
-# € an der englischen Stelle, vor der Zahl. Englisch in Euro zeigen
-# reverse-charge.yaml und die Beispiele je Art auf Englisch.
+# Fiktive Rechnung auf Englisch in Pfund (#377, #409), Kategorie O. Die
+# Positionen tragen, was auf Englisch anders geschrieben wird: Beträge über
+# 1.000, einen Einzelpreis mit drei Nachkommastellen, einen Rabatt, eine negative
+# Position und die Einheiten in Einzahl, Mehrzahl und Bruchteil.
 sprache: en-GB
 waehrung: GBP
 nummer: R26-051

@@ -1,8 +1,5 @@
-# Fiktive Rechnung auf Deutsch in US-Dollar (#409) an einen Unternehmer in
-# den USA, Kategorie O wie in amerikanische-rechnung.yaml: Die Sprache
-# bestimmt die Schreibweise, die Währung das Zeichen. Sie trägt, was das
-# zeigt: Beträge über 1.000 mit deutschem Tausendertrenner und Dezimalkomma,
-# das Zeichen dahinter, und eine negative Position für das Minus davor.
+# Fiktive Rechnung auf Deutsch in US-Dollar (#409), mit Beträgen über 1.000 und
+# einer negativen Position.
 waehrung: USD
 nummer: R26-053
 datum: 2026-08-14

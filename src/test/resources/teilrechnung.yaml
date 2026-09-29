@@ -1,5 +1,4 @@
 # Fiktive Teilrechnung: eine abgenommene Teilleistung, endgültig abgerechnet.
-# Anders als ein Abschlag wird sie nie in einer Schlussrechnung abgesetzt.
 nummer: R26-012
 art: teilrechnung
 datum: 2026-09-15
@@ -21,15 +20,13 @@ positionen:
     menge: 1
     einheit: pauschal
     einzelpreis: 6500.00
-  # Ein Rabatt (#213): Die Spalte steht, und die Position ohne Rabatt lässt
-  # ihre Zelle leer.
+  # Ein Rabatt als Satz (#213); die Position ohne Rabatt lässt ihre Zelle leer.
   - bezeichnung: Einführungsworkshop
     menge: 1
     einheit: Stück
     einzelpreis: 800.00
     rabatt: 30
-  # Derselbe Rabatt als fester Betrag (#233). Beide Formen auf einem Blatt:
-  # In der Spalte stehen dann "30 %", "100,00 €" und eine leere Zelle.
+  # Derselbe Rabatt als Betrag (#233), damit beide Formen auf einem Blatt stehen.
   - bezeichnung: Schulungsunterlagen
     menge: 40
     einheit: Stück

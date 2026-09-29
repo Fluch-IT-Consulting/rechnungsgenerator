@@ -1,10 +1,6 @@
-# Fiktive Rechnung in amerikanischem Englisch (#407) an einen Unternehmer in
-# den USA, Kategorie O wie in englische-rechnung.yaml. Sie trägt, worin sich
-# die Varianten auf dem Blatt unterscheiden: das lange Datum, im Kopf und im
-# Satz zum Skonto, wo auf das Jahr ein Komma folgt. Alles andere schreibt
-# en-US wie en-GB, und das zeigt englische-rechnung.yaml.
-#
-# In US-Dollar, der Währung des Kunden (#409).
+# Fiktive Rechnung in en-US und US-Dollar (#407, #409). Sie trägt, worin sich die
+# Varianten unterscheiden: das lange Datum, im Kopf und im Satz zum Skonto, wo
+# auf das Jahr ein Komma folgt.
 sprache: en-US
 waehrung: USD
 nummer: R26-052

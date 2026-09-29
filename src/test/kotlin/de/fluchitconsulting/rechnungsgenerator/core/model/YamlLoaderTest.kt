@@ -488,6 +488,7 @@ class YamlLoaderTest : FunSpec({
             val failure = shouldThrow<InputFileException> { YamlLoader.loadInvoice(file) }
 
             failure.message!! shouldContain file.toString()
+            // Zeile 17 von rechnung.yaml: Eine Zeile mehr oder weniger dort verschiebt sie.
             failure.message!! shouldContain "positionen[0].bezeichnung (Zeile 17, Spalte 18): U+000B"
         }
 

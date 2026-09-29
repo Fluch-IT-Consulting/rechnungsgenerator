@@ -1,12 +1,6 @@
-# Fiktive Rechnung über eine innergemeinschaftliche Lieferung (#427) an einen
-# Unternehmer in den Niederlanden: Die Lieferung von Waren an einen
-# Unternehmer in einem anderen Mitgliedstaat ist steuerfrei (§4 Nr. 1
-# Buchst. b, §6a UStG). Kategorie K ohne eigenen Grund, damit der
-# vorgesehene Wortlaut auf dem Blatt steht, dazu die USt-IdNr. des Kunden
-# und die Bestätigungsabfrage, ohne die K immer abbricht.
-#
-# Ohne `sprache`: Das Pflichtangaben-Netz setzt die Datei in jeder Sprache
-# und stellt die Sprache dafür voran.
+# Fiktive innergemeinschaftliche Lieferung in die Niederlande (#427). Kategorie K
+# ohne eigenen Grund, mit USt-IdNr. und Bestätigungsabfrage, ohne die K
+# abbricht, und ohne `sprache`, die das Pflichtangaben-Netz voranstellt.
 nummer: R26-053
 datum: 2026-08-14
 leistungszeitraum:

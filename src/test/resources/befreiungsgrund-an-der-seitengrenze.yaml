@@ -1,11 +1,7 @@
-# Fiktive Rechnung mit einer steuerfreien Position, deren Befreiungsgrund über
-# drei Zeilen läuft, und so vielen Positionen, dass die zweite Seite mitten im
-# Hinweis darauf endete (ADR-0020, #335). Nachgemessen mit den Vorlagen von
-# #335: Ohne Zusammenhalt stand in beiden Designs nur die erste Zeile auf
-# Seite 2, der Rest des Befreiungsgrunds auf Seite 3. Die steuerfreie
-# Position steht vorn, damit ihr Betrag auf Seite 3 nur im Hinweis steht.
-# Ändert sich das Satzbild, kann die Grenze woanders liegen; die Prüfung im
-# Netz bleibt dann richtig, trifft aber diesen Fall nicht mehr.
+# Fiktive Rechnung, deren zweite Seite ohne Zusammenhalt mitten im
+# Befreiungsgrund endete, nachgemessen mit den Vorlagen von #335 (ADR-0020). Die
+# steuerfreie Position steht vorn, damit ihr Betrag auf Seite 3 nur im Hinweis
+# steht. Ändert sich das Satzbild, trifft die Datei den Fall womöglich nicht mehr.
 nummer: R26-046
 datum: 2026-08-14
 leistungszeitraum:

@@ -1,6 +1,5 @@
-# Fiktive Schlussrechnung: die Gesamtleistung, abzüglich zweier vereinnahmter
-# Abschläge. Netto und Steuer stehen je Abschlag ausgeschrieben (ADR-0001) –
-# sie werden nicht aus den Dateien der Abschlagsrechnungen nachgeschlagen.
+# Fiktive Schlussrechnung mit zwei vereinnahmten Abschlägen, je Abschlag
+# ausgeschrieben (ADR-0001).
 nummer: R26-014
 art: schlussrechnung
 datum: 2026-11-05
@@ -19,8 +18,7 @@ positionen:
     einheit: pauschal
     einzelpreis: 20000.00
 abschlaege:
-  # Derselbe Abschlag wie in abschlagsrechnung.yaml – Nummer, Datum und
-  # Zeitpunkt der Vereinnahmung stimmen mit dieser Datei überein.
+  # Derselbe Abschlag wie in abschlagsrechnung.yaml, Feld für Feld.
   - rechnungsnummer: R26-009
     rechnungsdatum: 2026-06-15
     vereinnahmt-am: 2026-06-10
