@@ -20,14 +20,7 @@ import io.kotest.matchers.collections.shouldNotContain
 import io.kotest.matchers.string.shouldContain
 import java.time.LocalDate
 
-/**
- * Ohne dokumentierte Bestätigungsabfrage keine Rechnung ohne Umsatzsteuer.
- *
- * Die Regeln sind absichtlich verschieden streng, weil die Rechtslage es ist –
- * die Begründung steht an `VatIdConfirmation`. Diese Tests halten fest, dass die
- * Unterscheidung zwischen EU und Drittland tatsächlich gemacht wird und nicht
- * bloß im Kommentar behauptet ist.
- */
+/** Warum die Regeln verschieden streng sind, steht an `VatIdConfirmation`. */
 class VatIdCheckRulesTest : FunSpec({
 
     val config = testSellerConfig()
@@ -59,7 +52,7 @@ class VatIdCheckRulesTest : FunSpec({
             .messageOf(Rule.BESTAETIGUNGSABFRAGE_FEHLT) shouldContain "Bestätigungsabfrage"
     }
 
-    // Der Nachweis gehört in die eigene Akte und hängt an keiner Sprache (#406).
+    // #406
     test("die Bestätigungsabfrage gilt auf Englisch wie auf Deutsch") {
         val english = invoice("AT", TaxCategory.REVERSE_CHARGE).copy(language = Language.BRITISH_ENGLISH)
 
@@ -75,8 +68,6 @@ class VatIdCheckRulesTest : FunSpec({
     }
 
     test("Reverse Charge ins Drittland verlangt keinen VIES-Nachweis") {
-        // Für die Schweiz gibt es keine VIES-Abfrage. Einen Nachweis zu
-        // verlangen, den es nicht geben kann, wäre keine Strenge, sondern falsch.
         val totals =
             CalculatedInvoice(
                 invoice("CH", TaxCategory.REVERSE_CHARGE, vatId = VatId("CHE123456789")),
@@ -87,7 +78,7 @@ class VatIdCheckRulesTest : FunSpec({
     }
 
     test("innergemeinschaftliche Lieferung verlangt den Nachweis auch im Drittland-Fall") {
-        // §6a UStG kennt hier keinen Spielraum.
+        // §6a UStG
         CalculatedInvoice(invoice("AT", TaxCategory.INTRA_COMMUNITY), config).rules() shouldContain
             Rule.BESTAETIGUNGSABFRAGE_FEHLT
     }
@@ -131,9 +122,7 @@ class VatIdCheckRulesTest : FunSpec({
     }
 
     test("inländische Steuerschuldumkehr braucht keine Abfrage") {
-        // §13b Abs. 2 im Inland, etwa Bauleistungen: Das BZSt bestätigt
-        // ausländische USt-IdNrn.; für die Nummer eines deutschen Kunden gibt
-        // es diese Abfrage gar nicht. Sie zu verlangen wäre unerfüllbar.
+        // §13b Abs. 2 UStG; für eine deutsche Nummer gibt es die Abfrage nicht.
         val totals =
             CalculatedInvoice(
                 invoice("DE", TaxCategory.REVERSE_CHARGE, vatId = VatId("DE123456788")),
@@ -148,9 +137,6 @@ class VatIdCheckRulesTest : FunSpec({
     }
 
     context("Alter der EU-Liste") {
-        // Die Liste ist heute richtig und wird irgendwann still falsch. Ohne
-        // Prüfung merkt das niemand, weil nichts kaputtgeht – es wird nur leise
-        // die falsche Regel angewandt.
         fun invoiceOn(date: LocalDate) =
             invoice("CH", TaxCategory.REVERSE_CHARGE, vatId = VatId("CHE123456789")).copy(issueDate = date)
 
@@ -167,11 +153,7 @@ class VatIdCheckRulesTest : FunSpec({
         }
 
         test("bei einer Inlandsrechnung bleibt die Liste unerwähnt") {
-            // Sie wird dort gar nicht befragt – ein Hinweis wäre Lärm, und Lärm
-            // führt dazu, dass auch die wichtigen Hinweise überlesen werden.
-            // Der Leistungszeitraum rückt mit dem Datum mit: Sonst meldete sich
-            // der Hinweis auf eine späte Rechnung (§14 Abs. 2 UStG, #47), und
-            // um den geht es hier nicht.
+            // Der Leistungszeitraum rückt mit, sonst meldete sich RECHNUNG_SPAET.
             val date = EuMemberStates.AS_OF.plusYears(5)
             val domestic =
                 testInvoice().let {
