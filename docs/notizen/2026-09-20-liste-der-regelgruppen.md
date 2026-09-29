@@ -1,195 +1,104 @@
 # Was die Liste der Regelgruppen zusammenhält
 
-Notiz vom 20.09.2026, festgehalten für später. **Hier wird nichts entschieden.**
-Anlass war eine Architektur-Durchsicht der Kotlin-Anwendung. Ihr erster Befund
-war dieser: `InvoiceRules.check` ist eine handgeschriebene `listOf(...)` von
-dreizehn Regelgruppen; wer eine Gruppe anlegt und ihre Zeile vergisst, bekommt
-eine Rechnung, die diese Regeln nicht prüft – und weder Compiler noch Test
-sagen etwas. Vorgeschlagen war, die Regelgruppe zu einem Typ zu machen, der
-seine `Rule`-Kennungen selbst nennt.
-
-Der Befund trägt nicht. Die Notiz hält fest, warum – und was der Umbau gewesen
-wäre, damit die nächste Durchsicht nicht bei null anfängt.
+Notiz vom 20.09.2026, Stand 29.09.2026. **Hier wird nichts entschieden.**
+Eine Architektur-Durchsicht fand: `InvoiceRules.check` ist eine
+handgeschriebene Liste der Regelgruppen. Wer eine Gruppe anlegt und ihre
+Zeile vergisst, prüft deren Regeln nie, und weder Compiler noch Test sagen
+etwas. Vorgeschlagen war, die Gruppe zu einem Typ zu machen, der seine
+Kennungen selbst nennt. Der Befund trägt nicht.
 
 ## Warum der Befund nicht trägt
 
-**Das Netz liegt in `CheckHelpers`, nicht in einem Strukturtest.** Alle
-Regeltests kommen über `CalculatedInvoice.findings()` und damit über
-`AcceptedInvoice.check` → `InvoiceRules.check`. Keine Testdatei einer
-gelisteten Gruppe ruft deren `check` unmittelbar auf – die einzige Ausnahme
-ist `InvoiceKindRulesTest`, und das ist gerade die Gruppe, die nicht in der
-Liste steht. Fällt eine Gruppe aus der Liste, produziert
-sie für ihren eigenen Test keine Befunde mehr: `shouldBe`-Vergleiche werden
-rot, und `messageOf` wirft mit Klartext ("Kein Befund zu X. Gefunden: …"). Das
-gilt für alle zwölf Einträge. `InvoiceKindRules` ist ohnehin nicht droppbar –
-es ist ein Parameter von `InvoiceRules.check` und kein Listeneintrag, genau
-dafür wurde es in #105 herausgezogen.
+**Das Netz liegt in `CheckHelpers`.** Jeder Regeltest geht über
+`AcceptedInvoice.check` und damit über die Liste. Direkt ruft nur
+`InvoiceKindRulesTest` seine Gruppe auf, und die steht nicht in der Liste,
+sondern ist ein Parameter von `InvoiceRules.check` (#105). Fällt eine Gruppe
+aus der Liste, liefert sie ihrem eigenen Test keine Befunde mehr, und
+`messageOf` scheitert mit „Kein Befund zu X“. Wer die Regeltests einmal
+direkt an den Gruppen ansetzt, nimmt dieses Netz weg und braucht ein anderes.
 
-Das ist die Kehrseite einer Beobachtung derselben Durchsicht: dass keine
-Regelgruppe über ihre eigene Schnittstelle geprüft wird, sah nach Reibung aus.
-Es ist der Grund, dass die Liste hält. Wer die Regeltests eines Tages an den
-Gruppen ansetzen lässt, nimmt dieses Netz weg und braucht dann ein anderes.
+**Der Fall ist nie eingetreten.** Jede Gruppe kam mit ihrer Zeile im selben
+Commit: die zehn aus #71, `InvoiceKindRules` (#70), `SkontoRules` (#183),
+`CustomerRules`, heute `FreeTextRules` (#196), `LanguageRules` (#377) und
+`CurrencyRules` (#409). `LanguageRules` ging mit #406 samt Zeile wieder.
 
-**Der Fall ist nie eingetreten.** Seit der Extraktion aus dem
-`InvoiceCalculator` (#71) sind es vier Commits, die Gruppendateien anlegen –
-`cf24bc1` (zehn Gruppen und die Liste in einem Zug), `c7541ab`
-(`InvoiceKindRules`), `a603d22` (`SkontoRules`), `23919af` (`CustomerRules`,
-in `77862eb` zu `FreeTextRules` umbenannt). Jede Registerzeile steht im selben
-Commit wie ihre Datei. Keine nachgereichte Zeile, keine nie aufgerufene Gruppe.
-Und in neun Commits an `InvoiceRules.kt` wurde die Reihenfolge kein einziges
-Mal geändert, nur an gewählter Stelle eingefügt.
+## Gemessen am 29.09.2026
 
-## Was dabei gemessen wurde
+- **70 Kennungen, jede genau einmal vergeben**: 66 in den Gruppen, 4 in
+  `prepayments/Prepayments.kt`, die nie durch `InvoiceRules` laufen. Die
+  Zuordnung Regel → Gruppe ist also eine Funktion; sie steht nur nirgends, wo
+  ein Compiler sie sähe.
+- **Die Zwischenüberschriften in `Rule` ordnen nach Gegenstand**, nicht nach
+  Gruppe. Sie waren nie eine Karte der Gruppen.
 
-- **65 Kennungen im Enum, 65 in den Gruppen benutzt, jede genau einmal, keine
-  unbenutzt.** Die Zuordnung Regel → Gruppe ist heute schon eine Funktion. Sie
-  steht nur nirgends, wo ein Compiler sie sähe.
-- **Die Kommentarüberschriften in `Rule` sind keine Gruppenkarte.** Sie
-  beschreiben den Gegenstand ("Zeiten", "Beträge und Fristen der Rechnung"),
-  nicht die Gruppe: "Positionen und Steuerkategorie" deckt zwei Gruppen,
-  `GESAMTBETRAG_NEGATIV` steht unter "Beträge und Fristen" und wird in
-  `CancellationRules` geprüft, und das letzte Bündel sortiert nach Schwere.
-  Sie driften also nicht von den Gruppen weg – sie sind nie eine Abbildung
-  davon gewesen.
-- **Drei Kennungen gehören keiner Gruppe**:
-  `ABSCHLAGSRECHNUNGEN_VERSCHIEDENE_KUNDEN`, `ABSCHLAGSRECHNUNG_DOPPELT` und
-  `KEINE_ABSCHLAGSRECHNUNG` stehen im Enum, vergeben werden sie in
-  `prepayments/Prepayments.kt`, und durch `InvoiceRules` laufen sie nie.
+## Wenn die Frage wiederkommt
 
-## Der verworfene Umbau, mit seinen Achsen
+In dem Vorschlag stecken drei Zusagen: (a) keine Gruppe fällt aus dem Lauf,
+(b) jede Kennung gehört zu genau einer Gruppe, (c) die Befunde kommen in der
+Reihenfolge der Gruppen. (b) schließt (a) ein, umgekehrt nicht. Die
+Reihenfolge bliebe am besten eine geordnete Liste, von der nur die
+Vollständigkeit geprüft wird; ein Rang je Gruppe verteilte eine Angabe, die
+niemand begründen kann, über vierzehn Dateien.
 
-Falls die Frage wiederkommt: Sie hat mehr Achsen, als der erste Blick zeigt.
+Für (b) gibt es drei Formen:
 
-**Der Zuschnitt.** In dem Vorschlag stecken drei trennbare Zusagen: (a) keine
-Gruppe fällt aus dem Prüflauf, (b) jede Kennung gehört zu genau einer Gruppe,
-(c) die Befunde erscheinen in der Reihenfolge der Gruppen. (b) nimmt (a) mit:
-Wenn eine Stelle verlangt, dass alle Kennungen von registrierten Gruppen
-abgedeckt sind, ist eine vergessene Gruppe eine unabgedeckte Kennungsmenge.
-Umgekehrt gilt das nicht.
+- **`Rule` trägt die Gruppe.** Der Enum-Konstruktor erzwingt sie, das ist
+  eine Übersetzungsbedingung. Die Zuordnung steht dann aber nicht neben dem
+  Code, der den Befund vergibt.
+- **Die Gruppe nennt ihre Kennungen.** Näher am Code, aber eine vergessene
+  Kennung fängt nur ein Test.
+- **Nichts deklarieren**, die Zuordnung mit Konsist aus den Quellen ableiten
+  wie `PackageStructureTest` die Importe. Nichts kann driften, dafür liest ein
+  Test Quelltext, um eine Menge für einen anderen Test zu bilden.
 
-**Die Richtung.** Drei Formen, mit verschiedenen Zusagen:
-
-- `Rule` trägt die Gruppe als zweite Eigenschaft. Der Enum-Konstruktor
-  erzwingt sie, "jede Kennung hat eine Gruppe" wird damit zur
-  Übersetzungsbedingung und nicht zur Testzusage. Der Preis: Die Zuordnung
-  steht nicht neben dem Code, der den Befund vergibt.
-- Die Gruppe nennt ihre Kennungen. Näher am Code, aber eine vergessene Kennung
-  fängt nur ein Test – und die Form bricht an den beiden Sonderfällen unten.
-- Gar nichts deklarieren und die Zuordnung mit Konsist aus den Quellen
-  ableiten, wie `PackageStructureTest` es mit den Importen tut. Dann kann
-  nichts driften, weil die Quelle die Wahrheit ist; dafür liest ein Test
-  Quelltext, um eine Menge für einen anderen Test zu bilden.
-
-**Die beiden Sonderfälle.** `InvoiceKindRules` liefert `Result` und nicht
-`List<Finding>` (ADR-0008, begründete Ausnahme) und passt deshalb in keine
-Schnittstelle, die über `check` geschnitten ist – über eine Deklaration im
-Enum dagegen schon. Und die drei Kennungen aus `prepayments` verlangen, dass
-eine Gruppe auch sagt, **wo** sie läuft (beim Prüfen einer Rechnung oder beim
-Zusammentragen der Abschläge); sonst braucht die Vollständigkeitsprüfung doch
-wieder eine Ausnahmeliste, also genau das, was der Umbau abschaffen soll.
-
-**Die Reihenfolge** bliebe am besten, was sie ist: eine geordnete Liste, von
-der nur die Vollständigkeit geprüft wird. Mitgliedschaft und Reihenfolge sind
-zwei Dinge. Ein Rang je Gruppe verteilte eine Angabe, die niemand begründen
-kann – warum `FreeTextRules` vor `ItemRules` kommt, lässt sich nur festhalten –
-über dreizehn Dateien.
+Zwei Sonderfälle entscheiden mit: `InvoiceKindRules` liefert ein `Result` und
+keine Befundliste (ADR-0008) und passt in keine Schnittstelle über `check`,
+wohl aber in eine Angabe im Enum. Und die vier Kennungen aus `prepayments`
+verlangen, dass eine Gruppe auch sagt, wo sie läuft – sonst braucht die
+Vollständigkeitsprüfung eine Ausnahmeliste.
 
 ## `SKONTO_RULES` bleibt
 
-`SkontoRulesTest` hält eine Menge der sieben Skonto-Kennungen und filtert die
-Befunde damit. Das sieht aus wie eine zweite, handgeschriebene Liste neben
-`SkontoRules` – und dafür sollte sie fallen. Sie fällt nicht, weil sie etwas
-anderes tut, als sie aussieht: Sie trägt die Zusage **"und nur dieser eine
-Befund"**.
+Die Menge in `SkontoRulesTest` sieht aus wie eine zweite Liste neben
+`SkontoRules`. Sie trägt aber die Zusage „und nur dieser Befund“: Die
+Testrechnungen tragen absichtlich fremde Befunde – eine Skontostufe auf der
+falschen Art hat zusätzlich eine zu späte Frist und soll trotzdem nur
+`SKONTO_AUF_DIESER_ART_NICHT_MOEGLICH` melden (#97). Der Filter nimmt die
+fremden Befunde weg, damit `shouldBe listOf(…)` „nichts weiter“ behalten
+kann. Die Liste ist der Preis dafür, dass eine Testrechnung fremde Befunde
+tragen darf (ADR-0004).
 
-Sichtbar an den Rechnungen, die der Test baut. `val falsch = listOf(stufe("2",
-30))` ist absichtlich doppelt falsch – falsche Rechnungsart *und* eine Frist
-jenseits des Zahlungsziels –, und behauptet wird, dass trotzdem nur
-`SKONTO_AUF_DIESER_ART_NICHT_MOEGLICH` kommt und nicht zusätzlich
-`SKONTOFRIST_NICHT_VOR_ZAHLUNGSZIEL` (#97). Bei
-`SKONTO_OHNE_ZAHLUNGSAUFFORDERUNG` trägt die Rechnung Menge 0, also absichtlich
-einen fremden `MENGE_NULL`-Hinweis. Der Filter nimmt die fremden Befunde weg,
-damit `shouldBe listOf(…)` die Aussage "und nichts weiter" behalten kann.
+**Anlass:** eine zweite Testdatei, die dieselbe Sorte Menge braucht; dann ist
+die Zuordnung Regel → Gruppe neu zu fragen. Oder eine neue Skonto-Regel, die
+in `SKONTO_RULES` fehlt: Der Filter wäre zu eng, und die Zusagen würden still
+schwächer.
 
-Die Liste ist damit der Preis dafür, dass eine Testrechnung fremde Befunde
-tragen *darf* – was ADR-0004 gerade als Gewinn eingeführt hat. Sauber ableiten
-ließe sie sich nur über den Umbau oben.
+## Die Meldungen neben ihren Regeln
 
-**Woran sich der Zeitpunkt erkennen ließe:** an einer zweiten Testdatei, die
-dieselbe Sorte Menge braucht. Einmal ist es eine Eigenheit, zweimal ist es ein
-Muster – und dann ist die Frage nach der Zuordnung Regel → Gruppe neu zu
-stellen, mit einem Nutznießer mehr als heute. Oder daran, dass eine neue
-Skonto-Regel dazukommt und jemand sie in `SKONTO_RULES` vergisst: Der Filter
-wäre dann zu eng, und die "nur dieser Befund"-Zusagen würden still schwächer,
-ohne dass ein Test rot wird.
+Nach ADR-0004 schreibt die Schicht `rules` die Sätze der Ausgabe selbst. #282
+hat an allen Meldungen gemessen, ob sich der Preis zeigt: kein zweiter Kanal,
+die eingesetzten Werte formatiert einheitlich ihr `toString()`, auseinander
+liefen nur getippte Zahlen im Satz. Dagegen hält `CheckHelpers` jetzt ein
+Netz, das jede Meldung eines Regeltests trifft – die vier aus `prepayments`
+nicht.
+
+**Anlass, neu zu fragen:** ein Leser der Befunde, der keinen Satz will, etwa
+ein Export mit Kennung und Werten. Dann ist der Schritt dran, den #282
+verwirft: Kennung plus Parameter, der Wortlaut an einer Stelle.
 
 ## Erwogen und verworfen
 
-- **Den Umbau trotzdem bauen**, für die nächste Rechnungsart (#64) oder
-  ZUGFeRD. Er kaufte eine Zusage, die ein bestehendes Netz schon hält, für 65
-  geänderte Enum-Zeilen. Das Projekt entscheidet am Anlass entlang und nicht
-  auf Vorrat (Notiz vom 14.09.2026); der Anlass fehlt hier nicht nur, er ist
-  in der Historie nachweislich nie aufgetreten.
-- **Ein Issue anlegen.** Ein Issue verlangt eine Entscheidung und bekommt eine
-  Nummer, auf die sich Commits beziehen. Hier ist nichts zu entscheiden.
-- **`SKONTO_RULES` über das Namensschema bilden**
-  (`Rule.entries.filter { it.name.startsWith("SKONTO") }`). Passt heute auf
-  alle sieben und ist trotzdem falsch: Der Name einer Kennung ist kein
-  Ordnungsmerkmal, und `SKONTO_AUF_DIESER_ART_NICHT_MOEGLICH` gehört nur
-  zufällig zur selben Vorsilbe.
-- **Einen Strukturtest bauen**, der die Liste gegen die `*Rules.kt`-Dateien im
-  Paket vergleicht. Kleiner als der Umbau, aber er prüfte dieselbe Zusage ein
-  zweites Mal – und das schwächere Mal, weil er nur Dateinamen sieht.
+- **Den Umbau trotzdem bauen.** Er kaufte eine Zusage, die ein Netz schon
+  hält, für 70 geänderte Enum-Zeilen.
+- **`SKONTO_RULES` über das Namensschema bilden.** Der Name einer Kennung ist
+  kein Ordnungsmerkmal; `SKONTO_AUF_DIESER_ART_NICHT_MOEGLICH` gehört nur
+  zufällig zur Vorsilbe.
+- **Ein Strukturtest**, der die Liste gegen die `*Rules.kt`-Dateien
+  vergleicht. Er prüfte dieselbe Zusage ein zweites und schwächeres Mal, weil
+  er nur Dateinamen sieht.
 
 ## Nicht Teil dieser Frage
 
-- Ob `CheckHelpers` die richtige Testführung ist. Dass die Regeltests durch
-  die ganze Prüfung gehen, ist hier das Netz; ob es auch die beste Form ist,
-  eine einzelne Gruppe zu prüfen, ist eine eigene Frage.
-- Die zweite Pipeline in `prepayments` – das Laden, Rechnen, Prüfen und
-  Ablehnen ein zweites Mal, das `if (type != …)` statt eines `when` ohne
-  `else`, der von Hand geschriebene YAML-Block. Eigener Gegenstand aus
-  derselben Durchsicht.
-- Die Reihenfolge der Befunde als fachliche Sortierung (nach Schwere, dann
-  Gegenstand). Das änderte die Ausgabe jeder abgelehnten Rechnung und braucht
+- Die Reihenfolge der Befunde als fachliche Sortierung, nach Schwere und
+  Gegenstand. Sie änderte die Ausgabe jeder abgelehnten Rechnung und braucht
   einen eigenen Anlass.
-
-## Nachtrag vom 22.09.2026: die Meldungen neben ihren Regeln (#282)
-
-Dieselbe Durchsicht fragte auch, ob sich der Preis von ADR-0004 schon zeigt.
-Dort steht die Meldung bewusst neben ihrer Bedingung, und damit schreibt die
-Schicht `rules` die Sätze der Ausgabe selbst. Sichtbar wäre der Preis an drei
-Dingen: Zwei Gruppen nennen dieselbe Sache verschieden, eine Meldung
-formatiert Werte anders als eine andere, oder ein zweiter Kanal braucht die
-Befunde ohne Satz.
-
-**Gemessen an allen 65 Meldungen**, auch den drei aus `prepayments`:
-
-- **Kein zweiter Kanal.** Auch `abschlaege` gibt die Befunde nur über
-  `describe()` aus.
-- **Die eingesetzten Werte formatiert schon eine Stelle**, nämlich
-  `toString()` von `Money`, `Price`, `Percent` und `LocalDate`. Das ist die
-  Form aus #4: Punkt statt Komma, ohne Währung, `19%`, ISO-Datum wie in der
-  YAML. Die „gemeinsame Formatierung im Kern“, die #282 als Richtung
-  vorschlug, gab es also schon.
-- **Auseinander liefen die getippten Zahlen im Satz**, in sieben Meldungen:
-  „0,00 €“ in `GESAMTBETRAG_NULL`, aber „0.00“ in
-  `ABSCHLAGSRECHNUNG_OHNE_BETRAG`, und „von 0 %, angegeben ist 7%“ in einem
-  einzigen Satz. Kein Formatierer hätte das verhindert, denn diese Zahlen
-  sind keine eingesetzten Werte. Ebenso wenig hätte es eine Tabelle mit den
-  Wortlauten verhindert: Es ist kein Preis von ADR-0004.
-- **Benennung:** Nichts Sachliches, zwei Kleinigkeiten. Ein verschachtelter
-  Schlüssel stand in zwei Schreibweisen da, und `ABSCHLAG_DOPPELT` nannte
-  seinen Gegenstand zweimal.
-
-Behoben in #282. Das Netz steht in `CheckHelpers`: Eine Meldung in der Form
-von `GermanFormat` lässt den Regeltest scheitern, der sie auslöst. Es gilt
-also nur für Meldungen, die ein Test auslöst. Heute steht jede Kennung aus
-`rules` in einem Regeltest; die drei aus `prepayments` gehen nicht durch
-`CheckHelpers`, tragen aber auch keine Zahlen.
-
-**Woran sich die Frage neu stellen ließe:** an einem Leser der Befunde, der
-keinen Satz will – ein Export, der Kennung und Werte braucht. Dann ist der
-große Schritt dran, den #282 als verworfen führt: Kennung plus Parameter,
-der Wortlaut an einer Stelle. Solange die Befunde nur auf stderr landen,
-bleibt die Meldung neben ihrer Bedingung.
