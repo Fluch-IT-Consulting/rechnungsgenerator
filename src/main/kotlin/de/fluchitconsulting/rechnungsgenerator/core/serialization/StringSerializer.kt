@@ -8,22 +8,7 @@ import kotlinx.serialization.descriptors.SerialDescriptor
 import kotlinx.serialization.encoding.Decoder
 import kotlinx.serialization.encoding.Encoder
 
-/**
- * Das Gerüst für einen Werttyp, der in der YAML als Zeichenkette steht.
- *
- * Interessant an einem Serializer sind nur die beiden Umwandlungen – [encode]
- * und [decode] –, alles andere ist Form.
- *
- * Benutzt wird er per Delegation, damit der Serializer ein benanntes Objekt
- * bleibt und `@Serializable(with = …)` weiter darauf zeigen kann:
- *
- * ```
- * object MoneySerializer : KSerializer<Money> by stringSerializer("Money", …)
- * ```
- *
- * [name] geht in den Deskriptor und muss je Typ verschieden sein – kotlinx.
- * serialization unterscheidet die Typen daran.
- */
+/** Per Delegation, damit der Serializer ein benanntes Objekt bleibt. [name] muss je Typ verschieden sein. */
 fun <T> stringSerializer(
     name: String,
     encode: (T) -> String,
@@ -38,18 +23,8 @@ fun <T> stringSerializer(
     }
 
 /**
- * Baut einen Zahlwert aus Text und ersetzt die technische Ausnahme durch eine,
- * die den Wert nennt.
- *
- * Der BigDecimal-Konstruktor wirft ein nacktes "Character n is neither a
- * decimal digit number, decimal point, nor ..." – ohne den Wert und ohne Bezug
- * zur Rechnung. Zeile und Spalte ergänzt kaml NICHT (nachgemessen); dafür
- * müsste der Decoder auf YamlInput geprüft werden, was den Serializer an ein
- * konkretes Format bände.
- *
- * Für die Kennungen (IBAN, BIC, USt-IdNr.) gibt es in `Identifiers.kt` ein
- * Gegenstück, das die Meldung der Ausnahme **übernimmt** statt sie zu ersetzen:
- * Dort steht schon etwas Brauchbares drin ("Prüfsumme falsch"), hier nicht.
+ * Ersetzt die Meldung des BigDecimal-Konstruktors, die den Wert nicht nennt; Zeile und Spalte ergänzt kaml nicht
+ * (nachgemessen). `Identifiers.kt` übernimmt die Meldung dagegen, weil dort schon Brauchbares steht.
  */
 internal inline fun <T> parsedNumber(raw: String, was: String, build: (String) -> T): T =
     try {

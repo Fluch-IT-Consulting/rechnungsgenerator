@@ -1,31 +1,13 @@
 package de.fluchitconsulting.rechnungsgenerator.core.text
 
 /**
- * Ein Wortlaut mit Platzhaltern `<<NAME>>`, zerlegt in festen Text und
- * Variablen vom Typ [V].
- *
- * Nicht zu verwechseln mit der Vorlage eines Designs in `generate.render`:
- * Die ist LaTeX und wird vom Renderer gefüllt. Ein `TextTemplate` kennt kein
- * Ausgabeformat und kein Vokabular – welche Variablen es gibt, bringt [V] mit,
- * wie Text und Werte aussehen, entscheidet der Aufrufer von [map].
- *
- * Zerlegt wird beim Bau und nicht erst beim Einsetzen: Ein unbekannter Name
- * wirft dann dort, wo der Wortlaut steht, und wer ihn einsetzt, bekommt nur
- * noch Werte von [V] zu sehen.
+ * Nicht die Vorlage eines Designs: Ein TextTemplate kennt weder Format noch Vokabular (ADR-0019). Zerlegt wird beim
+ * Bau, damit ein unbekannter Name dort wirft, wo der Wortlaut steht.
  */
 class TextTemplate<out V> private constructor(
     private val parts: List<Part<V>>,
 ) {
-    /**
-     * Überführt jeden Teil mit der passenden Funktion – den festen Text mit
-     * [text], jede Variable mit [variable] – und liefert die Teile in ihrer
-     * Reihenfolge.
-     *
-     * Zwei Funktionen und nicht eine für die Variablen allein, weil ein Format
-     * auch den festen Text betrifft: LaTeX maskiert ihn, ein String lässt ihn,
-     * wie er ist. Liefe alles durch eine einzige Zeichenkette, wären Text und
-     * eingesetzte Werte schon vermischt, bevor das Format sie trennen könnte.
-     */
+    /** Zwei Funktionen, weil ein Format auch den festen Text betrifft: LaTeX maskiert ihn. */
     fun <R> map(
         text: (String) -> R,
         variable: (V) -> R,
@@ -47,10 +29,7 @@ class TextTemplate<out V> private constructor(
         // Nur Großbuchstaben und Unterstrich: `<<name>>` bleibt Text.
         private val PLACEHOLDER = Regex("<<([A-Z_]+)>>")
 
-        /**
-         * Zerlegt [text] und schlägt jeden Namen unter den Einträgen von [V]
-         * nach. Ein Name, den [V] nicht kennt, wirft.
-         */
+        /** Ein Name, den [V] nicht kennt, wirft. */
         inline fun <reified V : Enum<V>> parse(text: String): TextTemplate<V> =
             parse(text, enumValues<V>().associateBy { it.name })
 
