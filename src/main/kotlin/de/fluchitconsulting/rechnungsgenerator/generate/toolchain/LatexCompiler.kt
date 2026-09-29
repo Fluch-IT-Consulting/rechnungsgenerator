@@ -13,35 +13,20 @@ import kotlin.io.path.readText
 import kotlin.io.path.writeBytes
 import kotlin.io.path.writeText
 
-/**
- * Setzt eine .tex-Datei mit LuaLaTeX zu einem PDF/A.
- *
- * Die .xmpdata-Datei muss neben der .tex liegen und denselben Namen tragen –
- * daraus baut das Paket pdfx die XMP-Metadaten des PDF/A-Dokuments.
- *
- * Der [runner] kommt herein, statt hier gegriffen zu werden: Dadurch lässt sich
- * das, was zwischen Prozessaufruf und PDF passiert – Exitcode deuten, Protokoll
- * lesen, Läufe zählen –, mit einem aufgezeichneten Lauf prüfen, ohne dass
- * LuaLaTeX vorhanden sein muss.
- */
+/** Setzt eine .tex mit LuaLaTeX zu einem PDF/A. Die .xmpdata trägt denselben Namen, daraus baut pdfx das XMP. */
 class LatexCompiler(private val runner: ProcessRunner) {
     fun compile(
         workingDir: Path,
         jobName: String,
         sources: PdfSources,
     ): Path {
-        // Ein Name mit Verzeichnis landete außerhalb des Arbeitsverzeichnisses,
-        // einer wie die .tex überschriebe sie. "." und ".." sind für Path
-        // schlichte Namen, meinen aber Verzeichnisse; ein leerer Name das
-        // Arbeitsverzeichnis selbst.
+        // "." und ".." sind für Path schlichte Namen, meinen aber Verzeichnisse.
         sources.files.keys.forEach { name ->
             require(name.isNotBlank() && name != "." && name != "..") { "Kein Dateiname: '$name'" }
             require(name == Path.of(name).fileName.toString()) { "Kein schlichter Dateiname: $name" }
             require(name != "$jobName.tex" && name != "$jobName.xmpdata") { "$name ist schon vergeben" }
         }
-        // Das Arbeitsverzeichnis ist ein Temp-Verzeichnis; scheitert das
-        // Schreiben dort, kommt der Satz nicht zustande – ein Fehler des
-        // Werkzeugs und nicht einer beim Schreiben der Rechnung (#300).
+        // Scheitert das Schreiben im Temp-Verzeichnis, ist das ein Fehler des Werkzeugs, nicht der Rechnung (#300).
         try {
             workingDir.resolve("$jobName.tex").writeText(sources.tex)
             workingDir.resolve("$jobName.xmpdata").writeText(sources.xmpMetadata)
@@ -82,24 +67,9 @@ class LatexCompiler(private val runner: ProcessRunner) {
     }
 
     /**
-     * Die Trailer-ID des PDF, gebildet aus den Quellen: gleicher Inhalt, gleiche
-     * ID, geänderter Inhalt, andere ID.
-     *
-     * Von sich aus leitet LuaTeX sie auch aus dem Pfad ab, und jeder Lauf setzt
-     * in einem eigenen Temp-Verzeichnis – dieselbe Rechnung ergäbe nie dasselbe
-     * PDF. Das Datum ist der andere Teil davon: `SOURCE_DATE_EPOCH` ersetzt die
-     * Uhr, `TZ=UTC` legt fest, wie LuaTeX es schreibt. Gesetzt wird beides hier
-     * und nicht in der Vorlage, denn es ist eine Frage des Werkzeugs, nicht des
-     * Satzes.
-     *
-     * Die Null zwischen den beiden Quellen trennt sie: Ohne sie ergäben "ab" +
-     * "c" und "a" + "bc" dieselbe Prüfsumme.
-     *
-     * Die weiteren Dateien gehen mit Namen und Inhalt ein (#198): Ein Logo, das
-     * die .tex nur per `\input` nennt, änderte sonst das PDF, aber nicht die ID.
-     * Sortiert nach Namen, weil eine Map keine Reihenfolge verspricht. Die Länge
-     * vor jedem Inhalt trennt wie die Null – nur taugt die Null bei Bytes nicht,
-     * weil sie selbst darin vorkommen kann.
+     * Aus den Quellen statt, wie LuaTeX von sich aus, aus dem Pfad des Temp-Verzeichnisses. Die Null trennt die
+     * Quellen („ab“ + „c“ ist nicht „a“ + „bc“), bei Bytes die Länge, weil dort die Null selbst vorkommt. Die
+     * Dateien gehen mit ein, sonst änderte ein Logo das PDF, aber nicht die ID (#198).
      */
     private fun trailerId(sources: PdfSources): String {
         val md5 = MessageDigest.getInstance("MD5")
@@ -118,16 +88,8 @@ class LatexCompiler(private val runner: ProcessRunner) {
     }
 
     /**
-     * Das Protokoll des Laufs, oder null, wenn LuaLaTeX keines geschrieben hat.
-     *
-     * Fehlt es, bricht der Lauf nicht ab: Dann ist LuaLaTeX abgestürzt, bevor
-     * es eines anlegen konnte, und es bleibt die Prozessausgabe. Liegt es da und
-     * lässt sich nicht lesen, ist das dagegen ein Fehler des Werkzeugs wie beim
-     * Schreiben der Quellen – ohne Protokoll ist weder ein Fehlschlag zu deuten
-     * noch zu entscheiden, ob ein weiterer Lauf nötig ist (#336).
-     *
-     * Eine FileSystemException nennt in message nur den Pfad, was sie darüber
-     * hinaus weiß, steht in reason – der Pfad stünde sonst zweimal da (#327).
+     * `null`, wenn LuaLaTeX abstürzte, bevor es eines anlegte; dann bleibt die Prozessausgabe. Unlesbar ist es ein
+     * Fehler des Werkzeugs (#336). Eine FileSystemException nennt in message nur den Pfad, den Grund in reason.
      */
     private fun readLog(file: Path): String? {
         if (!file.exists()) return null
@@ -140,36 +102,15 @@ class LatexCompiler(private val runner: ProcessRunner) {
     }
 
     /**
-     * Verlangt LaTeX einen weiteren Lauf?
-     *
-     * Es sagt das in Worten und nicht über einen Rückgabewert, und nicht jedes
-     * Paket in denselben: Der Kern und lastpage schreiben "Rerun to get …",
-     * longtable schreibt "Table widths have changed. Rerun LaTeX." Gefragt wird
-     * nach jeder dieser Wendungen. Fehlte eine, fiele es nicht auf, solange ein
-     * anderes Paket im selben Lauf ebenfalls einen weiteren verlangt – und
-     * sobald es das nicht mehr tut, entstünde ein PDF aus dem ersten Lauf (#321).
-     *
-     * Bei den Rechnungen dieses Projekts sind es zwei Läufe (nachgemessen mit
-     * TeX Live 2026): longtable kennt die Spaltenbreiten der Positionen erst aus
-     * dem ersten, und nach ihm stehen die Spalten sichtbar anders als nach dem
-     * zweiten; lastpage kennt die Zahl der Seiten für "Seite n von N" ebenso
-     * erst danach. Gefragt wird trotzdem, statt zwei Läufe fest anzunehmen:
-     * Kommt ein Paket hinzu, das einen dritten braucht, bekommt es ihn, ohne
-     * dass jemand daran denken muss.
+     * Nicht jedes Paket sagt es gleich: lastpage „Rerun to get“, longtable „Rerun LaTeX“. Fehlte eine Wendung,
+     * fiele das erst auf, wenn kein anderes Paket den Lauf mehr verlangt – dann entstünde das PDF aus dem ersten (#321).
      */
     private fun needsAnotherPass(log: String): Boolean =
         log.lineSequence().any { it.contains("Rerun to get") || it.contains("Please rerun") || it.contains("Rerun LaTeX") }
 
     /**
-     * Die Meldung, wenn eine Seite mehr trägt, als das Blatt fasst – oder null.
-     *
-     * LuaLaTeX setzt eine solche Seite trotzdem, mit Exitcode 0, und schneidet
-     * ab, was unten übersteht. Das PDF ist dann gültiges PDF/A, und veraPDF
-     * hat nichts einzuwenden; nur das Protokoll sagt `Overfull \vbox`. Deshalb
-     * entsteht keines (ADR-0020).
-     *
-     * `Overfull \hbox` dagegen bleibt stehen: Eine zu breite Zeile ragt in den
-     * Rand, aber sie steht auf dem Blatt.
+     * Bei `Overfull \vbox` schneidet LuaLaTeX mit Exitcode 0 ab, was übersteht – ein gültiges PDF/A ohne den Inhalt
+     * (ADR-0020). `Overfull \hbox` ragt nur in den Rand und bleibt erlaubt.
      */
     private fun overflowReport(jobName: String, log: String): String? {
         val lines = log.lines().filter { it.startsWith("Overfull \\vbox") }.distinct()
@@ -178,20 +119,7 @@ class LatexCompiler(private val runner: ProcessRunner) {
             "Was übersteht, fehlte im PDF:\n\n${lines.joinToString("\n")}"
     }
 
-    /**
-     * Zieht die Fehlerzeilen aus dem Protokoll.
-     *
-     * LuaLaTeX schreibt gut tausend Zeilen Paketgeplauder; die Meldungen, auf
-     * die es ankommt, beginnen mit "!". Die zwei Folgezeilen kommen mit, weil
-     * dort meist die Fundstelle steht.
-     *
-     * `distinct()` fängt den Fall ab, dass zwei Fehler dicht beieinanderliegen:
-     * Dann überlappen ihre Dreierblöcke, und ohne das stünde dieselbe Zeile
-     * zweimal im Bericht.
-     *
-     * Findet sich kein "!", bleibt der Schluss des Protokolls übrig – besser
-     * als eine leere Meldung, denn irgendetwas ist ja schiefgegangen.
-     */
+    /** Die Zeilen ab „!“ samt zwei Folgezeilen mit der Fundstelle; ohne „!“ der Schluss des Protokolls. */
     private fun errorReport(jobName: String, log: String): String {
         val lines = log.lines()
         val relevant =
@@ -207,12 +135,7 @@ class LatexCompiler(private val runner: ProcessRunner) {
     private companion object {
         private const val PROGRAM = "lualatex"
 
-        // Die Obergrenze, nicht die Anzahl: Gelaufen wird, solange LaTeX einen
-        // weiteren Lauf verlangt – siehe needsAnotherPass, dort auch, warum es
-        // bei den Rechnungen dieses Projekts zwei sind.
-        //
-        // Drei als Grenze, weil ein Dokument, das nach dreien immer noch einen
-        // weiteren verlangt, nicht konvergiert – ein vierter änderte daran nichts.
+        // Obergrenze, nicht Anzahl: Wer nach drei Läufen noch einen will, konvergiert nicht.
         private const val MAX_PASSES = 3
     }
 
