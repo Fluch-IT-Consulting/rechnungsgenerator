@@ -66,19 +66,28 @@ object CiiWriter {
     }
 
     /**
-     * BT-80, auf jeder Art das Land des Kunden: BR-FX-DE-04 verlangt es ohne Lieferdatum, das es bei einem Zeitraum
-     * nicht gibt, und bei K BR-IC-12. Der Kunde, weil dort der Ort der Leistung liegt (§3a Abs. 2 UStG). Auch auf der
-     * Abschlagsrechnung: Ohne Land bliebe der Block leer (PEPPOL-EN16931-R008).
+     * BT-80 ist der Leistungsort nach BR-IC-12, nicht der Ort des Empfängers (#472): bei S, Z und E das Inland, sonst
+     * der Kunde; K geht vor. BR-FX-DE-04 verlangt das Land ohne Lieferdatum, das es bei einem Zeitraum nicht gibt. Auch
+     * auf der Abschlagsrechnung: Ohne Land bliebe der Block leer (PEPPOL-EN16931-R008).
      */
     private fun XmlElements.delivery(calculated: CalculatedInvoice) {
+        val categories = calculated.taxCategories
+        val domestic = TaxCategory.INTRA_COMMUNITY !in categories && categories.any { it.isSuppliedDomestically() }
+        val address = if (domestic) calculated.config.address else calculated.invoice.customer.address
         element("ram:ApplicableHeaderTradeDelivery") {
             element("ram:ShipToTradeParty") {
                 element("ram:PostalTradeAddress") {
-                    element("ram:CountryID", calculated.invoice.customer.address.countryCode.value)
+                    element("ram:CountryID", address.countryCode.value)
                 }
             }
         }
     }
+
+    private fun TaxCategory.isSuppliedDomestically(): Boolean =
+        when (this) {
+            TaxCategory.STANDARD, TaxCategory.ZERO_RATED, TaxCategory.EXEMPT -> true
+            TaxCategory.REVERSE_CHARGE, TaxCategory.INTRA_COMMUNITY, TaxCategory.EXPORT, TaxCategory.OUT_OF_SCOPE -> false
+        }
 
     private fun XmlElements.lineItem(
         index: Int,

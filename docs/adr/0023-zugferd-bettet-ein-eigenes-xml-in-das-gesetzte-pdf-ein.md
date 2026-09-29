@@ -182,7 +182,8 @@ einmal, etwa zu XRechnung, ist die Frage neu zu stellen.
 Kunden.** BR-IC-12 verlangt es (BT-80). Ein eigenes Feld für eine abweichende
 Lieferanschrift, etwa beim Reihengeschäft, kommt erst mit einem Fall: Bei
 einer Beratungsrechnung kommt K praktisch nicht vor. Seit dem Nachtrag vom
-29.09.2026 zum Lieferland steht es auf jeder Art, nicht nur bei K.
+29.09.2026 zum Lieferland steht eines auf jeder Art; bei K bleibt es das Land
+des Kunden, auch neben S.
 
 **Der Befreiungsgrund steht zweimal**: in der Aufschlüsselung und an jeder
 Position, beide Male der Grund der Gruppe. EXTENDED verlangt beide gleich
@@ -385,19 +386,24 @@ auslöst.
 
 ## Nachtrag vom 29.09.2026: Das Lieferland steht auf jeder Rechnung
 
-Seit #452 schreibt der Writer das Lieferland (BT-80) auf jeder Art, und es
-ist immer das Land des Kunden. ZUGFeRD 2.5.2 verlangt es mit BR-FX-DE-04:
-Eine deutsche Rechnung nennt das Leistungsdatum als Lieferdatum (BT-72),
-Rechnungszeitraum (BG-14) oder Zeitraum je Position (BG-26), und fehlt BT-72,
-dazu das Lieferland. Unser Zeitraum steht in BG-14; ein Lieferdatum gibt es
-nicht, weil bei einem Leistungszeitraum jedes Datum erfunden wäre.
+Seit #452 schreibt der Writer das Lieferland (BT-80) auf jeder Art. ZUGFeRD
+2.5.2 verlangt es mit BR-FX-DE-04: Eine deutsche Rechnung nennt das
+Leistungsdatum als Lieferdatum (BT-72), Rechnungszeitraum (BG-14) oder
+Zeitraum je Position (BG-26), und fehlt BT-72, dazu das Lieferland. Unser
+Zeitraum steht in BG-14; ein Lieferdatum gibt es nicht, weil bei einem
+Leistungszeitraum jedes Datum erfunden wäre.
 
-Das Land des Kunden, weil der Ort einer Dienstleistung an einen Unternehmer
-nach §3a Abs. 2 UStG beim Empfänger liegt. Eine Leistung mit anderem Ort,
-etwa nach §3a Abs. 3 UStG, kommt erst mit einem Fall, wie die abweichende
-Lieferanschrift bei K. Auch die Abschlagsrechnung trägt das Land, obwohl
-BR-FX-DE-04 sie ausnimmt: So kennt der Writer keinen Zweig nach der Art, und
-ohne Land bliebe `ApplicableHeaderTradeDelivery` leer.
+Das Lieferland ist seit #472 der Leistungsort. So liest die Norm BT-80 in
+ihrer einzigen Steuerregel (BR-IC-12), und so passt das Land zur Steuer im
+selben XML. Den Ort sagt die Steuerkategorie: Enthält die Rechnung S, Z oder
+E, liegt er im Inland, und BT-80 ist das Land des Verkäufers; sonst ist es das
+Land des Kunden. K geht vor, weil BR-IC-12 dort das Land des Kunden verlangt.
+Die Beratung für eine Privatperson in Wien (`auslandsrechnung.yaml`) trägt
+damit `DE`.
+
+Auch die Abschlagsrechnung trägt das Land, obwohl BR-FX-DE-04 sie ausnimmt:
+So kennt der Writer keinen Zweig nach der Art, und ohne Land bliebe
+`ApplicableHeaderTradeDelivery` leer.
 
 Damit entfällt `PEPPOL-EN16931-R008`, die Warnung zum leeren Block, und die
 Tests erlauben keine Warnung mehr. Mustang prüft BR-FX-DE-04 nicht: Die
@@ -405,6 +411,21 @@ Regel steht in der Tabelle der hybriden Geschäftsregeln der Spezifikation,
 nicht im Schematron von EXTENDED. Dass das Land dasteht, halten deshalb die
 Vergleichsdateien je Art fest und das Verbot jeder Warnung, das einen leeren
 Block nicht mehr durchlässt.
+
+Verworfen:
+
+- **Das Land des Kunden auf jeder Rechnung**, begründet mit §3a Abs. 2 UStG.
+  Der Absatz gilt nur für Leistungen an einen Unternehmer; bei der Schulung in
+  Nürnberg für eine Privatperson aus den USA stünde `US` neben deutscher
+  Umsatzsteuer.
+- **Der Ort, an dem der Kunde die Leistung empfängt.** Bei der Beratung nach
+  Wien stünde `AT` neben deutscher Umsatzsteuer.
+- **Eine Angabe in der Rechnungsdatei**, nur wo der Ort vom Land des Kunden
+  abweicht. Die Kategorie trägt die Entscheidung über den Ort schon, und bei
+  O, G, AE und K fallen Kunde und Leistungsort ohnehin zusammen.
+- **Ein Abbruch mit eigener Kennung**, wie ihn dieses ADR für Angaben vorsieht,
+  die der Writer nicht richtig schreiben kann. Er nähme
+  `umsatzsteuer-in-dollar.yaml` die XML-Prüfung aus #418.
 
 ## Nachtrag vom 29.09.2026: Innerhalb Deutschlands gilt das XML
 

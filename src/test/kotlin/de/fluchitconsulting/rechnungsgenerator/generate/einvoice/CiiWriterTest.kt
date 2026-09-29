@@ -8,6 +8,7 @@ import de.fluchitconsulting.rechnungsgenerator.core.calculation.CalculatedInvoic
 import de.fluchitconsulting.rechnungsgenerator.core.model.CancelledInvoice
 import de.fluchitconsulting.rechnungsgenerator.core.model.CheckMethod
 import de.fluchitconsulting.rechnungsgenerator.core.model.InvoiceType
+import de.fluchitconsulting.rechnungsgenerator.core.model.LineItem
 import de.fluchitconsulting.rechnungsgenerator.core.model.ServicePeriod
 import de.fluchitconsulting.rechnungsgenerator.core.model.SkontoTier
 import de.fluchitconsulting.rechnungsgenerator.core.model.TaxCategory
@@ -278,6 +279,20 @@ class CiiWriterTest : FunSpec({
             xml shouldContain
                 """
                 |    <ram:ApplicableHeaderTradeDelivery>
+                |      <ram:ShipToTradeParty>
+                |        <ram:PostalTradeAddress>
+                |          <ram:CountryID>AT</ram:CountryID>
+                """.trimMargin()
+            xml.shouldBeValidExtended()
+        }
+
+        // Neben S läge der Leistungsort sonst im Inland (#472).
+        test("K geht vor und nennt auch neben S das Land des Kunden") {
+            val xml = invoiceIn(TaxCategory.INTRA_COMMUNITY, "AT", alongside = listOf(testItem())).xml()
+
+            xml shouldContain "<ram:CategoryCode>S</ram:CategoryCode>"
+            xml shouldContain
+                """
                 |      <ram:ShipToTradeParty>
                 |        <ram:PostalTradeAddress>
                 |          <ram:CountryID>AT</ram:CountryID>
@@ -571,10 +586,11 @@ private fun invoiceIn(
     country: String = "DE",
     reason: String? = null,
     language: Language = Language.GERMAN,
+    alongside: List<LineItem> = emptyList(),
 ): AcceptedInvoice {
     val invoice =
         testInvoice(
-            items = listOf(testItem(vatRate = "0", taxCategory = category, taxExemptionReason = reason)),
+            items = listOf(testItem(vatRate = "0", taxCategory = category, taxExemptionReason = reason)) + alongside,
             language = language,
         )
     val customer =
