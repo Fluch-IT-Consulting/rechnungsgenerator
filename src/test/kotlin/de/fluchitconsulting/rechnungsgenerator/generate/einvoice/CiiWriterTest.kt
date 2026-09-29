@@ -514,7 +514,6 @@ class CiiWriterTest : FunSpec({
                 |        <ram:IncludedTradeTax>
                 |          <ram:CalculatedAmount>760.00</ram:CalculatedAmount>
                 |          <ram:TypeCode>VAT</ram:TypeCode>
-                |          <ram:BasisAmount>4000.00</ram:BasisAmount>
                 |          <ram:CategoryCode>S</ram:CategoryCode>
                 |          <ram:RateApplicablePercent>19</ram:RateApplicablePercent>
                 |        </ram:IncludedTradeTax>

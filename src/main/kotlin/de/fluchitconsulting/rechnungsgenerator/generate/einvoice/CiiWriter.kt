@@ -330,10 +330,12 @@ object CiiWriter {
     }
 
     /**
-     * Ein abgesetzter Abschlag (ADR-0002), Feld für Feld wie im Block
-     * `abschlaege` der Schlussrechnung (ADR-0001): gezahlter Betrag, Tag der
-     * Vereinnahmung, je Steueranteil Kategorie, Satz, Netto und Steuer, und
-     * die Abschlagsrechnung, auf die er zurückgeht.
+     * Ein abgesetzter Abschlag (ADR-0002), wie im Block `abschlaege` der
+     * Schlussrechnung (ADR-0001): gezahlter Betrag, Tag der Vereinnahmung, je
+     * Steueranteil Kategorie, Satz und Steuer, und die Abschlagsrechnung, auf
+     * die er zurückgeht. Das Netto des Anteils fehlt, weil EXTENDED in BG-X-46
+     * kein Feld dafür hat; das Schematron meldet ein `BasisAmount` dort als
+     * nicht verwendet (#453).
      */
     private fun XmlElements.advancePayment(deduction: Deduction) {
         val prepayment = deduction.deducted.prepayment
@@ -344,7 +346,6 @@ object CiiWriter {
                 element("ram:IncludedTradeTax") {
                     element("ram:CalculatedAmount", amount(share.vat))
                     element("ram:TypeCode", "VAT")
-                    element("ram:BasisAmount", amount(share.net))
                     element("ram:CategoryCode", share.taxCategory.code)
                     element("ram:RateApplicablePercent", percent(share.vatRate))
                 }
