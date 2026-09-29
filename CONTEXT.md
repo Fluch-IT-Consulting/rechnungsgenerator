@@ -71,7 +71,10 @@ einem PDF/A-3; maßgeblich ist das XML. Keine Rechnungsart, sondern eine Form �
 jede Art kann E-Rechnung sein. Gültig ist sie, wenn das PDF/A die
 PDF/A-Prüfung besteht und das XML die XML-Prüfung, und wenn das XML sich als
 EN 16931 ausgibt (BT-24): BASIC-WL besteht beide Prüfungen und ist trotzdem
-keine.
+keine. Sitzen Verkäufer und Käufer beide in Deutschland, genügt ein PDF/A-3,
+als das sich die Datei ausgibt, auch wenn es die PDF/A-Prüfung nicht besteht
+(BR-FX-DE-03): Maßgeblich ist das XML, und der Empfänger kann eine berichtigte
+Fassung verlangen.
 _Vermeiden_: ZUGFeRD-Rechnung, Hybridrechnung, PDF-Rechnung, XRechnung (das
 ist XML ohne Blatt)
 

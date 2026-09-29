@@ -406,3 +406,51 @@ Regel steht in der Tabelle der hybriden Geschäftsregeln der Spezifikation,
 nicht im Schematron von EXTENDED. Dass das Land dasteht, halten deshalb die
 Vergleichsdateien je Art fest und das Verbot jeder Warnung, das einen leeren
 Block nicht mehr durchlässt.
+
+## Nachtrag vom 29.09.2026: Innerhalb Deutschlands gilt das XML
+
+Seit #450 nimmt `xml` eine E-Rechnung an, deren PDF/A veraPDF beanstandet,
+wenn Verkäufer (BT-40) und Käufer (BT-55) beide in Deutschland sitzen. Die
+Verstöße stehen dann als Hinweis auf stderr, mit einem Satz davor, der die
+Regel nennt, das XML kommt auf stdout, und der Exitcode ist 0. Grundlage ist
+BR-FX-DE-03 aus der Tabelle der hybriden Geschäftsregeln, gelesen in
+ZUGFeRD 2.3.2 und unverändert in 2.5.2 (Factur-X 1.09.2): Bei einer solchen
+Rechnung ist seit 1.1.2025 das eingebettete XML die Rechnung. Ist es gültig
+und lässt es sich auslesen, liegt eine gültige E-Rechnung vor, ein Fehler im
+PDF/A ist eine Warnung, und der Empfänger kann eine berichtigte Fassung
+verlangen. Strenger als die Norm, auf die es sich beruft, soll das Kommando
+nicht urteilen.
+
+**Eng ausgelegt.** Der Wortlaut der Regel nennt Fehler gegen PDF/A
+allgemein, ihre Kommentarspalte nur das XMP-Erweiterungsschema. Die
+Nachsicht gilt deshalb nur, wenn die Datei sich als PDF/A-3a, -3b oder -3u
+ausgibt und veraPDF gegen genau dieses Profil geprüft hat. Ein PDF/A-1, ein
+PDF ohne `pdfaid` und ein PDF/A-3 ohne bekannte Stufe brechen weiter ab, wie
+im Nachtrag vom 26.09.2026: Dort gibt es kein Profil, gegen das geprüft
+worden wäre, und der Hinweis hätte nichts zu berichten als „nicht geprüft“.
+Ebenso bleibt es beim Abbruch, sobald es einen anderen Grund gibt – kein
+oder mehr als ein Anhang, eine Kennung außerhalb der EN 16931, ein Fehler im
+XML –, und dann steht der PDF/A-Verstoß als Grund neben den übrigen.
+
+**Deutschland und nicht Inland.** Die Regel meint wörtlich Deutschland. Eine
+Rechnung innerhalb Frankreichs ist nach dem Glossar eine Inlandsrechnung,
+BR-FX-DE-03 gilt für sie aber nicht. Code und Meldungen sagen deshalb
+„innerhalb Deutschlands“.
+
+**Die Länder liest `xml` selbst**, in `PartyCountries`, wie die Kennung aus
+BT-24 in `SpecificationIdentifier`: aus der Anschrift direkt an der Partei im
+Kopf der Vereinbarung, ohne Mustangs Modell. Fehlt ein Land, gilt die
+Nachsicht nicht; die XML-Prüfung lehnt es ohnehin ab (BR-09, BR-11). Ein
+gemeinsamer Leser für den Kopf des XML kommt erst mit einem dritten Feld.
+
+`erzeuge` bleibt, wie es ist: Was der Generator selbst setzt, muss das PDF/A
+bestehen, auch innerhalb Deutschlands.
+
+Verworfen:
+
+- **Die Nachsicht für jeden Fehler im PDF/A**, auch für ein PDF/A-1 oder ein
+  PDF, das sich gar nicht als PDF/A ausgibt. Der Wortlaut ließe es zu, die
+  Kommentarspalte der Regel nicht, und eine Datei, die sich nicht einmal als
+  PDF/A-3 ausgibt, ist keine E-Rechnung, die nur einen Formfehler hat.
+- **Das Inland des Verkäufers statt Deutschland.** Das Glossar trennt beides
+  mit Absicht, und die Regel gehört zur deutschen Fassung der Spezifikation.

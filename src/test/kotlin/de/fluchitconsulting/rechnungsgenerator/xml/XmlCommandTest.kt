@@ -55,6 +55,17 @@ class XmlCommandTest : FunSpec({
                 "<ram:ApplicableHeaderTradeDelivery/>",
             ).toByteArray()
 
+    // Beide Parteien in Deutschland, und trotzdem ungültig: BR-07.
+    val withoutBuyerName = xml.decodeToString().replaceFirst("<ram:Name>Beispiel Software GmbH</ram:Name>", "").toByteArray()
+
+    fun withCountry(
+        party: String,
+        country: String,
+    ) = xml
+        .decodeToString()
+        .replaceFirst(Regex("(?s)(<ram:$party>.*?<ram:CountryID>)DE"), "$1$country")
+        .toByteArray()
+
     fun einvoice(
         name: String,
         xml: ByteArray,
@@ -100,7 +111,9 @@ class XmlCommandTest : FunSpec({
 
     // Teil 3 stimmt, die Stufe nicht: Die Meldung nennt die Stufe und
     // widerspricht sich nicht mit "gibt sich als PDF/A-3 aus … ist ein
-    // PDF/A-3" (#386).
+    // PDF/A-3" (#386). Das XML geht von Würzburg nach Nürnberg; die
+    // Nachsicht nach BR-FX-DE-03 greift trotzdem nicht, weil es kein Profil
+    // gibt, gegen das veraPDF prüfen könnte.
     test("ein PDF/A-3 ohne Konformitätsstufe nennt die fehlende Stufe") {
         val pdf = writePdf(dir.resolve("ohne-stufe.pdf"), mapOf("factur-x.xml" to xml), xmpClaiming(3, null))
 
@@ -123,24 +136,47 @@ class XmlCommandTest : FunSpec({
         result.err shouldContain "Eine E-Rechnung nach ZUGFeRD ist ein PDF/A-3a, -3b oder -3u."
     }
 
-    test("ein PDF, das sich als PDF/A-3u ausgibt, es aber nicht ist, fällt beim PDF/A durch") {
-        val pdf = writePdf(dir.resolve("kein-pdfa.pdf"), mapOf("factur-x.xml" to xml), xmpClaiming(3, "U"))
+    // Die E-Rechnung des Generators geht von Würzburg nach Nürnberg, und
+    // dann gilt das XML: Fehler im PDF/A sind ein Hinweis (BR-FX-DE-03).
+    test("innerhalb Deutschlands ist ein PDF, das sich als PDF/A-3u ausgibt, es aber nicht ist, ein Hinweis") {
+        val pdf = writePdf(dir.resolve("kein-pdfa-inland.pdf"), mapOf("factur-x.xml" to xml), xmpClaiming(3, "U"))
+
+        val result = runProgram("xml", pdf.toString())
+
+        withClue(result.err) { result.exitCode shouldBe 0 }
+        result.out.contentEquals(xml) shouldBe true
+        result.err shouldContain "Hinweis: Das PDF/A ist nicht gültig."
+        result.err shouldContain "BR-FX-DE-03"
+        result.err shouldContain "Hinweis: PDF/A-3u verletzt:"
+        result.err shouldNotContain "keine gültige E-Rechnung"
+    }
+
+    listOf("SellerTradeParty" to "Verkäufer", "BuyerTradeParty" to "Käufer").forEach { (party, label) ->
+        test("sitzt der $label in Österreich, fällt dasselbe PDF beim PDF/A durch") {
+            val pdf = writePdf(dir.resolve("kein-pdfa-$party.pdf"), mapOf("factur-x.xml" to withCountry(party, "AT")), xmpClaiming(3, "U"))
+
+            val result = runProgram("xml", pdf.toString())
+
+            result.exitCode shouldBe 1
+            result.out.size shouldBe 0
+            result.err shouldContain "PDF/A-3u verletzt:"
+            result.err shouldNotContain "Das XML in"
+            result.err shouldNotContain "Hinweis:"
+        }
+    }
+
+    // Innerhalb Deutschlands, und trotzdem kein Hinweis: Die Nachsicht setzt
+    // ein gültiges XML voraus.
+    test("die Gründe beider Prüfer stehen auf einmal da, auch innerhalb Deutschlands") {
+        val pdf = writePdf(dir.resolve("beides.pdf"), mapOf("factur-x.xml" to withoutBuyerName), xmpClaiming(3, "B"))
 
         val result = runProgram("xml", pdf.toString())
 
         result.exitCode shouldBe 1
         result.out.size shouldBe 0
-        result.err shouldContain "PDF/A-3u verletzt:"
-        result.err shouldNotContain "Das XML in"
-    }
-
-    test("die Gründe beider Prüfer stehen auf einmal da") {
-        val pdf = writePdf(dir.resolve("beides.pdf"), mapOf("factur-x.xml" to withoutCountry), xmpClaiming(3, "B"))
-
-        val result = runProgram("xml", pdf.toString())
-
         result.err shouldContain "PDF/A-3b verletzt:"
-        result.err shouldContain "[BR-09]"
+        result.err shouldContain "[BR-07]"
+        result.err shouldNotContain "Hinweis:"
     }
 
     test("zwei XML einer E-Rechnung: Welches gilt, sagt das PDF nicht") {

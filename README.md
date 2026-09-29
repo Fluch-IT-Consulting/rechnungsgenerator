@@ -191,7 +191,10 @@ Es trägt kein XML einer E-Rechnung, gesucht unter factur-x.xml, zugferd-invoice
 ```
 
 Eine Warnung macht das XML nicht ungültig: Sie steht als Hinweis auf stderr,
-und das XML kommt trotzdem. Stammdaten braucht das Kommando nicht, LuaLaTeX
+und das XML kommt trotzdem. Ebenso ein Fehler im PDF/A, wenn Verkäufer und
+Käufer beide in Deutschland sitzen und die Datei sich als PDF/A-3 ausgibt:
+Dann gilt nach der Geschäftsregel BR-FX-DE-03 das XML, und der Empfänger kann
+eine berichtigte Fassung verlangen. Stammdaten braucht das Kommando nicht, LuaLaTeX
 auch nicht.
 
 ### Abschläge für die Schlussrechnung vorbereiten
