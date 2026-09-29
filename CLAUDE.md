@@ -624,7 +624,14 @@ PDF/A-Prüfung über veraPDF.
   `ApplicableHeaderTradeDelivery`. Leer ist es nicht bei K: Dort steht das Land
   des Kunden als Lieferland (BR-IC-12). Auch eine Warnung ohne Kennung zählt:
   So meldet Mustang eine Summe, die er anders nachrechnet. Satz und Basis
-  eines Rabatts rechnet er nicht nach, die hält der Test wörtlich fest. O
+  eines Rabatts rechnet er nicht nach, die hält der Test wörtlich fest.
+  Vom Schematron wertet Mustang nur `failed-assert` aus und übergeht den
+  `successful-report`, mit dem es ein Element meldet, das EXTENDED an dieser
+  Stelle nicht kennt – das XSD lässt es durch. Deshalb wendet der Test das
+  Schematron selbst an und duldet keinen, samt Gegentest; `erzeuge --zugferd`
+  und `xml` bleiben dafür blind, bis eine fremde Rechnung den Fall auslöst
+  (#453). Ein abgesetzter Abschlag trägt kein Netto: EXTENDED hat dafür kein
+  Feld, und genau dort meldete das Schematron es. O
   neben anderen Kategorien lehnt keine Regel ab, weil EXTENDED BR-O-11 bis
   BR-O-14 nicht prüft (Nachtrag zu ADR-0023).
 

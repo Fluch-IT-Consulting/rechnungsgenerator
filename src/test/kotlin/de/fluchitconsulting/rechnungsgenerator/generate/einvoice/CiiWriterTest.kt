@@ -1,5 +1,7 @@
 package de.fluchitconsulting.rechnungsgenerator.generate.einvoice
 
+import com.helger.schematron.svrl.SVRLHelper
+import com.helger.schematron.xslt.SchematronResourceXSLT
 import de.fluchitconsulting.rechnungsgenerator.core.accepted.AcceptedInvoice
 import de.fluchitconsulting.rechnungsgenerator.core.accepted.accepted
 import de.fluchitconsulting.rechnungsgenerator.core.calculation.CalculatedInvoice
@@ -29,8 +31,10 @@ import io.kotest.matchers.shouldBe
 import io.kotest.matchers.string.shouldContain
 import io.kotest.matchers.string.shouldNotContain
 import org.mustangproject.validator.ZUGFeRDValidator
+import java.io.StringReader
 import java.nio.file.Path
 import java.time.LocalDate
+import javax.xml.transform.stream.StreamSource
 import kotlin.io.path.readText
 
 private fun resource(name: String): String = Path.of("src/test/resources/$name").readText()
@@ -529,6 +533,28 @@ class CiiWriterTest : FunSpec({
             xml.occurrencesOf("<ram:SpecifiedAdvancePayment>") shouldBe 2
         }
 
+        // Der Gegentest zu shouldBeValidExtended: Ein Netz, das nichts meldet,
+        // sähe sonst aus wie eines, das hält. Der Fall ist ein Netto je
+        // Steueranteil, das EXTENDED hier nicht kennt und Mustang nicht meldet
+        // (#453) – ein echter und kein erfundener.
+        test("die Prüfung des Schematrons sieht ein Element, das EXTENDED an dieser Stelle nicht kennt") {
+            val site =
+                """
+                |        <ram:IncludedTradeTax>
+                |          <ram:CalculatedAmount>760.00</ram:CalculatedAmount>
+                |          <ram:TypeCode>VAT</ram:TypeCode>
+                |
+                """.trimMargin()
+            val xml = example("schlussrechnung").xml()
+            xml shouldContain site
+
+            val withNet = xml.replaceFirst(site, "$site          <ram:BasisAmount>4000.00</ram:BasisAmount>\n")
+
+            val report = schematronReports(withNet).single()
+            report shouldContain "/*:IncludedTradeTax["
+            report shouldContain "/*:BasisAmount["
+        }
+
         test("die Summen setzen die Abschläge ab, die Steuer bleibt die der Gesamtleistung") {
             val xml = example("schlussrechnung").xml()
 
@@ -617,6 +643,9 @@ private fun String.occurrencesOf(text: String): Int = split(text).size - 1
  * Gezählt wird jede Warnung und nicht nur die mit Kennung: Mustangs eigene
  * Rechenprüfung meldet eine abweichende Summe als Warnung ohne `[ID …]`, und
  * gerade sie hält die Beträge des XML an denen des Blatts.
+ *
+ * Dazu kein `successful-report` des Schematrons: Den übergeht Mustang, siehe
+ * [schematronReports].
  */
 private fun String.shouldBeValidExtended() {
     val validator = ZUGFeRDValidator()
@@ -626,6 +655,30 @@ private fun String.shouldBeValidExtended() {
         validator.wasCompletelyValid() shouldBe true
         warnings(report).filterNot { "[ID PEPPOL-EN16931-R008]" in it }.shouldBeEmpty()
     }
+    schematronReports(this).shouldBeEmpty()
+}
+
+private const val EXTENDED_SCHEMATRON = "/xslt/ZF_250/FACTUR-X_EXTENDED.xslt"
+
+private val extendedSchematron: SchematronResourceXSLT by lazy {
+    checkNotNull(CiiWriterTest::class.java.getResource(EXTENDED_SCHEMATRON)) {
+        "$EXTENDED_SCHEMATRON fehlt im Klassenpfad – liegt es in einer neuen Fassung von Mustang anderswo?"
+    }
+    SchematronResourceXSLT.fromClassPath(EXTENDED_SCHEMATRON)
+}
+
+/**
+ * Die `successful-report` des Schematrons von EXTENDED, je mit Ort und Text.
+ *
+ * Mustang wertet nur `failed-assert` aus. Ein `successful-report` meldet dort
+ * ein Element, das das Profil an dieser Stelle nicht kennt, und das XSD lässt
+ * es durch, weil die Typen der CII allgemein sind (#453). Deshalb wendet der
+ * Test das Schematron, das Mustang mitbringt, selbst an – geladen wie bei
+ * Mustang, über ph-schematron, das auch die Codeliste neben dem XSLT findet.
+ */
+private fun schematronReports(xml: String): List<String> {
+    val svrl = checkNotNull(extendedSchematron.applySchematronValidationToSVRL(StreamSource(StringReader(xml))))
+    return SVRLHelper.getAllSuccessfulReports(svrl).map { "${it.location}: ${it.text}" }
 }
 
 private fun warnings(report: String): List<String> =
