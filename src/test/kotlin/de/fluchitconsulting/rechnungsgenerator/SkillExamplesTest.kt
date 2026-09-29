@@ -10,18 +10,7 @@ import io.kotest.matchers.collections.shouldBeEmpty
 import io.kotest.matchers.shouldBe
 import java.io.File
 
-/**
- * Prüft die YAML-Beispiele im `rechnung`-Skill gegen den echten Parser.
- *
- * Doku, die nicht mehr stimmt, ist schlimmer als keine: Der Skill schreibt die
- * Rechnungsdateien, und ein Beispiel mit einem Feld, das es nicht mehr gibt,
- * führt ihn beim nächsten Mal in einen Abbruch. Der Test kostet Millisekunden
- * und wird rot, sobald sich das Format ändert, ohne dass die Beispiele
- * mitziehen.
- *
- * Der Kundenblock steht in den Beispielen als `kunde: …` – er ist dort verkürzt,
- * weil ihn der Abschnitt darüber schon zeigt, und wird hier ergänzt.
- */
+/** Der Kundenblock steht in den Beispielen verkürzt als `kunde: …` und wird hier ergänzt. */
 class SkillExamplesTest : FunSpec({
 
     val customer =
@@ -36,9 +25,6 @@ class SkillExamplesTest : FunSpec({
 
     test("die YAML-Beispiele im Skill sind gültige Rechnungsdateien") {
         val config = YamlLoader.parseSellerConfig(File("src/test/resources/stammdaten.yaml").readText())
-        // Die Schlussrechnung steht in einer eigenen Datei des Skills. In der
-        // Reihenfolge SKILL.md, dann schlussrechnung.md ergeben die Beispiele
-        // Rechnung, Abschlagsrechnung, Stornorechnung, Schlussrechnung.
         val skill =
             listOf("SKILL.md", "schlussrechnung.md")
                 .joinToString("\n") { File(".claude/skills/rechnung/$it").readText() }
@@ -51,8 +37,7 @@ class SkillExamplesTest : FunSpec({
                 .map { YamlLoader.parseInvoice(it.replace("kunde: …", customer)) }
                 .toList()
 
-        // Die Anzahl mitprüfen: Sonst wäre der Test auch dann grün, wenn das
-        // Suchmuster nichts mehr findet.
+        // Mit der Anzahl, sonst bliebe der Test grün, wenn das Suchmuster nichts findet.
         invoices.map { it.type } shouldBe
             listOf(InvoiceType.INVOICE, InvoiceType.PREPAYMENT, InvoiceType.CANCELLATION, InvoiceType.FINAL)
 
@@ -62,8 +47,6 @@ class SkillExamplesTest : FunSpec({
         totals.grossTotal shouldBe Money("23800.00")
         totals.remainingAmount shouldBe Money("19040.00")
 
-        // Und die beiden anderen wenigstens durchrechnen lassen: Auch eine
-        // gültige Datei kann eine widersprüchliche Rechnung beschreiben.
         invoices.dropLast(1).forEach { CalculatedInvoice(it, config).aborts().shouldBeEmpty() }
     }
 })

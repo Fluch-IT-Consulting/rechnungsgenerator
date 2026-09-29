@@ -14,25 +14,14 @@ import kotlin.io.path.readText
 import kotlin.io.path.writeText
 
 /**
- * Prüft `scripts/naechste-nummer.py` aus dem `rechnung`-Skill, indem es
- * wirklich läuft (#61).
- *
- * Warum ein Kotlin-Test für ein Python-Skript: Das Skript trägt seit #61 eine
- * Regel – es prüft die Nummer, die es vergeben will, gegen das
- * `rechnungsnummer-muster` der Stammdaten (ADR-0005). Eine Regel ohne Test ist
- * eine Zusage, die nur so lange gilt, wie sich jemand erinnert. Der Build
- * verlangt damit `python3` und PyYAML – dieselbe Art Voraussetzung wie
- * LuaLaTeX und veraPDF, und `offene-abschlaege.py` braucht PyYAML ohnehin.
- *
- * Die Ausgabe wird in Dateien umgeleitet statt aus Strömen gelesen, wie bei
- * jedem fremden Prozess in diesem Projekt: Wer liest, hängt mit, wenn der
- * Prozess hängt, und die Zeitgrenze käme nie zum Zug.
+ * #61; der Build verlangt damit `python3` und PyYAML. Die Ausgabe geht in
+ * Dateien, sonst hinge der Test mit einem hängenden Prozess und die Zeitgrenze griffe nie.
  */
 class NaechsteNummerSkriptTest : FunSpec({
 
     val script = File(".claude/skills/rechnung/scripts/naechste-nummer.py").absolutePath
 
-    // Die Beispiel-Stammdaten des Projekts tragen das Muster R\d{2}-\d{3}.
+    // Mit dem Muster R\d{2}-\d{3}.
     val sellerConfig = File("src/test/resources/stammdaten.yaml").readText()
 
     data class ScriptRun(val exitCode: Int, val stdout: String, val stderr: String)
@@ -63,9 +52,7 @@ class NaechsteNummerSkriptTest : FunSpec({
     }
 
     test("eine anders benannte YAML-Datei zählt über ihre Nummer") {
-        // #75: Wer ohne den Skill erzeugt, hält sich nicht an dessen
-        // Namensregel. Die Nummer ist trotzdem vergeben. Eine YAML-Datei ohne
-        // Nummer – hier eine Liste wie vereinnahmungen.yaml – zählt nicht.
+        // #75. Eine YAML-Datei ohne Nummer, etwa vereinnahmungen.yaml, zählt nicht.
         val dir = archive("Rechnung_R26-011-beispiel.pdf")
         val outgoing = dir.resolve("Outgoing")
         outgoing.resolve("Abschlagsrechnung-R26-014.yaml").writeText("nummer: R26-014\nart: abschlagsrechnung\n")
@@ -86,16 +73,12 @@ class NaechsteNummerSkriptTest : FunSpec({
     }
 
     test("ein Jahr ohne Rechnung fängt bei 001 an") {
-        // Nummern aus anderen Jahrgängen zählen nicht mit, auch wenn sie
-        // danebenliegen.
         val dir = archive("Rechnung_R25-137-beispiel.pdf")
 
         runScript(dir, "--rechnungsdatum", "2026-01-02").stdout shouldBe "R26-001"
     }
 
     test("das Jahr kommt aus dem Rechnungsdatum, nicht aus dem Kalender") {
-        // Die Silvesterrechnung: datiert auf den 31.12., geschrieben am 2.1.
-        // Sie gehört in den Nummernkreis des alten Jahres.
         val dir = archive("Rechnung_R25-003-beispiel.pdf", "Rechnung_R26-001-beispiel.pdf")
 
         runScript(dir, "--rechnungsdatum", "2025-12-31").stdout shouldBe "R25-004"
@@ -119,9 +102,6 @@ class NaechsteNummerSkriptTest : FunSpec({
     }
 
     test("ein gewechseltes Muster hält die Vergabe an") {
-        // Der Fall, für den die Prüfung da ist: Die Stammdaten tragen ein neues
-        // Muster, das Skript vergibt noch im alten Schema. Gemeldet wird das
-        // hier – nicht erst, wenn die Nummer schon in Dateinamen steht.
         val dir = archive("Rechnung_R26-011-beispiel.pdf")
         dir
             .resolve("stammdaten.yaml")
@@ -136,7 +116,6 @@ class NaechsteNummerSkriptTest : FunSpec({
     }
 
     test("Stammdaten ohne Muster prüfen nicht") {
-        // Dieselbe Regel wie im Generator: ohne Eintrag keine Prüfung.
         val dir = archive("Rechnung_R26-011-beispiel.pdf")
         dir
             .resolve("stammdaten.yaml")
@@ -157,9 +136,7 @@ class NaechsteNummerSkriptTest : FunSpec({
     }
 
     test("die Stammdaten im Ordner der Wurzel sind keine vergebene Nummer") {
-        // rglob steigt auch in versteckte Ordner, und seit ADR-0015 liegen die
-        // Stammdaten in einem. Sie haben kein Feld `nummer` und fallen deshalb
-        // durch – still, denn eine Datei ohne Nummer ist keine Rechnung.
+        // rglob steigt auch in den versteckten Ordner der Stammdaten (ADR-0015).
         val dir = archive("Rechnung_R26-009-beispiel.yaml")
         dir
             .resolve("Outgoing")

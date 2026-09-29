@@ -16,16 +16,9 @@ import kotlin.io.path.createTempDirectory
 import kotlin.io.path.readText
 import kotlin.io.path.writeText
 
-/** Die Eigenschaft, über die der Build seine Version an die Test-JVM reicht. */
 private const val VERSION_PROPERTY = "projectVersion"
 
-/**
- * Nur Gradle setzt [VERSION_PROPERTY]. Wer die Tests im Editor startet, hat sie
- * nicht – dann fehlt der Vergleichswert, und der Test überspringt sich, statt
- * grün oder rot zu melden. Übersprungen und nicht bestanden, wie beim
- * Altersnachweis der EU-Liste: Ein Netz, das fehlt, soll nicht aussehen wie
- * eines, das hält.
- */
+// Übersprungen, nicht bestanden: Nur Gradle setzt die Eigenschaft, der Editor nicht.
 private val withVersionFromBuild =
     if (System.getProperty(VERSION_PROPERTY) != null) {
         Enabled.enabled
@@ -36,14 +29,6 @@ private val withVersionFromBuild =
         )
     }
 
-/**
- * Prüft den ganzen Weg von den Argumenten bis zum Exitcode – und dazu, auf
- * welchem Kanal etwas steht.
- *
- * Die Regel: Der Kanal folgt dem Exitcode. Was mit einem Exitcode ungleich 0
- * endet, steht auf stderr; stdout trägt nur das Ergebnis. Wer die Ausgabe
- * umleitet, soll darin nie eine Fehlermeldung finden.
- */
 class MainTest : FunSpec({
 
     val inputDir = createTempDirectory("main-test")
@@ -62,8 +47,6 @@ class MainTest : FunSpec({
     }
 
     test("bei zwei Eingabedateien nennt die Meldung die schuldige") {
-        // erzeuge liest Rechnung und Stammdaten; ein "Die Eingabedateien
-        // konnten nicht gelesen werden" ließe raten, welche der beiden es war.
         val brokenSellerConfig =
             inputDir.resolve("stammdaten-kaputt.yaml").also { it.writeText("firma: Muster\ngibtsnicht: 1\n") }
 
@@ -76,9 +59,7 @@ class MainTest : FunSpec({
     }
 
     test("eine unlesbare Datei spricht vom Lesen, nicht vom Schreiben") {
-        // Auch ein Lesefehler ist eine IOException: Ein Zweig, der sie für ein
-        // nicht beschreibbares Ziel fängt, spräche hier vom Schreiben. (Als
-        // root ist auch chmod 000 lesbar, dieser Test schlüge dort fehl.)
+        // Schlägt unter root fehl: Dort ist auch chmod 000 lesbar.
         val unreadable =
             inputDir.resolve("unlesbar.yaml").also {
                 it.writeText("nummer: R26-001\n")
@@ -94,12 +75,9 @@ class MainTest : FunSpec({
         result.err shouldNotContain "geschrieben"
     }
 
-    // Die drei Fachfehler übersetzt execute() einmal für alle Kommandos (#119).
-    // Deshalb stehen sie hier und nicht in den Tests der Kommandos: Die prüfen
-    // nur noch, dass die Ausnahme geworfen wird.
+    // Die Fachfehler aller Kommandos stehen hier; deren Tests prüfen nur, dass sie geworfen werden (#119).
 
     test("eine abgelehnte Rechnung steht auf stderr, mit allen Abbrüchen") {
-        // Zwei Verstöße in einer Datei: Beide sollen dastehen, nicht nur der erste.
         val rejected =
             inputDir.resolve("abgelehnt.yaml").also {
                 it.writeText(
@@ -139,23 +117,13 @@ class MainTest : FunSpec({
         result.err shouldBe ""
     }
 
-    /**
-     * Mustang protokolliert über SLF4J, und SLF4J ohne Anbindung schreibt beim
-     * ersten Gebrauch drei Warnzeilen auf stderr – an Clikt vorbei, direkt auf
-     * `System.err`. Ein Lauf mit `--zugferd` fängt sie deshalb nicht zuverlässig
-     * ein, zumal SLF4J je JVM nur einmal warnt. Gefragt wird, was die Warnung
-     * auslöst: ob SLF4J eine Anbindung findet, und zwar über denselben
-     * ServiceLoader, mit dem es selbst sucht.
-     */
+    // Nicht an stderr prüfbar: SLF4J warnt an Clikt vorbei und je JVM nur einmal.
     test("SLF4J findet eine Anbindung und warnt deshalb nicht auf stderr") {
         ServiceLoader.load(SLF4JServiceProvider::class.java).toList().shouldNotBeEmpty()
     }
 
     test("scheitert das Öffnen, bleibt der Aufruf ein Erfolg, und der Hinweis steht auf stdout") {
-        // Ein Viewer, der nicht aufgeht, ist kein Grund, die Rechnung für
-        // gescheitert zu erklären: Das PDF liegt am Ziel (#144). Also Exitcode 0
-        // – und weil der Kanal dem Exitcode folgt, gehört der Hinweis auf stdout.
-        // Gelesen wird beides hier; GenerateCommandTest sieht nur die Reihenfolge.
+        // #144. Den Kanal sieht nur dieser Test, GenerateCommandTest die Reihenfolge.
         val target = inputDir.resolve("viewer-fehlt.pdf")
 
         val result =
@@ -176,8 +144,6 @@ class MainTest : FunSpec({
     }
 
     test("ein unbekanntes Unterkommando steht auf stderr") {
-        // Der Fehler kommt hier von Clikt selbst, nicht aus unserem Code –
-        // er muss denselben Weg nehmen.
         val result = runCli("gibtsnicht")
 
         result.exitCode shouldBe 1
@@ -186,8 +152,6 @@ class MainTest : FunSpec({
     }
 
     test("ohne Unterkommando steht die Hilfe auf stderr") {
-        // Wer "rechnungsgenerator >> schluss.yaml" tippt und das Unterkommando
-        // vergisst, soll die Hilfe nicht an seine Schlussrechnung hängen.
         val result = runCli()
 
         result.exitCode shouldBe 1
@@ -204,9 +168,7 @@ class MainTest : FunSpec({
     }
 
     test("--version ist kein Fehler und steht auf stdout") {
-        // Dieselbe Regel wie bei --help: Wer die Fassung erfragt, hat keinen
-        // Fehler gemacht. Ohne die eager Option fiele der Aufruf in "kein
-        // Unterkommando" und endete mit 1 auf stderr.
+        // Ohne die eager Option fiele der Aufruf in "kein Unterkommando".
         val result = runCli("--version")
 
         result.exitCode shouldBe 0
@@ -216,10 +178,7 @@ class MainTest : FunSpec({
 
     test("die genannte Fassung ist die aus dem Build")
         .config(enabledOrReasonIf = { withVersionFromBuild }) {
-            // Schließt den Kreis: Die Ressource entsteht beim Bauen aus
-            // `version` in build.gradle.kts, und hier steht, dass genau die
-            // Zahl beim Benutzer ankommt. Ohne diesen Test liefe eine
-            // veraltete Ressource still mit.
+            // Die Ressource entsteht beim Bauen aus `version` in build.gradle.kts.
             val result = runCli("--version")
 
             result.out.trim() shouldBe "rechnungsgenerator ${System.getProperty(VERSION_PROPERTY)}"
