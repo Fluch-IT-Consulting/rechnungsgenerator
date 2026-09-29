@@ -247,11 +247,11 @@ bei jeder Art – das ist die einzige Änderung an `rechnung-erwartet.xml`.
 Seit #369 schreibt der Writer die Schlussrechnung, und damit jede Art. Das
 war der Grund für das Profil EXTENDED (ADR-0002).
 
-**Je abgesetzter Abschlag ein `SpecifiedAdvancePayment`**, Feld für Feld wie
-der Block `abschlaege` (ADR-0001): der gezahlte Betrag, der Tag der
-Vereinnahmung, je Steueranteil Kategorie, Satz, Netto und Steuer, und die
-Abschlagsrechnung mit Nummer, Code 386 und Datum. Die Summe steht als
-`TotalPrepaidAmount`, der Restbetrag als `DuePayableAmount`. Die
+**Je abgesetzter Abschlag ein `SpecifiedAdvancePayment`**, wie der Block
+`abschlaege` (ADR-0001): der gezahlte Betrag, der Tag der Vereinnahmung, je
+Steueranteil Kategorie, Satz und Steuer – ohne Netto, siehe den Nachtrag vom
+29.09.2026 –, und die Abschlagsrechnung mit Nummer, Code 386 und Datum. Die
+Summe steht als `TotalPrepaidAmount`, der Restbetrag als `DuePayableAmount`. Die
 Steueraufschlüsselung bleibt die der Gesamtleistung; die Abschläge mindern
 den Zahlbetrag und nicht die Bemessungsgrundlage, wie auf dem Blatt. Mustang
 rechnet dabei nur die Summe gegen den Restbetrag nach (BR-FXEXT-CO-16), nicht
@@ -359,3 +359,28 @@ Verworfen:
 - **Eine Liste der abgelehnten Profile.** Sie deckte genau die heute
   bekannten ab und ließe ein unbekanntes still durch. Die Frage nach der Norm
   lehnt es ab.
+
+## Nachtrag vom 29.09.2026: Ein abgesetzter Abschlag trägt kein Netto
+
+Seit #453 steht im `IncludedTradeTax` eines `SpecifiedAdvancePayment` kein
+`BasisAmount` mehr. EXTENDED sieht in BG-X-46 den Steuerbetrag (BT-X-293),
+Steuerart, Kategorie, Satz und Befreiungsgrund vor, aber kein Netto; das
+Schematron des Profils meldet ein `BasisAmount` dort als nicht verwendet. Das
+XSD lässt es durch, weil `TradeTaxType` ein allgemeiner Typ ist, und Mustang
+auch: Es wertet vom Schematron nur `failed-assert` aus und übergeht jeden
+`successful-report`, und eine solche Meldung ist das. Gesehen hat sie deshalb
+kein Test.
+
+Die Frage nach §14 Abs. 5 Satz 2 UStG ändert daran nichts. Das Netto je
+Anteil steht auf dem Blatt und im Block `abschlaege`, und für das XML hat
+EXTENDED kein Feld, in dem es stehen könnte. Die Entsprechung aus ADR-0001
+gilt damit bis auf dieses Netto: Es bleibt in der Rechnungsdatei, weil die
+Prüfsumme `ABSCHLAG_PRUEFSUMME` und das Blatt es brauchen.
+
+Seitdem wendet `CiiWriterTest` das Schematron, das Mustang mitbringt, selbst
+an und duldet keinen `successful-report`, bei jedem XML, das er prüft. Ein
+Gegentest hält fest, dass die Prüfung das `BasisAmount` von damals sieht.
+`erzeuge --zugferd` und `xml` bleiben dafür blind: `EInvoiceValidator` prüft
+über Mustang. Für das eigene XML genügt der Test; für fremde Rechnungen bei
+`xml` bräuchte es eine eigene Auswertung, und die kommt, wenn eine den Fall
+auslöst.
