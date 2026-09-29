@@ -1,5 +1,7 @@
 # Kommentare begründen, sie erzählen nicht
 
+Abgelöst durch ADR-0028.
+
 Ein Kommentar sagt, **warum** eine Stelle so ist und welche Alternative sie
 ausschließt. Er sagt nicht, was vorher dort stand, wann sie so wurde und in
 welchem Issue – das liegt in Commit, Issue und ADR. Er erklärt auch keine

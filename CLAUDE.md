@@ -796,12 +796,11 @@ PDF/A-Prüfung über veraPDF.
 
 ## Konventionen
 
-- Bezeichner Englisch, Kommentare Deutsch. Ein Kommentar **begründet** und
-  erzählt nicht (ADR-0016): Er sagt, warum eine Stelle so ist und welche
-  Alternative sie ausschließt – nicht, was vorher dort stand, wann sie so wurde
-  und in welchem Issue. Eine Issue-Nummer in Klammern bleibt trotzdem, sie ist
-  ein Verweis wie ein ADR-Verweis. Kotlin-Idiome werden nicht erklärt, die kann
-  man nachschlagen; ein LaTeX-Fallstrick in einer Vorlage ist kein Idiom.
+- Bezeichner Englisch, Kommentare Deutsch. Ein Kommentar **warnt** (ADR-0028):
+  Er steht nur, wo man die Stelle ohne ihn falsch ändern würde, in ein bis
+  zwei Zeilen. Verworfene Alternativen gehören ins ADR, der Code verweist
+  darauf. BT-Nummern, Paragraphen und Verweise auf ADR, Issue oder Regel sind
+  immer erlaubt; Geschichte und Kotlin-Idiome nie.
 
   **Ausnahme: die Fachbegriffe aus `CONTEXT.md`.** `abschlag`, `anteil`,
   `restbetrag`, `vereinnahmt`, `zeitraum` heißen auch in lokalen Variablen und
