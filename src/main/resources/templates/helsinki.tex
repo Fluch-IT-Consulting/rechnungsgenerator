@@ -1,54 +1,29 @@
-%% Rechnungsvorlage – wird vom InvoiceRenderer gefüllt.
-%% Platzhalter haben die Form <<...>> und werden vollständig ersetzt. Welche es
-%% gibt, zählt TemplateValue auf. Die Vorlage muss nicht jeden setzen, aber
-%% jeden, der an Rechnungsart oder Rechnung hängt (#188).
-%%
-%% Jede einzelne Angabe kommt als eigener Platzhalter und darf leer sein. Ob sie
-%% dasteht, entscheidet der Renderer, indem er sie leer lässt oder nicht; wo und
-%% mit welcher Beschriftung, entscheidet diese Vorlage. Sie fragt dafür nur
-%% \ifblank und nichts sonst: Was an der Rechnungsart hängt, soll nicht in
-%% jedem Design neu entschieden werden, ohne Compiler.
-%%
-%% Gestaltungsprinzip: EIN Blickfang (der Titelbalken), sonst ruhiger Textfluss.
-%% Linien gibt es nur dort, wo sie Zahlen gliedern – nicht als Seitenraster.
-%% Gesperrte Versalien (das Stilmittel des Lebenslaufs) kommen genau einmal vor,
-%% als Spaltenkopf der Positionstabelle.
+%% Rechnungsvorlage „helsinki“ (ADR-0011): ein Blickfang, der Titelbalken, sonst ruhiger Textfluss; Linien nur,
+%% wo sie Zahlen gliedern. Jede einzelne Angabe darf leer sein, entschieden wird mit \ifblank und nichts sonst
+%% (ADR-0017).
 \documentclass[11pt,a4paper]{article}
 
-%% Was jedes Design gleich setzen muss, steht in der Grundlage (ADR-0022):
-%% PDF/A, Ligaturen, die Einstellungen von siunitx gegen falsche Zahlen, der
-%% Satzabstand und die Bausteine \ungeteilt, \programmsatz und
-%% \wennweitereseite. Als Erstes, denn sie lädt pdfx. Welche Pakete sie lädt,
-%% steht in ihrem Kopf; die lädt diese Vorlage nicht noch einmal.
+%% Als Erstes, denn die Grundlage lädt pdfx; was sie lädt, lädt diese Vorlage nicht noch einmal (ADR-0022).
 \usepackage{grundlage}
 
 \usepackage{geometry}
-%% xcolor lädt die Grundlage mit pdfx. colortbl liefert \arrayrulecolor.
+%% colortbl für \arrayrulecolor; xcolor lädt die Grundlage.
 \usepackage{colortbl}
 \usepackage{booktabs}  %% \midrule bringt die vertikalen Abstände selbst mit
-%% xltabular ist tabularx, das über Seiten umbricht (ADR-0020): die X-Spalte
-%% von tabularx, der Umbruch von longtable. Es lädt beide selbst; tabularx
-%% bleibt für Summen und Absetzung, die nie umbrechen.
+%% xltabular lädt tabularx und longtable selbst; tabularx bleibt für Summen und Absetzung (ADR-0020).
 \usepackage{xltabular}
 \usepackage{fancyhdr}
 \usepackage{array}
 \usepackage{etoolbox}  %% \ifblank für die Angaben, die leer sein dürfen
 \usepackage{tikz}      %% das Logo
 
-%% Die Schreibweise der Zahlen (ADR-0021): gruppiert ab vier Stellen – sonst
-%% stünde 8337,50 ohne Trenner da. Welche Zeichen trennen und wo das
-%% Währungszeichen steht, hängt an der Sprache und steht in der Sprachdatei,
-%% die übrigen Einstellungen von siunitx setzt die Grundlage.
+%% Gruppiert ab vier Stellen; Trennzeichen und Stellung des Währungszeichens setzt die Sprachdatei (ADR-0021).
 \sisetup{group-minimum-digits = 4}
 
-%% Die Währung der Rechnung als Code nach ISO 4217 (#409). Ihr Zeichen und
-%% wo es steht, setzt die Sprachdatei in \betrag; hier steht nur, welche.
+%% Das Zeichen dazu setzt die Sprachdatei in \betrag (ADR-0026).
 \newcommand{\waehrung}{<<WAEHRUNG>>}
 
-%% Die Sprachdatei (#377): die Wörter dieses Designs und die Schreibweise der
-%% Zahlen in der Sprache der Rechnung, als \wort... und \betrag, \prozent.
-%% Der Renderer legt die passende als sprache.tex neben diese Vorlage. Nach
-%% etoolbox und siunitx, denn sie braucht beide.
+%% Nach etoolbox und siunitx, denn die Sprachdatei braucht beide.
 \input{sprache}
 
 %% Dieselbe Schrift wie im Lebenslauf – dadurch passen die Dokumente zusammen.
@@ -60,14 +35,8 @@
   BoldItalicFont = *-bolditalic,
 ]
 
-%% Die Akzentfarbe, die des Titelbalkens, nennen die Stammdaten
-%% (akzentfarbe, #371). Ohne Eintrag gilt die von fluch-it-consulting.de:
-%% der Mittelweg zwischen dem Rot der Webseite (#8B1A2B) und dem gedämpften
-%% Ton der Rechnung vor dem Generator (#8E4848), kanalweise das arithmetische
-%% Mittel. Beide Ausgangsfarben stehen daneben, das Umschalten ist eine Zeile.
-%%
-%% Die Vorgabe steht hier und nicht in Kotlin: Farbe ist Satzbild (ADR-0017),
-%% und ein anderes Design hat eine andere oder keine.
+%% Die Vorgabe der Akzentfarbe steht hier und nicht in Kotlin (ADR-0024): das Mittel aus dem Rot der Webseite
+%% und dem Ton der Rechnung vor dem Generator, beide Ausgangsfarben stehen daneben.
 \ifblank{<<AKZENTFARBE>>}{\definecolor{akzent}{HTML}{8D313A}}{\definecolor{akzent}{HTML}{<<AKZENTFARBE>>}}
 \definecolor{akzentweb}{HTML}{8B1A2B}
 \definecolor{akzentalt}{HTML}{8E4848}
@@ -75,24 +44,17 @@
 \definecolor{gedaempft}{HTML}{5C5C62}
 \definecolor{linie}{HTML}{C9C9CF}
 
-%% Tabellenlinien global. Muss AUSSERHALB der Tabelle stehen: Mitten im
-%% Tabellenkörper eröffnet \arrayrulecolor eine neue Zelle, und das \noalign
-%% von \midrule landet dann an der falschen Stelle.
+%% Außerhalb der Tabelle: Darin eröffnete \arrayrulecolor eine Zelle, und das \noalign von \midrule landete falsch.
 \arrayrulecolor{linie}
 
-%% Der Fuß ist ein Seitenfuß und steht auf jeder Seite (ADR-0020). includefoot
-%% misst den unteren Rand bis zu seiner letzten Grundlinie – dort, wo er stand,
-%% als er noch das Ende des Textes war. Der Kopf der Folgeseiten steht im
+%% includefoot misst den unteren Rand bis zur letzten Grundlinie des Fußes. Der Kopf der Folgeseiten steht im
 %% oberen Rand, damit die erste Seite ihn nicht mitbezahlt.
 \geometry{a4paper, left=25mm, right=20mm, top=18mm, bottom=16mm,
   includefoot, footskip=12mm, headheight=14pt, headsep=6mm}
 
 \color{haupttext}
 \setlength{\parindent}{0pt}
-%% Die erste Seite hat den Briefkopf und nur den Fuß, jede weitere einen
-%% kurzen Kopf mit Nummer, Datum und Seitenzahl, damit eine lose Seite zu
-%% ihrer Rechnung findet. Eine Rechnung mit einer Seite trägt deshalb keine
-%% Seitenzahl, ohne dass jemand danach fragt.
+%% Folgeseiten tragen einen kurzen Kopf, damit eine lose Seite zu ihrer Rechnung findet.
 \fancypagestyle{erste}{\fancyhf{}\renewcommand{\headrulewidth}{0pt}\fancyfoot[C]{\fuss}\fancyfoot[R]{\fortsetzung}}
 \fancypagestyle{folge}{\fancyhf{}\renewcommand{\headrulewidth}{0pt}%
   \fancyhead[L]{\small\color{gedaempft}<<DOKUMENTART>> <<RECHNUNGSNUMMER>> · <<RECHNUNGSDATUM>>}%
@@ -100,222 +62,123 @@
   \fancyfoot[C]{\fuss}\fancyfoot[R]{\fortsetzung}}
 \pagestyle{folge}
 
-%% Der Fortsetzungshinweis unten rechts auf jeder Seite, der eine weitere
-%% folgt (\wennweitereseite aus der Grundlage). Er steht im Fuß, damit er an
-%% jeder Seite hängt, und nimmt dort keinen Raum ein ([0pt][0pt]): 3 mm unter
-%% dem Ende des Textbereichs, der \footskip über der Grundlinie des Fußes
-%% endet.
+%% Im Fuß, damit er an jeder Seite hängt, ohne Raum einzunehmen: 3 mm unter dem Ende des Textbereichs.
 \newcommand{\fortsetzung}{\wennweitereseite{%
   \raisebox{\dimexpr\footskip-3mm\relax}[0pt][0pt]{\footnotesize\color{gedaempft}\wortfortsetzung}}}
 
-%% Flattersatz statt Blocksatz. In den schmalen Spalten einer Rechnung reißt
-%% Blocksatz sichtbare Löcher zwischen die Wörter; Heros verträgt Flattersatz gut.
+%% Flattersatz: In den schmalen Spalten risse Blocksatz Löcher zwischen die Wörter.
 \raggedright
 
-%% Keine Silbentrennung: Auf einer Rechnung stehen fast nur Eigennamen,
-%% Beträge und Adressen – getrennte Firmennamen sehen schlicht falsch aus.
+%% Keine Silbentrennung: Getrennte Eigennamen und Firmennamen sehen falsch aus.
 \hyphenpenalty=10000
 \exhyphenpenalty=10000
 \tolerance=2000
 
-%% Achtung: minipage ruft \@parboxrestore auf und setzt damit die
-%% Absatzparameter zurück – der Flattersatz von oben gilt dort NICHT.
-%% Ein \AtBeginEnvironment-Hook hilft nicht, weil \@parboxrestore erst danach
-%% läuft. Deshalb steht \raggedright unten in jeder Minipage mit Fließtext.
+%% Achtung: minipage setzt über \@parboxrestore die Absatzparameter zurück, der Flattersatz gilt dort nicht; ein
+%% \AtBeginEnvironment-Hook kommt zu früh. Deshalb steht \raggedright in jeder Minipage mit Fließtext.
 
 \newlength{\balkenhoehe}
 
-%% Das Logo nennen die Stammdaten (#370, ADR-0012). Der Renderer legt die
-%% Datei neben die .tex, <<LOGO>> ist ihr Name, ohne Logo leer. Sie wird hier
-%% in der Präambel gelesen und definiert:
-%%  - \logozeichnung, Pflicht: den Rumpf einer tikzpicture;
-%%  - \logoskalierung, optional: einen Faktor auf \logohoehe, sonst 1.
-%% Schrift und Farben bringt sie selbst mit; die Vorlage sichert zu, dass TikZ,
-%% fontspec und xcolor geladen sind.
-%%
-%% Den Faktor begrenzt die Vorlage nicht, man sieht ihn am Blatt; die Grenze
-%% steht beim Kopf.
-%%
-%% TikZ und keine Bilddatei: Der Treiber luatex.def von graphicx gibt jedem
-%% über \includegraphics eingebundenen PDF eine Transparenzgruppe mit, und die
-%% verbietet PDF/A-1 (ISO 19005-1, 6.4, siehe #197).
+%% Das Logo definiert \logozeichnung und optional \logoskalierung (ADR-0012). TikZ und keine Bilddatei:
+%% luatex.def gibt jedem per \includegraphics eingebundenen PDF eine Transparenzgruppe mit, und die verbietet
+%% PDF/A-1 (#197).
 \newlength{\logohoehe}\setlength{\logohoehe}{12mm}
 \newlength{\versalhoehe}
 \ifblank{<<LOGO>>}{}{\input{<<LOGO>>}}
 \providecommand{\logoskalierung}{1}
 
-%% Abstände als benannte Längen (#51): Wer das Satzbild ändert, fasst diese
-%% Datei an und keine zweite.
-%%
-%% 2.5mm zwischen Positionen statt 1.5mm: Sobald eine Position eine Zusatzzeile
-%% hat, verschmilzt sie bei knappem Abstand optisch mit der nächsten. Dasselbe
-%% gilt für die abgesetzten Abschläge, die immer eine Zusatzzeile haben.
+%% Abstände als benannte Längen, damit das Satzbild an einer Stelle steht (#51). 2.5mm zwischen Positionen:
+%% Bei knappem Abstand verschmölze eine Position mit Zusatzzeile optisch mit der nächsten.
 \newlength{\positionsabstand}\setlength{\positionsabstand}{2.5mm}
 \newlength{\summenabstand}\setlength{\summenabstand}{1mm}
 \newlength{\blockabstand}\setlength{\blockabstand}{3mm}
 \newlength{\ustidabstand}\setlength{\ustidabstand}{2mm}
 
-%% Die Zeilenwechsel, die diese Abstände tragen (#76). Der Renderer ruft nur das
-%% Makro auf und kennt die Länge nicht: Ein vertippter Längenname fiele erst
-%% LuaLaTeX auf – ein Makro prüft das Setzen, eine Länge nicht. \blocktrenner und
-%% \ustidtrenner ruft nur diese Vorlage selbst auf (#188).
+%% Der Renderer ruft nur das Makro auf, nie die Länge: Ein vertippter Längenname fiele erst LuaLaTeX auf (#76).
 \newcommand{\positionstrenner}{\\[\positionsabstand]}
 \newcommand{\summentrenner}{\\[\summenabstand]}
 \newcommand{\blocktrenner}{\\[\blockabstand]}
 \newcommand{\ustidtrenner}{\\[\ustidabstand]}
 
-%% Der schlichte Zeilenwechsel ohne Abstand: zwischen den Zeilen der Anschrift
-%% und im Briefkopf (#147).
-%% Eines für alle Blöcke. prag kommt damit ebenso aus (ADR-0011); braucht ein
-%% Design für verschiedene Blöcke verschiedene Zeilenwechsel, kostet das einen
-%% Eintrag in TemplateMacro.
-%%
-%% Aufgerufen wird es als \zeilenwechsel{}, vom Renderer wie von dieser Vorlage,
-%% und das leere Paar schützt die nächste Zeile: Beginnt sie mit "[", läse \\
-%% sie sonst als Abstandsangabe. Ein rohes \\ steht deshalb nur vor festem
-%% Text, nie vor einem Platzhalter – auch nicht über ein Zeilenende hinweg,
-%% denn \\ überliest den Leerraum bis zum nächsten Zeichen.
+%% Aufgerufen als \zeilenwechsel{}: Das leere Paar schützt die nächste Zeile, denn beginnt sie mit „[“, läse \\
+%% sie als Abstandsangabe. Ein rohes \\ steht deshalb nur vor festem Text, nie vor einem Platzhalter (#147).
 \newcommand{\zeilenwechsel}{\\}
 
-%% Das Land unter der Anschrift eines Kunden im Ausland, in Versalien nach
-%% DIN 5008 (#374). Der Renderer liefert den Namen, wie er geschrieben wird.
+%% In Versalien nach DIN 5008 (#374).
 \newcommand{\landzeile}[1]{\MakeUppercase{#1}}
 
-%% Die Person unter der Firmierung im Briefkopf (#147). Das {} hinter \\ aus
-%% demselben Grund wie beim Aufruf von \zeilenwechsel.
+%% Das {} hinter \\ wie beim Aufruf von \zeilenwechsel.
 \newcommand{\kopfperson}[1]{\\{}#1}
 
-%% Eine Zeile im Block oben rechts: Beschriftung und Wert. Ist der Wert leer,
-%% entfällt die ganze Zeile, samt Beschriftung – sonst stünde auf einer
-%% Stornorechnung "Zahlbar ohne Abzug bis" ohne Datum.
-%%
-%% Jede Zeile beendet sich selbst mit \par. Das ist, was \\ in einem Block mit
-%% \raggedleft ohnehin tut (latex.ltx, \@centercr); ein \\ hinter der letzten
-%% Zeile ließe dagegen eine leere Zeile zurück.
+%% Ist der Wert leer, entfällt die Zeile samt Beschriftung. \par statt \\: Ein \\ hinter der letzten Zeile ließe
+%% eine leere Zeile zurück.
 \newcommand{\kopfangabe}[2]{\ifblank{#2}{}{#1 #2\par}}
 
-%% Diese Angabe bricht nicht um. Im schmalen Block oben rechts bräche
-%% "Juni bis Oktober 2026" sonst hinter dem "bis" und läse sich wie zwei Angaben.
+%% Im schmalen Block bräche „Juni bis Oktober 2026“ sonst hinter dem „bis“.
 \newcommand{\zusammen}[1]{\mbox{#1}}
-%% Die Mengen, gesetzt nach \sisetup. \betrag und \prozent stehen in der
-%% Sprachdatei: Wo das Währungszeichen steht, hängt an der Sprache.
+%% \betrag und \prozent stehen in der Sprachdatei.
 \newcommand{\menge}[1]{\num{#1}}
 
-%% Kleine, gesperrte Versalien – dasselbe Stilmittel wie im Lebenslauf.
-%% \rubrik statt \label, das ist in LaTeX vergeben.
+%% \rubrik statt \label, das in LaTeX vergeben ist.
 \newcommand{\rubrik}[1]{{\footnotesize\color{gedaempft}\addfontfeature{LetterSpace=14}\MakeUppercase{#1}}}
 
-%% Ein Hinweisabsatz unter den Summen – der Pflichtsatz der Rechnungsart oder
-%% der Satz zum ausgeglichenen Restbetrag. Er bringt seinen Abstand selbst mit,
-%% weil er nur bei einzelnen Rechnungsarten gesetzt wird: Stünde der \vspace in
-%% der Vorlage, nähme er bei allen anderen Raum ein, obwohl dort nichts steht.
-%%
-%% Er trägt die eigenen Sätze des Programms und damit als einziger den breiten
-%% Abstand nach einem Satzende, und er bricht nicht über zwei Seiten – beides
-%% aus der Grundlage (\programmsatz, \ungeteilt). Eingabedaten gehören deshalb
-%% nicht hier hinein. Das % hinter \noindent verhindert einen Leerraum am
-%% Absatzanfang.
+%% Bringt seinen Abstand selbst mit, sonst nähme er auch auf Arten ohne Pflichtsatz Raum ein. Nur für Sätze des
+%% Programms, keine Eingabedaten: \programmsatz setzt den breiten Satzabstand.
 \newcommand{\hinweisabsatz}[1]{\par\vspace{6mm}\noindent%
   \ungeteilt{\programmsatz{#1}}}
 
-%% Der Hinweis auf eine Steuerbefreiung (BT-120), ein Satz je befreiter
-%% Steuergruppe. Er hält zusammen wie ein \hinweisabsatz, aber ohne
-%% \programmsatz: Der Befreiungsgrund kommt aus den Eingabedaten (#143). Den
-%% Abstand darüber setzt die Vorlage einmal für alle, zwischen zwei
-%% Hinweisen steht keiner.
+%% Ohne \programmsatz: Der Befreiungsgrund kommt aus den Eingabedaten (#143).
 \newcommand{\steuerhinweis}[1]{\noindent\ungeteilt{#1}}
 
-%% Der Kopf des Absetzungsblocks: wie ein Hinweisabsatz, aber mit Luft zur
-%% Tabelle darunter – sonst klebt die erste Rechnung an der Ankündigung.
+%% Mit Luft zur Tabelle, sonst klebte die erste Rechnung an der Ankündigung.
 \newcommand{\absetzungskopf}[1]{\par\vspace{6mm}\noindent #1\par\vspace{1.5mm}}
 
-%% Die Bankverbindung mitsamt ihrer Überschrift. Als Makro und nicht als fester
-%% Text, weil sie nur auf Dokumenten steht, die zur Zahlung auffordern: Eine
-%% Stornorechnung kündigt eine Erstattung an, und eine Überschrift ohne Konto
-%% darunter wäre schlimmer als keine. Ob es dasteht, entscheidet der Renderer,
-%% indem er es aufruft oder nicht; was darin steht, diese Vorlage. Der Abstand
-%% darüber gehört deshalb ins Makro, wie bei \hinweisabsatz.
+%% Ein Makro samt Überschrift und Abstand, damit auf einem Dokument ohne Zahlungsaufforderung nichts stehen bleibt.
 \newcommand{\bankblock}{\vspace{9mm}\noindent{\bfseries \wortbankverbindung}\\[1.5mm]%
   \wortkontoinhaber: <<KONTOINHABER>>\\
   \wortinstitut: <<INSTITUT>>\\
   IBAN: <<IBAN>>\\
   BIC: <<BIC>>}
 
-%% Die Tabelle der abgesetzten Abschläge: links die Rechnung, rechts der Betrag.
-%% Dieselbe Spaltenaufteilung wie beim Summenblock, nur über die volle Breite –
-%% die Zeilen tragen Nummer und zwei Daten und passen nicht in 0,55.
+%% Über die volle Breite: Die Zeilen tragen Nummer und zwei Daten und passen nicht in 0,55.
 \newcommand{\absetzungstabelle}[1]{%
   \begin{tabularx}{\linewidth}{@{}>{\raggedright\arraybackslash}X r@{}}#1\end{tabularx}}
 
-%% Die Aufteilung eines Abschlags in Netto und Steuer: klein, gedämpft und
-%% eingerückt unter der Zeile, zu der sie gehört.
 \newcommand{\absetzungsdetail}[1]{\newline\hspace*{4mm}{\footnotesize\color{gedaempft}#1}}
 
-%% Dasselbe für eine Position, nur ohne Einzug – die Beschreibungsspalte beginnt
-%% ohnehin am linken Rand. Zwei Makros und nicht eines: Der Unterschied im Einzug
-%% ist Satzbild und wird nicht nebenbei in einem Umbau eingeebnet (#51).
+%% \newline statt \\, das in der X-Spalte die Tabellenzeile beendete. Ohne den Einzug von \absetzungsdetail;
+%% der Unterschied ist Satzbild (#51).
 \newcommand{\positionsdetail}[1]{\newline{\footnotesize\color{gedaempft} #1}}
 
-%% Eine Zeile der Positionstabelle. Damit steht die Zahl der Spalten nur noch
-%% hier und nicht ein zweites Mal im Renderer, wo nichts sie vergliche.
-%%
-%% Das erste Argument ist die laufende Nummer der Position. Dieses Design setzt
-%% sie nicht. Das sechste ist der Rabatt; seine Spalte steht nur, wenn eine
-%% Position einen hat (#213): \mitrabatt setzt sein Argument nur dann, R ist
-%% die Spalte oder nichts.
-%%
-%% Gefragt wird einmal, danach nur der Schalter: Zeile, Spaltentyp und
-%% \spaltenzahl müssen dieselbe Antwort bekommen, sonst hat eine Zeile eine
-%% Zelle mehr, als die Tabelle Spalten hat.
+%% Die Spaltenzahl steht nur hier. Die laufende Nummer setzt dieses Design nicht. Einmal gefragt, danach nur der
+%% Schalter: Zeile, Spaltentyp und \spaltenzahl müssen dieselbe Antwort bekommen.
 \newtoggle{rabattspalte}
 \ifblank{<<RABATTSPALTE>>}{}{\toggletrue{rabattspalte}}
 \newcommand{\mitrabatt}[1]{\iftoggle{rabattspalte}{#1}{}}
 \iftoggle{rabattspalte}{\newcolumntype{R}{r}}{\newcolumntype{R}{}}
 \newcommand{\positionszeile}[7]{#2 & #3 & #4 & #5\mitrabatt{ & #6} & #7}
 
-%% Der Kopf der Positionstabelle, auf der ersten Seite und auf jeder
-%% Folgeseite. \mbox um jeden Spaltenkopf: In der X-Spalte ist der Inhalt sonst
-%% ein Absatz, dessen erste Zeile tiefer sitzt als die Grundlinie der
-%% r-/l-Spalten.
+%% \mbox um jeden Spaltenkopf: In der X-Spalte säße die erste Zeile sonst tiefer als in den r-/l-Spalten.
 \newcommand{\positionskopf}{\mbox{\rubrik{\wortbeschreibung}} & \mbox{\rubrik{\wortmenge}} & & \mbox{\rubrik{\worteinzelpreis}}\mitrabatt{ & \mbox{\rubrik{\wortrabatt}}} & \mbox{\rubrik{\wortbetrag}} \\[1.5mm]
   \midrule}
 
-%% Wie viele Spalten die Positionstabelle hat, für die Zeilen über ihre ganze
-%% Breite: fünf, mit Rabattspalte sechs. Es steht im ersten Argument von
-%% \multicolumn und muss dort zur Zahl expandieren; \iftoggle tut das.
+%% Muss im ersten Argument von \multicolumn zur Zahl expandieren; \iftoggle tut das.
 \newcommand{\spaltenzahl}{\iftoggle{rabattspalte}{6}{5}}
 
-%% Eine Zeile im Summen- oder Absetzungsblock: Bezeichnung links, Betrag rechts.
 \newcommand{\summenzeile}[2]{#1 & #2}
 
-%% Die fette Zeile unter dem Strich, mit der ein Betragsblock endet – der
-%% Gesamtbetrag der Summen, der Restbetrag der Absetzung.
-%%
-%% Sie beendet selbst die Zeile davor und steht deshalb nur hinter einer Zeile,
-%% nie als erste (#147). Ein Trenner vor ihr ginge nicht: Der Renderer schreibt
-%% ihn als \name{}, und ein {} vor \midrule ist ein "Misplaced \noalign".
+%% Beendet die Zeile davor selbst (#147). Ein Trenner davor ginge nicht: Als \name{} vor \midrule gäbe er ein
+%% „Misplaced \noalign“.
 \newcommand{\abschlusszeile}[2]{\\\midrule\textbf{#1} & \textbf{#2}}
 
-%% Die Zeilen des Summenblocks mit ihren Beschriftungen (#217). Die Wörter
-%% gehören zum Design und stehen in seiner Sprachdatei; Kotlin liefert nur
-%% Satz und Beträge. Die Grundlage der Steuerzeile gibt es nur bei mehreren
-%% Steuergruppen (#218), sonst ist sie leer.
 \newcommand{\nettozeile}[1]{\summenzeile{\wortnettobetrag}{#1}}
 \newcommand{\steuerzeile}[3]{\summenzeile{\wortsteuer{#1}{#2}}{#3}}
 \newcommand{\gesamtzeile}[1]{\abschlusszeile{\wortgesamtbetrag}{#1}}
 
 %% ------------------------------------------------------------------ Fußzeile
-%% Zwei zentrierte Zeilen ohne Trennlinie darüber, wie auf der Rechnung vor
-%% dem Generator: erst die gesellschaftsrechtlichen Angaben (§35a GmbHG),
-%% dann die steuerlichen und die Bankverbindung. Der Seitenfuß jeder Seite,
-%% oben in \fancypagestyle gesetzt. [b], damit er von seiner letzten Grundlinie
-%% nach oben wächst und nicht in den Rand.
-%% Beide Zeilen passen in den Satzspiegel (nachgemessen 152 mm bzw. 138 mm bei
-%% 165 mm Breite), deshalb ohne Trick mit negativem \hspace.
-%%
-%% Bewusst OHNE Steuernummer: §14 Abs. 4 Nr. 2 UStG verlangt die Steuernummer
-%% ODER die USt-IdNr., nicht beides. Mit beiden wurde die zweite Zeile 178 mm
-%% breit und passte nicht mehr in die 165 mm Textbreite.
+%% [b], damit er nach oben wächst und nicht in den Rand. Beide Zeilen passen nachgemessen in den Satzspiegel
+%% (152 und 138 mm bei 165 mm). Ohne Steuernummer: §14 Abs. 4 Nr. 2 UStG verlangt sie oder die USt-IdNr., und
+%% mit beiden wurde die zweite Zeile 178 mm breit.
 \newcommand{\fuss}{\parbox[b]{\textwidth}{\centering\scriptsize\color{gedaempft}
 <<FIRMA>> · <<STRASSE>>, <<PLZ>> <<ORT>>\ifblank{<<REGISTERGERICHT>>}{}{ · \wortregistergericht{} <<REGISTERGERICHT>>\ifblank{<<REGISTERNUMMER>>}{}{, <<REGISTERNUMMER>>}}\\
 \wortustid{} <<USTID>> · <<INSTITUT>> · BIC <<BIC>> · IBAN <<IBAN>>}}
@@ -324,28 +187,10 @@
 \thispagestyle{erste}
 
 %% ------------------------------------------------------------------ Kopf
-%% Alles rechtsbündig in einem Block, wie auf der Rechnung vor dem Generator:
-%% die Firmierung fett, darunter Anschrift und Kontakt in derselben
-%% Schriftgröße.
-%% Links steht allenfalls das Logo, sonst bleibt es frei – der Balken weiter
-%% unten ist der einzige Blickfang des Designs.
-%%
-%% Das Logo hängt am Ende der ersten Zeile: Sie endet rechtsbündig am Rand,
-%% der linke Rand liegt von dort genau \linewidth zurück. Der Anfang der Zeile
-%% hinge dagegen an der Länge der Firmierung. Es nimmt keinen Raum ein
-%% (\rlap, [0pt][0pt]), so bleibt der Kopf, wo er ohne Logo steht. Seine
-%% Oberkante liegt auf der Versalhöhe der Firmierung. \normalsize, weil ein
-%% Fragment mit Text sonst in \small gesetzt würde und in prag nicht, und
-%% \color{haupttext}, damit eine Fläche ohne eigene Farbe nicht grau wird.
-%% Nach unten wächst es in den Abstand zum Empfänger – mit \logoskalierung
-%% liegt die Grenze bei gut 2.
-%%
-%% Die Person steht unter der Firmierung nur, wenn es keine Geschäftsführung
-%% gibt: Die steht rechts neben dem Empfänger, und bei einer UG sind beide
-%% meist dieselbe Person. Für Einzelunternehmen bleibt der Name hier stehen,
-%% §14 Abs. 4 Nr. 1 UStG verlangt ihn. Die Webseite steht bewusst nicht im
-%% Kopf – sie wiederholte nur die Domain der E-Mail. Die E-Mail gehört hierher:
-%% Rückfragen zu einer Rechnung kommen meist schriftlich.
+%% Das Logo hängt am Ende der ersten Zeile, denn deren Anfang hinge an der Länge der Firmierung; es nimmt keinen
+%% Raum ein. \normalsize, sonst stünde Text im Logo in \small, \color{haupttext}, sonst würde eine Fläche ohne
+%% eigene Farbe grau. Mit \logoskalierung liegt die Grenze bei gut 2.
+%% Die Person nur ohne Geschäftsführung; bei Einzelunternehmen verlangt §14 Abs. 4 Nr. 1 UStG den Namen.
 {\raggedleft\small\color{gedaempft}
   {\bfseries\color{haupttext}<<FIRMA>>}\ifblank{<<LOGO>>}{}{\settoheight{\versalhoehe}{\bfseries M}%
     \rlap{\hspace*{-\linewidth}\raisebox{\dimexpr\versalhoehe-\height\relax}[0pt][0pt]{\normalsize\color{haupttext}%
@@ -355,29 +200,13 @@
 \vspace{18mm}
 
 %% ----------------------------------------------------------- Empfängerfeld
-%% Ohne Rücksendezeile: Die Rechnung wird als PDF versandt, nie im
-%% Fensterumschlag. Rechts daneben die Vertretung und die Angaben zur
-%% Rechnung. 0.44 der Breite = 72,6 mm; nachgemessen braucht die längste
-%% Zeile ("Leistungszeitraum: 01.07.2026 – 31.08.2026") 69,8 mm.
-%%
-%% Die USt-IdNr. des Kunden unter seiner Anschrift (BT-48): Bei Reverse Charge
-%% und innergemeinschaftlicher Lieferung verlangt §14a UStG die USt-IdNr. beider
-%% Seiten, die eigene steht im Fuß. Sie hängt ohne Leerraum an der Anschrift,
-%% sonst stünde ohne sie ein Leerzeichen am Ende des Blocks.
+%% Ohne Rücksendezeile, die Rechnung geht als PDF hinaus. 0.44 der Breite sind 72,6 mm, die längste Zeile braucht
+%% nachgemessen 69,8 mm. Die USt-IdNr. hängt ohne Leerraum an, sonst stünde ohne sie ein Leerzeichen am Ende.
 \begin{minipage}[t]{0.52\linewidth}\raggedright
   <<EMPFAENGER>>\ifblank{<<KUNDE_USTID>>}{}{\ustidtrenner{}\wortustid{} <<KUNDE_USTID>>}
 \end{minipage}%
 \hfill
-%% Die Geschäftsführung steht hier und nicht im Fuß, sonst bräche die erste
-%% Fußzeile um. Warum das Wort nicht "Geschäftsführer" ist, steht in der
-%% Sprachdatei.
-%%
-%% Nummer und Datum der Rechnung stehen im Balken, nicht hier. Die
-%% Kundennummer steht als erste Kopfangabe, gleich neben dem Kunden. Die Beschriftung
-%% des Zeitraums kommt vom Renderer, weil sie an der Rechnungsart hängt
-%% ("Voraussichtlicher Leistungszeitraum", UStAE 14.8). Der Zeitraum bricht
-%% nicht um: Im schmalen Block bräche "Juni bis Oktober 2026" sonst hinter dem
-%% "bis" und läse sich wie zwei Angaben.
+%% Die Geschäftsführung hier und nicht im Fuß, sonst bräche die erste Fußzeile um.
 \begin{minipage}[t]{0.44\linewidth}
   \raggedleft\small\color{gedaempft}
   \ifblank{<<GESCHAEFTSFUEHRUNG>>}{}{\wortgeschaeftsfuehrung\zeilenwechsel{}<<GESCHAEFTSFUEHRUNG>>\blocktrenner{}}
@@ -392,16 +221,8 @@
 \vspace{14mm}
 
 %% ---------------------------------------------------------- Titel (Blickfang)
-%% Das einzige Flächenelement der Seite. Nummer links, Datum rechts – wie auf
-%% der Rechnung vor dem Generator, damit beide Angaben zusammen gelesen
-%% werden.
-%% \fboxsep steuert den Innenabstand des \colorbox – waagerecht wie senkrecht.
-%% Nachgemessen: Der Balken der Rechnung vor dem Generator ist 6,0 mm hoch.
-%%
-%% \raisebox erzwingt Höhe = Ziffernhöhe und Tiefe = 0. Ohne das richtet sich
-%% die Boxhöhe nach dem tatsächlichen Text: Die Unterlänge des "g" in "August"
-%% macht den Balken unten dicker als oben. Jetzt liegt die Unterlänge im
-%% Innenabstand, und die Ziffern haben oben wie unten denselben Abstand.
+%% Nachgemessen ist der Balken der Rechnung vor dem Generator 6,0 mm hoch. \raisebox erzwingt Ziffernhöhe und
+%% Tiefe null, sonst machte die Unterlänge des „g“ in „August“ den Balken unten dicker als oben.
 {\setlength{\fboxsep}{1.4mm}%
 \settoheight{\balkenhoehe}{\large\bfseries 0}%
 \noindent\colorbox{akzent}{%
@@ -412,35 +233,14 @@
 \vspace{9mm}
 
 %% --------------------------------------------------------------- Einleitung
-%% Der Satz aus der Rechnungsdatei, der sagt, worum es geht (#209). Er kommt aus
-%% den Eingabedaten und steht deshalb nicht in \hinweisabsatz (#143). Ohne
-%% Einleitung steht hier nichts, und der Abstand zur Tabelle bleibt derselbe.
+%% Aus den Eingabedaten, deshalb nicht in \hinweisabsatz (#143).
 \ifblank{<<EINLEITUNG>>}{}{\noindent <<EINLEITUNG>>\par\vspace{6mm}}
 
 %% --------------------------------------------------------- Positionen, Summen
-%% Die Tabelle bricht zwischen zwei Positionen um, nie in einer (ADR-0020). Auf
-%% jeder Folgeseite steht wieder der Spaltenkopf; einen Tabellenfuß gibt es
-%% nicht, den Fortsetzungshinweis setzt der Seitenfuß (\fortsetzung). Ein
-%% Übertrag steht nirgends, denn die Vorlage rechnet nicht.
-%%
-%% Die Summen sind die letzte Zeile der Tabelle, angehängt mit \\*: So stehen
-%% sie nie ohne eine Position darüber auf einer Seite. Hinter der Tabelle ginge
-%% das nicht – longtable erlaubt an ihrem Ende einen Umbruch, den kein
-%% \nopagebreak danach zurücknimmt. Der Abstand dazwischen als \noalign und
-%% nicht als \\*[5mm]: Das verlängerte nur die Unterlänge der Zeile, und die
-%% ist mit einer Zusatzzeile der Position schon länger. 5mm und \lineskip
-%% sind der Abstand, den Tabelle und Summen hatten, als sie zwei Absätze
-%% waren; berechnet vor der Tabelle, denn in ihr ist \lineskip null.
-%%
-%% Aus demselben Grund steht hinter der Tabelle \lineskip ohne Zeilenabstand:
-%% longtable hinterlässt eine Unterlänge von null, und TeX setzte vor den
-%% nächsten Absatz den vollen Zeilenabstand, wo zuvor unter den Summen nur
-%% \lineskip stand.
-%%
-%% Davor genau \lineskip und kein \bigskip: So weit stand die tabularx vom
-%% Absatz darüber ab, denn sie war selbst ein Absatz, und ihre Höhe ließ TeX
-%% nur diesen Mindestabstand. Danach nichts und kein Einzug. Dass die Spalten
-%% auf jeder Seite gleich breit sind, sichert die Grundlage (LTchunksize).
+%% Die Summen sind die letzte Zeile, angehängt mit \\*, damit sie nie ohne Position darüber stehen: Hinter der
+%% Tabelle erlaubte longtable einen Umbruch, den kein \nopagebreak zurücknimmt (ADR-0020). Der Abstand als
+%% \noalign, nicht als \\*[5mm], das nur die Unterlänge verlängerte; \summenluft vor der Tabelle, denn darin ist
+%% \lineskip null. \LTpre und \nointerlineskip danach halten die Abstände der früheren tabularx.
 \setlength{\LTpre}{\lineskip}\setlength{\LTpost}{0pt}%
 \setlength{\LTleft}{0pt}\setlength{\LTright}{0pt}%
 \newlength{\summenluft}\setlength{\summenluft}{\dimexpr 5mm+\lineskip\relax}%
@@ -459,42 +259,21 @@
 \end{xltabular}
 \nointerlineskip\vspace{\lineskip}
 
-%% Der Pflichtsatz der Rechnungsart (siehe \hinweisabsatz oben). Bei jeder
-%% anderen Art bleibt der Platzhalter leer und nimmt dann auch keinen Raum ein.
 <<ARTHINWEIS>>
 
-%% Begründungen für Positionen ohne Umsatzsteuer (BT-120), je ein
-%% \steuerhinweis. Bleibt der Platzhalter leer, entsteht hier nichts – der
-%% Abstand darunter trägt beide Fälle.
+%% Der Abstand darunter trägt beide Fälle, mit und ohne Steuerhinweise.
 \vspace{6mm}
 
 <<STEUERHINWEISE>>
 
-%% Die Absetzung der vereinnahmten Abschläge in einer Schlussrechnung – unter
-%% dem Gesamtbetrag, nie in der Positionstabelle (ADR-0002), und nach den
-%% Steuerhinweisen: Die begründen die Steuerzeilen darüber und gehören zu
-%% ihnen. Leer bei jeder anderen Rechnungsart; den Abstand bringt
-%% \absetzungskopf mit.
-%%
-%% Davor die Umsatzsteuer in Euro einer Rechnung in Fremdwährung, als
-%% \hinweisabsatz: Sie gehört zu den Steuerzeilen wie die Steuerhinweise.
-%% Dahinter das Skonto als \hinweisabsatz: nach der Absetzung, weil es das
-%% betrifft, was zu zahlen ist. Alles auf derselben Zeile, damit eine Rechnung
-%% ohne Umrechnung und Skonto kein Zeichen mehr im .tex hat.
+%% Umrechnung, Absetzung und Skonto auf einer Zeile, damit eine Rechnung ohne sie kein Zeichen mehr im .tex hat.
 <<UMRECHNUNG>><<ABSETZUNG>><<SKONTO>>
 
 \vspace{5mm}
 
 %% ------------------------------------------------------------------ Schluss
-%% Ohne Zahlungsaufforderung: Das Zahlungsziel steht oben rechts, ein Satz
-%% darüber wäre die zweite Nennung desselben Datums. Auf welches Konto zu
-%% zahlen ist, sagt die Bankverbindung darunter.
-%%
-%% Schlusssatz, Gruß und Name brechen nicht auseinander: Sonst stünde auf der
-%% letzten Seite ein "Mit freundlichen Grüßen" ohne den Satz, den es beschließt.
-%% Gehalten wird mit Strafen und nicht mit einer Box, denn Strafen nehmen keinen
-%% Raum ein, und eine Rechnung mit einer Seite bleibt, wie sie ist:
-%% \ungeteilt aus der Grundlage im Satz, \nopagebreak danach, \\* im Gruß.
+%% Schlusssatz, Gruß und Name brechen nicht auseinander. Mit Strafen und nicht mit einer Box, denn Strafen
+%% nehmen keinen Raum ein.
 \ungeteilt{<<SCHLUSSSATZ>>}
 \nopagebreak
 \vspace{5mm}
@@ -503,9 +282,6 @@
 <<INHABER>>
 
 %% ---------------------------------------------------------- Bankverbindung
-%% Im Textfluss, linksbündig, mit schlichter Beschriftung – wie auf der
-%% Rechnung vor dem Generator. Kein Kasten, keine Linie, keine Versalien. Ob sie
-%% dasteht, entscheidet der Renderer (siehe \bankblock oben).
 <<BANKVERBINDUNG>>
 
 \end{document}

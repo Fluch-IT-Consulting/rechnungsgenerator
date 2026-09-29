@@ -1,31 +1,21 @@
-%% Die Sprachdatei von helsinki für en-GB (#377). Was eine Sprachdatei ist und
-%% welche Regeln für sie gelten, steht im Kopf von helsinki-de-de.tex.
+%% Die Sprachdatei von helsinki für en-GB (ADR-0025).
 
 %% ---------------------------------------------------------------- Zahlen
-%% Dezimalpunkt und Komma als Tausendertrenner (ADR-0021). Ab wie vielen
-%% Stellen gruppiert wird, wählt die Vorlage.
+%% Ab wie vielen Stellen gruppiert wird, wählt die Vorlage (ADR-0021).
 \sisetup{
   output-decimal-marker = {.},
   group-separator       = {,},
 }
-%% Die Zeichen je Währung wie in helsinki-de-de.tex, wo steht, warum.
 \newcommand{\zeichenEUR}{€}
 \newcommand{\zeichenUSD}{\$}
 \newcommand{\zeichenGBP}{£}
 \newcommand{\waehrungszeichen}{\csname zeichen\waehrung\endcsname}
-%% Das Währungszeichen steht britisch vor der Zahl und ohne Abstand, das
-%% Minus davor: −€200.00. siunitx setzt kein Zeichen vor die Zahl, deshalb
-%% trennt \betrag@zeichen das Vorzeichen ab und setzt es selbst, als
-%% \textminus wie siunitx (#320). Das erste Zeichen genügt: Kotlin liefert die Ziffern mit
-%% Punkt und einem Minus davor, nie ein Plus oder Leerraum (ADR-0021).
-%%
-%% Das @ im Namen macht die Hilfe zu einem Makro allein dieser Datei; die
-%% übrigen Sprachdateien brauchen sie nicht zu kennen.
+%% Das Zeichen vor der Zahl, das Minus davor: −€200.00. siunitx setzt kein Zeichen vor die Zahl, deshalb trennt
+%% \betrag@zeichen das Vorzeichen ab und setzt es als \textminus (#320). Kotlin liefert nie ein Plus (ADR-0021).
 \makeatletter
 \newcommand{\betrag}[1]{\betrag@zeichen#1\relax}
 \def\betrag@zeichen#1#2\relax{\ifx-#1\textminus\waehrungszeichen\num{#2}\else\waehrungszeichen\num{#1#2}\fi}
 \makeatother
-%% Ein Betrag in Euro wie in helsinki-de-de.tex, wo steht, warum.
 \newcommand{\eurobetrag}[1]{\begingroup\def\waehrung{EUR}\betrag{#1}\endgroup}
 %% Das Prozentzeichen ohne Abstand: 19%.
 \newcommand{\prozent}[1]{\num{#1}\%}
@@ -42,8 +32,7 @@
 \newcommand{\wortauftragsnr}{Our order no.:}
 \newcommand{\wortvereinnahmtam}{Payment received on}
 \newcommand{\wortreferenz}{Your reference:}
-%% "Due in full" für "ohne Abzug": Es sagt dasselbe, ohne dass jemand nach
-%% einem Abzug fragt.
+%% „Due in full“ für „ohne Abzug“: dasselbe, ohne dass jemand nach einem Abzug fragt.
 \newcommand{\wortzahlbarbis}{Due in full by}
 
 %% ----------------------------------------------------- Positionen, Summen

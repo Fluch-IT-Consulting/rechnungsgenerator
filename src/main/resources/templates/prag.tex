@@ -1,41 +1,23 @@
-%% Rechnungsvorlage "prag" – wird vom InvoiceRenderer gefüllt, mit denselben
-%% Werten und Makroaufrufen wie "helsinki" (ADR-0011). Platzhalter, Makros und die
-%% Regel, wer was entscheidet, beschreibt der Kopf von helsinki.tex. Kurz: Jede
-%% einzelne Angabe darf leer sein, und diese Vorlage fragt dafür nur \ifblank.
-%%
-%% Gestaltungsprinzip: klassisch-tabellarisch und schwarz-weiß. Die Ordnung
-%% trägt das Gitter der Positionen, nicht eine Farbe. Oben rechts der
-%% Dokumenttitel mit den Kopfangaben, darunter Empfänger und Absender
-%% nebeneinander, unten der Fuß in drei Spalten. Farbe bringt allenfalls das
-%% Logo oben links mit, wenn die Stammdaten eines nennen.
+%% Rechnungsvorlage „prag“ (ADR-0011): klassisch-tabellarisch und schwarz-weiß, die Ordnung trägt das Gitter.
 \documentclass[10pt,a4paper]{article}
 
-%% Was jedes Design gleich setzen muss, steht in der Grundlage (ADR-0022).
-%% Als Erstes, denn sie lädt pdfx. Welche Pakete sie lädt, steht in ihrem
-%% Kopf; die lädt diese Vorlage nicht noch einmal.
+%% Als Erstes, denn die Grundlage lädt pdfx; was sie lädt, lädt diese Vorlage nicht noch einmal (ADR-0022).
 \usepackage{grundlage}
 
 \usepackage{geometry}
-%% xltabular für die Positionen, die über Seiten umbrechen (ADR-0020), wie in
-%% helsinki.tex. Es lädt tabularx selbst, das für die Absetzung bleibt.
+%% xltabular lädt tabularx selbst, das für die Absetzung bleibt.
 \usepackage{xltabular}
 \usepackage{fancyhdr}
 \usepackage{array}
 \usepackage{etoolbox}  %% \ifblank für die Angaben, die leer sein dürfen
 \usepackage{tikz}      %% das Logo
 
-%% Die Schreibweise der Zahlen (ADR-0021): gruppiert ab vier Stellen. Welche
-%% Zeichen trennen und wo das Währungszeichen steht, hängt an der Sprache
-%% und steht in der Sprachdatei, die übrigen Einstellungen von siunitx setzt
-%% die Grundlage.
+%% Gruppiert ab vier Stellen; Trennzeichen und Stellung des Währungszeichens setzt die Sprachdatei (ADR-0021).
 \sisetup{group-minimum-digits = 4}
 
-%% Die Währung der Rechnung, wie in helsinki.tex (#409).
 \newcommand{\waehrung}{<<WAEHRUNG>>}
 
-%% Die Sprachdatei (#377), wie in helsinki.tex: die Wörter dieses Designs und
-%% die Schreibweise der Zahlen in der Sprache der Rechnung. Nach etoolbox und
-%% siunitx, denn sie braucht beide.
+%% Nach etoolbox und siunitx, denn die Sprachdatei braucht beide.
 \input{sprache}
 
 %% Fira Sans, aus TeX Live.
@@ -47,20 +29,12 @@
   BoldItalicFont = *-BoldItalic,
 ]
 
-%% Der Fuß ist ein Seitenfuß auf jeder Seite (ADR-0020), der Kopf der
-%% Folgeseiten steht im oberen Rand, wie in helsinki.tex. includefoot misst den
-%% unteren Rand bis zur Grundlinie des Fußes, und die ist seine Unterkante
-%% (siehe \fuss). Sie steht, wo sie stand, als der Fuß noch das Ende des
-%% Textes war: TeX setzte seine Unterkante \maxdepth unter das Ende des
-%% Textbereichs, der 16 mm über dem Blattrand endete.
-%% Wie hoch der Fuß ist, hängt an den Stammdaten; \footskip setzt deshalb
-%% \fuss selbst, unten nach seiner Definition.
+%% includefoot misst den unteren Rand bis zur Grundlinie des Fußes, und die ist seine Unterkante (siehe \fuss).
+%% 16mm-\maxdepth hält sie, wo sie ohne Seitenfuß stand. \footskip setzt \fuss selbst, unten.
 \geometry{a4paper, left=20mm, right=20mm, top=18mm, bottom=\dimexpr 16mm-\maxdepth\relax,
   includefoot, headheight=12pt, headsep=6mm}
 
 \setlength{\parindent}{0pt}
-%% Die erste Seite trägt nur den Fuß, jede weitere dazu einen kurzen Kopf mit
-%% Nummer, Datum und Seitenzahl.
 \fancypagestyle{erste}{\fancyhf{}\renewcommand{\headrulewidth}{0pt}\fancyfoot[C]{\fuss}\fancyfoot[R]{\fortsetzung}}
 \fancypagestyle{folge}{\fancyhf{}\renewcommand{\headrulewidth}{0pt}%
   \fancyhead[L]{\small <<DOKUMENTART>> <<RECHNUNGSNUMMER>> · <<RECHNUNGSDATUM>>}%
@@ -68,17 +42,12 @@
   \fancyfoot[C]{\fuss}\fancyfoot[R]{\fortsetzung}}
 \pagestyle{folge}
 
-%% Der Fortsetzungshinweis unten rechts auf jeder Seite, der eine weitere
-%% folgt (\wennweitereseite aus der Grundlage). Er steht im Fuß, damit er an
-%% jeder Seite hängt, und nimmt dort keinen Raum ein ([0pt][0pt]): 3 mm unter
-%% dem Ende des Textbereichs, der \footskip über der Grundlinie des Fußes
-%% endet.
+%% Im Fuß, damit er an jeder Seite hängt, ohne Raum einzunehmen: 3 mm unter dem Ende des Textbereichs.
 \newcommand{\fortsetzung}{\wennweitereseite{%
   \raisebox{\dimexpr\footskip-3mm\relax}[0pt][0pt]{\small \wortfortsetzung}}}
 \raggedright
 
-%% Keine Silbentrennung, aus demselben Grund wie in helsinki.tex: Eigennamen,
-%% Beträge und Anschriften.
+%% Keine Silbentrennung: Eigennamen, Beträge und Anschriften.
 \hyphenpenalty=10000
 \exhyphenpenalty=10000
 \tolerance=2000
@@ -86,129 +55,82 @@
 %% Etwas Luft in den Zeilen des Gitters, sonst kleben die Ziffern an den Linien.
 \renewcommand{\arraystretch}{1.35}
 
-%% Die Breite der Betragsspalte. Positionen, Summen und Absetzung stehen in
-%% drei Tabellen untereinander; nur mit derselben Breite fluchten ihre Linien.
-%% Nachgemessen braucht "−19.040,00 €" rund 21 mm.
+%% Dieselbe Breite in allen drei Tabellen, sonst fluchten ihre Linien nicht. Nachgemessen braucht „−19.040,00 €“
+%% rund 21 mm.
 \newlength{\betragsbreite}\setlength{\betragsbreite}{24mm}
 \newcolumntype{B}{>{\raggedleft\arraybackslash}p{\betragsbreite}}
 
-%% Die Zeilen- und Tabellentrenner, die der Renderer aufruft (TemplateMacro).
-%% Im Gitter trennt eine Linie die Positionen; die Summen stehen ohne Linie
-%% untereinander, erst die Abschlusszeile setzt wieder eine.
+%% Die Summen stehen ohne Linie untereinander, erst die Abschlusszeile setzt wieder eine.
 \newcommand{\positionstrenner}{\\\hline}
 \newcommand{\summentrenner}{\\}
 \newcommand{\zeilenwechsel}{\\}
 \newcommand{\zusammen}[1]{\mbox{#1}}
 %% Das Land unter der Anschrift, in Versalien nach DIN 5008.
 \newcommand{\landzeile}[1]{\MakeUppercase{#1}}
-%% Die Mengen, gesetzt nach \sisetup. \betrag und \prozent stehen in der
-%% Sprachdatei: Wo das Währungszeichen steht, hängt an der Sprache.
+%% \betrag und \prozent stehen in der Sprachdatei.
 \newcommand{\menge}[1]{\num{#1}}
 
-%% Eine Zeile oben rechts: Beschriftung und Wert als Tabellenzeile. Ist der Wert
-%% leer, entfällt die ganze Zeile samt Beschriftung – sonst stünde auf einer
-%% gewöhnlichen Rechnung "Vereinnahmt am" ohne Datum.
+%% Ist der Wert leer, entfällt die Zeile samt Beschriftung.
 \newcommand{\kopfangabe}[2]{\ifblank{#2}{}{#1 & #2\\}}
 
-%% Die eigenen Sätze des Programms unter den Summen: zusammenhaltend und mit
-%% dem breiten Abstand nach einem Satzende, beides aus der Grundlage. Deshalb
-%% keine Eingabedaten.
+%% Nur für Sätze des Programms, keine Eingabedaten: \programmsatz setzt den breiten Satzabstand.
 \newcommand{\hinweisabsatz}[1]{\par\vspace{5mm}\noindent%
   \ungeteilt{\programmsatz{#1}}}
 
-%% Der Hinweis auf eine Steuerbefreiung, ein Satz je befreiter Steuergruppe:
-%% zusammenhaltend, aber ohne \programmsatz – der Befreiungsgrund kommt aus
-%% den Eingabedaten (#143).
+%% Ohne \programmsatz: Der Befreiungsgrund kommt aus den Eingabedaten (#143).
 \newcommand{\steuerhinweis}[1]{\noindent\ungeteilt{#1}}
 
 \newcommand{\absetzungskopf}[1]{\par\vspace{6mm}\noindent #1\par\vspace{1.5mm}}
 
-%% Die abgesetzten Abschläge im selben Gitter wie die Summen: Bezeichnung links,
-%% Betrag in der Betragsspalte. Der Renderer liefert die Zeilen ohne Zeilenende
-%% nach der letzten, das setzt diese Tabelle.
+%% Der Renderer liefert die Zeilen ohne Zeilenende nach der letzten, das setzt diese Tabelle.
 \newcommand{\absetzungstabelle}[1]{\par\noindent%
   \begin{tabularx}{\linewidth}{|>{\raggedright\arraybackslash}X|B|}\hline#1\\\hline\end{tabularx}\par}
 
-%% Die Zusatzzeile unter einer Position oder einem Abschlag. \normalfont, weil
-%% die Bezeichnung einer Position fett steht und die Zeile darin liegt.
+%% \newline statt \\, das in der X-Spalte die Tabellenzeile beendete. \normalfont, weil die Bezeichnung einer
+%% Position fett steht.
 \newcommand{\positionsdetail}[1]{\newline{\normalfont\small #1}}
 \newcommand{\absetzungsdetail}[1]{\newline{\small #1}}
 
-%% Die Rabattspalte steht nur, wenn eine Position einen Rabatt hat (#213).
-%% \mitrabatt setzt sein Argument nur dann, R ist die Spalte oder nichts.
-%%
-%% Gefragt wird einmal, danach nur der Schalter: Zeile, Spaltentyp und
-%% \spaltenzahl müssen dieselbe Antwort bekommen, sonst hat eine Zeile eine
-%% Zelle mehr, als die Tabelle Spalten hat.
+%% Einmal gefragt, danach nur der Schalter: Zeile, Spaltentyp und \spaltenzahl müssen dieselbe Antwort
+%% bekommen, sonst hat eine Zeile eine Zelle mehr, als die Tabelle Spalten hat.
 \newtoggle{rabattspalte}
 \ifblank{<<RABATTSPALTE>>}{}{\toggletrue{rabattspalte}}
 \newcommand{\mitrabatt}[1]{\iftoggle{rabattspalte}{#1}{}}
 \iftoggle{rabattspalte}{\newcolumntype{R}{>{\raggedleft\arraybackslash}p{14mm}|}}{\newcolumntype{R}{}}
 
-%% Eine Zeile der Positionstabelle, Spalten wie das Gitter: laufende Nummer,
-%% Bezeichnung (fett, die Beschreibung darunter), Menge, Einheit, Einzelpreis,
-%% Rabatt, Gesamt.
 \newcommand{\positionszeile}[7]{#1 & \textbf{#2} & #3 & #4 & #5\mitrabatt{ & #6} & #7}
 
-%% Der Kopf der Positionstabelle, auf der ersten Seite und auf jeder Folgeseite.
 \newcommand{\positionskopf}{\hline
   \textbf{\wortpos} & \textbf{\wortbezeichnung} & \textbf{\wortmenge} & \textbf{\worteinheit} & \textbf{\worteinzelpreis}\mitrabatt{ & \textbf{\wortrabatt}} & \textbf{\wortgesamt}\\
   \hline}
 
-%% Wie viele Spalten die Positionstabelle hat: sechs, mit Rabattspalte sieben.
-%% Es steht im ersten Argument von \multicolumn und muss dort zur Zahl
-%% expandieren; \iftoggle tut das.
+%% Muss im ersten Argument von \multicolumn zur Zahl expandieren; \iftoggle tut das.
 \newcommand{\spaltenzahl}{\iftoggle{rabattspalte}{7}{6}}
 
 \newcommand{\summenzeile}[2]{#1 & #2}
 
-%% Die fette Zeile unter der Linie, mit der ein Betragsblock endet. Sie beendet
-%% die Zeile davor selbst, wie in helsinki.tex (#147).
+%% Beendet die Zeile davor selbst (#147).
 \newcommand{\abschlusszeile}[2]{\\\hline\textbf{#1} & \textbf{#2}}
 
-%% Die Zeilen des Summenblocks mit ihren Beschriftungen (#217). Die Wörter
-%% gehören zum Design und stehen in seiner Sprachdatei; Kotlin liefert nur
-%% Satz und Beträge. prag nennt die Steuer ausgeschrieben und den Satz
-%% dahinter, wie auf der Rechnung vor dem Generator, der dieses Design folgt.
+%% prag nennt die Steuer ausgeschrieben und den Satz dahinter.
 \newcommand{\nettozeile}[1]{\summenzeile{\wortzwischensumme}{#1}}
 \newcommand{\steuerzeile}[3]{\summenzeile{\wortsteuer{#1}{#2}}{#3}}
 \newcommand{\gesamtzeile}[1]{\abschlusszeile{\wortgesamtbetrag}{#1}}
 
-%% Die Bankverbindung setzt prag nicht als eigenen Block: Sie steht im Fuß,
-%% auf jedem Dokument, als Angabe des Briefbogens und nicht als
-%% Zahlungsaufforderung – so, wie helsinki die IBAN in seiner Fußzeile führt.
-%% Ob das Dokument zur Zahlung auffordert, sagt der Satz zur Zahlungsfrist.
-%% Der Renderer ruft \bankblock trotzdem auf, wenn Zahlung gefordert wird, und
-%% es bleibt leer (#189, ADR-0011).
+%% Die Bankverbindung steht im Fuß, als Angabe des Briefbogens und nicht als Zahlungsaufforderung. \bankblock
+%% bleibt deshalb leer (ADR-0011).
 \newcommand{\bankblock}{}
 
-%% Das Logo nennen die Stammdaten (#198, ADR-0012). Der Renderer legt die
-%% Datei neben die .tex, <<LOGO>> ist ihr Name, ohne Logo leer. Sie wird hier
-%% in der Präambel gelesen und definiert (#199):
-%%  - \logozeichnung, Pflicht: den Rumpf einer tikzpicture;
-%%  - \logoskalierung, optional: einen Faktor auf \logohoehe, sonst 1.
-%% Schrift und Farben bringt sie selbst mit; die Vorlage sichert zu, dass TikZ,
-%% fontspec und xcolor geladen sind.
-%%
-%% Den Faktor begrenzt die Vorlage nicht, man sieht ihn am Blatt; die Grenze
-%% steht beim Kopf.
-%%
-%% TikZ und keine Bilddatei: Der Treiber luatex.def von graphicx gibt jedem
-%% über \includegraphics eingebundenen PDF eine Transparenzgruppe mit, und die
-%% verbietet PDF/A-1 (ISO 19005-1, 6.4, siehe #197).
+%% Das Logo definiert \logozeichnung und optional \logoskalierung (ADR-0012). TikZ und keine Bilddatei:
+%% luatex.def gibt jedem per \includegraphics eingebundenen PDF eine Transparenzgruppe mit, und die verbietet
+%% PDF/A-1 (#197).
 \newlength{\logohoehe}\setlength{\logohoehe}{12mm}
 \newlength{\versalhoehe}
 \ifblank{<<LOGO>>}{}{\input{<<LOGO>>}}
 \providecommand{\logoskalierung}{1}
 
 %% ------------------------------------------------------------------ Fuß
-%% Drei Spalten: Anschrift und Kontakt, Steuer und Register (§35a GmbHG),
-%% Bank. Beide Steuerkennungen, wo es beide gibt – die Spalte hat Platz. Der
-%% Seitenfuß jeder Seite, oben in \fancypagestyle gesetzt.
-%%
-%% Die Spalten hängen oben bündig, und die längste bestimmt die Unterkante.
-%% \raisebox{\depth} macht die Unterkante zur Grundlinie: So wächst der Fuß
-%% mit jeder weiteren Zeile nach oben und nie in den Rand.
+%% \raisebox{\depth} macht die Unterkante zur Grundlinie: So wächst der Fuß nach oben und nie in den Rand.
 \newcommand{\fuss}{\raisebox{\depth}{\parbox[t]{\textwidth}{\footnotesize
 \noindent
 \begin{minipage}[t]{0.32\linewidth}\raggedright
@@ -223,11 +145,8 @@
   <<INSTITUT>>\\IBAN: <<IBAN>>\\BIC: <<BIC>>
 \end{minipage}}}}
 
-%% \footskip aus der Höhe des Fußes, dazu der Abstand, den fancyhdr über ihn
-%% setzt, und 4 mm Luft zum Text. Ein fester Wert wäre bei einem langen
-%% Firmennamen, der in seiner Spalte umbricht, zu klein, und dann vergrößerte
-%% fancyhdr \footskip selbst: Der Fuß rutschte nach unten, der Text bliebe,
-%% wo er ist.
+%% \footskip aus der Höhe des Fußes: Ein fester Wert wäre bei einem umbrechenden Firmennamen zu klein, und
+%% fancyhdr schöbe den Fuß nach unten.
 \newlength{\fusshoehe}\settoheight{\fusshoehe}{\fuss}
 \geometry{footskip=\dimexpr\fusshoehe+\footruleskip+4mm\relax}
 
@@ -235,14 +154,8 @@
 \thispagestyle{erste}
 
 %% ------------------------------------------------------- Titel und Kopfangaben
-%% Links das Logo, wenn es eines gibt, rechts der Titel mit den Kopfangaben;
-%% die Beschriftungen stehen rechtsbündig vor ihren Werten.
-%%
-%% Das Logo nimmt keinen Raum ein ([0pt][0pt]): So steht der Titel auf
-%% derselben Grundlinie wie ohne Logo, und alles darunter bleibt, wo es war.
-%% Seine Oberkante liegt auf der Versalhöhe des Titels. Dafür darf es nicht
-%% höher werden als der Block der Kopfangaben, sonst ragt es in die Anschriften
-%% – mit \logoskalierung liegt die Grenze bei gut 2.
+%% Das Logo nimmt keinen Raum ein ([0pt][0pt]), so bleibt alles, wo es ohne Logo stand. Höher als der Block der
+%% Kopfangaben ragte es in die Anschriften; mit \logoskalierung liegt die Grenze bei gut 2.
 \settoheight{\versalhoehe}{\LARGE\bfseries M}%
 \noindent\ifblank{<<LOGO>>}{}{\raisebox{\dimexpr\versalhoehe-\height\relax}[0pt][0pt]{%
   \resizebox{!}{\logoskalierung\logohoehe}{\begin{tikzpicture}\logozeichnung\end{tikzpicture}}}}%
@@ -261,9 +174,7 @@
 \vspace{12mm}
 
 %% ------------------------------------------------------ Empfänger und Absender
-%% Links der Empfänger mit seiner USt-IdNr. (BT-48, §14a UStG), rechts der
-%% Absender. Die Person unter der Firmierung nur ohne Geschäftsführung, wie in
-%% helsinki; die Geschäftsführung steht hier im Fuß.
+%% Die Person unter der Firmierung nur ohne Geschäftsführung, die hier im Fuß steht.
 \begin{minipage}[t]{0.5\linewidth}\raggedright
   <<EMPFAENGER>>\ifblank{<<KUNDE_USTID>>}{}{\\[2mm]\wortustid: <<KUNDE_USTID>>}
 \end{minipage}%
@@ -275,27 +186,13 @@
 \vspace{12mm}
 
 %% --------------------------------------------------------------- Einleitung
-%% Der Satz aus der Rechnungsdatei, der sagt, worum es geht (#209). Er kommt aus
-%% den Eingabedaten und steht deshalb nicht in \hinweisabsatz (#143). Ohne
-%% Einleitung steht hier nichts, und der Abstand zur Tabelle bleibt derselbe.
+%% Aus den Eingabedaten, deshalb nicht in \hinweisabsatz (#143).
 \ifblank{<<EINLEITUNG>>}{}{\noindent <<EINLEITUNG>>\par\vspace{5mm}}
 
 %% --------------------------------------------------------- Positionen, Summen
-%% Die Tabelle bricht zwischen zwei Positionen um (ADR-0020): Jede \hline ist
-%% in longtable eine Stelle, an der die Seite brechen darf, mit ihrer Linie
-%% unten auf der einen Seite und oben auf der nächsten. Oben steht wieder der
-%% Spaltenkopf; den Fortsetzungshinweis setzt der Seitenfuß (\fortsetzung).
-%%
-%% Die Summen setzen das Gitter fort, mit derselben Betragsspalte, und sind
-%% deshalb die letzte Zeile der Tabelle: So stehen sie nie ohne eine Position
-%% darüber. Die Linie zwischen beiden ist darum ein \hrule und keine \hline,
-%% denn an einer \hline dürfte die Seite brechen, und \\* davor änderte daran
-%% nichts. Dieselbe Höhe, dieselbe Breite.
-%%
-%% Davor \lineskip, danach \lineskip ohne Zeilenabstand: Die tabularx stand in
-%% einem Absatz, und TeX ließ zwischen ihr und ihren Nachbarn nur diesen
-%% Mindestabstand. longtable hinterlässt eine Unterlänge von null. Dass die
-%% Spalten auf jeder Seite gleich breit sind, sichert die Grundlage.
+%% Jede \hline ist in longtable eine Stelle, an der die Seite brechen darf (ADR-0020). Die Summen sind die letzte
+%% Zeile, damit sie nie ohne Position darüber stehen; die Linie davor ist deshalb ein \hrule und keine \hline,
+%% und \\* änderte daran nichts. \LTpre und \LTpost halten den Abstand der früheren tabularx.
 \setlength{\LTpre}{\lineskip}\setlength{\LTpost}{0pt}%
 \setlength{\LTleft}{0pt}\setlength{\LTright}{0pt}%
 \begin{xltabular}{\linewidth}{|>{\centering\arraybackslash}p{7mm}|>{\raggedright\arraybackslash}X|>{\raggedleft\arraybackslash}p{13mm}|>{\raggedright\arraybackslash}p{15mm}|>{\raggedleft\arraybackslash}p{22mm}|RB|}
@@ -313,29 +210,18 @@
 \nointerlineskip\vspace{\lineskip}
 
 %% ------------------------------------------------------ Die fachlichen Sätze
-%% Pflichtsatz, Steuerhinweise, Umsatzsteuer in Euro, Absetzung und Skonto in
-%% derselben Reihenfolge wie in helsinki. Dazwischen das Zahlungsziel als Satz, das helsinki im Kopf
-%% nennt (#211): erst was offen ist, dann wann es fällig ist, dann der
-%% mögliche Abzug.
+%% Die Zahlungsfrist zwischen Absetzung und Skonto: erst was offen ist, dann wann, dann der mögliche Abzug (#211).
 <<ARTHINWEIS>>
 
-%% Ihren Abstand bringen alle selbst mit – außer den Steuerhinweisen: Der
-%% Befreiungsgrund kommt aus den Eingabedaten und steht deshalb nicht in
-%% \hinweisabsatz (#143). Den Abstand setzt deshalb die Vorlage, und nur, wenn
-%% etwas dasteht – unbedingt wie in helsinki schöbe er auch jede Rechnung ohne
-%% steuerfreie Position um dieselben 5 mm nach unten (#220).
+%% Den Abstand der Steuerhinweise setzt die Vorlage, und nur, wenn etwas dasteht (#220).
 \ifblank{<<STEUERHINWEISE>>}{}{\par\vspace{5mm}<<STEUERHINWEISE>>}
 
 <<UMRECHNUNG>><<ABSETZUNG>><<ZAHLUNGSFRIST>><<SKONTO>>
 
 <<BANKVERBINDUNG>>
 
-%% Der Schlusssatz aus Stammdaten oder Rechnung. Keine Grußformel. Er bricht
-%% nicht über zwei Seiten (\ungeteilt aus der Grundlage), und er
-%% hängt am Absatz davor – der Zahlungsfrist, ohne sie dem Pflichtsatz –,
-%% sonst stünde er allein auf der letzten Seite. \nopagebreak vor dem Abstand
-%% und nicht danach: Hinter einer Strafe ist der Abstand keine Stelle mehr, an
-%% der die Seite brechen darf. <<BANKVERBINDUNG>> davor ist in prag leer.
+%% Der Schlusssatz hängt am Absatz davor, sonst stünde er allein auf der letzten Seite. \nopagebreak vor dem
+%% Abstand: Hinter einer Strafe ist der Abstand keine Bruchstelle mehr.
 \nopagebreak
 \vspace{8mm}
 
