@@ -9,10 +9,7 @@ import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
 import java.math.BigDecimal
 
-/**
- * Welche Ziffern die Vorlage bekommt. Wie sie auf dem Blatt aussehen, prüft
- * das Pflichtangaben-Netz je Design am fertigen PDF (ADR-0021).
- */
+/** Nur die Ziffern; ihre Schreibweise prüft das Pflichtangaben-Netz (ADR-0021). */
 class NumbersTest : FunSpec({
 
     test("Beträge mit genau zwei Nachkommastellen") {
@@ -57,8 +54,7 @@ class NumbersTest : FunSpec({
         }
     }
 
-    // stripTrailingZeros macht aus 1000 ein 1E+3, und siunitx läse den
-    // Exponenten: 1 × 10³ auf dem Blatt.
+    // stripTrailingZeros macht aus 1000 ein 1E+3, und siunitx setzte 1 × 10³.
     test("große runde Zahlen ohne Exponent") {
         assertSoftly {
             Numbers.quantity(BigDecimal("1000")).tex shouldBe "\\menge{1000}"
@@ -69,19 +65,14 @@ class NumbersTest : FunSpec({
         }
     }
 
-    /**
-     * Der Kern von #14: Ein festes Muster rundete, ohne es zu sagen. Aus einem
-     * Einzelpreis von 0,00001 € würde `0,00` – und dann stünde auf der
-     * Rechnung "10.000 zu 0,00 € = 0,10 €".
-     */
+    // #14
     test("nichts wird stillschweigend gerundet") {
         assertSoftly {
             Numbers.price(Price("0.00001")).tex shouldBe "\\betrag{0.00001}"
             Numbers.price(Price("0.12345")).tex shouldBe "\\betrag{0.12345}"
             Numbers.quantity(BigDecimal("86.5678")).tex shouldBe "\\menge{86.5678}"
             Numbers.quantity(BigDecimal("0.0004")).tex shouldBe "\\menge{0.0004}"
-            // Satz: "0 %" wäre auf einer Rechnung nicht ungenau, sondern eine
-            // andere Aussage – die Kategorie unterscheidet steuerfrei von 0 %.
+            // "0 %" wäre nicht ungenau, sondern eine andere Steuerkategorie.
             Numbers.percent(Percent("0.0004")).tex shouldBe "\\prozent{0.0004}"
             Numbers.percent(Percent("19.1234")).tex shouldBe "\\prozent{19.1234}"
         }

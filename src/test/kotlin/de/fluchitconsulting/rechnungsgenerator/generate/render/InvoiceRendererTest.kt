@@ -41,34 +41,21 @@ import java.nio.file.Path
 import java.time.LocalDate
 import java.time.YearMonth
 
-// Testressourcen liegen in src/test/resources und landen im Classpath.
 private fun resource(name: String): String =
     checkNotNull(InvoiceRendererTest::class.java.getResource("/$name")).readText()
 
-/**
- * Der Inhalt einer Rechnung, wie ihn die Vorlage bekommt (#204): je nicht
- * leerem Platzhalter eine Kopfzeile `<<NAME>>`, darunter der Wert, in der
- * Reihenfolge von [TemplateValue]. Die leeren fehlen, damit eine neue,
- * optionale Angabe keine dieser Dateien berührt. Ein Format des Netzes und
- * kein Ergebnis des Renderers – deshalb steht es hier und nicht im Hauptcode.
- */
+// #204. Die leeren fehlen, damit eine neue, optionale Angabe keine Vergleichsdatei berührt.
 private fun contentOf(values: Map<TemplateValue, Latex>): String =
     TemplateValue.entries
         .map { it to values.getValue(it).tex }
         .filter { (_, tex) -> tex.isNotEmpty() }
         .joinToString("\n") { (key, tex) -> "<<${key.name}>>\n$tex\n" }
 
-/**
- * Prüft das erzeugte LaTeX, nicht das PDF. Ob daraus ein gültiges PDF/A wird,
- * beantwortet der ToolchainIntegrationTest; hier geht es um die Frage, ob die
- * Felder an der richtigen Stelle landen – und das ist ohne LuaLaTeX zu klären.
- */
 class InvoiceRendererTest : FunSpec({
 
     val config = testSellerConfig()
 
-    // Das Beispiellogo aus den Testressourcen. Der Pfad ist nur ein Name –
-    // gelesen hat der Test die Datei selbst, wie sonst YamlLoader.
+    // Der Pfad ist nur ein Name, die Bytes liest der Test selbst.
     val exampleLogo = Logo(Path.of("logo.tex"), resource("logo.tex").toByteArray())
 
     fun renderWith(vararg items: de.fluchitconsulting.rechnungsgenerator.core.model.LineItem): String {
@@ -76,12 +63,7 @@ class InvoiceRendererTest : FunSpec({
         return InvoiceRenderer.render(CalculatedInvoice(invoice, config).accepted()).sources.tex
     }
 
-    /**
-     * Der Wert eines Platzhalters, wie der Renderer ihn liefert. Seit #188
-     * stehen die Beschriftungen ("Tel.", "Zahlbar ohne Abzug bis") in der
-     * Vorlage, also in jedem gesetzten Text. Ob eine Angabe dasteht, zeigt
-     * deshalb ihr Wert: leer oder nicht.
-     */
+    // Ob eine Angabe dasteht, zeigt ihr Wert, denn die Beschriftung steht in der Vorlage (#188).
     fun valueOf(
         key: TemplateValue,
         invoice: Invoice = testInvoice(),
@@ -92,16 +74,12 @@ class InvoiceRendererTest : FunSpec({
         val tex = renderWith(testItem())
 
         tex shouldContain "Testposition"
-        // Kein Umbruch, keine zweite Zeile: Die schlichte Position soll
-        // schlicht bleiben.
-        // Nicht bloß "positionsdetail": Die Vorlage definiert das Makro, das
-        // Wort steht also ohnehin im Text. Gemeint ist der Aufruf dahinter.
+        // Der Aufruf, nicht das Wort: Die Vorlage definiert das Makro.
         tex shouldNotContain "Testposition\\positionsdetail"
     }
 
     test("jede Position trägt ihre laufende Nummer, beginnend bei 1") {
-        // Das erste Argument von \positionszeile. Ob ein Design sie setzt,
-        // entscheidet die Vorlage; helsinki setzt sie nicht (#188).
+        // Ob ein Design sie setzt, entscheidet die Vorlage; helsinki nicht (#188).
         val tex = renderWith(testItem().copy(name = "Erste"), testItem().copy(name = "Zweite"))
 
         tex shouldContain "\\positionszeile{1}{Erste}"
@@ -111,8 +89,7 @@ class InvoiceRendererTest : FunSpec({
     test("die Beschreibung wird zur zweiten Zeile, klein und gedämpft") {
         val tex = renderWith(testItem(description = "Rahmenvertrag vom 01.02.2026"))
 
-        // Wie die zweite Zeile aussieht, steht in der Vorlage; hier wird
-        // geprüft, was hineingeht (#51).
+        // #51
         tex shouldContain "Testposition\\positionsdetail{Rahmenvertrag vom 01.02.2026}"
     }
 
@@ -123,8 +100,7 @@ class InvoiceRendererTest : FunSpec({
     }
 
     test("ein abweichender Zeitraum der Position wird benannt") {
-        // Vor dem Rechnungsdatum (14.08.2026): Eine Rechnung rechnet eine
-        // erbrachte Leistung ab, auch je Position (#47).
+        // Vor dem Rechnungsdatum, denn auch eine Position rechnet Erbrachtes ab (#47).
         val item =
             testItem(description = "Arbeitspaket Nord").copy(
                 servicePeriod = ServicePeriod(LocalDate.of(2026, 6, 1), LocalDate.of(2026, 6, 30)),
@@ -134,24 +110,13 @@ class InvoiceRendererTest : FunSpec({
     }
 
     test("Sonderzeichen werden auch in den Zusatzfeldern maskiert") {
-        // Ein nacktes & beendet in LaTeX die Tabellenspalte, ein % den Rest der
-        // Zeile. Beides würde den Satz zerlegen, nicht bloß hässlich aussehen.
         val tex = renderWith(testItem(description = "Meier & Söhne", note = "50 % Anzahlung"))
 
         tex shouldContain "Meier \\& Söhne · 50 \\% Anzahlung"
     }
 
-    /**
-     * Eine Rechnungsdatei ohne den Schlüssel `art` ist eine gewöhnliche
-     * Rechnung, und ihr Satz steht zeichengleich in `rechnung-erwartet.tex`.
-     *
-     * Verglichen wird das LaTeX, nicht das PDF – zwei PDF-Läufe unterscheiden
-     * sich schon im Zeitstempel, und alles, was am PDF anders werden könnte,
-     * steht vorher hier drin. Wird die Vorlage absichtlich geändert, muss
-     * `rechnung-erwartet.tex` bewusst neu erzeugt werden; genau das ist der
-     * Zweck: Der Satz einer gewöhnlichen Rechnung soll sich nicht nebenbei
-     * ändern, wenn an einer anderen Rechnungsart gebaut wird.
-     */
+    // Wird er rot, ist das eine Frage und keine Aufgabe: Der Satz einer
+    // gewöhnlichen Rechnung soll sich nicht nebenbei ändern.
     test("eine Rechnungsdatei ohne art wird gesetzt wie erwartet") {
         val seller = YamlLoader.parseSellerConfig(resource("stammdaten.yaml"))
         val invoice = YamlLoader.parseInvoice(resource("rechnung.yaml"))
@@ -160,19 +125,8 @@ class InvoiceRendererTest : FunSpec({
             resource("rechnung-erwartet.tex")
     }
 
-    /**
-     * Je Art der Inhalt, je Design das Satzbild (#204). Die Werte hängen nicht
-     * am Design, eine Datei gilt also für jedes; den Volltext sichert je Design
-     * allein die gewöhnliche Rechnung. Die übrigen Arten tragen ihr Markup –
-     * Absetzungstabelle, Pflichtsatz, Bezug – als Makroaufrufe in den Werten,
-     * und wie ein Design diese Makros definiert, steht in dessen Volltext.
-     * Eine Änderung am Satzbild berührt so eine Datei je Design statt eine je
-     * Art, und wird der Volltext rot, zeigt die Inhalts-Datei, ob sich der
-     * Inhalt geändert hat oder nur das Satzbild.
-     *
-     * Ohne Logo: Es ist ein Schalter und keine Angabe der Rechnungsart; das
-     * Logo sichert die Volltext-Datei von prag.
-     */
+    // Je Art der Inhalt, je Design der Volltext nur der gewöhnlichen Rechnung
+    // (#204). Ohne Logo, das sichert der Volltext von prag.
     test("jede Rechnungsart hat eine Beispieldatei") {
         exampleInvoices.keys shouldBe InvoiceType.entries.toSet()
     }
@@ -190,12 +144,7 @@ class InvoiceRendererTest : FunSpec({
         }
     }
 
-    /**
-     * Dieselben Beispiele auf Englisch (#405), in beiden Varianten (#407),
-     * mit vorangestelltem `sprache:` wie im Pflichtangaben-Netz. Die Freitexte
-     * der Datei bleiben deutsch; festgehalten ist, was aus Kotlin kommt – Name
-     * des Dokuments, Pflichtsatz, Absetzung, Daten, Einheiten.
-     */
+    // #405, #407. Die Freitexte der Dateien bleiben deutsch.
     test("jede Rechnungsart bekommt auf Englisch die Werte wie festgehalten") {
         val seller = YamlLoader.parseSellerConfig(resource("stammdaten.yaml"))
 
@@ -211,15 +160,8 @@ class InvoiceRendererTest : FunSpec({
         }
     }
 
-    /**
-     * Das Satzbild von prag, gesichert an der Rechnung (ADR-0011). Die
-     * übrigen Arten sichern hier wie in helsinki ihre Inhalts-Dateien und das
-     * Pflichtangaben-Netz; eine Vergleichsdatei je Design und Art änderte sich
-     * mit jeder Vorlage.
-     */
     test("eine Rechnung im Design prag wird gesetzt wie festgehalten") {
-        // Mit Logo (#198): Das zeigt prag, und ohne Logo stünde in der
-        // Vergleichsdatei nur ein leeres \ifblank.
+        // Mit Logo (#198), sonst stünde in der Vergleichsdatei nur ein leeres \ifblank.
         val seller =
             YamlLoader.parseSellerConfig(resource("stammdaten.yaml")).copy(design = Design.PRAG, logo = exampleLogo)
         val invoice = YamlLoader.parseInvoice(resource("rechnung.yaml"))
@@ -228,13 +170,7 @@ class InvoiceRendererTest : FunSpec({
             resource("prag-rechnung-erwartet.tex")
     }
 
-    /**
-     * Je Design der Volltext einer englischen Rechnung (#377) und einer
-     * amerikanischen (#407), wie der deutschen oben eine Frage und keine
-     * Aufgabe. Was aus Kotlin kommt – Daten, Einheiten, Sätze, das Land –
-     * steht hier wörtlich; die Wörter der Designs stehen als `\wort…` da und
-     * in ihren Sprachdateien.
-     */
+    // #377, #407; wie oben eine Frage und keine Aufgabe.
     test("eine englische und eine amerikanische Rechnung werden in jedem Design gesetzt wie festgehalten") {
         val seller = YamlLoader.parseSellerConfig(resource("stammdaten.yaml"))
 
@@ -283,8 +219,7 @@ class InvoiceRendererTest : FunSpec({
             }
         }
 
-        // Ob das Blatt das Logo zeigt, sagt der Renderer ausdrücklich – das
-        // Kommando nennt es danach in einer Fehlermeldung (#203).
+        // Ausdrücklich, weil das Kommando es in einer Fehlermeldung nennt (#203).
         test("mit Logo zeigt es jedes Design") {
             Design.entries.forEach { design ->
                 withClue(design) { typeset(design, exampleLogo).includesLogo shouldBe true }
@@ -322,8 +257,7 @@ class InvoiceRendererTest : FunSpec({
     }
 
     context("Die Kommentarzeilen der Vorlage") {
-        // Wie gestrichen wird, prüft der TemplateTest; hier nur, dass im
-        // gesetzten LaTeX keine ankommt (#149).
+        // #149
 
         test("im gesetzten LaTeX steht keine Kommentarzeile der Vorlage") {
             renderWith(testItem()).lines().filter { it.trimStart().startsWith("%") }.shouldBeEmpty()
@@ -332,7 +266,6 @@ class InvoiceRendererTest : FunSpec({
 
     context("Das Land in der Anschrift") {
 
-        /** Der Block, in dem die Anschrift des Kunden steht. */
         fun address(customerCountry: String, sellerCountry: String): String {
             val basis = testInvoice()
             val invoice =
@@ -347,17 +280,11 @@ class InvoiceRendererTest : FunSpec({
         }
 
         test("ein kleingeschriebenes Land ist dasselbe Land") {
-            // Der Defekt, gegen den dieser Typ steht: Ohne ihn stünde hier eine
-            // Zeile "de" unter der Anschrift, während der Calculator dieselbe
-            // Rechnung als Inlandsrechnung behandelt.
             address(customerCountry = "de", sellerCountry = "DE") shouldBe
                 """Beispiel Software GmbH\zeilenwechsel{}Industriestraße 1\zeilenwechsel{}90402 Nürnberg"""
         }
 
         test("Inland ist relativ zum Rechnungssteller, nicht zu Deutschland") {
-            // Sitzt der Rechnungssteller in Österreich, ist ein deutscher Kunde
-            // für ihn Ausland – und bekommt sein Land genannt. Stünde "DE"
-            // fest im Code, verschwiege diese Rechnung es.
             address(customerCountry = "DE", sellerCountry = "AT") shouldBe
                 """Beispiel Software GmbH\zeilenwechsel{}Industriestraße 1\zeilenwechsel{}90402 Nürnberg\zeilenwechsel{}\landzeile{Deutschland}"""
         }
@@ -367,11 +294,8 @@ class InvoiceRendererTest : FunSpec({
                 """Beispiel Software GmbH\zeilenwechsel{}Industriestraße 1\zeilenwechsel{}90402 Nürnberg\zeilenwechsel{}\landzeile{Österreich}"""
         }
 
-        // Ein Code, den das JDK nicht als Staat nach ISO 3166 führt, bricht
-        // nicht ab: Die Form hat CountryCode geprüft, und auf dem Blatt steht
-        // er, wie er in der Datei steht.
-        // EL: Griechenland in der Umsatzsteuer der EU, in ISO 3166 GR.
-        // ZZ: Das JDK nennt es "Unbekannte Region" – das darf nicht aufs Blatt.
+        // EL ist Griechenland nur in der Umsatzsteuer der EU; ZZ nennt das JDK
+        // "Unbekannte Region".
         for (code in listOf("EL", "ZZ", "XX")) {
             test("der Code $code ohne Namen steht als Code da") {
                 address(customerCountry = code, sellerCountry = "DE") shouldEndWith """\zeilenwechsel{}\landzeile{$code}"""
@@ -380,9 +304,7 @@ class InvoiceRendererTest : FunSpec({
     }
 
     test("ein Kleinstpreis steht so da, dass man die Zeile nachrechnen kann") {
-        // Der Fall aus #14: Mit gerundetem Einzelpreis stünde hier
-        // "10.000 & Std. & 0,00 € & 0,10 €" – die Summe stimmt, aber
-        // nachrechnen ließe sie sich nicht.
+        // #14
         val tex = renderWith(testItem(quantity = "10000", unitPrice = "0.00001"))
 
         tex shouldContain "{\\menge{10000}}{Std.}{\\betrag{0.00001}}{}{\\betrag{0.10}}"
@@ -406,12 +328,8 @@ class InvoiceRendererTest : FunSpec({
         }
 
         test("der Zeitraum ist der voraussichtliche") {
-            // UStAE 14.8 Abs. 1: Auf einer Abschlagsrechnung ist der Zeitraum
-            // eine Prognose. Als "Leistungszeitraum" beschriftet, behauptete er,
-            // die Leistung sei erbracht.
-            //
-            // Deshalb kommt diese Beschriftung vom Renderer und nicht aus der
-            // Vorlage: Sie trägt eine fachliche Aussage (#188).
+            // UStAE 14.8 Abs. 1. Vom Renderer und nicht aus der Vorlage, weil die
+            // Beschriftung eine fachliche Aussage trägt (#188).
             valueOf(TemplateValue.ZEITRAUM_BESCHRIFTUNG, testInvoice(type = InvoiceType.PREPAYMENT)) shouldBe
                 "Voraussichtlicher Leistungszeitraum"
             valueOf(TemplateValue.ZEITRAUM_BESCHRIFTUNG) shouldBe "Leistungszeitraum"
@@ -422,9 +340,7 @@ class InvoiceRendererTest : FunSpec({
             val tex = abschlag()
 
             tex shouldContain "Die Leistung ist noch nicht erbracht."
-            // Nicht nur, DASS er dasteht: Über der Positionstabelle wäre der
-            // Satz eine Ankündigung, unter dem Gesamtbetrag ist er der Vorbehalt
-            // zu genau dieser Summe.
+            // Unter dem Gesamtbetrag, als Vorbehalt zu genau dieser Summe.
             tex.indexOf("Die Leistung ist noch nicht erbracht.") shouldBeGreaterThan tex.indexOf("\\gesamtzeile{")
             renderWith(testItem()) shouldNotContain "noch nicht erbracht"
         }
@@ -440,8 +356,7 @@ class InvoiceRendererTest : FunSpec({
                 "Voraussichtlicher Zeitraum: September 2026"
         }
 
-        // Die kurze Beschriftung steht in keiner Beispieldatei, weil keine
-        // Position des Abschlags einen eigenen Zeitraum trägt (#405).
+        // Steht in keiner Beispieldatei (#405).
         test("auf Englisch heißt der Zeitraum einer Position Expected period") {
             val item =
                 testItem().copy(servicePeriod = ServicePeriod(LocalDate.of(2026, 9, 1), LocalDate.of(2026, 9, 30)))
@@ -476,17 +391,14 @@ class InvoiceRendererTest : FunSpec({
         val totalService = listOf(testItem(quantity = "1", unitPrice = "20000.00"))
 
         test("die Abschläge stehen unter dem Gesamtbetrag, nicht in der Positionstabelle") {
-            // ADR-0002: Ein Abschlag ist keine negative Position. Stünde er in
-            // der Tabelle, senkte er die Bemessungsgrundlage und damit die
-            // ausgewiesene Umsatzsteuer.
+            // ADR-0002
             val tex = finalInvoice(totalService, testPrepayment())
 
             tex.indexOf("R26-009") shouldBeGreaterThan tex.indexOf("\\gesamtzeile{")
         }
 
         test("jeder Abschlag steht einzeln, mit Netto und Steuer") {
-            // UStAE 14.8 Abs. 7 ließe die Summe genügen; einzeln, damit der
-            // Kunde sieht, welche seiner Zahlungen abgesetzt wurde.
+            // UStAE 14.8 Abs. 7 ließe die Summe genügen.
             val tex =
                 finalInvoice(
                     totalService,
@@ -501,8 +413,7 @@ class InvoiceRendererTest : FunSpec({
             tex shouldContain "Abschlagsrechnung R26-009 vom 15.06.2026, vereinnahmt am 10.06.2026"
             tex shouldContain "Abschlagsrechnung R26-011 vom 20.07.2026, vereinnahmt am 25.07.2026"
             tex shouldContain "netto \\betrag{4000.00} zzgl. \\prozent{19} USt. \\betrag{760.00}"
-            // Abgesetzt wird, also negativ. Welches Minuszeichen auf dem Blatt
-            // steht, entscheidet die Vorlage (ADR-0021).
+            // Das Minuszeichen wählt die Vorlage (ADR-0021).
             tex shouldContain "\\betrag{-4760.00}"
         }
 
@@ -510,21 +421,16 @@ class InvoiceRendererTest : FunSpec({
             val tex = finalInvoice(totalService, testPrepayment())
 
             tex shouldContain "\\abschlusszeile{Restbetrag}{\\betrag{19040.00}}"
-            // Der Aufruf und nicht bloß der Name: Die Vorlage definiert
-            // \bankblock, das Wort steht also in jedem erzeugten .tex.
+            // Der Aufruf, nicht das Wort: Die Vorlage definiert \bankblock.
             tex shouldContain "\\bankblock{}"
         }
 
         test("ein Restbetrag von null bekommt einen Satz statt einer Zahl") {
-            // Ein nacktes "0,00 €" unter dem Strich sieht aus wie ein Fehler.
             val tex = finalInvoice(listOf(testItem(quantity = "1", unitPrice = "4000.00")), testPrepayment())
 
             tex shouldContain "es verbleibt kein Restbetrag"
-            // Keine Abschlusszeile mit Betrag (#94).
+            // #94
             tex shouldNotContain "\\abschlusszeile{Restbetrag}"
-            // Und kein Zahlungsziel daneben: Das wäre die zweite, andere
-            // Aussage desselben Blattes. Die Gegenprobe: Eine gewöhnliche
-            // Rechnung nennt sehr wohl eines.
             val settled =
                 testInvoice(
                     type = InvoiceType.FINAL,
@@ -533,8 +439,7 @@ class InvoiceRendererTest : FunSpec({
                 )
             valueOf(TemplateValue.ZAHLUNGSZIEL, settled) shouldBe ""
             valueOf(TemplateValue.ZAHLUNGSZIEL) shouldBe "28.~August 2026"
-            // Ebenso wenig ein Konto: Wer nichts zu zahlen hat, bekommt keines
-            // genannt (#94). Die IBAN in der Fußzeile bleibt.
+            // Die IBAN im Fuß bleibt.
             valueOf(TemplateValue.BANKVERBINDUNG, settled) shouldBe ""
         }
 
@@ -542,8 +447,7 @@ class InvoiceRendererTest : FunSpec({
             renderWith(testItem()) shouldNotContain "Abzüglich"
         }
 
-        // Der Restbetrag steht in schlussrechnung-en-gb-inhalt.tex, der Satz
-        // statt der Null in keiner Inhalts-Datei (#405).
+        // Der Satz statt der Null steht in keiner Inhalts-Datei (#405).
         test("auf Englisch bekommt ein Restbetrag von null den englischen Satz") {
             val invoice =
                 testInvoice(
@@ -581,8 +485,7 @@ class InvoiceRendererTest : FunSpec({
         }
 
         test("das Zahlungsziel im Kopf bleibt, wie es ist") {
-            // Kein Datum steht doppelt: Jede Skontofrist endet vor dem
-            // Zahlungsziel, das SKONTOFRIST_NICHT_VOR_ZAHLUNGSZIEL hält.
+            // Kein Datum doppelt, das hält SKONTOFRIST_NICHT_VOR_ZAHLUNGSZIEL.
             valueOf(TemplateValue.ZAHLUNGSZIEL, testInvoice(skonto = listOf(SkontoTier(rate = Percent("2"), days = 7)))) shouldBe
                 "28.~August 2026"
         }
@@ -593,8 +496,7 @@ class InvoiceRendererTest : FunSpec({
     }
 
     context("Umrechnung (#418)") {
-        // Eine Position zu 100.00 $ mit 19 %: 19.00 $, geteilt durch 1.1685
-        // sind 16.2601… -> 16.26 €.
+        // 19.00 $ / 1.1685 = 16.2601… -> 16.26 €
         fun inDollar(
             language: Language = Language.GERMAN,
             skonto: List<SkontoTier> = emptyList(),
@@ -643,8 +545,7 @@ class InvoiceRendererTest : FunSpec({
     }
 
     context("Zahlungsfrist") {
-        // Der Satz, den prag statt der Kopfzeile "Zahlbar bis" setzt (#211).
-        // Die Stammdaten des Tests haben 14 Tage.
+        // #211; die Stammdaten des Tests haben 14 Tage.
         fun paymentTerm(invoice: Invoice): String = valueOf(TemplateValue.ZAHLUNGSFRIST, invoice)
 
         test("mehrere Tage ab Rechnungsdatum") {
@@ -661,14 +562,12 @@ class InvoiceRendererTest : FunSpec({
         }
 
         test("mit Skonto ohne Abzug") {
-            // Ohne Skonto fehlen die Worte: Dort fragte man sich, welcher
-            // Abzug gemeint ist.
             paymentTerm(testInvoice(skonto = listOf(SkontoTier(rate = Percent("2"), days = 7)))) shouldBe
                 "\\hinweisabsatz{Die Zahlung ist ohne Abzug 14 Tage nach Rechnungsdatum fällig.}"
         }
 
         test("ohne Zahlungsziel kein Satz") {
-            // Eine voll abgesetzte Schlussrechnung fordert kein Geld (#94).
+            // #94
             val settled =
                 testInvoice(
                     type = InvoiceType.FINAL,
@@ -680,8 +579,6 @@ class InvoiceRendererTest : FunSpec({
     }
 
     context("Englisch (#377)") {
-        // Was aus Kotlin kommt. Beschriftungen der Vorlage und die
-        // Schreibweise der Zahlen stehen in den Sprachdateien der Designs.
         fun english(
             items: List<LineItem> = listOf(testItem()),
             paymentTermDaysOverride: Int? = null,
@@ -713,8 +610,7 @@ class InvoiceRendererTest : FunSpec({
                 "\\hinweisabsatz{Payment is due in full 14 days after the invoice date.}"
         }
 
-        // "of 2%" und nicht "a 2%": Der Artikel hinge an der Aussprache der
-        // Zahl – a 2%, an 8%, an 11% (#406).
+        // "of 2%" statt "a 2%": Der Artikel hinge an der Aussprache der Zahl (#406).
         test("Skonto mit zwei Stufen, nach der Frist sortiert") {
             val skonto = listOf(SkontoTier(rate = Percent("1.5"), days = 10), SkontoTier(rate = Percent("2"), days = 7))
 
@@ -780,15 +676,12 @@ class InvoiceRendererTest : FunSpec({
     }
 
     context("Pflichtangaben und was fehlen darf") {
-        // Keine dieser Angaben steht in einer der Vergleichsdateien (#95):
-        // Deren Stammdaten haben alles, und keine ihrer Rechnungen ist
-        // steuerfrei. Geprüft wird am Inhalt, nicht am Makro.
+        // Keine dieser Angaben steht in einer Vergleichsdatei (#95).
 
         fun render(invoice: Invoice, sellerConfig: SellerConfig = config): String =
             InvoiceRenderer.render(CalculatedInvoice(invoice, sellerConfig).accepted()).sources.tex
 
-        // Eine Position zum Regelsatz und eine mit Steuerschuldnerschaft des
-        // Leistungsempfängers – die verlangt die USt-IdNr. des Kunden.
+        // Reverse Charge verlangt die USt-IdNr. des Kunden.
         fun withReverseCharge() =
             testInvoice(
                 items =
@@ -800,8 +693,7 @@ class InvoiceRendererTest : FunSpec({
             )
 
         test("eine Position ohne Umsatzsteuer bekommt ihren Grund genannt") {
-            // BT-120. Bei Reverse Charge verlangen §14a Abs. 1 und 5 UStG den Hinweis
-            // ausdrücklich auf der Rechnung.
+            // BT-120, §14a Abs. 1 und 5 UStG
             render(withReverseCharge()) shouldContain
                 "Auf \\betrag{200.00} entfällt keine Umsatzsteuer: Steuerschuldnerschaft des Leistungsempfängers (Reverse Charge)."
         }
@@ -813,9 +705,8 @@ class InvoiceRendererTest : FunSpec({
                 "No VAT is charged on \\betrag{200.00}: Reverse charge."
         }
 
-        // Einen vorgeschriebenen Wortlaut haben beide nicht: Der Grund darf
-        // umgangssprachlich stehen (UStAE 14.5 Abs. 20), nur fachlich nichts
-        // anderes sagen als der deutsche (#406).
+        // Kein vorgeschriebener Wortlaut, nur dieselbe fachliche Aussage wie der
+        // deutsche (UStAE 14.5 Abs. 20, #406).
         listOf(
             TaxCategory.INTRA_COMMUNITY to "Exempt intra-Community supply of goods",
             TaxCategory.EXPORT to "Exempt export of goods",
@@ -841,8 +732,6 @@ class InvoiceRendererTest : FunSpec({
         }
 
         test("eine Steuergruppe ohne Steuerbetrag steht nicht in den Summen") {
-            // "zzgl. 0 % USt. 0,00 €" sähe aus wie ein Rechenfehler; warum keine
-            // Steuer anfällt, sagt der Hinweis darunter.
             val tex = render(withReverseCharge())
 
             tex shouldContain "\\steuerzeile{\\prozent{19}}"
@@ -850,8 +739,7 @@ class InvoiceRendererTest : FunSpec({
         }
 
         test("jeder Hinweis auf eine Steuerbefreiung ist ein eigener Satz") {
-            // Zwischen zwei Hinweisen darf die Seite brechen, in einem nicht
-            // (ADR-0020) – das entscheidet die Vorlage je Makroaufruf.
+            // Zwischen zwei Hinweisen darf die Seite brechen, in einem nicht (ADR-0020).
             val tex =
                 render(
                     testInvoice(
@@ -878,7 +766,7 @@ class InvoiceRendererTest : FunSpec({
         }
 
         test("die USt-IdNr. des Kunden steht unter seiner Anschrift, wenn er eine hat") {
-            // §14a UStG. Wo sie steht, entscheidet die Vorlage; hier nur, ob.
+            // §14a UStG
             val customerVatId = VatId("ATU12345678")
 
             valueOf(TemplateValue.KUNDE_USTID, testInvoice(customerVatId = customerVatId)) shouldBe customerVatId.formatted()
@@ -886,8 +774,7 @@ class InvoiceRendererTest : FunSpec({
         }
 
         test("der Ansprechpartner steht unter dem Namen und vor der Straße, wenn es einen gibt") {
-            // BT-56 (#196). Die Reihenfolge ist Postkonvention, deshalb im
-            // Block EMPFAENGER und nicht als eigener Platzhalter.
+            // BT-56 (#196). Postkonvention, deshalb im Block und kein eigener Platzhalter.
             valueOf(TemplateValue.EMPFAENGER, testInvoice(contactPoint = "Herrn Max Beispiel")) shouldBe
                 """Beispiel Software GmbH\zeilenwechsel{}Herrn Max Beispiel\zeilenwechsel{}Industriestraße 1\zeilenwechsel{}90402 Nürnberg"""
             valueOf(TemplateValue.EMPFAENGER) shouldBe
@@ -895,32 +782,26 @@ class InvoiceRendererTest : FunSpec({
         }
 
         test("die Kundennummer kommt maskiert, und ohne sie ist der Wert leer") {
-            // BT-46 (#190). Leer heißt: helsinki lässt die Zeile samt "Kundennr."
-            // weg. Das & zeigt, dass sie wie jeder Freitext maskiert wird.
+            // BT-46 (#190)
             valueOf(TemplateValue.KUNDENNUMMER, testInvoice(buyerIdentifier = "K-17 & Co")) shouldBe "K-17 \\& Co"
             valueOf(TemplateValue.KUNDENNUMMER) shouldBe ""
         }
 
         test("die Auftragsnummer kommt maskiert, und ohne sie ist der Wert leer") {
-            // BT-14 (#191). Leer heißt: helsinki lässt die Zeile samt
-            // "Unsere Auftragsnr." weg.
+            // BT-14 (#191)
             valueOf(TemplateValue.AUFTRAGSNUMMER, testInvoice(salesOrderReference = "A_2026_014")) shouldBe "A\\_2026\\_014"
             valueOf(TemplateValue.AUFTRAGSNUMMER) shouldBe ""
         }
 
         test("die Einleitung kommt maskiert, und ohne sie ist der Wert leer") {
-            // #209. Leer heißt: Die Vorlage setzt über der Tabelle nichts, und
-            // der Abstand ändert sich nicht.
+            // #209
             valueOf(TemplateValue.EINLEITUNG, testInvoice(introduction = "Für Projekt A & B:")) shouldBe
                 "Für Projekt A \\& B:"
             valueOf(TemplateValue.EINLEITUNG) shouldBe ""
         }
 
         test("Geschäftsführung, Telefon, Registergericht und Referenz sind leer, wenn sie fehlen") {
-            // Die Beschriftungen stehen seit #188 in der Vorlage, ebenso die
-            // Regel "die Person im Kopf nur ohne Geschäftsführung". Hier bleibt
-            // die Frage, ob der Renderer eine fehlende Angabe leer liefert und
-            // eine vorhandene so, wie sie in der Eingabe steht.
+            // #188
             valueOf(TemplateValue.GESCHAEFTSFUEHRUNG) shouldBe ""
             valueOf(TemplateValue.TELEFON) shouldBe ""
             valueOf(TemplateValue.REGISTERGERICHT) shouldBe ""
@@ -944,8 +825,6 @@ class InvoiceRendererTest : FunSpec({
         }
 
         test("die Angaben der Stammdaten kommen maskiert") {
-            // Einzeln statt als fertige Zeile, aber genauso maskiert: Ein & in
-            // der Firmierung zerlegte sonst den Fuß.
             valueOf(TemplateValue.FIRMA, sellerConfig = config.copy(companyName = "Meier & Söhne")) shouldBe "Meier \\& Söhne"
         }
     }

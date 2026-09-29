@@ -14,17 +14,14 @@ class DateFormatTest : FunSpec({
     val english = DateFormat(Language.BRITISH_ENGLISH)
     val american = DateFormat(Language.AMERICAN_ENGLISH)
 
-    // Sicherstellen, dass die Formatierung nicht am Standard-Locale der JVM hängt:
-    // Unter en_US wären Punkt und Komma vertauscht.
+    // Die Formatierung darf nicht am Standard-Locale der JVM hängen.
     beforeSpec { Locale.setDefault(Locale.US) }
     afterSpec { Locale.setDefault(Locale.getDefault()) }
 
     test("Leistungszeitraum: ganzer Monat wird zum Monatsnamen") {
         assertSoftly {
             german.servicePeriod(LocalDate.of(2026, 7, 1), LocalDate.of(2026, 7, 31)).tex shouldBe "Juli 2026"
-            // Februar hat 28 Tage – die Monatslänge muss berechnet, nicht geraten werden.
             german.servicePeriod(LocalDate.of(2026, 2, 1), LocalDate.of(2026, 2, 28)).tex shouldBe "Februar 2026"
-            // Teilmonat und monatsübergreifend bleiben ein Datumsbereich.
             german.servicePeriod(LocalDate.of(2026, 7, 1), LocalDate.of(2026, 7, 15)).tex shouldBe
                 "01.07.2026\\,–\\,15.07.2026"
             german.servicePeriod(LocalDate.of(2026, 7, 1), LocalDate.of(2026, 8, 31)).tex shouldBe
@@ -42,7 +39,7 @@ class DateFormatTest : FunSpec({
 
     test("Datumsangaben") {
         assertSoftly {
-            // ~ hinter dem Tag: Der Punkt ist kein Satzende (#143).
+            // Der Punkt ist kein Satzende (#143).
             german.date(LocalDate.of(2026, 8, 14)).tex shouldBe "14.~August 2026"
             german.date(LocalDate.of(2026, 3, 1)).tex shouldBe "1.~März 2026"
             // In den Metadaten ist ~ ein Zeichen und kein Abstand.
@@ -52,14 +49,12 @@ class DateFormatTest : FunSpec({
     }
     test("ein voraussichtlicher Zeitraum wird in Monaten geschrieben") {
         assertSoftly {
-            // Volle Monate: Der Kalendermonat genügt (UStAE 14.8 Abs. 1 und 4).
+            // UStAE 14.8 Abs. 1 und 4
             german.monthPeriod(LocalDate.of(2026, 6, 1), LocalDate.of(2026, 10, 31)).tex shouldBe
                 "Juni bis Oktober 2026"
             german.monthPeriod(LocalDate.of(2026, 6, 1), LocalDate.of(2026, 6, 30)).tex shouldBe "Juni 2026"
             german.monthPeriod(LocalDate.of(2026, 12, 1), LocalDate.of(2027, 3, 31)).tex shouldBe
                 "Dezember 2026 bis März 2027"
-            // Angebrochene Randmonate bleiben datiert – sonst wäre die Angabe
-            // nicht gröber, sondern eine andere.
             german.monthPeriod(LocalDate.of(2026, 6, 15), LocalDate.of(2026, 10, 20)).tex shouldBe
                 "15.06.2026\\,–\\,20.10.2026"
         }
