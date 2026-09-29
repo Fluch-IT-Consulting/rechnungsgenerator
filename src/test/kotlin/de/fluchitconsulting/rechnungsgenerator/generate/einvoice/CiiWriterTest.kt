@@ -48,21 +48,13 @@ private fun example(name: String): AcceptedInvoice {
 private fun AcceptedInvoice.xml(): String = CiiWriter.write(this)
 
 /**
- * Das XML einer Rechnung, zeichengleich und geprüft – und was der Writer noch
- * nicht schreibt.
- *
- * Die Vergleichsdatei ist wie `rechnung-erwartet.tex` eine Frage und keine
- * Aufgabe: Wird der Test rot, erst nachsehen, ob die Änderung gewollt ist.
- * Der Vergleich allein sagt aber nicht, ob das XML gilt – deshalb prüft
- * Mustang es daneben, so wie ihn auch `erzeuge --zugferd` prüft (ADR-0023).
+ * Eine rote Vergleichsdatei ist eine Frage und keine Aufgabe. Ob das XML gilt,
+ * sagt erst Mustang daneben (ADR-0023).
  */
 class CiiWriterTest : FunSpec({
 
-    // Je Art, die der Writer schreibt, eine Vergleichsdatei. Die Teilrechnung
-    // unterscheidet sich von der Rechnung im XML nur im Code, sie prüft der
-    // Test darunter. Dazu die englische Rechnung (#405): Mustang prüft nur,
-    // ob ihr XML gilt, nicht, dass Einleitung und Befreiungsgrund darin auf
-    // Englisch stehen.
+    // Die Teilrechnung unterscheidet sich nur im Code. Die englische Rechnung,
+    // weil Mustang die Sprache nicht prüft (#405).
     listOf("rechnung", "abschlagsrechnung", "schlussrechnung", "stornorechnung", "englische-rechnung").forEach { name ->
         test("$name.yaml ergibt das erwartete XML") {
             example(name).xml() shouldBe resource("$name-erwartet.xml")
@@ -73,9 +65,7 @@ class CiiWriterTest : FunSpec({
         }
     }
 
-    // Die Währung der Rechnung (#409) steht als BT-5 und an der einen Summe,
-    // die sie in CII eigens nennt, der Steuersumme (BT-110). Jeder andere
-    // Betrag gilt in BT-5.
+    // #409. BT-110 ist die einzige Summe, die in CII ihre Währung eigens nennt.
     test("die Währung steht als InvoiceCurrencyCode und an der Steuersumme") {
         Currency.entries.forEach { currency ->
             withClue(currency) {
@@ -95,18 +85,14 @@ class CiiWriterTest : FunSpec({
         }
     }
 
-    // Die Beispiele in Fremdwährung (#409): Mustang nimmt sie ohne neue
-    // Warnung an. Die englische Rechnung in Pfund steht schon oben, mit
-    // Vergleichsdatei.
+    // #409
     listOf("amerikanische-rechnung", "dollar-auf-deutsch").forEach { name ->
         test("das XML aus $name.yaml ist gültig, ohne Warnung") {
             example(name).xml().shouldBeValidExtended()
         }
     }
 
-    // Umsatzsteuer in Fremdwährung (#418): BT-6 und die Steuersumme in Euro
-    // (BT-111), die BR-53 dann verlangt. Mustang rechnet sie nicht nach, er
-    // kennt den Kurs nicht – deshalb die Vergleichsdatei.
+    // #418. Mustang kennt den Kurs nicht und rechnet BT-111 nicht nach.
     context("Umrechnung") {
         test("umsatzsteuer-in-dollar.yaml ergibt das erwartete XML") {
             example("umsatzsteuer-in-dollar").xml() shouldBe resource("umsatzsteuer-in-dollar-erwartet.xml")
@@ -132,9 +118,7 @@ class CiiWriterTest : FunSpec({
         }
     }
 
-    // Der Pflichtsatz steht im XML in der Sprache der Rechnung, als Notiz
-    // (#405). Die Vergleichsdatei der englischen Rechnung sieht ihn nicht:
-    // Die gewöhnliche Rechnung hat keinen.
+    // #405. Die englische Vergleichsdatei ist eine gewöhnliche Rechnung ohne Pflichtsatz.
     test("das Storno auf Englisch trägt den englischen Pflichtsatz, und das XML ist gültig") {
         val seller = YamlLoader.parseSellerConfig(resource("stammdaten.yaml"))
         val invoice = YamlLoader.parseInvoice("sprache: en-GB\n" + resource("stornorechnung.yaml"))
@@ -146,9 +130,7 @@ class CiiWriterTest : FunSpec({
         xml.shouldBeValidExtended()
     }
 
-    // Auf en-US steht dort das amerikanische Datum (#407), sonst derselbe
-    // Satz. Keine eigene Vergleichsdatei: Das XML unterscheidet sich in nichts
-    // anderem.
+    // #407
     test("das Storno auf en-US nennt das Datum amerikanisch, und das XML ist gültig") {
         val seller = YamlLoader.parseSellerConfig(resource("stammdaten.yaml"))
         val invoice = YamlLoader.parseInvoice("sprache: en-US\n" + resource("stornorechnung.yaml"))
@@ -171,7 +153,6 @@ class CiiWriterTest : FunSpec({
         xml.shouldBeValidExtended()
     }
 
-    // Nicht teilrechnung.yaml: Die trägt Rabatte, und die gehen noch nicht.
     test("die Teilrechnung trägt den Code 326 und ist gültig") {
         val xml = CalculatedInvoice(testInvoice(type = InvoiceType.PARTIAL), testSellerConfig()).accepted().xml()
 
@@ -222,9 +203,8 @@ class CiiWriterTest : FunSpec({
     }
 
     context("BT-33 nennt Registergericht und Geschäftsführung wie das Blatt") {
-        // Die Positionen stehen im XML vor dem Verkäufer, und ihre
-        // Beschreibung (BT-154) heißt ebenfalls ram:Description. Deshalb trägt
-        // die Rechnung eine, und gelesen wird nur im Verkäufer.
+        // Auch die Positionsbeschreibung (BT-154) heißt ram:Description und steht
+        // davor; gelesen wird nur im Verkäufer.
         fun description(registerCourt: String?, managingDirector: String?): String {
             val config = testSellerConfig().copy(registerCourt = registerCourt, managingDirector = managingDirector)
             val invoice = testInvoice(items = listOf(testItem(description = "Arbeitspaket Nord")))
@@ -277,8 +257,7 @@ class CiiWriterTest : FunSpec({
             }
         }
 
-        // Das XML ist die maßgebliche Fassung und trägt denselben Grund wie das
-        // Blatt. Bei AE ist es der Begriff aus Anlage 8 zum UStAE (#406).
+        // Derselbe Grund wie auf dem Blatt; bei AE aus Anlage 8 zum UStAE (#406).
         listOf(
             Triple(TaxCategory.REVERSE_CHARGE, "AT", "Reverse charge"),
             Triple(TaxCategory.INTRA_COMMUNITY, "AT", "Exempt intra-Community supply of goods"),
@@ -292,10 +271,7 @@ class CiiWriterTest : FunSpec({
             }
         }
 
-        // Das Lieferland steht auf jeder Rechnung (BR-FX-DE-04), im Inland
-        // hält es rechnung-erwartet.xml fest. Bei K verlangt es zusätzlich
-        // BR-IC-12, und dort ist das Land des Kunden ein anderes als das des
-        // Verkäufers.
+        // BR-FX-DE-04, bei K zusätzlich BR-IC-12.
         test("K nennt das Land des Kunden als Lieferland") {
             val xml = invoiceIn(TaxCategory.INTRA_COMMUNITY, "AT").xml()
 
@@ -317,9 +293,8 @@ class CiiWriterTest : FunSpec({
             xml.shouldBeValidExtended()
         }
 
-        // EXTENDED lässt O neben anderen Kategorien zu und verlangt dann
-        // nicht, dass die USt-IdNr. des Verkäufers fehlt. BR-O-02 und
-        // BR-O-11 bis BR-O-14 prüft Mustang nur in BASIC und EN16931.
+        // EXTENDED lässt O neben anderen Kategorien zu; BR-O-02 und BR-O-11 bis
+        // BR-O-14 prüft Mustang nur in BASIC und EN16931.
         test("O neben S ist gültig") {
             val invoice =
                 testInvoice(
@@ -342,9 +317,7 @@ class CiiWriterTest : FunSpec({
     }
 
     context("Rabatt und Skonto") {
-        // Satz und Basis prüft der Validator nicht nach, nur die Summen: Ein
-        // falscher Satz neben dem richtigen Betrag ginge durch. Deshalb stehen
-        // beide Abschläge hier wörtlich.
+        // Wörtlich, weil der Validator Satz und Basis nicht nachrechnet.
         test("ein Rabatt als Satz trägt seine Basis, einer als Betrag nicht") {
             val xml = example("teilrechnung").xml()
 
@@ -378,9 +351,7 @@ class CiiWriterTest : FunSpec({
             xml.shouldBeValidExtended()
         }
 
-        // Mustangs eigenes Modell rundet hier auf 6.208,78 € und bekäme von
-        // seinem Validator eine Rechenwarnung (#363). Nach ADR-0013 sind es
-        // 6.208,77 €, wie auf dem Blatt, und das nimmt er ohne Warnung an.
+        // Mustangs eigenes Modell rundete auf 6.208,78 € (#363); nach ADR-0013 sind es 6.208,77 €.
         test("die Beträge sind die nach ADR-0013, und der Validator rechnet sie nach") {
             val item = testItem(quantity = "42.09", unitPrice = "273.17", discount = "46")
             val xml = CalculatedInvoice(testInvoice(items = listOf(item)), testSellerConfig()).accepted().xml()
@@ -389,8 +360,7 @@ class CiiWriterTest : FunSpec({
             xml.shouldBeValidExtended()
         }
 
-        // Nach der Frist sortiert und nicht wie in der Datei, wie auf dem
-        // Blatt; das Zahlungsziel bleibt eigene Zahlungsbedingung davor.
+        // Nach der Frist sortiert, wie auf dem Blatt.
         test("mehrere Skontostufen stehen je als eigene Zahlungsbedingung da") {
             val xml = example("skonto").xml()
 
@@ -433,8 +403,6 @@ class CiiWriterTest : FunSpec({
     }
 
     context("Abschlag und Storno") {
-        // Die Vergleichsdateien tragen den Wortlaut; hier steht, worauf es
-        // bei der Art ankommt.
         test("der Abschlag nennt seinen Pflichtsatz und den Tag der Vereinnahmung") {
             val xml = example("abschlagsrechnung").xml()
 
@@ -472,8 +440,7 @@ class CiiWriterTest : FunSpec({
                 """.trimMargin()
         }
 
-        // Ein Storno fordert kein Geld (requestsPayment): keine Bankverbindung,
-        // kein Zahlungsziel, und der Betrag steht negativ da (ADR-0006).
+        // ADR-0006
         test("das Storno fordert nichts") {
             val xml = example("stornorechnung").xml()
 
@@ -482,8 +449,7 @@ class CiiWriterTest : FunSpec({
             xml shouldContain "<ram:DuePayableAmount>-9921.63</ram:DuePayableAmount>"
         }
 
-        // Der Rabatt bekommt das Vorzeichen der Basis (ADR-0013), im XML
-        // also einen negativen Abschlag auf eine negative Position.
+        // ADR-0013
         test("ein Storno mit Rabatt ist gültig") {
             val items =
                 listOf(
@@ -504,9 +470,7 @@ class CiiWriterTest : FunSpec({
     }
 
     context("die Schlussrechnung") {
-        // Mustang rechnet nur die Summe der Abschläge gegen den Restbetrag
-        // nach (BR-FXEXT-CO-16), nicht den einzelnen Abschlag. Deshalb steht
-        // einer hier wörtlich, Feld für Feld wie im Block abschlaege.
+        // Wörtlich, weil Mustang nur die Summe der Abschläge nachrechnet (BR-FXEXT-CO-16).
         test("jeder abgesetzte Abschlag steht mit Betrag, Vereinnahmung, Steueranteil und Rechnung da") {
             val xml = example("schlussrechnung").xml()
 
@@ -535,10 +499,7 @@ class CiiWriterTest : FunSpec({
             xml.occurrencesOf("<ram:SpecifiedAdvancePayment>") shouldBe 2
         }
 
-        // Der Gegentest zu shouldBeValidExtended: Ein Netz, das nichts meldet,
-        // sähe sonst aus wie eines, das hält. Der Fall ist ein Netto je
-        // Steueranteil, das EXTENDED hier nicht kennt und Mustang nicht meldet
-        // (#453) – ein echter und kein erfundener.
+        // Der Gegentest zu shouldBeValidExtended, an einem echten Fall (#453).
         test("die Prüfung des Schematrons sieht ein Element, das EXTENDED an dieser Stelle nicht kennt") {
             val site =
                 """
@@ -568,8 +529,7 @@ class CiiWriterTest : FunSpec({
             ).forEach { xml shouldContain it }
         }
 
-        // Je Kombination aus Kategorie und Satz ein Steueranteil, wie in
-        // steueranteile (ADR-0002).
+        // ADR-0002
         test("ein Abschlag mit zwei Steuersätzen trägt zwei Steueranteile und bleibt gültig") {
             val invoice =
                 example("schlussrechnung").calculated.invoice.let { invoice ->
@@ -594,8 +554,6 @@ class CiiWriterTest : FunSpec({
             xml.shouldBeValidExtended()
         }
 
-        // Wie auf dem Blatt: Wer nichts mehr fordert, nennt weder Konto noch
-        // Frist (requestsPayment).
         test("ausgeglichen fordert sie nichts mehr") {
             val xml = example("schlussrechnung-ausgeglichen").xml()
 
@@ -607,11 +565,7 @@ class CiiWriterTest : FunSpec({
     }
 })
 
-/**
- * Eine Rechnung, deren einzige Position in [category] steht, an einen Kunden
- * in [country]. Verlangt die Kategorie die USt-IdNr. des Kunden, trägt er eine
- * samt Nachweis der Bestätigungsabfrage, sonst lehnten die Regeln ab.
- */
+// Verlangt die Kategorie die USt-IdNr. des Kunden, trägt er eine samt Nachweis.
 private fun invoiceIn(
     category: TaxCategory,
     country: String = "DE",
@@ -637,15 +591,8 @@ private fun invoiceIn(
 private fun String.occurrencesOf(text: String): Int = split(text).size - 1
 
 /**
- * Gültig heißt für Mustang auch "gültig mit Warnungen". Erlaubt ist keine:
- * Jede wäre ein Befund, der sonst unbemerkt durchginge.
- *
- * Gezählt wird jede Warnung und nicht nur die mit Kennung: Mustangs eigene
- * Rechenprüfung meldet eine abweichende Summe als Warnung ohne `[ID …]`, und
- * gerade sie hält die Beträge des XML an denen des Blatts.
- *
- * Dazu kein `successful-report` des Schematrons: Den übergeht Mustang, siehe
- * [schematronReports].
+ * Keine Warnung, auch keine ohne `[ID …]`: So meldet Mustangs Rechenprüfung eine
+ * abweichende Summe. Dazu kein `successful-report`, den Mustang übergeht.
  */
 private fun String.shouldBeValidExtended() {
     val validator = ZUGFeRDValidator()
@@ -668,13 +615,9 @@ private val extendedSchematron: SchematronResourceXSLT by lazy {
 }
 
 /**
- * Die `successful-report` des Schematrons von EXTENDED, je mit Ort und Text.
- *
- * Mustang wertet nur `failed-assert` aus. Ein `successful-report` meldet dort
- * ein Element, das das Profil an dieser Stelle nicht kennt, und das XSD lässt
- * es durch, weil die Typen der CII allgemein sind (#453). Deshalb wendet der
- * Test das Schematron, das Mustang mitbringt, selbst an – geladen wie bei
- * Mustang, über ph-schematron, das auch die Codeliste neben dem XSLT findet.
+ * Mustang wertet nur `failed-assert` aus, ein `successful-report` meldet aber ein
+ * Element, das EXTENDED hier nicht kennt (#453). Geladen wie bei Mustang, über
+ * ph-schematron, das auch die Codeliste neben dem XSLT findet.
  */
 private fun schematronReports(xml: String): List<String> {
     val svrl = checkNotNull(extendedSchematron.applySchematronValidationToSVRL(StreamSource(StringReader(xml))))

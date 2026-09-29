@@ -34,32 +34,14 @@ import kotlin.io.path.exists
 import kotlin.io.path.readText
 import kotlin.io.path.writeText
 
-/**
- * Prüft, was zwischen Einlesen und Ergebnis passiert: kopieren, ausgeben,
- * aufräumen, Exitcode setzen.
- *
- * Ohne die Naht [Typesetter] setzte jeder Lauf LuaLaTeX und veraPDF voraus.
- * Hinter ihr steht hier ein Adapter, der ein vorbereitetes PDF und ein
- * vorbereitetes Prüfergebnis liefert – der Weg davor bleibt echt, nur die
- * beiden fremden Programme sind ersetzt.
- *
- * Aufgerufen wird über das Elternkommando, so wie ein Mensch es tut:
- * `rechnungsgenerator erzeuge …`. Die Ausgabe lässt sich trotzdem dort
- * abgreifen, denn ein Unterkommando erbt `echoMessage` von seinem Elternteil.
- */
+/** Über das Elternkommando aufgerufen; `echoMessage` erbt das Unterkommando von ihm. */
 class GenerateCommandTest : FunSpec({
 
     val inputDir = createTempDirectory("kommando-test")
     val invoice = inputDir.resolve("rechnung.yaml").also { it.writeText(resource("rechnung.yaml")) }
     val sellerConfig = inputDir.resolve("stammdaten.yaml").also { it.writeText(resource("stammdaten.yaml")) }
 
-    /**
-     * Führt das Kommando aus und sammelt, was es ausgegeben hätte.
-     *
-     * Der Viewer ist immer ein Fake, auch wo ein Test ihn nicht nennt: Ein
-     * `--oeffnen` soll im Build nie ein Fenster aufmachen. [output] lässt sich
-     * hineinreichen, damit ein Test sie schon während des Laufs sieht.
-     */
+    // Der Viewer ist immer ein Fake: `--oeffnen` soll im Build nie ein Fenster aufmachen.
     fun generate(
         typesetter: Typesetter,
         vararg args: String,
@@ -74,11 +56,7 @@ class GenerateCommandTest : FunSpec({
         return output
     }
 
-    /**
-     * Welcher Prüfer prüft, entscheidet der Schalter – und das lässt sich
-     * sehen, ohne dass ein PDF entsteht: Das Kommando reicht den Prüfer an
-     * die Fabrik weiter, und die gehört dem Test (#226).
-     */
+    // #226
     context("die Wahl des PDF/A-Prüfers") {
         fun chosen(vararg args: String): PdfAValidator {
             lateinit var seen: PdfAValidator
@@ -106,18 +84,12 @@ class GenerateCommandTest : FunSpec({
             chosen() shouldBe BuiltInPdfAValidator
         }
 
-        // Nicht bloß "ein anderer": Dieser Prüfer ruft das installierte
-        // Programm auf, und genau das ist der Sinn des Schalters.
         test("mit --externe-pdfa-pruefung prüft das Programm verapdf") {
             chosen("--externe-pdfa-pruefung").shouldBeInstanceOf<ExternalPdfAValidator>()
         }
     }
 
-    /**
-     * Der Schalter ändert die Quellen und mit ihnen das Profil, sonst nichts
-     * (ADR-0023): dasselbe Ziel, derselbe Überschreibschutz, dieselben
-     * Ausgaben.
-     */
+    // ADR-0023
     context("--zugferd") {
         test("die Quellen tragen das XML der Rechnung, und das Urteil nennt PDF/A-3u") {
             val typesetter = FakeTypesetter()
@@ -163,8 +135,6 @@ class GenerateCommandTest : FunSpec({
             error.message!! shouldContain "Das PDF liegt zum Ansehen unter ${fake.workingDir!!.resolve("${fake.jobName}-zugferd.pdf")}."
         }
 
-        // Die Schlussrechnung stand als letzte Art aus; seitdem kennt der
-        // Writer keinen Abbruch mehr.
         test("auch die Schlussrechnung geht als E-Rechnung, samt ihrer Abschläge") {
             val finalInvoice = inputDir.resolve("schlussrechnung.yaml").also { it.writeText(resource("schlussrechnung.yaml")) }
             val typesetter = FakeTypesetter()
@@ -190,9 +160,6 @@ class GenerateCommandTest : FunSpec({
 
         generate(fake, "-o", inputDir.resolve("weg.pdf").toString())
 
-        // Der Adapter hat sich gemerkt, wo gearbeitet wurde – sonst wüsste der
-        // Test es nicht, denn das Kommando nennt das Verzeichnis nur mit
-        // --arbeitsdateien-behalten.
         fake.workingDir!!.exists() shouldBe false
     }
 
@@ -206,8 +173,7 @@ class GenerateCommandTest : FunSpec({
     }
 
     test("ein nicht beschreibbares Ziel nennt die Zieldatei, und nur einmal") {
-        // NoSuchFileException trägt in message nur den Pfad, und der stünde
-        // sonst ein zweites Mal hinter dem Doppelpunkt.
+        // NoSuchFileException trägt in message nur den Pfad.
         val target = inputDir.resolve("gibt-es-nicht").resolve("ergebnis.pdf")
 
         val error = shouldThrow<CliktError> { generate(FakeTypesetter(), "-o", target.toString()) }
@@ -215,16 +181,8 @@ class GenerateCommandTest : FunSpec({
         error.message shouldBe "Die Datei $target konnte nicht geschrieben werden."
     }
 
-    /**
-     * erzeuge und einrichten schreiben den Satz ab, statt ihn zu teilen – die
-     * Begründung steht in GenerateCommand. Dieser Test hält die Abschriften
-     * gleich: Beide scheitern an derselben Ursache, und bis auf den Pfad muss
-     * dieselbe Meldung herauskommen (#327).
-     *
-     * Die Ursache ist ein Ort unter einer Datei statt unter einem Ordner. Das
-     * braucht keine Dateirechte, die ein Testlauf als root überginge, und es
-     * liefert einen Grund, also auch den Teil hinter dem Doppelpunkt.
-     */
+    // Hält die Abschrift in einrichten gleich (#327). Ein Ort unter einer Datei
+    // braucht keine Dateirechte, die ein Lauf als root überginge.
     test("ein nicht beschreibbares Ziel meldet sich wie bei einrichten") {
         val blocked = inputDir.resolve("blockiert").also { it.writeText("") }
         val generateTarget = blocked.resolve("ergebnis.pdf")
@@ -238,12 +196,7 @@ class GenerateCommandTest : FunSpec({
         setupError.message!!.replace(setupTarget.toString(), "<ziel>") shouldBe message
     }
 
-    /**
-     * "Nicht geschrieben" meint die Zieldatei und nichts sonst (#300). Was
-     * im Satz scheitert, kommt über die Naht als ToolchainException; eine
-     * IOException von dort bricht deren Vertrag und geht unverändert durch,
-     * statt als Schreibfehler auf die falsche Stelle zu zeigen.
-     */
+    // #300
     test("eine IOException aus dem Satz wird nicht zum Schreibfehler") {
         val error =
             shouldThrow<IOException> {
@@ -254,8 +207,7 @@ class GenerateCommandTest : FunSpec({
     }
 
     test("ein ungültiges PDF/A ist ein Fehler der Werkzeuge") {
-        // Den Exitcode und den Kanal prüft MainTest: Übersetzt wird die
-        // Ausnahme in execute(), einmal für alle Kommandos (#119).
+        // Exitcode und Kanal prüft MainTest (#119).
         val error =
             shouldThrow<ToolchainException> {
                 generate(FakeTypesetter(valid = false), "-o", inputDir.resolve("ungueltig.pdf").toString())
@@ -269,7 +221,6 @@ class GenerateCommandTest : FunSpec({
 
         shouldThrow<ToolchainException> { generate(fake, "-o", inputDir.resolve("ungueltig2.pdf").toString()) }
 
-        // Das Aufräumen steht in einem finally – hier wird es geprüft.
         fake.workingDir!!.exists() shouldBe false
     }
 
@@ -291,8 +242,6 @@ class GenerateCommandTest : FunSpec({
             }
 
         target.readText() shouldBe "das verschickte Original"
-        // Die Verstöße gehören zum Fehlschlag und stehen deshalb in der
-        // Meldung, also auf stderr – der Kanal folgt dem Exitcode.
         error.message!! shouldContain "6.1.2"
     }
 
@@ -305,8 +254,7 @@ class GenerateCommandTest : FunSpec({
         error.statusCode shouldBe 1
         error.message!! shouldContain "--ueberschreiben"
         target.readText() shouldBe "das verschickte Original"
-        // Geprüft wird vor dem Satz: Ein LuaLaTeX-Lauf, dessen Ergebnis
-        // nirgends hin darf, wäre vergeudet.
+        // Geprüft wird vor dem Satz.
         fake.workingDir shouldBe null
     }
 
@@ -326,12 +274,7 @@ class GenerateCommandTest : FunSpec({
         fake.jobName shouldBe "Rechnung-R26-042"
     }
 
-    /**
-     * Die Vorgabe hängt nicht am Standort des Aufrufs – deshalb wechselt
-     * hier kein Test das Arbeitsverzeichnis. Jeder bekommt ein eigenes
-     * Verzeichnis, denn ohne -o entscheidet der Name der Rechnungsdatei, wo
-     * das PDF entsteht.
-     */
+    // Je Test ein eigenes Verzeichnis, denn ohne -o entscheidet die Rechnungsdatei, wo das PDF entsteht.
     context("ohne -o entsteht das PDF neben der Rechnungsdatei (ADR-0018)") {
         fun invoiceFile(name: String) =
             createTempDirectory("ohne-ausgabe").resolve(name).also { it.writeText(resource("rechnung.yaml")) }
@@ -345,7 +288,7 @@ class GenerateCommandTest : FunSpec({
             val pdf = file.resolveSibling("R.pdf")
             pdf.readText() shouldContain "%PDF"
             output.first() shouldBe pdf.toString()
-            // Der Jobname bleibt, was er war; der Name des PDF hängt nicht an ihm.
+            // Der Name des PDF hängt nicht am Jobnamen (ADR-0005).
             fake.jobName shouldBe "Rechnung-R26-042"
         }
 
@@ -366,8 +309,7 @@ class GenerateCommandTest : FunSpec({
         }
 
         test("die Ausgabe nennt das Ziel so, wie die Rechnungsdatei angegeben wurde") {
-            // Relativ zum Arbeitsverzeichnis des Testlaufs, also mit ../ bis ins
-            // Temp-Verzeichnis – aber relativ, und so bleibt es.
+            // Mit ../ bis ins Temp-Verzeichnis, aber relativ.
             val file = invoiceFile("R.yaml")
             val relative = Path.of("").toAbsolutePath().relativize(file)
 
@@ -387,10 +329,7 @@ class GenerateCommandTest : FunSpec({
         }
     }
 
-    /**
-     * `--ueberschreiben` ist fürs Nachbessern eines Entwurfs da. Die Eingabe
-     * zu zerstören ist kein Nachbessern – deshalb gilt der Schalter hier nicht.
-     */
+    // Auch nicht mit `--ueberschreiben`: Die Eingabe zu zerstören ist kein Nachbessern.
     context("das Ziel ist nie die Rechnungsdatei") {
         fun invoiceFile(name: String) =
             createTempDirectory("ziel-eingabe").resolve(name).also { it.writeText(resource("rechnung.yaml")) }
@@ -441,12 +380,7 @@ class GenerateCommandTest : FunSpec({
         fake.sources!!.creationDate shouldBe LocalDate.of(2026, 8, 14)
     }
 
-    /**
-     * Die Metadaten gehen denselben Weg wie der Quelltext (#202). Merkte der
-     * Fake sie sich nicht, belegte allein der Lauf mit den echten Werkzeugen,
-     * dass das Kommando sie überhaupt weiterreicht – ohne sie gibt es kein
-     * gültiges PDF/A, aber das sagt erst veraPDF.
-     */
+    // #202
     test("die Metadaten kommen beim Typesetter an") {
         val fake = FakeTypesetter()
 
@@ -495,8 +429,6 @@ class GenerateCommandTest : FunSpec({
         }
 
         test("bricht erzeuge an einer vorhandenen Zieldatei ab, öffnet sich auch die nicht") {
-            // Die vorhandene Datei kann die verschickte Rechnung sein – nicht
-            // die, die gerade aus der Rechnungsdatei entstehen sollte.
             val target = inputDir.resolve("vorhanden-oeffnen.pdf").also { it.writeText("das verschickte Original") }
             val viewer = FakePdfViewer()
 
@@ -509,10 +441,7 @@ class GenerateCommandTest : FunSpec({
             val target = inputDir.resolve("viewer-fehlt.pdf")
             val viewer = FakePdfViewer(result = ViewerResult.Failed("open endete mit Exitcode 1."))
 
-            // Hier zählt die Reihenfolge: Der Hinweis steht als letzte Zeile,
-            // also nach dem Ergebnis. Dass der Lauf dabei wirklich mit Exitcode 0
-            // endet und der Hinweis auf stdout landet, liest MainTest (#153) –
-            // von hier aus wäre es nur aus "keine Ausnahme" geraten.
+            // Nur die Reihenfolge; Exitcode und Kanal liest MainTest (#153).
             val output = generate(FakeTypesetter(), "-o", target.toString(), "--oeffnen", viewer = viewer)
 
             target.exists() shouldBe true
@@ -521,7 +450,6 @@ class GenerateCommandTest : FunSpec({
     }
 
     context("logo (#198)") {
-        // Stammdaten mit Logo in einem eigenen Verzeichnis, das Logo daneben.
         val logoDir = createTempDirectory("kommando-logo")
         val logo = logoDir.resolve("logo.tex").also { it.writeText(resource("logo.tex")) }
 
@@ -549,8 +477,6 @@ class GenerateCommandTest : FunSpec({
         }
 
         test("scheitert der Satz, nennt die Meldung das Logo mit seinem Pfad") {
-            // Im Protokoll von LuaLaTeX heißt es nur logo.tex; welche Datei
-            // das war, weiß allein das Kommando.
             val error =
                 shouldThrow<ToolchainException> {
                     generate(
@@ -566,7 +492,6 @@ class GenerateCommandTest : FunSpec({
         }
 
         test("auch ein ungültiges PDF/A nennt das Logo, denn es kann daran liegen") {
-            // Etwa eine Deckkraft im Fragment: Transparenz verbietet PDF/A-1.
             val error =
                 shouldThrow<ToolchainException> {
                     generate(FakeTypesetter(valid = false), "-o", target("logo-ungueltig"), sellerConfigFile = sellerConfigWithLogo("prag"))
@@ -607,10 +532,7 @@ class GenerateCommandTest : FunSpec({
     }
 
     test("die Hinweise für die eigene Akte stehen nach dem Ergebnis, nicht davor") {
-        // Eine Rechnung ohne Umsatzsteuer an einen Kunden in Österreich, deren
-        // Bestätigungsabfrage nur einfach war: Der Calculator gibt dazu einen
-        // Hinweis aus – er betrifft die eigene Ablage, nicht den Kunden, und
-        // soll deshalb nicht wie ein Fehler oben stehen.
+        // Die einfache Bestätigungsabfrage ergibt einen Hinweis für die eigene Akte.
         val austrianInvoice =
             inputDir.resolve("oesterreich.yaml").also {
                 it.writeText(
@@ -656,11 +578,7 @@ class GenerateCommandTest : FunSpec({
     }
 
     context("ohne -s kommen die Stammdaten aus der Wurzel (ADR-0015)") {
-        /**
-         * Eine Ablage mit einer Rechnung im Jahresordner – mit Wurzel, wenn
-         * [company] genannt ist. Der Name steht später im Satz und sagt, welche
-         * Stammdaten wirklich gelesen wurden.
-         */
+        // [company] steht später im Satz und zeigt, welche Stammdaten gelesen wurden.
         fun archive(company: String? = null): Path {
             val root = createTempDirectory("wurzel-erzeuge")
             if (company != null) {
@@ -679,9 +597,7 @@ class GenerateCommandTest : FunSpec({
         }
 
         test("gesucht wird von der Rechnungsdatei aus, nicht im Arbeitsverzeichnis") {
-            // Das Arbeitsverzeichnis des Testlaufs ist das Projekt, und dort
-            // liegt keine Wurzel: Was hier gefunden wird, kann nur die über
-            // der Rechnungsdatei sein.
+            // Im Arbeitsverzeichnis des Testlaufs, dem Projekt, liegt keine Wurzel.
             val root = archive("Wurzelfirma UG")
             val fake = FakeTypesetter()
 
