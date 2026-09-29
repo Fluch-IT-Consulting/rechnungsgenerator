@@ -4,21 +4,8 @@ import de.fluchitconsulting.rechnungsgenerator.core.calculation.CalculatedInvoic
 import de.fluchitconsulting.rechnungsgenerator.core.model.Invoice
 import de.fluchitconsulting.rechnungsgenerator.core.model.InvoiceType
 
-/**
- * Die Schlussrechnung und die Absetzung ihrer Abschläge.
- *
- * Ob abgesetzt wird, wo es hingehört, ob eine Schlussrechnung überhaupt Abschläge
- * trägt und ob jeder davon vereinnahmt ist, prüft [InvoiceKindRules] – ohne das
- * gibt es keine Schlussrechnung als Typ (ADR-0008). Hier steht, was an einem
- * vorhandenen Abschlag falsch sein kann – und nur auf einer Schlussrechnung
- * (#97).
- *
- * Zwei Teile: die Angaben je Abschlag, die sich ohne die Summen der Rechnung
- * prüfen lassen, und die Absetzung gegen die Rechnung selbst – für die liegt
- * das fertig gerechnete Ergebnis vor (#71).
- */
+/** Was an einem vorhandenen Abschlag falsch sein kann. Ob es ihn geben darf, prüft [InvoiceKindRules]. */
 internal object FinalInvoiceRules {
-    // Nur auf einer Schlussrechnung; warum, steht bei InvoiceKindRules (#97).
     fun check(calculated: CalculatedInvoice): List<Finding> =
         when (calculated.invoice.type) {
             InvoiceType.FINAL -> prepayments(calculated.invoice) + deduction(calculated)
@@ -27,17 +14,8 @@ internal object FinalInvoiceRules {
 
     private fun prepayments(invoice: Invoice): List<Finding> =
         buildList {
-            // Derselbe Abschlag zweimal abgesetzt ist ein Kopierfehler und fiele
-            // sonst nur über den Restbetrag auf.
-            // Verglichen wird exakt (#53): Ob "r26-009" dasselbe Dokument meint wie
-            // "R26-009", hängt am Nummernkreis des Rechnungsstellers, und den kennt
-            // der Generator nicht.
-            // Jede mehrfach genannte Nummer bekommt ihren eigenen Befund (#152):
-            // Der Gegenstand am Befund ist eine Nummer, also heißt zwei Nummern
-            // auch zwei Befunde; mit firstOrNull stünde nur die erste da, und
-            // die zweite fiele erst im nächsten Lauf auf (ADR-0004). Die Meldung
-            // nennt die Anzahl: Wer "zweimal" liest, wo es drei sind, löscht
-            // eine Zeile und läuft in denselben Abbruch.
+            // Exakt verglichen: Ob „r26-009“ „R26-009“ meint, hängt am Nummernkreis (#53). Die Meldung nennt die
+            // Anzahl, sonst löschte, wer „zweimal“ liest, wo es drei sind, eine Zeile zu wenig.
             invoice.prepayments
                 .groupBy { it.invoiceNumber }
                 .filterValues { it.size > 1 }
@@ -54,15 +32,9 @@ internal object FinalInvoiceRules {
             invoice.prepayments.forEach { abschlag ->
                 val subject = Subject.Prepayment(abschlag.invoiceNumber)
 
-                // Fehlt die Vereinnahmung, meldet das InvoiceKindRules – und die
-                // Regeln, die sie brauchen, entfallen, aber nur für diesen
-                // Abschlag. Ausgedrückt durch das frühe Weiterspringen: Ein Feld
-                // am Befund, das seine Voraussetzungen aufzählt, wäre ein
-                // Mechanismus für eine Handvoll Fälle.
+                // Ohne Vereinnahmung meldet InvoiceKindRules; die Regeln, die sie brauchen, entfallen für diesen Abschlag.
                 val vereinnahmtAm = abschlag.receivedOn ?: return@forEach
 
-                // Was nach dem Rechnungsdatum liegt, ist für diese Rechnung nicht
-                // vereinnahmt.
                 if (vereinnahmtAm.isAfter(invoice.issueDate)) {
                     add(
                         Finding(
@@ -74,9 +46,6 @@ internal object FinalInvoiceRules {
                     )
                 }
 
-                // Das Gegenstück für das Rechnungsdatum (#47): Ein Abschlag geht der
-                // Schlussrechnung voraus. Später datiert ist er ein Tippfehler – oder
-                // eine Rechnung, die nicht hierher gehört.
                 if (abschlag.issueDate.isAfter(invoice.issueDate)) {
                     add(
                         Finding(
@@ -88,8 +57,7 @@ internal object FinalInvoiceRules {
                     )
                 }
 
-                // Ohne Anteile liefe die Prüfsumme über eine leere Schleife, und der
-                // Abschlag setzte still 0,00 € ab.
+                // Sonst liefe die Prüfsumme leer, und der Abschlag setzte still 0,00 € ab.
                 if (abschlag.taxShares.isEmpty()) {
                     add(
                         Finding(
@@ -103,9 +71,7 @@ internal object FinalInvoiceRules {
                     return@forEach
                 }
 
-                // Die Prüfsumme gegen den Zahlendreher (ADR-0001). Die Steuer steht in
-                // der Datei, weil sie aus der alten Rechnung abgeschrieben wird –
-                // nachgerechnet wird sie trotzdem.
+                // Gegen den Zahlendreher beim Abschreiben (ADR-0001).
                 abschlag.taxShares.forEach { anteil ->
                     val expected = anteil.net * anteil.vatRate
                     if (anteil.vat != expected) {
@@ -122,13 +88,10 @@ internal object FinalInvoiceRules {
             }
         }
 
-    /** Die Absetzung gegen die Rechnung selbst – die beiden Regeln, die die Summen brauchen. */
     private fun deduction(calculated: CalculatedInvoice): List<Finding> =
         buildList {
             val prepayments = calculated.prepayments
-            // Zwei Positionen mit 0 % können steuerlich Verschiedenes bedeuten,
-            // deshalb muss die Kombination aus Kategorie und Satz passen – nicht
-            // nur der Satz.
+            // Kategorie und Satz, nicht nur der Satz: 0 % kann Verschiedenes bedeuten.
             val present = calculated.vatGroups.map { it.category to it.rate }.toSet()
             prepayments.forEach { deducted ->
                 deducted.prepayment.taxShares.forEach { anteil ->
@@ -146,15 +109,7 @@ internal object FinalInvoiceRules {
                 }
             }
 
-            // Eine Überzahlung ist kein Restbetrag: Zurückgezahlt wird außerhalb
-            // dieses Programms, oder der zu hohe Abschlag wird storniert. Ein
-            // Storno der Schlussrechnung wäre es gerade nicht – die ist ja
-            // richtig.
-            //
-            // Nur bei Abschlägen: Ohne sie ist ein negativer Restbetrag schlicht
-            // ein negativer Gesamtbetrag, und den meldet die Regel dafür. Sonst
-            // stünde "mehr Abschläge abgesetzt (0.00)" unter einer Rechnung, die
-            // gar keine hat (#47).
+            // Nur mit Abschlägen: Ohne sie meldet GESAMTBETRAG_NEGATIV denselben Fall (#47).
             if (prepayments.isNotEmpty() && calculated.remainingAmount.isNegative()) {
                 add(
                     Finding(
