@@ -18,22 +18,10 @@ import kotlinx.serialization.descriptors.SerialDescriptor
 import kotlin.io.path.createTempDirectory
 import kotlin.io.path.writeText
 
-/**
- * Das Netz unter der Vorlage: Sie ist eine zweite Abschrift des Schemas und
- * veraltet sonst still – ein neues Feld in [SellerConfig] fiele niemandem auf,
- * weil ein fehlender Eintrag in einer Vorlage nichts kaputtmacht. Er kostet nur
- * den Nächsten, der die Datei ausfüllt.
- *
- * Geprüft wird die **einkommentierte** Vorlage: jedes `#`, das unmittelbar vor
- * einem Schlüssel steht, weggenommen. Genau das tut auch, wer einen
- * freiwilligen Eintrag haben will.
- */
+/** Geprüft wird die einkommentierte Vorlage, so wie jemand sie für einen freiwilligen Eintrag benutzt. */
 class SellerConfigTemplateTest : FunSpec({
 
-    /**
-     * Nimmt jedes `#` weg, das unmittelbar vor einem Schlüssel steht
-     * (`#telefon:`). Erklärender Text beginnt mit `# ` und bleibt stehen.
-     */
+    // Erklärender Text beginnt mit `# ` und bleibt stehen.
     fun uncommented(text: String): String =
         text.lines().joinToString("\n") { line ->
             val rest = line.trimStart()
@@ -42,7 +30,6 @@ class SellerConfigTemplateTest : FunSpec({
 
     val template = Yaml.default.parseToYamlNode(uncommented(SellerConfigTemplate.text)) as YamlMap
 
-    /** Die YAML-Schlüssel einer Datenklasse: ihre `@SerialName` in der Reihenfolge des Deskriptors. */
     fun keysOf(descriptor: SerialDescriptor): Set<String> =
         (0 until descriptor.elementsCount).map { descriptor.getElementName(it) }.toSet()
 
@@ -51,11 +38,6 @@ class SellerConfigTemplateTest : FunSpec({
             .map { it.content }
             .toSet()
 
-    /**
-     * Die freiwilligen Einträge, die eine Vorgabe nennen, nach ihrem Schlüssel
-     * auf oberster Ebene: `design` mit der Zeile `design: helsinki`,
-     * `anschrift` mit `  land: DE`, `schlusssatz` mit einer Zeile je Sprache.
-     */
     val defaults: Map<String, List<String>> =
         buildMap<String, MutableList<String>> {
             var parent = ""
@@ -68,12 +50,6 @@ class SellerConfigTemplateTest : FunSpec({
                 }
         }
 
-    /**
-     * Die Pflichtfelder mit gültigen Werten – den fiktiven aus den Testdaten –
-     * und dazu [extra], Einträge aus [defaults]. Die unter `anschrift` kommen
-     * in die Anschrift, eingerückte unter ihren eigenen Schlüssel, die übrigen
-     * auf die oberste Ebene.
-     */
     fun requiredFields(extra: Map<String, List<String>> = emptyMap()): String {
         val inAddress = extra["anschrift"].orEmpty()
         val topLevel =
@@ -102,9 +78,7 @@ class SellerConfigTemplateTest : FunSpec({
     }
 
     test("die Vorlage nennt genau die Schlüssel der Stammdaten") {
-        // In beide Richtungen: Ein neues Feld ohne Eintrag wird rot, ein
-        // Eintrag ohne Feld ebenso – letzterer bräche sonst erst beim
-        // Einkommentieren, und zwar bei der Benutzerin.
+        // In beide Richtungen.
         keysIn(template) shouldBe keysOf(SellerConfig.serializer().descriptor)
         keysIn(template.get<YamlMap>("anschrift")!!) shouldBe keysOf(Address.serializer().descriptor)
         keysIn(template.get<YamlMap>("bank")!!) shouldBe keysOf(BankDetails.serializer().descriptor)
@@ -113,8 +87,7 @@ class SellerConfigTemplateTest : FunSpec({
     test("nennt die Vorlage eine Vorgabe, ist es die echte") {
         defaults.keys shouldContainAll listOf("anschrift", "zahlungsziel-tage", "design", "schlusssatz")
 
-        // Der Schlusssatz ist eine Tabelle, und eine volle ist nicht gleich
-        // einer leeren – gleich sein muss, was auf dem Blatt steht.
+        // Eine volle Tabelle ist nicht gleich einer leeren, gleich sein muss das Blatt.
         val withDefaults = YamlLoader.parseSellerConfig(requiredFields(defaults))
         val without = YamlLoader.parseSellerConfig(requiredFields())
         Language.entries.forEach { language ->
@@ -124,14 +97,11 @@ class SellerConfigTemplateTest : FunSpec({
     }
 
     test("der Schlusssatz steht je Sprache unter ihrem genauen Code") {
-        // Unter "en" stünde die britische Vorgabe auch für en-US, ob die
-        // beiden gleich lauten oder nicht.
+        // Unter "en" stünde die britische Vorgabe auch für en-US.
         keysIn(template.get<YamlMap>("schlusssatz")!!) shouldBe Language.entries.map { it.tag }.toSet()
     }
 
     test("die unausgefüllte Vorlage wird abgelehnt, und die Meldung nennt Datei und Schlüssel") {
-        // Der Sinn der leeren Pflichtfelder: Wer eine Zeile übersieht, bekommt
-        // einen Abbruch und kein PDF mit fremder Bankverbindung.
         val file = createTempDirectory("vorlage-test").resolve("stammdaten.yaml")
         file.writeText(SellerConfigTemplate.text)
 

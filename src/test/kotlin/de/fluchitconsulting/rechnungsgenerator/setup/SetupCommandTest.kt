@@ -16,16 +16,9 @@ import kotlin.io.path.exists
 import kotlin.io.path.readText
 import kotlin.io.path.writeText
 
-/**
- * `einrichten` von den Argumenten bis zur Datei.
- *
- * Das Arbeitsverzeichnis ist gereicht statt gelesen: Sonst schriebe der
- * Testlauf in sein eigenes Projektverzeichnis, und "legt nichts Vorhandenes
- * um" ließe sich nur mit angehaltenem Atem prüfen.
- */
+/** Das Arbeitsverzeichnis ist gereicht statt gelesen, sonst schriebe der Testlauf ins Projekt. */
 class SetupCommandTest : FunSpec({
 
-    /** Führt das Kommando aus und sammelt, was auf welchen Kanal ginge. */
     fun runSetup(dir: Path): Pair<List<String>, List<String>> {
         val out = mutableListOf<String>()
         val err = mutableListOf<String>()
@@ -47,8 +40,7 @@ class SetupCommandTest : FunSpec({
     }
 
     test("die angelegte Datei wird von der Suche gefunden") {
-        // Der eigentliche Zweck: Das Verzeichnis ist danach eine Wurzel im
-        // Sinne von ADR-0015, und zwar für jede Rechnung darunter.
+        // ADR-0015
         val dir = createTempDirectory("einrichten-test")
         runSetup(dir)
         val invoice =
@@ -62,7 +54,6 @@ class SetupCommandTest : FunSpec({
     }
 
     test("eine vorhandene Datei wird nie überschrieben") {
-        // Darin steht, was jemand von Hand eingetragen hat. Kein --force.
         val dir = createTempDirectory("einrichten-test")
         val existing = dir.resolve(Root.FOLDER).createDirectories().resolve(Root.SELLER_CONFIG)
         existing.writeText("firma: Schon da\n")
@@ -74,9 +65,7 @@ class SetupCommandTest : FunSpec({
     }
 
     test("ein nicht beschreibbarer Ort nennt die Zieldatei und den Grund") {
-        // Unter einer Datei lässt sich kein Ordner anlegen – eine Ursache
-        // ohne Dateirechte, die ein Testlauf als root überginge. Dass die
-        // Meldung wie bei erzeuge lautet, prüft GenerateCommandTest.
+        // Ein Ort unter einer Datei braucht keine Dateirechte, die ein Lauf als root überginge.
         val blocked = createTempDirectory("einrichten-test").resolve("blockiert").also { it.writeText("") }
         val target = blocked.resolve(Root.FOLDER).resolve(Root.SELLER_CONFIG)
 
@@ -86,7 +75,7 @@ class SetupCommandTest : FunSpec({
     }
 
     test("gibt es den Ordner ohne die Datei, entsteht die Datei und sonst nichts") {
-        // Der Ausweg aus dem Abbruch "Ordner ohne stammdaten.yaml" (#275).
+        // #275
         val dir = createTempDirectory("einrichten-test")
         val folder = dir.resolve(Root.FOLDER).createDirectories()
         folder.resolve("logo.tex").writeText("\\fill (0,0) circle (1);")
@@ -99,9 +88,6 @@ class SetupCommandTest : FunSpec({
 
     context("eine Wurzel oberhalb") {
         test("hält das Einrichten nicht auf, meldet sich aber auf stderr") {
-            // Verschachteln ist der vorgesehene Weg für einen zweiten
-            // Rechnungssteller – aus Versehen aber eine Falle. Also Hinweis,
-            // kein Abbruch.
             val upper = createTempDirectory("einrichten-test")
             upper
                 .resolve(Root.FOLDER)
@@ -114,8 +100,6 @@ class SetupCommandTest : FunSpec({
 
             out shouldBe listOf(lower.resolve(Root.FOLDER).resolve(Root.SELLER_CONFIG).toString())
             err.single() shouldContain upper.toString()
-            // Der Hinweis sagt auch, was jetzt gilt – sonst wüsste man nur,
-            // dass etwas ist, nicht was.
             err.single() shouldContain "ab hier"
         }
 

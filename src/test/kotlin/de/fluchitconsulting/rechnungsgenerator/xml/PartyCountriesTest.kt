@@ -6,7 +6,7 @@ import io.kotest.matchers.shouldBe
 import java.nio.file.Path
 import kotlin.io.path.readBytes
 
-/** Die Länder von Verkäufer (BT-40) und Käufer (BT-55) und ob beide Deutschland sind. */
+/** BT-40, BT-55 */
 class PartyCountriesTest : FunSpec({
 
     fun cii(
@@ -56,8 +56,7 @@ class PartyCountriesTest : FunSpec({
         PartyCountries.of(xml) shouldBe PartyCountries("AT", "DE")
     }
 
-    // Ein fehlendes Land lehnt die XML-Prüfung ohnehin ab (BR-09, BR-11);
-    // hier zählt nur, dass daraus keine Rechnung innerhalb Deutschlands wird.
+    // Ein fehlendes Land lehnt die XML-Prüfung ohnehin ab (BR-09, BR-11).
     test("ohne lesbares Land gibt es keines, und innerhalb Deutschlands ist sie dann nicht") {
         PartyCountries.of(cii(null, "DE")) shouldBe PartyCountries(null, "DE")
         PartyCountries.of(cii("DE", "  ")).buyer.shouldBeNull()

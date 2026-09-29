@@ -13,13 +13,7 @@ import java.nio.file.Path
 import kotlin.io.path.createTempDirectory
 import kotlin.io.path.readBytes
 
-/**
- * Als welches PDF/A sich ein Dokument ausgibt, gelesen aus seinem XMP.
- *
- * Die zwei echten PDF stammen aus `erzeuge`: `rechnung-a1b.pdf` ohne und, über
- * den Embedder, mit E-Rechnung. Die übrigen Fälle bauen ihr XMP selbst, weil
- * es auf die Form der Angabe ankommt und nicht auf das Dokument darum.
- */
+/** Die zwei echten PDF stammen aus `erzeuge`, die übrigen Fälle bauen ihr XMP selbst. */
 class PdfAIdentificationTest : FunSpec({
 
     val a1b = Path.of("src/test/resources/rechnung-a1b.pdf")
@@ -66,8 +60,7 @@ class PdfAIdentificationTest : FunSpec({
         identificationOf(xmp)!!.profile shouldBe PdfAProfile.PDFA_3B
     }
 
-    // Verlangt sind Großbuchstaben. Ob die Angabe der Norm genügt, urteilt
-    // der Prüfer, und dafür braucht er das Profil.
+    // Verlangt sind Großbuchstaben, aber darüber urteilt der Prüfer.
     test("die Stufe zählt ohne Rücksicht auf die Schreibweise") {
         val xmp =
             xmpWith(

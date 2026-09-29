@@ -18,18 +18,10 @@ import java.time.LocalDate
 private fun resource(name: String): String =
     checkNotNull(PrepaymentBlockTest::class.java.getResource("/$name")).readText()
 
-/**
- * Die Beispiel-Schlussrechnung ohne ihren `abschlaege`-Block, mit dem erzeugten
- * Block dahinter – so, wie `>>` ihn anhängt.
- */
+// So, wie `>>` den Block anhängt.
 private fun finalInvoiceWith(block: String): String =
     resource("schlussrechnung.yaml").substringBefore("abschlaege:") + block + "\n"
 
-/**
- * Prüft den Text, den `rechnungsgenerator abschlaege` ausgibt – ohne Dateien
- * und ohne Kommando. Woher die Abschläge kommen, ist hier egal; es geht nur
- * darum, wie sie hingeschrieben werden und ob sie so wieder gelesen werden.
- */
 class PrepaymentBlockTest : FunSpec({
 
     val vereinnahmt = CollectedPrepayment("Rechnung_R26-009-beispiel.yaml", testPrepayment())
@@ -40,9 +32,7 @@ class PrepaymentBlockTest : FunSpec({
         )
 
     test("der Block hat die in #41 vereinbarte Gestalt") {
-        // Zeichengleich verglichen: Damit ist zugleich gesichert, dass weder ein
-        // Datum noch ein Pfad hineinrutscht – sonst ergäbe derselbe Aufruf
-        // morgen oder aus einem anderen Ordner einen anderen Text.
+        // Zeichengleich, damit weder ein Datum noch ein Pfad hineinrutscht.
         PrepaymentBlock.render(listOf(vereinnahmt, notReceived)) shouldBe
             """
             |# Abschläge für die Schlussrechnung, vorbereitet von `rechnungsgenerator abschlaege`.
@@ -76,8 +66,6 @@ class PrepaymentBlockTest : FunSpec({
     }
 
     test("angehängt und zurückgelesen ergibt der Block dieselben Abschläge") {
-        // Ein gemischter Abschlag mit zwei Steueranteilen, damit auch die Liste
-        // unter steueranteile mehr als einen Eintrag trägt.
         val mixed =
             CollectedPrepayment(
                 "gemischt.yaml",
@@ -96,8 +84,6 @@ class PrepaymentBlockTest : FunSpec({
         val parsed = YamlLoader.parseInvoice(finalInvoiceWith(PrepaymentBlock.render(entries)))
 
         parsed.prepayments shouldBe entries.map { it.prepayment }
-        // Schon in der Gleichheit enthalten, hier aber eigens genannt: Das leere
-        // Feld wird als fehlend gelesen, nicht als Fehler im YAML.
         parsed.prepayments[1].receivedOn shouldBe null
     }
 
@@ -113,9 +99,7 @@ class PrepaymentBlockTest : FunSpec({
     }
 
     test("eine Rechnungsnummer mit YAML-Sonderzeichen kommt unverändert zurück") {
-        // "R26 #9" ist der gefährliche Fall: Ohne Anführungszeichen beginnt mit
-        // " #" ein Kommentar, und YAML liest still "R26" – der Abschlag stünde
-        // mit falscher Nummer in der Schlussrechnung, und keine Regel merkte es.
+        // Ohne Anführungszeichen läse YAML aus "R26 #9" still "R26".
         listOf("R26 #9", "R26: 9", "-R26", "R26 \"neu\"", "R26\\9").forEach { number ->
             val entry = CollectedPrepayment("x.yaml", testPrepayment(invoiceNumber = number))
 
