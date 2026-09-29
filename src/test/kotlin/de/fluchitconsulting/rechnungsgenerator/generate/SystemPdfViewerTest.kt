@@ -5,10 +5,7 @@ import io.kotest.matchers.nulls.shouldBeNull
 import io.kotest.matchers.shouldBe
 import java.nio.file.Path
 
-/**
- * Nur die Wahl des Befehls. Den Prozess selbst startet kein Test – sonst ginge
- * bei jedem Build ein Fenster auf.
- */
+/** Nur die Wahl des Befehls, sonst ginge bei jedem Build ein Fenster auf. */
 class SystemPdfViewerTest : FunSpec({
 
     val pdf = Path.of("/tmp/Rechnung-R26-042.pdf")
