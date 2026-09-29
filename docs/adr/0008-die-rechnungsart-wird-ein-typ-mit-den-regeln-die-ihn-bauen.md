@@ -19,7 +19,7 @@ Das sind sechs: `STORNO_OHNE_BEZUG`, `BEZUG_OHNE_STORNO`,
 `ABSCHLAG_OHNE_VEREINNAHMUNG`. Die YAML-Datei, `Invoice`, der Calculator und die
 übrigen Regelgruppen bleiben, wie sie sind.
 
-Das Gespräch davor steht in `docs/notizen/2026-09-13-modell-je-rechnungsart.md`.
+Das Gespräch davor steht in #90.
 
 ## Warum
 

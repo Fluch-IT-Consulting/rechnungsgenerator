@@ -30,7 +30,9 @@ im Issue oder am Code – nicht hier.
   Entscheidungen ohne ADR stehen im Issue, auf das Code oder Test verweisen.
 - `docs/notizen/` – durchdachte, aber **nicht entschiedene** Fragen, je eine
   Datei mit Datum. Wer eine davon neu aufwirft, liest erst nach; binden tun
-  sie nicht.
+  sie nicht. Eine Notiz steht auf heutigem Stand, ohne Nachträge. Ist ihre
+  Frage entschieden, fällt sie weg, und das ADR nennt das Issue oder den Pull
+  Request, in dem sie steht (#470).
 - `src/main/resources/templates/` – je Design eine Vorlage (`helsinki.tex`,
   `prag.tex`), je Design und Sprache eine Sprachdatei (`prag-en-gb.tex`) und
   die gemeinsame `grundlage.sty`.
