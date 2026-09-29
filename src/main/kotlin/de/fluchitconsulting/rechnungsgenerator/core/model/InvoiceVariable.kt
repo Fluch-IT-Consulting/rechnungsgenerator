@@ -4,15 +4,11 @@ import de.fluchitconsulting.rechnungsgenerator.core.text.TextTemplate
 import de.fluchitconsulting.rechnungsgenerator.core.text.VariableResolver
 
 /**
- * Die Werte einer Rechnung, die ein [TextTemplate] nennen kann, als
- * `<<URSPRUNGSNUMMER>>` und so weiter. Der Name des Eintrags ist der des
- * Platzhalters.
- *
- * Nicht dieselbe Menge wie die Platzhalter der Design-Vorlage: Die füllt der
- * Renderer, diese löst ein [VariableResolver] auf.
+ * Die Werte, die ein [TextTemplate] als `<<NAME>>` nennen kann. Nicht die Platzhalter der Vorlage: Diese löst
+ * ein [VariableResolver] auf (ADR-0019).
  */
 enum class InvoiceVariable {
-    // Die Rechnung, die ein Storno aufhebt (BG-3): BT-25 und BT-26.
+    // BG-3: BT-25 und BT-26
     URSPRUNGSNUMMER,
     URSPRUNGSDATUM,
 }
