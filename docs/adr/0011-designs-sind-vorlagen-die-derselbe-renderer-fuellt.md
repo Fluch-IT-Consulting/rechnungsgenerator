@@ -22,11 +22,11 @@ Wer was entscheidet:
 
 Der Generator soll auch für andere Rechnungssteller taugen, und nicht jeder
 will aussehen wie der Lebenslauf des Autors. Die Rechnungsarten bleiben dabei
-die geschlossene Menge, die jedes Design vollständig beantwortet (Notiz vom
-14.09.2026): Was an der Art hängt, entscheidet einmal Kotlin, in den `when`
-ohne `else`, und nicht jedes Design für sich ohne Compiler.
+die geschlossene Menge, die jedes Design vollständig beantwortet (#133): Was
+an der Art hängt, entscheidet einmal Kotlin, in den `when` ohne `else`, und
+nicht jedes Design für sich ohne Compiler.
 
-Die Treppe aus der Notiz hat auf der ersten Stufe gehalten. `prag` kommt mit
+Die Treppe aus #133 hat auf der ersten Stufe gehalten. `prag` kommt mit
 dem Vokabular aus, das #188 für `helsinki` geschnitten hat – kein neuer
 Eintrag in `TemplateMacro` oder `TemplateValue`, kein zweiter Renderer.
 
