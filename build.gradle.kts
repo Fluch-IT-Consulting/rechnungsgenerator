@@ -24,7 +24,7 @@ plugins {
 // zusammenpassen, hält seit #269 der Release-Workflow fest – und zwar am
 // Namen des gebauten Archivs, denn darauf zeigt eine Homebrew-Formel. Bis
 // dahin war es eine Gewohnheit, wie die Bedingungen im Versionskatalog (#253).
-version = "0.5.0"
+version = "0.5.1"
 
 kotlin {
     // Ziel-JDK; Foojay (siehe settings.gradle.kts) lädt es bei Bedarf herunter.
