@@ -2,18 +2,11 @@ package de.fluchitconsulting.rechnungsgenerator.core.rules
 
 import de.fluchitconsulting.rechnungsgenerator.core.calculation.CalculatedInvoice
 
-/**
- * Das Zahlungsziel.
- *
- * Bestimmt wird es an genau einer Stelle, [CalculatedInvoice.paymentTermDays],
- * und nicht für diese Regel noch einmal: Zwei Stellen mit derselben Zeile
- * stimmten nur zufällig überein (#71).
- */
+/** Das Zahlungsziel kommt aus [CalculatedInvoice.paymentTermDays] und wird hier nicht noch einmal bestimmt (#71). */
 internal object PaymentTermRules {
     fun check(calculated: CalculatedInvoice): List<Finding> {
         val termDays = calculated.paymentTermDays
-        // Negativ setzte es die Fälligkeit vor das Rechnungsdatum (#47). Die
-        // Meldung nennt, woher der Wert kommt; 0 heißt "sofort" und bleibt.
+        // Negativ läge die Fälligkeit vor dem Rechnungsdatum; 0 heißt „sofort“.
         if (termDays >= 0) return emptyList()
         val source = if (calculated.invoice.paymentTermDaysOverride != null) "in der Rechnung" else "in den Stammdaten"
         return listOf(

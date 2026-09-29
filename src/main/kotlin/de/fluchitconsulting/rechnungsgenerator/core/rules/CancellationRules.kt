@@ -4,38 +4,21 @@ import de.fluchitconsulting.rechnungsgenerator.core.calculation.CalculatedInvoic
 import de.fluchitconsulting.rechnungsgenerator.core.model.Invoice
 import de.fluchitconsulting.rechnungsgenerator.core.model.InvoiceType
 
-/**
- * Das Storno: sein Bezug auf die Ursprungsrechnung und das Vorzeichen des
- * Gesamtbetrags (ADR-0006) – und mit ihm, welcher Gesamtbetrag zu welcher Art
- * passt, auch null (#214).
- *
- * Ob ein Storno überhaupt einen Bezug trägt – und ein anderes Dokument keinen –,
- * prüft [InvoiceKindRules]: Ohne Bezug gibt es keine Stornorechnung als Typ
- * (ADR-0008). Hier steht, was am Bezug selbst falsch sein kann – und nur auf
- * einer Stornorechnung (#97).
- *
- * Das Vorzeichen steht hier und nicht bei den Positionen, weil es zur
- * Rechnungsart gehört: Ein Storno ist negativ, jedes andere Dokument nicht.
- * Die Summen, die es dafür braucht, liegen hier fertig vor.
- */
+/** Was am Bezug des Stornos falsch sein kann, und das Vorzeichen des Gesamtbetrags je Art (ADR-0006, #214). */
 internal object CancellationRules {
     fun check(calculated: CalculatedInvoice): List<Finding> = reference(calculated.invoice) + sign(calculated)
 
     private fun reference(invoice: Invoice): List<Finding> =
         buildList {
-            // Nur auf einer Stornorechnung; warum, steht bei InvoiceKindRules (#97).
             when (invoice.type) {
                 InvoiceType.CANCELLATION -> {}
                 InvoiceType.INVOICE, InvoiceType.PREPAYMENT, InvoiceType.FINAL, InvoiceType.PARTIAL -> {
                     return@buildList
                 }
             }
-            // Ohne Bezug gibt es nichts zu prüfen; dass er fehlt, meldet
-            // InvoiceKindRules.
             val cancelled = invoice.cancelled ?: return@buildList
 
-            // Verglichen wird zeichengenau, wie bei den Abschlägen (#53): Über
-            // die Schreibweise fremder Nummern weiß dieses Programm nichts.
+            // Zeichengenau wie bei den Abschlägen (#53).
             if (cancelled.invoiceNumber == invoice.number) {
                 add(
                     Finding(
@@ -59,14 +42,8 @@ internal object CancellationRules {
         }
 
     /**
-     * Das Vorzeichen des Gesamtbetrags. Vor #47 schlug hier erst
-     * RESTBETRAG_NEGATIV zu, mit einer Meldung über Abschläge, die eine
-     * gewöhnliche Rechnung gar nicht hat.
-     *
-     * Null ist für die Abschlagsrechnung zu wenig (#214): Sie fordert eine
-     * Vorauszahlung, und über null stünde sie später als leerer Abschlag in der
-     * Schlussrechnung. Einer Rechnung über null gilt nur ein Hinweis
-     * (GESAMTBETRAG_NULL), sie kann gewollt sein.
+     * Null ist für die Abschlagsrechnung zu wenig: Sie stünde später als leerer Abschlag in der Schlussrechnung
+     * (#214). Einer Rechnung über null gilt nur ein Hinweis.
      */
     private fun sign(calculated: CalculatedInvoice): List<Finding> {
         val invoice = calculated.invoice
@@ -106,7 +83,6 @@ internal object CancellationRules {
         }
     }
 
-    /** Jede Art außer dem Storno: kein negativer Gesamtbetrag. */
     private fun notNegative(calculated: CalculatedInvoice): List<Finding> {
         val grossTotal = calculated.grossTotal
         if (!grossTotal.isNegative()) return emptyList()

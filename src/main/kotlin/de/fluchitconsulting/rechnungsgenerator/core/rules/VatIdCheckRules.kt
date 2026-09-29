@@ -3,28 +3,12 @@ package de.fluchitconsulting.rechnungsgenerator.core.rules
 import de.fluchitconsulting.rechnungsgenerator.core.calculation.CalculatedInvoice
 import de.fluchitconsulting.rechnungsgenerator.core.calculation.EuMemberStates
 import de.fluchitconsulting.rechnungsgenerator.core.model.CheckMethod
-import de.fluchitconsulting.rechnungsgenerator.core.model.TaxCategory
 import de.fluchitconsulting.rechnungsgenerator.core.model.VatIdConfirmation
 import java.time.temporal.ChronoUnit
 
 /**
- * Die Bestätigungsabfrage der USt-IdNr.: der Nachweis, der vor einer Rechnung
- * ohne Umsatzsteuer vorliegen muss, und die Hinweise dazu.
- *
- * **Welche** Kategorie was verlangt, steht am Enum: [VatIdConfirmation]
- * und die Werte in [TaxCategory]. Dort und nicht hier, weil es eine
- * Eigenschaft der Kategorie ist und keine dieser Regeln: Stünde die
- * Fallunterscheidung hier, müsste ganz lesen, wer wissen will, was für "G"
- * gilt.
- *
- * Hier steht nur noch, wie daraus eine Pflicht wird: Der Nachweis muss
- * vorliegen, er muss vor dem Rechnungsdatum erbracht sein, und fehlt er,
- * bricht der Lauf ab. Ob der Kunde im Ausland und ob er in der EU sitzt,
- * fragen die Regeln die gerechnete Rechnung ([CalculatedInvoice.isDomestic],
- * [CalculatedInvoice.customerInEu]) – der Renderer fragt dasselbe (#120).
- *
- * Das ist Steuerrecht und keine Rechtsberatung – wer die Regeln ändert,
- * sollte sie mit dem Steuerberater abgleichen.
+ * Wie aus [VatIdConfirmation] eine Pflicht wird; welche Kategorie was verlangt, steht am Enum. Das ist
+ * Steuerrecht und keine Rechtsberatung: Wer die Regeln ändert, gleicht sie mit dem Steuerberater ab.
  */
 internal object VatIdCheckRules {
     fun check(calculated: CalculatedInvoice): List<Finding> = confirmation(calculated) + hints(calculated)
@@ -32,11 +16,7 @@ internal object VatIdCheckRules {
     private fun confirmation(calculated: CalculatedInvoice): List<Finding> =
         buildList {
             val invoice = calculated.invoice
-            // Ausgewählt wird über den Nachweis und nicht über
-            // requiresCustomerVatId: Das eine ist eine Angabe auf dem Papier,
-            // das andere diese Pflicht. Stünde hier das Papier, bliebe eine
-            // Kategorie mit Nachweis und ohne Angabe still ungeprüft – heute
-            // ohne Folgen, weil beide bei AE und K anschlagen (#148).
+            // Über den Nachweis und nicht über requiresCustomerVatId: Das Papier ist eine andere Pflicht (#148).
             val categories = calculated.taxCategories.filter { it.vatIdConfirmation != VatIdConfirmation.NEVER }
             if (categories.isEmpty()) return@buildList
             val customer = invoice.customer
@@ -50,8 +30,6 @@ internal object VatIdCheckRules {
                 }
             if (!required) return@buildList
 
-            // Ohne Nachweis entfällt auch die Frage nach seinem Datum – deshalb
-            // hier das frühe Weiterspringen.
             val vatIdCheck = customer.vatIdCheck
             if (vatIdCheck == null) {
                 add(
@@ -79,18 +57,13 @@ internal object VatIdCheckRules {
             }
         }
 
-    /** Hinweise, die den Lauf nicht abbrechen, aber in die eigene Akte gehören. */
     private fun hints(calculated: CalculatedInvoice): List<Finding> =
         buildList {
             val invoice = calculated.invoice
             val customer = invoice.customer
             val categories = calculated.taxCategories
 
-            // Die Altersprüfung der EU-Liste hängt bewusst am Ausland und läuft
-            // nicht immer: Bei einer Inlandsrechnung wird die Liste gar nicht
-            // befragt, ein Hinweis darauf wäre also Lärm. Und Hinweise, die bei
-            // jeder Rechnung erscheinen, liest nach der dritten niemand mehr –
-            // dann geht der eine unter, auf den es ankommt.
+            // Nur im Ausland, denn nur dort wird die Liste befragt; ein Hinweis bei jeder Rechnung überläse man bald.
             if (!calculated.isDomestic) {
                 val listAge = ChronoUnit.MONTHS.between(EuMemberStates.AS_OF, invoice.issueDate)
                 if (listAge >= 12) {
@@ -107,10 +80,7 @@ internal object VatIdCheckRules {
                 }
             }
 
-            // Eine Kategorie, deren Nachweis nur innerhalb der EU zu führen
-            // ist, trifft hier auf einen Kunden ausserhalb: Verlangt wird dann
-            // nichts (siehe confirmation), aber die Akte braucht trotzdem
-            // etwas.
+            // Außerhalb der EU wird nichts verlangt, aber die Akte braucht trotzdem etwas.
             val onlyInEu = categories.any { it.vatIdConfirmation == VatIdConfirmation.IN_EU }
             if (onlyInEu && !calculated.isDomestic && !calculated.customerInEu) {
                 add(
@@ -145,10 +115,7 @@ internal object VatIdCheckRules {
                         ),
                     )
                 }
-                // Nur, wo eine Leistung abgerechnet wird: Das Storno wiederholt die
-                // Abfrage der Ursprungsrechnung, und zu der musste sie passen. Eine
-                // frische Abfrage für ein Dokument zu verlangen, das den Umsatz
-                // zurücknimmt, hieße Arbeit ohne Zweck.
+                // Nicht beim Storno: Die Abfrage musste zur Ursprungsrechnung passen.
                 val checkAge = ChronoUnit.MONTHS.between(vatIdCheck.date, invoice.issueDate)
                 if (invoice.type.chargesForService && checkAge >= 12) {
                     add(

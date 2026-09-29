@@ -5,28 +5,14 @@ import de.fluchitconsulting.rechnungsgenerator.core.model.InvoiceType
 import de.fluchitconsulting.rechnungsgenerator.core.model.SkontoTier
 import java.math.BigDecimal
 
-/**
- * Das Skonto (#183): Die Skontostufen dürfen sich weder selbst noch dem
- * Zahlungsziel widersprechen.
- *
- * Eine eigene Gruppe und nicht [InvoiceKindRules]: Dorthin gehört eine Regel,
- * wenn ohne sie keine Rechnungsart gebaut werden kann (ADR-0008). Skonto ist
- * keine Angabe einer Rechnungsart, [InvoiceKind] kennt es nicht.
- *
- * Die Stufen kommen sortiert aus [CalculatedInvoice.skonto]. Deshalb genügt
- * es, benachbarte Stufen zu vergleichen, und die Reihenfolge in der Datei
- * braucht keine eigene Regel.
- */
+/** Die Stufen kommen sortiert aus [CalculatedInvoice.skonto], deshalb genügt es, Nachbarn zu vergleichen. */
 internal object SkontoRules {
     fun check(calculated: CalculatedInvoice): List<Finding> {
         val invoice = calculated.invoice
         val skonto = calculated.skonto
         if (skonto.isEmpty()) return emptyList()
 
-        // Ohne `else`, wie bei den übrigen Gruppen (#121): Eine neue Art
-        // übersetzt hier erst, wenn entschieden ist, ob sie Skonto tragen darf.
-        // Auf der falschen Art bleibt es bei diesem einen Befund – Sätze über die
-        // Fristen eines Skontos, das es nicht geben darf, lenkten nur ab (#97).
+        // Auf der falschen Art bleibt es bei diesem einen Befund; Sätze über die Fristen lenkten nur ab.
         when (invoice.type) {
             InvoiceType.INVOICE, InvoiceType.PARTIAL -> {}
             InvoiceType.PREPAYMENT, InvoiceType.FINAL, InvoiceType.CANCELLATION -> {
@@ -41,8 +27,7 @@ internal object SkontoRules {
             }
         }
 
-        // Aus demselben Grund nur dieser Befund: Ohne Zahlungsziel sagt ein
-        // Vergleich der Fristen mit ihm nichts.
+        // Ohne Zahlungsziel sagt ein Vergleich der Fristen mit ihm nichts.
         if (!calculated.requestsPayment) {
             return listOf(
                 Finding(
@@ -55,19 +40,16 @@ internal object SkontoRules {
         }
 
         return skonto.flatMap { tier(it, calculated.paymentTermDays) } +
-            // `zipWithNext` liefert die Paare benachbarter Elemente: (1, 2), (2, 3), …
             skonto.zipWithNext().mapNotNull { (earlier, later) -> neighbours(earlier, later) }
     }
 
-    /** Was an einer Stufe für sich falsch sein kann. */
     private fun tier(
         stufe: SkontoTier,
         paymentTermDays: Int,
     ): List<Finding> =
         buildList {
             val percentage = stufe.rate.valueAsPercentage
-            // Zwei Nachkommastellen, wie die XRechnung sie für den Satz schreibt
-            // (`PROZENT=2.00`). `stripTrailingZeros`, weil Percent intern mehr führt.
+            // Zwei Nachkommastellen wie `PROZENT=2.00` der XRechnung; Percent führt intern mehr.
             if (percentage <= BigDecimal.ZERO || percentage >= HUNDRED || percentage.stripTrailingZeros().scale() > 2) {
                 add(
                     Finding(
@@ -88,8 +70,7 @@ internal object SkontoRules {
                     ),
                 )
             } else if (paymentTermDays >= 0 && stufe.days >= paymentTermDays) {
-                // Ein negatives Zahlungsziel meldet ZAHLUNGSZIEL_NEGATIV; der
-                // Vergleich mit ihm wäre ein zweiter Befund über denselben Fehler.
+                // Ein negatives Zahlungsziel meldet schon ZAHLUNGSZIEL_NEGATIV.
                 add(
                     Finding(
                         Rule.SKONTOFRIST_NICHT_VOR_ZAHLUNGSZIEL,
@@ -102,7 +83,6 @@ internal object SkontoRules {
             }
         }
 
-    /** Was zwei benachbarte Stufen zusammen falsch machen können. */
     private fun neighbours(
         earlier: SkontoTier,
         later: SkontoTier,
@@ -116,8 +96,7 @@ internal object SkontoRules {
                         "(${earlier.rate} und ${later.rate}). Welcher Satz gilt, bliebe offen.",
                 )
             }
-            // Wer später zahlt, bekäme mindestens so viel – die Stufe mit der
-            // kürzeren Frist nutzte niemand. Meist sind die Sätze vertauscht.
+            // Die Stufe mit der kürzeren Frist nutzte niemand; meist sind die Sätze vertauscht.
             later.rate.valueAsPercentage >= earlier.rate.valueAsPercentage -> {
                 Finding(
                     Rule.SKONTOSTUFE_WERTLOS,
