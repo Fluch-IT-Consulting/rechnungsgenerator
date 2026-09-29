@@ -42,7 +42,8 @@ sealed interface Subject {
 
 /**
  * Deutsch benannt und nicht nummeriert (ADR-0004). Auch die Kennungen, die allein `abschlaege` vergibt, stehen hier:
- * Was das Programm ablehnt, steht so an einer Stelle (#314).
+ * Was das Programm ablehnt, steht so an einer Stelle, und `abschlaege` meldet fremde und eigene Abbrüche in einer
+ * Liste. Getrennt bräuchte [Finding] statt dieses Enums ein offenes Interface (#314).
  */
 enum class Rule(val severity: Severity) {
     // Die Form der Rechnungsnummer (ADR-0005)

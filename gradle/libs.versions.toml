@@ -29,7 +29,8 @@ jackson = "2.22.3"
 
 [libraries]
 kaml = { module = "com.charleskorn.kaml:kaml", version.ref = "kaml" }
-# clikt-core statt clikt: die Variante ohne Mordant und damit ohne JNA.
+# clikt-core statt clikt: die Variante ohne Mordant und damit ohne JNA, das ab JDK 24
+# bei jedem Start vier Warnzeilen auf stderr schreibt.
 # Wir brauchen nur Argumentverarbeitung und schlichte Textausgabe.
 clikt = { module = "com.github.ajalt.clikt:clikt-core", version.ref = "clikt" }
 kotest-runner = { module = "io.kotest:kotest-runner-junit5", version.ref = "kotest" }

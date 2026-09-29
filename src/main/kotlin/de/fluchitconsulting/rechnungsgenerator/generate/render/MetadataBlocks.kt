@@ -33,7 +33,8 @@ internal object MetadataBlocks {
 
     /**
      * Der Name aus dem JDK, in der Sprache der Rechnung – aber nur für Codes aus [Locale.getISOCountries], sonst
-     * der Code selbst: Für `ZZ` stünde „Unbekannte Region“ auf dem Blatt (#374).
+     * der Code selbst: Für `ZZ` stünde „Unbekannte Region“ auf dem Blatt (#374). Ein anderes JDK kann den Namen
+     * ändern; die Vergleichsdateien sind Inlandsrechnungen und sehen das nicht.
      */
     private fun countryName(code: CountryCode, language: Language): String =
         if (code.value in ISO_COUNTRIES) Locale.of("", code.value).getDisplayCountry(language.locale) else code.value

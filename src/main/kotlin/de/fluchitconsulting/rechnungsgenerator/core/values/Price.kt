@@ -7,8 +7,8 @@ import kotlinx.serialization.Serializable
 import java.math.BigDecimal
 
 /**
- * Ein exakter Preis, der nie rundet: BT-146, BT-147, BT-148. Keine Verwandtschaft zu [Money]: Eine Unterklasse
- * bräche die Symmetrie von `equals`.
+ * Ein exakter Preis, der nie rundet: BT-146, BT-147, BT-148 lassen beliebig viele Nachkommastellen zu, anders als
+ * die Beträge (BR-DEC-*). Keine Verwandtschaft zu [Money]: Eine Unterklasse bräche die Symmetrie von `equals`.
  */
 @Serializable(with = PriceSerializer::class)
 class Price(val value: BigDecimal) : Comparable<Price> {

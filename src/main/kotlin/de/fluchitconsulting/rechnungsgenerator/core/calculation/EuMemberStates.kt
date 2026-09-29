@@ -11,7 +11,7 @@ import java.time.LocalDate
  */
 object EuMemberStates {
     // Datum der letzten Prüfung gegen die amtliche Aufstellung, nicht der letzten Änderung – beim Prüfen
-    // mitsetzen. Ein Test und ein Hinweis zur Laufzeit melden, wenn es veraltet.
+    // mitsetzen. Der Test meldet es nach sechs Monaten, der Hinweis zur Laufzeit nach zwölf für den, der nie baut.
     val AS_OF: LocalDate = LocalDate.of(2026, 8, 30)
 
     // Als CountryCode: Ein verformter Eintrag scheitert beim ersten Zugriff, statt einen Staat still zum Drittland zu machen.
