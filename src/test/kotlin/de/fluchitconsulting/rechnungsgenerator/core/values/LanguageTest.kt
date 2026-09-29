@@ -7,8 +7,7 @@ import io.kotest.matchers.shouldBe
 class LanguageTest : FunSpec({
 
     test("jeder Tag ist einer, den das JDK in derselben Schreibweise zurückgibt") {
-        // Ein vertippter Tag ergäbe still ein Locale ohne Land, und das Datum
-        // stünde in der Schreibweise der Sprache statt der Variante da.
+        // Ein vertippter Tag ergäbe still ein Locale ohne Land.
         Language.entries.forEach { language ->
             withClue(language.name) {
                 language.locale.toLanguageTag() shouldBe language.tag

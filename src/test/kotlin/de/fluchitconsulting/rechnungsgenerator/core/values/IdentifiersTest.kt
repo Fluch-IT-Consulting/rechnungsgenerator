@@ -25,8 +25,6 @@ class IdentifiersTest : FunSpec({
         }
 
         test("erkennt einen Zahlendreher über die Prüfsumme") {
-            // Genau der Fehler, den man beim Abtippen macht: zwei Ziffern vertauscht.
-            // Das Muster stimmt weiterhin, nur die Prüfsumme nicht.
             val error = shouldThrow<InvalidIdentifierException> { Iban("DE89 3704 0044 0532 0130 09") }
             error.message!! shouldContain "Prüfsumme"
         }
@@ -63,8 +61,7 @@ class IdentifiersTest : FunSpec({
 
     context("USt-IdNr.") {
         test("rechnet die Prüfziffer deutscher Nummern nach") {
-            // DE123456788 hat eine gültige Prüfziffer, DE123456789 nicht –
-            // die beiden unterscheiden sich nur in der letzten Stelle.
+            // DE123456788 hat eine gültige Prüfziffer, DE123456789 nicht.
             VatId("DE123456788").value shouldBe "DE123456788"
             shouldThrow<InvalidIdentifierException> { VatId("DE123456789") }
                 .message!! shouldContain "Prüfziffer"
@@ -83,8 +80,6 @@ class IdentifiersTest : FunSpec({
         }
 
         test("prüft bei anderen Ländern nur das Format") {
-            // Jedes Land hat ein eigenes Prüfverfahren; eine halbe Prüfung wäre
-            // schlechter als eine ehrlich fehlende.
             assertSoftly {
                 VatId("ATU12345678").value shouldBe "ATU12345678"
                 VatId("CHE123456789").value shouldBe "CHE123456789"
@@ -110,10 +105,7 @@ class IdentifiersTest : FunSpec({
     }
 
     context("Einheit") {
-        // Gelesen wird über den Serializer und nicht über eine eigene
-        // Nachschlagefunktion: Das ist der Weg, den eine YAML-Datei tatsächlich
-        // nimmt, und seit die Deklaration an einer Stelle steht, gibt es
-        // daneben keine zweite Tür mehr.
+        // Über den Serializer, den Weg einer YAML-Datei.
         fun unit(text: String): Unit = Yaml.default.decodeFromString(UnitSerializer, text)
 
         test("löst die deutschen Schreibweisen auf Rec-20-Codes auf") {
@@ -142,8 +134,7 @@ class IdentifiersTest : FunSpec({
                 }
             }
 
-            // Über alle übrigen Einträge und nicht über eine Liste: Eine neue
-            // Einheit mit Einzahl fällt hier auf, statt ungeprüft zu bleiben.
+            // Über alle übrigen Einträge, damit eine neue Einheit mit Einzahl auffällt.
             test("bleibt bei jeder anderen Einheit gleich") {
                 assertSoftly {
                     (Unit.entries - setOf(Unit.DAY, Unit.WEEK, Unit.MONTH)).forEach { unit ->

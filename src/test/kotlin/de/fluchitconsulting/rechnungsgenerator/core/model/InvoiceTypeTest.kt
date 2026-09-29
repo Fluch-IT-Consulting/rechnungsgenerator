@@ -21,8 +21,7 @@ class InvoiceTypeTest : FunSpec({
     }
 
     test("die Schlussrechnung teilt den Code der gewöhnlichen Rechnung") {
-        // Kein eigener Code in der Liste: Die Schlussrechnung ist die Rechnung
-        // über die Gesamtleistung, kenntlich an der Absetzung, nicht am Typ.
+        // Kenntlich ist sie an der Absetzung, nicht am Code.
         InvoiceType.FINAL.code shouldBe InvoiceType.INVOICE.code
     }
 

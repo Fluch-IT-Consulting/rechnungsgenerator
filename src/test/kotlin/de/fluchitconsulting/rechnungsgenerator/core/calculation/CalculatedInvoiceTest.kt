@@ -25,8 +25,7 @@ class CalculatedInvoiceTest : FunSpec({
 
     context("Jobname") {
         test("setzt sich aus Rechnungsart und -nummer zusammen") {
-            // Aus ihm bildet pdfx die DocumentID; so ist sie je Rechnung
-            // verschieden (#297).
+            // #297
             CalculatedInvoice(testInvoice(number = "R26-009", type = InvoiceType.PREPAYMENT), config)
                 .fileBaseName shouldBe "Abschlagsrechnung-R26-009"
         }
@@ -49,9 +48,7 @@ class CalculatedInvoiceTest : FunSpec({
         totals.lines.single().net shouldBe Money("123.74")
     }
 
-    // Einzelpreise unterhalb der Cent-Grenze sind nach EN 16931 (BT-146) zulässig.
-    // Würde der Einzelpreis beim Einlesen auf Cent normalisiert (0,335 -> 0,34),
-    // stünden hier 340,00 € statt 335,00 € – 5 € Fehler auf einer einzigen Position.
+    // BT-146
     test("Einzelpreis unter einem Cent wird erst nach der Multiplikation gerundet") {
         val invoice = testInvoice(items = listOf(testItem(quantity = "1000", unitPrice = "0.335")))
 
@@ -61,9 +58,7 @@ class CalculatedInvoiceTest : FunSpec({
         totals.grossTotal shouldBe Money("398.65")
     }
 
-    // Der Rabatt mindert den Positionsbetrag, nicht den Einzelpreis (EN 16931
-    // BG-27): Basis (BT-137) und Rabattbetrag (BT-136) sind je auf Cent
-    // gerundet, das Netto (BT-131) ist ihre Differenz.
+    // BG-27, ADR-0013
     context("Rabatt") {
         test("mindert das Positionsnetto um den Rabattbetrag") {
             val invoice = testInvoice(items = listOf(testItem(quantity = "1", unitPrice = "800.00", discount = "30")))
@@ -75,9 +70,8 @@ class CalculatedInvoiceTest : FunSpec({
             line.net shouldBe Money("560.00")
         }
 
-        // 50 % von 10,05 sind 5,025. Gerundet wird der Rabattbetrag (5,03), das
-        // Netto ist der Rest (5,02) – nicht Basis × 50 % gerundet, das wären
-        // ebenfalls 5,03, und Rabatt und Netto ergäben zusammen 10,06.
+        // 50 % von 10,05 sind 5,025: Rabatt 5,03, Netto 5,02. Basis × 50 % gerundet
+        // wären ebenfalls 5,03, zusammen also 10,06.
         test("rundet den Rabattbetrag, das Netto ist der Rest") {
             val invoice = testInvoice(items = listOf(testItem(quantity = "1", unitPrice = "10.05", discount = "50")))
 
@@ -87,9 +81,7 @@ class CalculatedInvoiceTest : FunSpec({
             line.net shouldBe Money("5.02")
         }
 
-        // Ein Storno rechnet mit negativer Menge (ADR-0006). Hebt es die
-        // Ursprungsrechnung auf den Cent genau auf, muss auch die Rundung des
-        // Rabattbetrags spiegelbildlich sein.
+        // ADR-0006
         test("rundet bei negativer Menge spiegelbildlich") {
             val invoice = testInvoice(items = listOf(testItem(quantity = "-1", unitPrice = "10.05", discount = "50")))
 
@@ -105,9 +97,7 @@ class CalculatedInvoiceTest : FunSpec({
             CalculatedInvoice(invoice, config).lines.single().net shouldBe Money("0.00")
         }
 
-        // Der Rabatt als fester Betrag (#233): Er steht positiv in der Datei
-        // und mindert die Basis – gerundet wird an ihm nichts, er ist schon
-        // ein Betrag.
+        // #233
         test("ein fester Rabattbetrag mindert das Positionsnetto") {
             val invoice = testInvoice(items = listOf(testItem(quantity = "2", unitPrice = "800.00", discountAmount = "200.00")))
 
@@ -118,9 +108,6 @@ class CalculatedInvoiceTest : FunSpec({
             line.net shouldBe Money("1400.00")
         }
 
-        // Anders als der Satz bringt der Betrag sein Vorzeichen nicht mit: Er
-        // bekommt das der Basis. Sonst forderte ein Storno mehr zurück, als die
-        // Ursprungsrechnung verlangt hat (hier: -1400,00 statt -1800,00).
         test("ein fester Rabattbetrag folgt bei negativer Menge der Basis") {
             val invoice = testInvoice(items = listOf(testItem(quantity = "-2", unitPrice = "800.00", discountAmount = "200.00")))
 
@@ -131,8 +118,6 @@ class CalculatedInvoiceTest : FunSpec({
             line.net shouldBe Money("-1400.00")
         }
 
-        // Die Probe darauf, dass das Storno den Rabatt auf den Cent genau
-        // aufhebt: dieselbe Position, einmal berechnet und einmal negiert.
         test("Rechnung und Storno heben sich mit festem Rabattbetrag auf") {
             val invoiceItem = testItem(quantity = "3", unitPrice = "33.33", discountAmount = "19.99")
             val cancellationItem = testItem(quantity = "-3", unitPrice = "33.33", discountAmount = "19.99")
@@ -170,7 +155,6 @@ class CalculatedInvoiceTest : FunSpec({
         }
     }
 
-    // Die Summen gehören zur Rechnung, aus der sie entstanden – auch nach copy().
     // Ein Paar aus einer Rechnung und den Summen einer anderen soll nicht baubar sein.
     test("copy mit einer anderen Rechnung rechnet deren Summen") {
         val calculated = CalculatedInvoice(testInvoice(items = listOf(testItem(quantity = "1", unitPrice = "100.00"))), config)
@@ -203,9 +187,7 @@ class CalculatedInvoiceTest : FunSpec({
             totals.grossTotal shouldBe Money("1394.60")
         }
 
-        // Die Positionen stehen jeweils verkehrt herum in der Datei: Ohne die
-        // Sortierung blieben die Gruppen in der Reihenfolge ihres ersten
-        // Auftretens, und der Test wäre grün, ohne etwas zu prüfen.
+        // Die Positionen stehen verkehrt herum, sonst wäre der Test auch ohne Sortierung grün.
         context("Reihenfolge") {
             test("innerhalb einer Kategorie der höhere Satz zuerst") {
                 val invoice = testInvoice(items = listOf(testItem(vatRate = "7"), testItem(vatRate = "19")))
@@ -228,8 +210,7 @@ class CalculatedInvoiceTest : FunSpec({
             }
         }
 
-        // Dieselbe Kategorie mit zwei Sätzen und derselbe Satz in zwei
-        // Kategorien: Ein Schlüssel aus nur einem der beiden ordnete falsch zu.
+        // Ein Schlüssel aus nur Kategorie oder nur Satz ordnete hier falsch zu.
         test("jede Position findet ihre Gruppe") {
             val invoice =
                 testInvoice(
@@ -301,7 +282,6 @@ class CalculatedInvoiceTest : FunSpec({
             totals.dueDate shouldBe LocalDate.of(2026, 9, 13)
         }
 
-        // Ein negatives Zahlungsziel lehnt PaymentTermRules ab, siehe den Test dort.
         test("null Tage heißen sofort") {
             CalculatedInvoice(testInvoice(paymentTermDaysOverride = 0), config).dueDate shouldBe
                 LocalDate.of(2026, 8, 14)
@@ -324,9 +304,7 @@ class CalculatedInvoiceTest : FunSpec({
     }
 
     context("Zahlungsaufforderung") {
-        // Aus requestsPayment folgen Zahlungsziel und Bankverbindung (#94). Was
-        // davon auf dem Blatt steht, prüft InvoiceRendererTest; hier nur die
-        // Entscheidung.
+        // #94
 
         test("eine gewöhnliche Rechnung fordert zur Zahlung auf") {
             CalculatedInvoice(testInvoice(), config).requestsPayment shouldBe true
@@ -392,9 +370,7 @@ class CalculatedInvoiceTest : FunSpec({
         }
 
         test("ein negativer Betrag fordert kein Geld, auch wo die Art eine Leistung abrechnet") {
-            // Auf ein PDF kommt diese Rechnung nicht, GESAMTBETRAG_NEGATIV lehnt
-            // sie ab. Dass sie kein Geld fordert, soll aber am Wert selbst hängen
-            // und nicht an einer Regel in einer anderen Gruppe (#130).
+            // GESAMTBETRAG_NEGATIV lehnt sie ab, aber es soll am Wert selbst hängen (#130).
             val calculated =
                 CalculatedInvoice(
                     testInvoice(items = listOf(testItem(quantity = "-1", unitPrice = "1000.00"))),
@@ -407,11 +383,8 @@ class CalculatedInvoiceTest : FunSpec({
     }
 
     context("Inland und EU") {
-        // Zwei Fragen, nicht eine (CONTEXT.md, *Ausland*). Regeln und Renderer
-        // fragen beide hier, statt je für sich zu vergleichen (#120). Was daraus
-        // folgt, prüfen VatIdCheckRulesTest und InvoiceRendererTest.
+        // Zwei Fragen, nicht eine (CONTEXT.md, *Ausland*, #120).
 
-        /** Die Beispielrechnung, mit Rechnungssteller und Kunde in den genannten Ländern. */
         fun between(seller: String, customer: String): CalculatedInvoice {
             val invoice = testInvoice()
             val sellerConfig = testSellerConfig()
@@ -438,8 +411,6 @@ class CalculatedInvoiceTest : FunSpec({
         }
 
         test("Inland heißt das Land des Rechnungsstellers, nicht Deutschland") {
-            // Für einen Rechnungssteller in Österreich ist ein Kunde in Wien
-            // Inland.
             val calculated = between(seller = "AT", customer = "AT")
 
             calculated.isDomestic shouldBe true

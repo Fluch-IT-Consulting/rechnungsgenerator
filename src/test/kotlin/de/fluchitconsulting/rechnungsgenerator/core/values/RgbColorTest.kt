@@ -22,8 +22,7 @@ class RgbColorTest : FunSpec({
     }
 
     test("ein # davor wird abgewiesen, mit dem Hinweis, es wegzulassen") {
-        // In YAML beginnt ohne Anführungszeichen ein Kommentar; die Form mit #
-        // soll deshalb auch mit ihnen nicht durchgehen.
+        // Ohne Anführungszeichen beginnt mit # in YAML ein Kommentar.
         val error = shouldThrow<InvalidRgbColorException> { RgbColor("#31AE34") }
 
         error.message!! shouldContain "'#31AE34'"

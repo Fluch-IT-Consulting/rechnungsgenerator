@@ -43,8 +43,6 @@ class LanguageTableTest : FunSpec({
     }
 
     test("nur unterstützte Sprachen und ihre Hauptsprache sind Schlüssel") {
-        // Ein Satz, den keine Rechnung je verwendet, ist derselbe stille
-        // Fehler wie ein vertippter Schlüssel.
         listOf("fr", "en-AU", "englisch", "").forEach { key ->
             withClue(key) {
                 val error = shouldThrow<InvalidLanguageRangeException> { LanguageTable(mapOf(key to "X")) }

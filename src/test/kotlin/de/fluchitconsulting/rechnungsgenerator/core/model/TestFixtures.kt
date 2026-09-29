@@ -12,9 +12,6 @@ import de.fluchitconsulting.rechnungsgenerator.core.values.VatId
 import java.math.BigDecimal
 import java.time.LocalDate
 
-// Baukasten für Tests: Top-Level-Funktionen mit Default-Argumenten, sodass jeder
-// Test nur die Werte angibt, um die es ihm geht ("Object Mother"-Muster).
-
 fun testSellerConfig(paymentTermDays: Int = 14, invoiceNumberPattern: InvoiceNumberPattern? = null) =
     SellerConfig(
         companyName = "Muster IT-Consulting",
@@ -124,13 +121,7 @@ fun testInvoice(
     introduction = introduction,
 )
 
-/**
- * Die Beispielrechnung je Rechnungsart, als Name ohne Endung: `rechnung` steht
- * für `rechnung.yaml` unter `src/test/resources` und für die Dateien, die davon
- * abgeleitet sind. Einmal hier, damit das Pflichtangaben-Netz und die
- * Inhalts-Dateien des Renderers dieselben Beispiele meinen (#204). Dass keine
- * Art fehlt, prüft `InvoiceRendererTest`, der auch ohne die Werkzeuge läuft.
- */
+// Einmal hier, damit Pflichtangaben-Netz und Inhalts-Dateien dieselben Beispiele meinen (#204).
 val exampleInvoices =
     mapOf(
         InvoiceType.INVOICE to "rechnung",
@@ -140,13 +131,8 @@ val exampleInvoices =
         InvoiceType.CANCELLATION to "stornorechnung",
     )
 
-/**
- * Je Steuerkategorie, die einen Grund mitbringt, eine Beispielrechnung, die
- * nur diese Kategorie trägt und keinen eigenen Grund (#427): So steht der
- * Wortlaut aus [TaxCategory.defaultReason] auf dem Blatt. Die Dateien nennen
- * keine `sprache`, damit das Pflichtangaben-Netz jede voranstellen kann. Dass
- * keine Kategorie fehlt, prüft `TaxCategoryRulesTest` ohne die Werkzeuge.
- */
+// Ohne eigenen Grund, damit der Vorgabegrund auf dem Blatt steht (#427), und
+// ohne `sprache`, damit das Pflichtangaben-Netz jede voranstellen kann.
 val taxCategoryExamples =
     mapOf(
         TaxCategory.REVERSE_CHARGE to "reverse-charge",

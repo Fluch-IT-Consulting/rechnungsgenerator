@@ -9,17 +9,9 @@ import kotlin.io.path.createDirectories
 import kotlin.io.path.createTempDirectory
 import kotlin.io.path.writeText
 
-/**
- * Die Suche nach der Wurzel (ADR-0015), an echten Verzeichnissen geprüft –
- * sie rechnet Pfade und fragt `exists`, und dafür braucht es keine Naht.
- *
- * Jeder Test legt sich seine Ablage selbst an: Eine geteilte hätte für jeden
- * Fall eine andere Form, und die halb eingerichtete Wurzel des einen wäre die
- * Falle des nächsten.
- */
+/** ADR-0015. Jeder Test legt sich seine Ablage an, sonst wäre die halbe Wurzel des einen die Falle des nächsten. */
 class RootTest : FunSpec({
 
-    /** Eine Ablage mit Wurzel: `.rechnungsgenerator/stammdaten.yaml` und ein Jahresordner. */
     fun archive(): Path =
         createTempDirectory("wurzel-test").also {
             it
@@ -29,7 +21,6 @@ class RootTest : FunSpec({
                 .writeText("firma: Muster\n")
         }
 
-    /** Eine Rechnungsdatei unter [dir]; die Zwischenordner entstehen mit. */
     fun invoice(dir: Path, path: String): Path =
         dir.resolve(path).also {
             it.parent.createDirectories()
@@ -50,9 +41,7 @@ class RootTest : FunSpec({
     }
 
     test("gesucht wird ab der Rechnungsdatei, nicht ab dem Arbeitsverzeichnis") {
-        // Ein relativer Pfad wird zuerst absolut gemacht. Das Arbeitsverzeichnis
-        // des Testlaufs ist das Projekt und hat gar keine Wurzel – fände die
-        // Suche von dort aus statt, käme hier ein Abbruch heraus.
+        // Im Arbeitsverzeichnis des Testlaufs, dem Projekt, liegt keine Wurzel.
         val archive = archive()
         val invoice = invoice(archive, "2026/R26-009.yaml")
         val relative = Path.of("").toAbsolutePath().relativize(invoice)
@@ -61,7 +50,6 @@ class RootTest : FunSpec({
     }
 
     test("die nächste Wurzel gewinnt") {
-        // Ein zweiter Rechnungssteller ist eine zweite Wurzel, auch verschachtelt.
         val outer = archive()
         val inner = outer.resolve("zweitfirma").createDirectories()
         inner
@@ -87,8 +75,6 @@ class RootTest : FunSpec({
     }
 
     test("eine lose stammdaten.yaml ist keine Wurzel") {
-        // Sie kann als Kopie oder Sicherung irgendwo liegen; ein Ordner mit dem
-        // Namen des Programms nicht.
         val withoutRoot = createTempDirectory("wurzel-test")
         withoutRoot.resolve(Root.SELLER_CONFIG).writeText("firma: Muster\n")
 
@@ -96,8 +82,6 @@ class RootTest : FunSpec({
     }
 
     context("eine halb eingerichtete Wurzel bricht ab, statt weiter oben zu suchen") {
-        // Sonst nähme sie still die Stammdaten der äußeren Wurzel, und auf der
-        // Rechnung stünde der falsche Aussteller.
         test("ein Ordner ohne stammdaten.yaml") {
             val outer = archive()
             val inner = outer.resolve("zweitfirma").also { it.resolve(Root.FOLDER).createDirectories() }
