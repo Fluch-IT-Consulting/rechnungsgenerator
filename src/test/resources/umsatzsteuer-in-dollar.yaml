@@ -1,9 +1,6 @@
-# Fiktive Rechnung in US-Dollar mit Umsatzsteuer (#418) an eine Privatperson
-# aus den USA: eine Schulung in Nürnberg, deren Ort im Inland liegt (§3a
-# Abs. 3 Nr. 3 Buchst. a UStG), also Kategorie S. Die Steuer steht
-# umgerechnet in Euro da, mit dem Kurs des BMF für den Monat der Leistung.
-# 1.710,00 $ Umsatzsteuer geteilt durch 1,1685 sind 1.463,41 € – über 1.000,
-# damit auch der Euro-Betrag gruppiert wird.
+# Fiktive Rechnung in US-Dollar mit Umsatzsteuer (#418): eine Schulung in
+# Nürnberg, Kategorie S. 1.710,00 $ / 1,1685 = 1.463,41 €, über 1.000, damit
+# auch der Euro-Betrag gruppiert wird.
 waehrung: USD
 umrechnung:
   kurs: 1.1685

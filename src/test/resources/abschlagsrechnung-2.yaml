@@ -1,6 +1,5 @@
-# Fiktive zweite Abschlagsrechnung zu demselben Vorgang wie
-# abschlagsrechnung.yaml. Ohne vereinnahmt-am: Das Geld kam erst nach der
-# Rechnung, am 02.09.2026 – so steht es in schlussrechnung.yaml.
+# Fiktiv. Ohne vereinnahmt-am: Das Geld kam erst am 02.09.2026, so steht es in
+# schlussrechnung.yaml.
 nummer: R26-011
 art: abschlagsrechnung
 datum: 2026-08-20

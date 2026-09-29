@@ -1,8 +1,4 @@
-# Fiktive Schlussrechnung, deren vereinnahmte Abschläge den Gesamtbetrag genau
-# decken (#342): 20.000,00 € netto und 3.800,00 € Umsatzsteuer, abgesetzt
-# in zwei Abschlägen zu je 10.000,00 € und 1.900,00 €. Statt eines
-# Restbetrags von null steht ein Satz auf dem Blatt, und Zahlungsziel und
-# Bankverbindung entfallen, weil das Dokument kein Geld fordert.
+# Fiktive Schlussrechnung, deren Abschläge den Gesamtbetrag genau decken (#342).
 nummer: R26-048
 art: schlussrechnung
 datum: 2026-11-05

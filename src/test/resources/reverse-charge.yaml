@@ -1,12 +1,6 @@
-# Fiktive Rechnung an einen Unternehmer in Österreich (#406, #427): Eine
-# sonstige Leistung an einen Unternehmer in einem anderen Mitgliedstaat wird
-# dort ausgeführt, und der Kunde schuldet die Steuer (§3a Abs. 2, §13b Abs. 1
-# UStG). Kategorie AE ohne eigenen Grund, damit der vorgesehene Wortlaut auf
-# dem Blatt steht, dazu die USt-IdNr. des Kunden und die
-# Bestätigungsabfrage, ohne die AE in die EU abbricht.
-#
-# Ohne `sprache`: Das Pflichtangaben-Netz setzt die Datei in jeder Sprache
-# und stellt die Sprache dafür voran.
+# Fiktive Rechnung mit Reverse Charge nach Österreich (#406, #427). Kategorie AE
+# ohne eigenen Grund, mit USt-IdNr. und Bestätigungsabfrage, ohne die AE in die
+# EU abbricht, und ohne `sprache`, die das Pflichtangaben-Netz voranstellt.
 nummer: R26-052
 datum: 2026-08-14
 leistungszeitraum:

@@ -1,6 +1,6 @@
-# Fiktive Rechnung mit zwei Steuersätzen und einer steuerfreien Position (#218).
-# Je Satz zwei Positionen: Das Entgelt je Satz (§14 Abs. 4 Nr. 7 UStG) steht
-# dann auf keiner Position und kommt nur über die Steuerzeile auf das Blatt.
+# Fiktive Rechnung mit zwei Steuersätzen, einer steuerfreien Position und einem
+# Nullsatz (#218). Je Satz zwei Positionen, damit das Entgelt je Satz nur über
+# die Steuerzeile auf das Blatt kommt.
 nummer: R26-043
 datum: 2026-08-14
 leistungszeitraum:
@@ -33,7 +33,7 @@ positionen:
     einheit: Stück
     einzelpreis: 24.50
     ust-satz: 7
-  # Steuerfrei: das Entgelt nennt der Hinweis unter den Summen.
+  # Steuerfrei
   - bezeichnung: Schulung
     menge: 1
     einheit: pauschal
@@ -41,8 +41,7 @@ positionen:
     ust-satz: 0
     steuerkategorie: E
     steuerbefreiungsgrund: Steuerfrei nach §4 Nr. 21 UStG
-  # Nullsatz: keine Befreiung, sondern 0 % – Satz und Steuerbetrag gehören
-  # deshalb in den Summenblock.
+  # Nullsatz: keine Befreiung, Satz und Steuerbetrag gehören in den Summenblock.
   - bezeichnung: Photovoltaikmodul
     menge: 1
     einheit: Stück

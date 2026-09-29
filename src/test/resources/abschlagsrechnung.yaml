@@ -1,12 +1,11 @@
-# Fiktive Abschlagsrechnung: eine Pauschale auf eine noch nicht erbrachte
-# Leistung. Der Zeitraum ist der voraussichtliche – das PDF beschriftet ihn so.
+# Fiktive Abschlagsrechnung: eine Pauschale auf eine noch nicht erbrachte Leistung.
 nummer: R26-009
 art: abschlagsrechnung
 datum: 2026-06-15
 leistungszeitraum:
   von: 2026-06-01
   bis: 2026-10-31
-# Optional, nur wenn der Zeitpunkt feststeht: §14 Abs. 4 Nr. 6 UStG, BT-7.
+# Nur, wenn der Zeitpunkt feststeht: §14 Abs. 4 Nr. 6 UStG, BT-7.
 vereinnahmt-am: 2026-06-10
 kunde:
   name: Beispiel Software GmbH
