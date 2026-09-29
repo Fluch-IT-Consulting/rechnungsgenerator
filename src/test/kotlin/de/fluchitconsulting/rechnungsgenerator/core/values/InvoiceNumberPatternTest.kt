@@ -5,12 +5,7 @@ import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.string.shouldContain
 
-/**
- * Das Muster aus den Stammdaten (#54, ADR-0005). Geprüft wird hier nur, was
- * dieser Wert für sich weiß: ob der Ausdruck einer ist und wie er trifft.
- * Ob eine bestimmte Rechnung dazu passt, entscheidet `InvoiceNumberRules` –
- * das hängt an zwei Dateien und steht in `InvoiceNumberRulesTest`.
- */
+/** #54, ADR-0005 */
 class InvoiceNumberPatternTest : FunSpec({
 
     test("das Muster trifft die ganze Nummer, nicht bloß eine Stelle darin") {
@@ -26,8 +21,7 @@ class InvoiceNumberPatternTest : FunSpec({
     }
 
     test("mehrere Nummernkreise stehen als Alternative im Ausdruck") {
-        // UStAE 14.5 Abs. 11 erlaubt sie; eine eigene Mechanik dafür braucht es
-        // nicht, ein regulärer Ausdruck trägt seine Alternativen selbst.
+        // UStAE 14.5 Abs. 11
         val pattern = InvoiceNumberPattern("(R|G)\\d{2}-\\d{3}")
 
         pattern.matches("R26-001") shouldBe true
@@ -36,18 +30,15 @@ class InvoiceNumberPatternTest : FunSpec({
     }
 
     test("ein Ausdruck, der keiner ist, wird beim Bauen abgelehnt") {
-        // Der Tippfehler steckt in der Wiederholung: {2-3} statt {2,3}.
         val error = shouldThrow<InvalidIdentifierException> { InvoiceNumberPattern("R\\d{2-3}") }
 
         error.message!! shouldContain "R\\d{2-3}"
-        // Die Meldung der PatternSyntaxException wird übernommen, nicht ersetzt:
-        // Sie zeigt mit einem ^ auf die schadhafte Stelle im Ausdruck.
+        // Mit dem ^ der PatternSyntaxException, das auf die Stelle zeigt.
         error.message!! shouldContain "^"
     }
 
     test("zwei gleiche Ausdrücke sind derselbe Wert") {
-        // Regex selbst hat kein equals – ohne eigenes wären zwei Stammdaten mit
-        // demselben Muster verschieden, und data class copy() löge.
+        // Regex selbst hat kein equals.
         InvoiceNumberPattern("R\\d{2}") shouldBe InvoiceNumberPattern("R\\d{2}")
         InvoiceNumberPattern("R\\d{2}").hashCode() shouldBe InvoiceNumberPattern("R\\d{2}").hashCode()
     }

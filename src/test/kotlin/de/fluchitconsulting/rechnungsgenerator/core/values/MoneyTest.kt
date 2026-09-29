@@ -38,8 +38,6 @@ class MoneyTest : FunSpec({
         test("Kommutativität") { checkAll(money, money) { a, b -> a + b shouldBe b + a } }
         test("Assoziativität") { checkAll(money, money, money) { a, b, c -> (a + b) + c shouldBe a + (b + c) } }
         test("ZERO ist neutrales Element") { checkAll(money) { a -> a + Money.ZERO shouldBe a } }
-        // negate() ist mit #32 entfallen – ungerufen. Das inverse Element prüft
-        // jetzt a - a, ohne dafür eine Operation vorzuhalten.
         test("a - a == ZERO") { checkAll(money) { a -> a - a shouldBe Money.ZERO } }
     }
 
@@ -80,7 +78,6 @@ class MoneyTest : FunSpec({
             Money.ZERO.abs() shouldBe Money.ZERO
         }
         test("ist nie negativ") { checkAll(money) { a -> a.abs().isNegative() shouldBe false } }
-        // Die Form, die vor #247 in ItemRules von Hand dastand.
         test("ist der Wert selbst oder sein Gegenteil") {
             checkAll(money) { a -> a.abs() shouldBe if (a.isNegative()) -a else a }
         }
@@ -91,8 +88,7 @@ class MoneyTest : FunSpec({
         test("100 % ist neutral") { checkAll(money) { a -> a * Percent("100") shouldBe a } }
     }
 
-    // Money × Menge gibt es bewusst nicht – das ist Sache von Price, siehe PriceTest.
-    // Ein Test dafür kann hier nicht stehen: Er würde schlicht nicht kompilieren.
+    // Money × Menge gibt es bewusst nicht, das ist Sache von Price.
 
     context("Summen-Extensions") {
         test("sumOf über eine Liste") {
@@ -120,7 +116,7 @@ class MoneyTest : FunSpec({
             error.message shouldContain "neunzig"
         }
 
-        // #232: Der Konstruktor rundet weiter (siehe unten), die Eingabe nicht.
+        // #232: Der Konstruktor rundet, die Eingabe nicht.
         test("eine dritte Nachkommastelle bricht ab, statt still zu runden") {
             val error =
                 shouldThrow<SerializationException> {
@@ -140,8 +136,6 @@ class MoneyTest : FunSpec({
     }
 
     context("Formatierung") {
-        // toString ist Debug-Darstellung, nicht Report-Darstellung: locale-unabhängig,
-        // ohne Währung. Das deutsche Format ist Sache der Ausgabeschicht.
         test("toString: locale-unabhängige Debug-Form") {
             assertSoftly {
                 Money("1234.56").toString() shouldBe "1234.56"

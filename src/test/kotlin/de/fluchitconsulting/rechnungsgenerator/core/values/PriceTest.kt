@@ -15,8 +15,7 @@ import java.math.BigDecimal
 
 class PriceTest : FunSpec({
 
-    // Arb<Price>: Werte mit vier Nachkommastellen – bewusst feiner als Cent,
-    // denn genau darin unterscheidet sich Price von Money.
+    // Feiner als Cent, denn darin unterscheidet sich Price von Money.
     val price: Arb<Price> = Arb.long(-10_000_000L..10_000_000L).map { Price(BigDecimal.valueOf(it, 4)) }
 
     context("Konstruktion") {
@@ -33,15 +32,11 @@ class PriceTest : FunSpec({
     }
 
     context("Arithmetik bleibt exakt") {
-        // Price trägt nur, was die Domäne braucht: Menge mal Einzelpreis und
-        // den Übergang zu Money (#32). Keine Addition und kein Vorzeichen –
-        // zwei Einzelpreise zu addieren ergibt keinen Einzelpreis.
+        // #32: Keine Addition, zwei Einzelpreise ergeben keinen Einzelpreis.
         test("Menge 1 ist neutral") { checkAll(price) { a -> a * BigDecimal.ONE shouldBe a } }
         test("Menge × Einzelpreis, ohne jede Rundung") {
             assertSoftly {
-                // Der Kernfall der Rechnung: Stunden × Stundensatz.
                 Price("95.00") * BigDecimal("86.5") shouldBe Price("8217.50")
-                // Sub-Cent-Preis: die dritte Stelle überlebt die Multiplikation.
                 Price("0.335") * BigDecimal("1000") shouldBe Price("335.000")
             }
         }
@@ -56,9 +51,7 @@ class PriceTest : FunSpec({
             }
         }
 
-        // Der eigentliche Punkt der beiden Typen: erst rechnen, dann runden.
-        // Würde der Einzelpreis vorher auf Cent normalisiert (0,335 -> 0,34),
-        // kämen hier 340,00 € heraus – 5 € zu viel.
+        // Vorher auf Cent normalisiert (0,335 -> 0,34), kämen 5 € zu viel heraus.
         test("erst multiplizieren, dann runden – nicht umgekehrt") {
             val net = (Price("0.335") * BigDecimal("1000")).roundToAmount()
 
@@ -74,8 +67,6 @@ class PriceTest : FunSpec({
         test("nicht gleich zu null, Fremdtyp oder Money") {
             Price("1").equals(null) shouldBe false
             Price("1").equals("1") shouldBe false
-            // Price und Money sind gleichrangige Typen ohne Verwandtschaft –
-            // deshalb sind sie auch bei gleichem Zahlenwert nicht gleich.
             Price("1").equals(Money("1")) shouldBe false
         }
     }

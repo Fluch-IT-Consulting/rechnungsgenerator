@@ -22,7 +22,6 @@ import kotlin.io.path.createDirectories
 import kotlin.io.path.createTempDirectory
 import kotlin.io.path.writeText
 
-// Testressourcen liegen in src/test/resources und landen im Classpath.
 private fun resource(name: String): String = checkNotNull(YamlLoaderTest::class.java.getResource("/$name")).readText()
 
 class YamlLoaderTest : FunSpec({
@@ -34,13 +33,11 @@ class YamlLoaderTest : FunSpec({
         config.vatId.value shouldBe "DE123456788"
         config.address.postalCode shouldBe "97070"
         config.paymentTermDays shouldBe 14
-        // Das Muster der Rechnungsnummern (ADR-0005): geprüft wird die Nummer
-        // erst im Calculator, gelesen wird sie hier.
         checkNotNull(config.invoiceNumberPattern).matches("R26-042") shouldBe true
     }
 
     test("ohne design gilt helsinki, mit design das genannte") {
-        // ADR-0011: Die Wahl steht in den Stammdaten, Vorgabe ist das heutige Design.
+        // ADR-0011
         YamlLoader.parseSellerConfig(resource("stammdaten.yaml")).design shouldBe Design.HELSINKI
         YamlLoader.parseSellerConfig(resource("stammdaten.yaml") + "design: prag\n").design shouldBe Design.PRAG
     }
@@ -56,9 +53,7 @@ class YamlLoaderTest : FunSpec({
     }
 
     test("balken und raster sind unbekannte Designs wie jeder andere Wert") {
-        // Nachtrag zu ADR-0011: keine Zuordnung zu helsinki und prag, auch
-        // keine Warnung – wer einen davon stehen hat, ändert die Zeile in den
-        // Stammdaten.
+        // Nachtrag zu ADR-0011
         listOf("balken", "raster").forEach { old ->
             withClue(old) {
                 val error =
@@ -113,7 +108,6 @@ class YamlLoaderTest : FunSpec({
         invoice.items.first().unitPrice shouldBe Price("95.00")
         invoice.items.first().name shouldBe "IT-Beratungsleistungen"
         invoice.items.first().description shouldBe "Rahmenvertrag vom 01.02.2026"
-        // Nicht gesetzte Zusatzfelder bleiben null, statt zu einem leeren String zu werden.
         invoice.items.first().note shouldBe null
 
         val totals = CalculatedInvoice(invoice, config)
@@ -126,14 +120,13 @@ class YamlLoaderTest : FunSpec({
     }
 
     test("unbekannte YAML-Schlüssel werden abgelehnt") {
-        // Strikter Modus: Tippfehler wie "nummmer" sollen laut scheitern.
         shouldThrow<Exception> {
             YamlLoader.parseInvoice(resource("rechnung.yaml").replace("nummer:", "nummmer:"))
         }
     }
 
     test("ansprechpartner liest die Kontaktstelle des Kunden, wörtlich") {
-        // BT-56. Wörtlich heißt: Das Programm setzt kein "z. Hd." davor.
+        // BT-56; das Programm setzt kein "z. Hd." davor.
         val yaml =
             resource("rechnung.yaml").replace(
                 "  name: Beispiel Software GmbH",
@@ -145,8 +138,7 @@ class YamlLoaderTest : FunSpec({
     }
 
     test("kundennummer liest die Kundennummer, als Text") {
-        // BT-46. Als Text, auch wenn sie nur aus Ziffern besteht: Eine führende
-        // Null gehört zur Nummer.
+        // BT-46. Als Text, weil eine führende Null zur Nummer gehört.
         val yaml =
             resource("rechnung.yaml").replace(
                 "  name: Beispiel Software GmbH",
@@ -158,8 +150,7 @@ class YamlLoaderTest : FunSpec({
     }
 
     test("auftragsnummer liest die eigene Auftragsnummer") {
-        // BT-14, auf oberster Ebene und nicht unter kunde: Vergeben hat sie
-        // der Rechnungssteller.
+        // BT-14, nicht unter kunde: Vergeben hat sie der Rechnungssteller.
         val yaml = "auftragsnummer: A-2026-014\n" + resource("rechnung.yaml")
 
         YamlLoader.parseInvoice(yaml).salesOrderReference shouldBe "A-2026-014"
@@ -167,8 +158,7 @@ class YamlLoaderTest : FunSpec({
     }
 
     test("einleitung liest den Satz über den Positionen") {
-        // >- faltet die Zeilen mit Leerzeichen und lässt den Zeilenumbruch am
-        // Ende weg – so, wie das Beispiel im Skill rechnung es schreibt.
+        // So, wie das Beispiel im Skill rechnung es schreibt.
         val yaml = "einleitung: >-\n  Für den Workshop\n  berechnen wir:\n" + resource("rechnung.yaml")
 
         YamlLoader.parseInvoice(yaml).introduction shouldBe "Für den Workshop berechnen wir:"
@@ -176,8 +166,6 @@ class YamlLoaderTest : FunSpec({
     }
 
     test("eine Rechnungsdatei ohne art ist eine gewöhnliche Rechnung") {
-        // Die Vorgabe hält jede Rechnungsdatei gültig, die den Schlüssel nicht
-        // kennt.
         YamlLoader.parseInvoice(resource("rechnung.yaml")).type shouldBe InvoiceType.INVOICE
     }
 
@@ -210,7 +198,6 @@ class YamlLoaderTest : FunSpec({
         }
 
         test("ohne Variante oder ausgeschrieben bricht das Lesen ab und nennt Datei und Wert") {
-            // Die Variante gehört zum Wert: en ließe offen, ob en-GB oder en-US.
             listOf("en", "englisch", "de", "en-AU").forEach { language ->
                 withClue(language) {
                     val file = createTempDirectory("loader-test").resolve("rechnung.yaml")
@@ -242,7 +229,6 @@ class YamlLoaderTest : FunSpec({
         }
 
         test("eine andere Währung bricht das Lesen ab und nennt Datei und Wert") {
-            // Auch das Zeichen ist kein Code: $ ließe offen, welcher Dollar.
             listOf("CHF", "$", "Euro").forEach { currency ->
                 withClue(currency) {
                     val file = createTempDirectory("loader-test").resolve("rechnung.yaml")
@@ -334,9 +320,7 @@ class YamlLoaderTest : FunSpec({
     }
 
     test("eine unlesbare Datei nennt die Datei und den Grund") {
-        // Clikt prüft mit mustExist nur, dass es die Datei gibt. Ob sie lesbar
-        // ist, zeigt sich erst hier. (Als root ist auch chmod 000 lesbar,
-        // dieser Test schlüge dort fehl.)
+        // Schlägt unter root fehl: Dort ist auch chmod 000 lesbar.
         val unreadable = createTempDirectory("loader-test").resolve("unlesbar.yaml")
         unreadable.writeText(resource("rechnung.yaml"))
         unreadable.toFile().setReadable(false)
@@ -348,8 +332,6 @@ class YamlLoaderTest : FunSpec({
     }
 
     test("ein Wert, der seine Prüfung nicht besteht, nennt die Datei") {
-        // Die Meldung des Wertobjekts nennt die IBAN, aber nicht, in welcher
-        // Datei sie steht – bei zwei Eingabedateien ist das die halbe Auskunft.
         val file = createTempDirectory("loader-test").resolve("stammdaten.yaml")
         file.writeText(resource("stammdaten.yaml").replace("0532 0130 00", "0532 0130 01"))
 
@@ -360,8 +342,6 @@ class YamlLoaderTest : FunSpec({
     }
 
     test("ein Muster, das kein regulärer Ausdruck ist, nennt die Datei") {
-        // Der Tippfehler {2-3} statt {2,3} fällt beim Laden auf, nicht erst bei
-        // der ersten Rechnung, die daran scheitert.
         val file = createTempDirectory("loader-test").resolve("stammdaten.yaml")
         file.writeText(resource("stammdaten.yaml").replace("R\\d{2}-\\d{3}", "R\\d{2-3}"))
 
@@ -394,8 +374,6 @@ class YamlLoaderTest : FunSpec({
         }
 
         test("ein # ohne Anführungszeichen ist ein Kommentar, und der leere Wert bricht ab") {
-            // Sonst käme null an, und die Rechnung erschiene still in der
-            // Farbe der Vorlage.
             listOf("akzentfarbe: #31AE34", "akzentfarbe:", "akzentfarbe: ~").forEach { entry ->
                 withClue(entry) {
                     val file = createTempDirectory("loader-test").resolve("stammdaten.yaml")
@@ -418,8 +396,6 @@ class YamlLoaderTest : FunSpec({
     }
 
     context("logo") {
-        // Stammdaten mit Logo-Eintrag in einem eigenen Verzeichnis; das Logo
-        // liegt, wo der Test es hinlegt.
         fun sellerConfigWithLogo(entry: String): Path {
             val file = createTempDirectory("loader-test").resolve("stammdaten.yaml")
             file.writeText(resource("stammdaten.yaml") + "logo: $entry\n")
@@ -434,7 +410,6 @@ class YamlLoaderTest : FunSpec({
         }
 
         test("ein relativer Pfad gilt ab dem Verzeichnis der Stammdaten") {
-            // Nicht ab dem Arbeitsverzeichnis des Tests – das ist ein anderes.
             val file = sellerConfigWithLogo("marke/logo.tex")
             val logoFile = file.resolveSibling("marke").createDirectories().resolve("logo.tex")
             logoFile.writeText("\\fill (0,0) circle (1);")
@@ -464,7 +439,7 @@ class YamlLoaderTest : FunSpec({
         }
 
         test("eine andere Endung als .tex bricht ab, bevor gelesen wird") {
-            // Die Datei gibt es nicht einmal: Die Endung entscheidet vorher.
+            // Die Datei gibt es nicht einmal.
             val file = sellerConfigWithLogo("logo.png")
 
             val failure = shouldThrow<InputFileException> { YamlLoader.loadSellerConfig(file) }
@@ -474,10 +449,7 @@ class YamlLoaderTest : FunSpec({
         }
 
         test("die Endung zählt ohne Groß- und Kleinschreibung, weiter geht es klein") {
-            // macOS unterscheidet die Schreibweise im Dateinamen nicht, und
-            // eine Datei Logo.TEX ist eine .tex-Datei. Weitergereicht wird die
-            // Endung klein: Die Vorlage liest \input{logo}, und das findet
-            // unter Linux nur logo.tex.
+            // Klein, weil \input{logo} unter Linux nur logo.tex findet.
             val file = sellerConfigWithLogo("Logo.TEX")
             file.resolveSibling("Logo.TEX").writeText("\\fill (0,0) circle (1);")
 
@@ -505,9 +477,7 @@ class YamlLoaderTest : FunSpec({
     }
 
     context("Steuerzeichen (#391)") {
-        // Ein echtes Steuerzeichen lässt YAML im Text nicht zu, hinein kommt es
-        // über ein Escape in doppelten Anführungszeichen. Die Dateien schreiben
-        // deshalb "\x0B" und nicht das Zeichen selbst.
+        // Als Escape "\x0B", denn ein echtes Steuerzeichen lässt YAML nicht zu.
         fun invoiceWith(name: String): String =
             resource("rechnung.yaml").replace("bezeichnung: IT-Beratungsleistungen", "bezeichnung: \"$name\"")
 
@@ -547,8 +517,7 @@ class YamlLoaderTest : FunSpec({
         }
 
         test("CR, DEL, C1 und was XML 1.0 sonst verbietet, brechen ab") {
-            // CR, weil YAML jedes echte Zeilenende zu LF macht und TeX nach
-            // einem CR den Rest der Zeile verschluckt.
+            // CR, weil TeX nach einem CR den Rest der Zeile verschluckt.
             listOf(
                 "\\r" to "U+000D",
                 "\\x7F" to "U+007F",

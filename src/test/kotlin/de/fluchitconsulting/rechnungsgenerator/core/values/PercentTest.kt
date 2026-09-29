@@ -48,26 +48,19 @@ class PercentTest : FunSpec({
         Percent("19").valueAsPercentage shouldBe BigDecimal("19.0000000")
         Percent("19").valueAsMultiplier shouldBe BigDecimal("0.190000000")
 
-        // Scale 7 in Prozent entspricht Scale 9 im Multiplikator – das Verschieben des
-        // Kommas ist verlustfrei, die fachlich geforderte Genauigkeit bleibt erhalten.
+        // Scale 7 in Prozent entspricht Scale 9 im Multiplikator.
         Percent("19").valueAsPercentage.scale() shouldBe 7
         Percent("19").valueAsMultiplier.scale() shouldBe 9
     }
 
     context("toString") {
-        // Debug-Form, nicht Report-Form: Punkt statt Komma, Prozentzeichen
-        // direkt am Wert – aber ohne die Nullen der internen Rechengenauigkeit.
-        // Sie stehen sonst in jeder Fehlermeldung des Calculators.
         test("toString: locale-unabhängige Debug-Form") {
             assertSoftly {
                 Percent("19").toString() shouldBe "19%"
                 Percent("2.5").toString() shouldBe "2.5%"
                 Percent("0").toString() shouldBe "0%"
                 Percent("0.0004").toString() shouldBe "0.0004%"
-                // Runde Werte sind der Stolperstein: stripTrailingZeros macht
-                // aus 100.0000000 ein 1E+2. Erst toPlainString schreibt daraus
-                // wieder "100" – mit einem schlichten toString stünde in der
-                // Meldung "1E+2%".
+                // stripTrailingZeros macht aus 100.0000000 ein 1E+2.
                 Percent("10").toString() shouldBe "10%"
                 Percent("100").toString() shouldBe "100%"
                 Percent("1000").toString() shouldBe "1000%"

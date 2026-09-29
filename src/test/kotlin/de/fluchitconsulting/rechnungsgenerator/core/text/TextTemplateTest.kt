@@ -5,13 +5,8 @@ import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.collections.shouldContainExactly
 import io.kotest.matchers.shouldBe
 
-/**
- * Ein eigenes Vokabular statt der Variablen der Rechnung: Geprüft wird die
- * Form, und die hängt an keinem bestimmten Enum.
- */
 private enum class TestVariable { NUMBER, DATE }
 
-// Macht die Teile sichtbar, ohne dass der Test ihren Typ kennen muss.
 private fun TextTemplate<TestVariable>.parts(): List<String> = map(text = { "Text($it)" }, variable = { "Variable($it)" })
 
 class TextTemplateTest : FunSpec({
