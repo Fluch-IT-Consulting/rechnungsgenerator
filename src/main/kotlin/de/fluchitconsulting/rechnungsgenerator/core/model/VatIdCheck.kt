@@ -6,36 +6,23 @@ import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
 /**
- * Der Nachweis, dass die USt-IdNr. des Kunden geprüft wurde.
- *
- * Warum das im Datenmodell steht und nicht bloß im Kopf des Rechnungsstellers:
- * Vor einer Rechnung ohne Umsatzsteuer muss die Nummer des Empfängers bestätigt
- * sein, und die Bestätigung muss dokumentiert werden – sonst nützt sie im
- * Zweifel nichts. Ein Feld, das beim Erzeugen der Rechnung vorhanden sein muss,
- * ist die einzige Form von Erinnerung, die man nicht übersehen kann.
- *
- * Die Abfrage selbst macht dieses Programm bewusst NICHT. Die qualifizierte
- * Bestätigungsabfrage beim BZSt setzt eine Registrierung voraus und liefert ein
- * Protokoll, das aufzubewahren ist; ein nebenbei abgesetzter Online-Aufruf
- * erzeugt keinen Nachweis, den man in zehn Jahren noch vorlegen kann.
+ * Der dokumentierte Nachweis der Bestätigungsabfrage. Die Abfrage selbst macht das Programm bewusst nicht: Sie
+ * setzt eine Registrierung beim BZSt voraus und muss ein aufbewahrbares Protokoll liefern.
  */
 @Serializable
 data class VatIdCheck(
     @SerialName("am") val date: IsoDate,
     @SerialName("verfahren") val method: CheckMethod,
-    /** Aktenzeichen des Protokolls, damit der Nachweis wiederauffindbar ist. */
+    /** Aktenzeichen des Protokolls. */
     @SerialName("nachweis") val reference: String? = null,
 )
 
 @Serializable(with = CheckMethodSerializer::class)
 enum class CheckMethod(val label: String) {
-    /** VIES-Abfrage: sagt nur gültig oder ungültig. */
+    /** VIES: nur gültig oder ungültig. */
     SIMPLE("einfach"),
 
-    /**
-     * Qualifizierte Bestätigungsabfrage beim BZSt: gleicht zusätzlich Name und
-     * Anschrift ab. Nur sie verschafft Vertrauensschutz.
-     */
+    /** Gleicht auch Name und Anschrift ab; nur sie verschafft Vertrauensschutz. */
     QUALIFIED("qualifiziert"),
     ;
 

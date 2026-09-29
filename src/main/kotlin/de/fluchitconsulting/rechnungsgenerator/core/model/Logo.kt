@@ -3,16 +3,7 @@ package de.fluchitconsulting.rechnungsgenerator.core.model
 import java.nio.file.Path
 import kotlin.io.path.extension
 
-/**
- * Das Logo des Rechnungsstellers: die Datei, aus der es stammt, und ihr Inhalt.
- *
- * Die Endung bestimmt die Art, ohne Rücksicht auf Groß- und Kleinschreibung;
- * [extension] liefert sie klein. Zulässig ist nur `tex`, ein
- * LaTeX-Fragment.
- *
- * Keine `data class`: Deren `equals` verglich ein [ByteArray] nach Identität,
- * nicht nach Inhalt – zwei Logos aus derselben Datei wären verschieden.
- */
+/** Zulässig ist nur `tex` (ADR-0012). Keine `data class`: Ihr `equals` verglich das [ByteArray] nach Identität. */
 class Logo(
     val source: Path,
     val content: ByteArray,

@@ -10,9 +10,7 @@ import java.time.LocalDate
 import java.time.YearMonth
 import java.time.format.DateTimeParseException
 
-// Serializer für JDK-Typen, die kotlinx.serialization nicht von Haus aus kennt und
-// die wir – anders als Money und Percent – nicht selbst annotieren können.
-// Die Typaliase binden sie an und geben dem Wert zugleich einen fachlichen Namen.
+// Serializer für JDK-Typen, die wir nicht selbst annotieren können; die Typaliase binden sie an.
 
 /** Eine Menge: dimensionslos (86,5 Std., 1 pauschal), deshalb kein eigener Werttyp. */
 typealias Quantity =
@@ -27,8 +25,6 @@ typealias IsoMonth =
     @Serializable(with = YearMonthSerializer::class)
     YearMonth
 
-// Das Gerüst darunter kommt aus stringSerializer – hier steht nur noch, wie aus
-// dem Wert Text wird und zurück.
 object BigDecimalSerializer :
     KSerializer<BigDecimal> by stringSerializer(
         name = "BigDecimal",
@@ -40,7 +36,6 @@ object LocalDateSerializer :
     KSerializer<LocalDate> by stringSerializer(
         name = "LocalDate",
         encode = LocalDate::toString,
-        // LocalDate.parse erwartet ISO-8601 (JJJJ-MM-TT) – genau das YAML-Datumsformat.
         decode = LocalDate::parse,
     )
 
@@ -48,9 +43,7 @@ object YearMonthSerializer :
     KSerializer<YearMonth> by stringSerializer(
         name = "YearMonth",
         encode = YearMonth::toString,
-        // JJJJ-MM wie das Datum ohne Tag. Übersetzt, weil die Ausnahme des JDK
-        // "Text '2026-8' could not be parsed at index 5" sagt und nicht, was
-        // erwartet ist.
+        // Übersetzt, weil die Meldung des JDK nicht sagt, was erwartet ist.
         decode = { raw ->
             try {
                 YearMonth.parse(raw)

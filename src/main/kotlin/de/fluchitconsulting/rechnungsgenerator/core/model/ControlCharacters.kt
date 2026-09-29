@@ -8,23 +8,10 @@ import com.charleskorn.kaml.YamlScalar
 import com.charleskorn.kaml.YamlTaggedNode
 
 /**
- * Sucht Steuerzeichen in den Werten einer YAML-Datei (#391).
- *
- * Ein echtes Steuerzeichen lässt YAML im Text nicht zu; hinein kommt es über
- * ein Escape in doppelten Anführungszeichen wie `"\x0B"`. Ungeprüft käme es bis
- * in den Satz, wo LuaLaTeX mit einer Meldung über seinen eigenen Quelltext
- * abbricht, und ins XML der E-Rechnung, das dann keines mehr ist – beides
- * schickt die Benutzerin an die falsche Stelle.
- *
- * Geprüft wird der Knotenbaum vor dem Decodieren und nicht Feld für Feld: So
- * sind Stammdaten und Rechnung gleich gedeckt, und ein neues Freitextfeld
- * braucht keine eigene Zeile, die man vergessen könnte. Keine Regel mit Befund
- * (ADR-0004): Das Zeichen ist ein Fehler der Datei wie ungültiges YAML, keine
- * Aussage über die Rechnung. Schlüssel bleiben ungeprüft, einen unbekannten
- * lehnt kaml ohnehin ab.
+ * Steuerzeichen in den Werten einer YAML-Datei (#391). Geprüft wird der Knotenbaum vor dem Decodieren, damit
+ * ein neues Freitextfeld keine eigene Zeile braucht. Kein Befund nach ADR-0004: Das Zeichen ist ein Fehler der Datei.
  */
 internal object ControlCharacters {
-    /** Je Wert mit Steuerzeichen eine Zeile: Pfad, Ort und die Zeichen. */
     fun findIn(root: YamlNode): List<String> = scalars(root).mapNotNull(::describe).toList()
 
     private fun scalars(node: YamlNode): Sequence<YamlScalar> =
@@ -62,14 +49,9 @@ internal object ControlCharacters {
     }
 
     /**
-     * Tabulator und Zeilenumbruch bleiben erlaubt, ein mehrzeiliges Feld trägt
-     * sie mit Absicht. CR nicht: YAML macht aus jedem echten Zeilenende ein LF,
-     * ein CR kommt also nur über `"\r"` herein, und TeX verschluckt dahinter
-     * still den Rest der Zeile. DEL und C1 erlaubt XML zwar, aber sie sind
-     * Steuerzeichen wie die übrigen, und DEL bricht LaTeX ab wie `\x0B`. Über
-     * die Steuerzeichen hinaus verbietet XML 1.0 noch U+FFFE, U+FFFF und ein
-     * Surrogat ohne Partner – eines mit Partner hat `codePoints` schon zu
-     * einem Zeichen zusammengesetzt.
+     * Tab und LF bleiben erlaubt. CR nicht: Ein echtes Zeilenende macht YAML zu LF, und hinter `"\r"` verschluckt TeX
+     * still den Rest der Zeile. Dazu U+FFFE, U+FFFF und einzelne Surrogate, die XML 1.0 verbietet; ein Paar hat
+     * `codePoints` schon zusammengesetzt.
      */
     private fun isForbidden(codePoint: Int): Boolean =
         when (codePoint) {

@@ -8,22 +8,14 @@ import java.nio.file.Path
 import kotlin.io.path.readBytes
 import kotlin.io.path.readText
 
-/**
- * Wird geworfen, wenn eine Eingabedatei nicht zu lesen ist – mit der Datei und
- * dem Grund in der Meldung.
- */
+/** Eine Eingabedatei ist nicht zu lesen; die Meldung nennt Datei und Grund. */
 class InputFileException(message: String) : Exception(message)
 
-// Dünne Schicht über kaml: liest YAML-Text bzw. -Dateien in unsere Datenklassen.
-// kaml läuft im strikten Modus (Default): unbekannte Schlüssel sind ein Fehler –
-// Tippfehler in der YAML-Datei fallen so sofort auf, statt still ignoriert zu werden.
+// kaml im strikten Modus: Ein unbekannter Schlüssel ist ein Fehler, ein Tippfehler fällt so auf.
 object YamlLoader {
     private val yaml = Yaml.default
 
-    /**
-     * Stammdaten aus Text. Ein Logo lehnt sie ab: Ohne Datei gibt es kein
-     * Verzeichnis, gegen das sein Pfad gälte.
-     */
+    /** Ohne Logo: Ohne Datei gibt es kein Verzeichnis, gegen das sein Pfad gälte. */
     fun parseSellerConfig(text: String): SellerConfig {
         val config = decodeSellerConfig(text)
         if (config.logoFile != null) {
@@ -42,19 +34,7 @@ object YamlLoader {
 
     fun loadInvoice(path: Path): Invoice = read(path, ::parseInvoice)
 
-    /**
-     * Liest eine Datei und macht aus jedem Fehler eine Meldung, die die Datei nennt.
-     *
-     * Beides landet hier, weil beides dasselbe ist, sobald jemand davorsitzt:
-     * Diese Datei taugt nicht als Eingabe. Ob das Betriebssystem sie nicht
-     * herausrückt, kaml einen Schlüssel nicht kennt oder eine IBAN ihre
-     * Prüfsumme nicht besteht, steht im Grund dahinter. Die Wertprüfungen
-     * kommen als [SerializationException] an, weil `Identifiers.kt` sie dazu
-     * macht.
-     *
-     * Der Dateiname kommt von hier und nicht vom Aufrufer: kaml nennt nur den
-     * Schlüssel, und `erzeuge` liest zwei Dateien.
-     */
+    /** Jeder Fehler nennt die Datei: kaml nennt nur den Schlüssel, und `erzeuge` liest zwei Dateien. */
     private fun <T> read(path: Path, parse: (String) -> T): T {
         val text =
             try {
@@ -71,12 +51,7 @@ object YamlLoader {
 
     private fun decodeSellerConfig(text: String): SellerConfig = decode(SellerConfig.serializer(), text)
 
-    /**
-     * Die zwei Schritte, aus denen kaml `decodeFromString` baut, getrennt –
-     * dazwischen sieht [ControlCharacters] den Knotenbaum. Alle Fundstellen
-     * stehen auf einmal da; wer nur die erste erfährt, läuft für jede weitere
-     * einmal mehr.
-     */
+    /** `decodeFromString` in zwei Schritten: Dazwischen sieht [ControlCharacters] den Knotenbaum. */
     private fun <T> decode(
         deserializer: DeserializationStrategy<T>,
         text: String,
@@ -94,15 +69,7 @@ object YamlLoader {
         return yaml.decodeFromYamlNode(deserializer, root)
     }
 
-    /**
-     * Liest das Logo, das die Stammdaten unter [sellerConfig] nennen. Ein
-     * relativer Pfad gilt ab ihrem Verzeichnis, nicht ab dem Arbeitsverzeichnis:
-     * Die Stammdaten liegen meist anderswo als der Ort, von dem aus man
-     * `erzeuge` aufruft. `resolve` lässt einen absoluten Pfad, wie er ist.
-     *
-     * Jede Meldung nennt beide Dateien – wer nur "logo.tex fehlt" liest, weiß
-     * nicht, welche Stammdaten danach gefragt haben.
-     */
+    /** Relativ zu den Stammdaten, nicht zum Arbeitsverzeichnis. Jede Meldung nennt beide Dateien. */
     private fun readLogo(
         sellerConfig: Path,
         logoFile: String,
@@ -126,10 +93,7 @@ object YamlLoader {
         return Logo(source, content)
     }
 
-    /**
-     * Der Grund im Klartext. Die beiden häufigen Fälle tragen als Meldung nur
-     * den Pfad, der dann zweimal dastünde und nichts erklärte.
-     */
+    /** Die zwei häufigen Fälle tragen als Meldung nur den Pfad. */
     private fun reasonFor(e: IOException): String =
         when (e) {
             // Die vollen Namen, weil kotlin.io gleichnamige Ausnahmen mitbringt.
