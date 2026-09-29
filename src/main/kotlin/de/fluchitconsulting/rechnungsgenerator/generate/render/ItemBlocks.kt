@@ -6,24 +6,13 @@ import de.fluchitconsulting.rechnungsgenerator.core.calculation.CalculatedInvoic
 import de.fluchitconsulting.rechnungsgenerator.core.model.Discount
 import de.fluchitconsulting.rechnungsgenerator.core.model.Invoice
 import de.fluchitconsulting.rechnungsgenerator.core.model.InvoiceType
-import de.fluchitconsulting.rechnungsgenerator.core.model.InvoiceVariable
 import de.fluchitconsulting.rechnungsgenerator.core.model.LineItem
 import de.fluchitconsulting.rechnungsgenerator.core.model.SkontoTier
 import de.fluchitconsulting.rechnungsgenerator.core.values.Language
 
-/**
- * Positionstabelle, Summenblock und die Hinweise darunter: Steuerbefreiungen,
- * der Pflichtsatz der Rechnungsart und das Skonto. Artabhängig sind hier nur
- * Beschriftungen und der Pflichtsatz, beides über [InvoiceType] – ein `when`
- * über die Rechnungsart gibt es in diesen Blöcken nicht.
- */
+/** Positionstabelle, Summenblock und die Hinweise darunter. Was an der Rechnungsart hängt, kommt aus [InvoiceType]. */
 internal object ItemBlocks {
-    // Die Zeilen werden mit \positionstrenner VERBUNDEN, nicht damit
-    // abgeschlossen: Ein Umbruch hinter der letzten Zeile erzeugt in LaTeX eine
-    // leere Extrazeile.
-    //
-    // Die laufende Nummer beginnt bei 1. Ob ein Design sie setzt, entscheidet
-    // die Vorlage (#188); `mapIndexed` liefert zum Element seinen Index.
+    // Verbunden, nicht abgeschlossen: Ein Trenner hinter der letzten Zeile ergäbe in LaTeX eine leere Zeile.
     fun lineItems(calculatedInvoice: CalculatedInvoice): Latex =
         calculatedInvoice.lines
             .mapIndexed { index, line ->
@@ -36,9 +25,7 @@ internal object ItemBlocks {
                         Numbers.quantity(item.quantity),
                         item.unit.nameFor(item.quantity, calculatedInvoice.invoice.language).escapeLatex(),
                         Numbers.price(item.unitPrice),
-                        // In der Spalte steht, was vereinbart wurde: der Satz
-                        // oder der Betrag, und der ohne Vorzeichen – das trägt
-                        // im Storno die Menge.
+                        // Was vereinbart wurde, Satz oder Betrag; der Betrag ohne Vorzeichen, das trägt im Storno die Menge.
                         when (val discount = item.discount) {
                             null -> Latex.EMPTY
                             is Discount.Rate -> Numbers.percent(discount.rate)
@@ -49,34 +36,17 @@ internal object ItemBlocks {
                 )
             }.joinToLatex(rowSeparator(TemplateMacro.POSITIONSTRENNER))
 
-    /**
-     * Der Schalter für die Rabattspalte: nicht leer, sobald eine Position einen
-     * Rabatt hat. Welches Wort darin steht, ist gleich – die Vorlage fragt nur
-     * `\ifblank`.
-     */
+    /** Der Schalter für die Rabattspalte. Das Wort ist gleich, die Vorlage fragt nur `\ifblank`. */
     fun discountColumn(calculatedInvoice: CalculatedInvoice): Latex =
         if (calculatedInvoice.invoice.items.any { it.discount != null }) "rabatt".escapeLatex() else Latex.EMPTY
 
-    /**
-     * Die Beschreibungsspalte einer Position: Bezeichnung, darunter – falls
-     * vorhanden – die Zusatzangaben klein und gedämpft. Das ergibt die
-     * zweizeilige Position der Rechnungen vor dem Generator, nur dass die
-     * zweite Zeile hier aus benannten Feldern entsteht statt aus einem
-     * Textzusatz.
-     *
-     * \newline statt \\ für den Umbruch: Die Spalte ist eine X-Spalte, also
-     * ein Absatz. Ein \\ darin würde die Tabellenzeile beenden statt die
-     * Textzeile.
-     */
     private fun describeItem(item: LineItem, invoice: Invoice): Latex {
         val type = invoice.type
         val details =
             buildList {
                 item.description?.let { add(it.escapeLatex()) }
                 item.note?.let { add(it.escapeLatex()) }
-                // Auch hier die Beschriftung der Rechnungsart: Auf einer
-                // Abschlagsrechnung ist der Zeitraum einer Position genauso eine
-                // Prognose wie der Zeitraum der ganzen Rechnung.
+                // Auf einer Abschlagsrechnung ist auch der Zeitraum einer Position eine Prognose.
                 item.servicePeriod?.let { add("${type.itemPeriodLabel(invoice.language)}: ".escapeLatex() + servicePeriod(it, invoice)) }
             }
         val name = item.name.escapeLatex()
@@ -85,25 +55,14 @@ internal object ItemBlocks {
     }
 
     /**
-     * Der Summenblock: Beträge und Sätze, die Beschriftungen setzt die Vorlage
-     * (#217).
-     *
-     * Hier steht eine Gruppe genau dann, wenn sie keinen Befreiungsgrund trägt.
-     * Eine befreite Gruppe erschiene sonst als "zzgl. 0 % USt. 0,00 €" – das
-     * sähe aus wie ein Rechenfehler; warum keine Steuer anfällt, sagt
-     * [taxNotes] darunter. Der Nullsatz (Kategorie Z) trägt keinen Grund und
-     * steht deshalb hier: Er ist keine Befreiung, sondern eine Besteuerung mit
-     * 0 %, und §14 Abs. 4 Nr. 8 UStG verlangt dafür Satz und Steuerbetrag
-     * (#218). Nicht der Steuerbetrag von null: Danach fiele eine Z-Gruppe ganz
-     * vom Blatt.
+     * Der Summenblock. Eine Steuerzeile hat jede Gruppe ohne Befreiungsgrund, nicht jede mit Steuer über null:
+     * Der Nullsatz Z ist keine Befreiung, und §14 Abs. 4 Nr. 8 UStG verlangt Satz und Betrag (#218).
      */
     fun totalsBlock(calculatedInvoice: CalculatedInvoice): Latex =
         buildList {
             add(Latex.macro(TemplateMacro.NETTOZEILE, listOf(Numbers.amount(calculatedInvoice.netTotal))))
-            // §14 Abs. 4 Nr. 7 UStG verlangt das Entgelt je Steuersatz (#218).
-            // Bei nur einer Gruppe ist es die Zwischensumme und stünde doppelt da;
-            // sonst steht es in der Steuerzeile. Steuerfreie Gruppen zählen mit,
-            // ihr Entgelt nennt taxNotes.
+            // Das Entgelt je Satz (§14 Abs. 4 Nr. 7 UStG) erst ab zwei Gruppen, sonst stünde die Zwischensumme
+            // doppelt. Steuerfreie Gruppen zählen mit.
             val showsBase = calculatedInvoice.vatGroups.size > 1
             calculatedInvoice.vatGroups.filter { it.exemptionReason == null }.forEach { group ->
                 val base = if (showsBase) Numbers.amount(group.base) else Latex.EMPTY
@@ -119,15 +78,7 @@ internal object ItemBlocks {
             Latex.raw("\n  ") +
             Latex.macro(TemplateMacro.GESAMTZEILE, listOf(Numbers.amount(calculatedInvoice.grossTotal)))
 
-    /**
-     * Der Pflichtsatz der Rechnungsart, unter den Summen. Ob eine Art einen hat
-     * und wie er lautet, trägt [InvoiceType.mandatoryNote], den Abstand die
-     * Vorlage: \hinweisabsatz bringt ihn mit, sodass bei den übrigen Arten der
-     * leere Platzhalter auch wirklich nichts einnimmt.
-     *
-     * Der Satz darf Werte der Rechnung nennen, als `<<NAME>>`; welche es gibt,
-     * zählt [InvoiceVariable] auf, woher sie kommen, [InvoiceVariableResolver].
-     */
+    /** Der Pflichtsatz der Rechnungsart. `\hinweisabsatz` bringt den Abstand mit, damit ein leerer Platzhalter nichts einnimmt. */
     fun typeNote(acceptedInvoice: AcceptedInvoice): Latex =
         acceptedInvoice.calculated.invoice
             .let { it.type.mandatoryNote(it.language) }
@@ -138,25 +89,14 @@ internal object ItemBlocks {
             ?: Latex.EMPTY
 
     /**
-     * Das Zahlungsziel als ein Satz unter den Summen, als Frist und nicht als
-     * Datum: "Die Zahlung ist 14 Tage nach Rechnungsdatum fällig." Das Design
-     * `prag` setzt ihn statt der Kopfzeile, `helsinki` übergeht ihn (#211).
-     *
-     * Der Bezug ist das Rechnungsdatum und nicht der Erhalt der Rechnung: Von
-     * dort rechnen [CalculatedInvoice.dueDate] und das Skonto daneben. "ohne
-     * Abzug" nur mit Skonto, sonst fragte man, welcher Abzug gemeint ist.
-     * "sofort" und Skonto zusammen gibt es nicht, weil eine Skontofrist vor dem
-     * Zahlungsziel endet (SKONTOFRIST_NICHT_VOR_ZAHLUNGSZIEL).
-     *
-     * Ob der Satz dasteht, sagt [CalculatedInvoice.dueDate] – wie die Kopfzeile.
+     * Die Zahlungsfrist als Satz, für `prag` (#211). „ohne Abzug“ nur mit Skonto; „sofort“ und Skonto zusammen
+     * gibt es nicht (SKONTOFRIST_NICHT_VOR_ZAHLUNGSZIEL).
      */
     fun paymentTermNote(calculatedInvoice: CalculatedInvoice): Latex {
         if (calculatedInvoice.dueDate == null) return Latex.EMPTY
 
         val days = calculatedInvoice.paymentTermDays
         val withSkonto = calculatedInvoice.skonto.isNotEmpty()
-        // Ohne `else`: Eine neue Sprache schreibt ihren eigenen Satz, denn die
-        // Reihenfolge der Teile ist je Sprache eine andere.
         val sentence =
             when (val language = calculatedInvoice.invoice.language) {
                 Language.GERMAN -> {
@@ -170,7 +110,7 @@ internal object ItemBlocks {
                     "Die Zahlung ist $deadline fällig."
                 }
                 Language.BRITISH_ENGLISH, Language.AMERICAN_ENGLISH -> {
-                    // "in full" wie das "Due in full by" im Kopf von helsinki.
+                    // „in full“ wie „Due in full by“ im Kopf von helsinki.
                     val withoutDeduction = if (withSkonto) "in full " else ""
                     when (days) {
                         0 -> "Payment is due immediately."
@@ -183,22 +123,8 @@ internal object ItemBlocks {
     }
 
     /**
-     * Das Skonto als ein Satz unter den Summen, eine Stufe je Satzteil, nach der
-     * Skontofrist sortiert: "Bei Zahlung bis 21. August 2026 können 2 % Skonto
-     * abgezogen werden, bei Zahlung bis 24. August 2026 1 %."
-     *
-     * Ein Satz und keine Zeilen im Kopf (#183): Dort steht weiter "Zahlbar ohne
-     * Abzug bis …", als Gegenstück. Kein Datum steht doppelt, weil jede
-     * Skontofrist vor dem Zahlungsziel endet (SKONTOFRIST_NICHT_VOR_ZAHLUNGSZIEL).
-     * Den Skontobetrag nennt der Satz bewusst nicht.
-     *
-     * Zwischen "bis" und dem Datum ein geschütztes Leerzeichen, das [escapeLatex]
-     * zu `~` macht: Ein Zeilenende dort ließe "bis" allein am Zeilenende stehen.
-     *
-     * Ob Skonto auf dieser Rechnungsart stehen darf, fragt der Renderer nicht
-     * noch einmal: Eine angenommene Rechnung mit Skonto ist eine Rechnung oder
-     * Teilrechnung, die zur Zahlung auffordert (SKONTO_AUF_DIESER_ART_NICHT_MOEGLICH,
-     * SKONTO_OHNE_ZAHLUNGSAUFFORDERUNG).
+     * Das Skonto als ein Satz, eine Stufe je Satzteil. Den Skontobetrag nennt er bewusst nicht (#183). Nach
+     * „bis“ ein geschütztes Leerzeichen, damit es nicht allein am Zeilenende steht.
      */
     fun skontoNote(calculatedInvoice: CalculatedInvoice): Latex {
         val stufen = calculatedInvoice.skonto
@@ -211,8 +137,6 @@ internal object ItemBlocks {
 
         val firstTier = stufen.first()
         val furtherTiers = stufen.drop(1)
-        // Ohne `else`: Eine neue Sprache schreibt ihren eigenen Satz, wie bei
-        // der Zahlungsfrist.
         val sentence =
             when (language) {
                 Language.GERMAN -> {
@@ -224,8 +148,7 @@ internal object ItemBlocks {
                                     Numbers.percent(stufe.rate)
                             }.joinToLatex()
                 }
-                // "of 2%" und nicht "a 2%": Der Artikel hinge an der Aussprache
-                // der Zahl – a 2%, an 8%, an 11%.
+                // „of 2%“ statt „a 2%“: Der Artikel hinge an der Aussprache der Zahl – a 2%, an 8%.
                 Language.BRITISH_ENGLISH, Language.AMERICAN_ENGLISH -> {
                     "For payment by\u00A0".escapeLatex() + deadline(firstTier) + ", an early payment discount of ".escapeLatex() +
                         Numbers.percent(firstTier.rate) + " may be deducted".escapeLatex() +
@@ -239,35 +162,20 @@ internal object ItemBlocks {
         return Latex.macro(TemplateMacro.HINWEISABSATZ, listOf(sentence))
     }
 
-    /**
-     * Die Umsatzsteuer einer Rechnung in Fremdwährung, umgerechnet in Euro,
-     * als ein Satz unter den Summen: "Umgerechnet in Euro beträgt die
-     * Umsatzsteuer 1.355,70 € (1 € = 1,1685 $, Monatsdurchschnittskurs des
-     * BMF für Juli 2026)." Kurs und Monat stehen dabei, damit sich der Betrag
-     * nachrechnen lässt (#418).
-     *
-     * Der Kurs bricht nicht um: "1 € =" am Zeilenende und "1,1685 $" auf der
-     * nächsten läsen sich wie zwei Angaben.
-     *
-     * Ob eine Umrechnung dastehen darf, fragt der Renderer nicht noch einmal:
-     * Eine angenommene Rechnung trägt sie nur in Fremdwährung und mit
-     * Umsatzsteuer (UMRECHNUNG_BEI_EURO, UMRECHNUNG_OHNE_UMSATZSTEUER).
-     */
+    /** Die Umsatzsteuer in Euro, mit Kurs und Monat, damit sich der Betrag nachrechnen lässt (ADR-0027). */
     fun conversionNote(calculatedInvoice: CalculatedInvoice): Latex {
         val conversion = calculatedInvoice.invoice.conversion ?: return Latex.EMPTY
         val euro = Numbers.euroAmount(checkNotNull(calculatedInvoice.vatTotalInEuro))
         val rate = together(Numbers.exchangeRate(conversion.rate))
         val month = DateFormat(calculatedInvoice.invoice.language).month(conversion.month)
 
-        // Ohne `else`: Eine neue Sprache schreibt ihren eigenen Satz.
         val sentence =
             when (calculatedInvoice.invoice.language) {
                 Language.GERMAN -> {
                     "Umgerechnet in Euro beträgt die Umsatzsteuer ".escapeLatex() + euro + " (".escapeLatex() + rate +
                         ", Monatsdurchschnittskurs des BMF für ".escapeLatex() + month + ").".escapeLatex()
                 }
-                // Das Ministerium ausgeschrieben: "BMF" kennt nur, wer
-                // deutsche Umsatzsteuer erklärt.
+                // Ausgeschrieben: „BMF“ kennt nur, wer deutsche Umsatzsteuer erklärt.
                 Language.BRITISH_ENGLISH, Language.AMERICAN_ENGLISH -> {
                     "Converted to euros, the VAT amounts to ".escapeLatex() + euro + " (".escapeLatex() + rate +
                         ", monthly average rate of the German Federal Ministry of Finance for ".escapeLatex() + month +
@@ -278,27 +186,14 @@ internal object ItemBlocks {
     }
 
     /**
-     * Die Begründungen für Positionen ohne Umsatzsteuer – EN 16931 BT-120.
-     *
-     * Bei Reverse Charge ist das keine Höflichkeit: §14a Abs. 1 und 5 UStG verlangen
-     * den Hinweis auf die Steuerschuldnerschaft des Leistungsempfängers
-     * ausdrücklich auf der Rechnung.
-     *
-     * Gefragt wird nur nach dem Grund, nicht zusätzlich nach dem Steuerbetrag
-     * null: Einen Grund tragen nur Kategorien, die auch den Satz 0 verlangen –
-     * das hält ein Test am Enum fest. Stünde beides hier, entschiede der
-     * Renderer selbst, was die Gruppe schon weiß (#148).
-     *
-     * Jeder Satz ist ein eigener Makroaufruf und nicht eine Zeile in einem
-     * gemeinsamen Absatz: Zwischen zwei Sätzen darf die Seite brechen, in
-     * einem nicht (ADR-0020).
+     * Die Befreiungsgründe (BT-120), bei Reverse Charge Pflicht nach §14a UStG. Gefragt wird nur nach dem Grund,
+     * wie im Summenblock (#148). Jeder Satz ein eigenes Makro: Zwischen zwei Sätzen darf die Seite brechen (ADR-0020).
      */
     fun taxNotes(calculatedInvoice: CalculatedInvoice): Latex =
         calculatedInvoice.vatGroups
             .mapNotNull { group ->
                 group.exemptionReason?.let { reason ->
-                    // "No VAT is charged" und nicht "VAT exempt": O ist nicht
-                    // steuerbar, und das ist etwas anderes als befreit.
+                    // „No VAT is charged“ statt „VAT exempt“: O ist nicht steuerbar, und das ist nicht befreit.
                     val sentence =
                         when (calculatedInvoice.invoice.language) {
                             Language.GERMAN -> {
