@@ -418,8 +418,13 @@ PDF/A-Prüfung über veraPDF.
   Vorher urteilen beide Prüfer wie beim Erzeugen (ADR-0023): veraPDF gegen
   das Profil aus dem XMP, Mustang über das XML. Besteht die Datei nicht, bleibt
   stdout leer, und auf stderr stehen alle Gründe auf einmal; eine Warnung ist
-  ein Hinweis auf stderr, und das XML kommt trotzdem. Angenommen wird jede
-  E-Rechnung nach ZUGFeRD oder Factur-X, nicht nur die eigene – aber nur, wenn
+  ein Hinweis auf stderr, und das XML kommt trotzdem. Ebenso ein Fehler im
+  PDF/A, wenn Verkäufer und Käufer beide in Deutschland sitzen (BR-FX-DE-03,
+  #450) – eng ausgelegt: nur bei einem PDF/A-3 mit bekannter Stufe und ohne
+  jeden anderen Grund. Die Länder liest `PartyCountries` wie BT-24, und es
+  heißt „innerhalb Deutschlands“, nicht „Inland“ (Nachtrag zu ADR-0023).
+  Angenommen wird jede E-Rechnung nach ZUGFeRD oder Factur-X, nicht nur die
+  eigene – aber nur, wenn
   ihr XML sich in BT-24 als EN 16931 ausgibt (#399): MINIMUM, BASIC-WL und
   ZUGFeRD 1 bestehen Mustangs Prüfung und sind trotzdem keine E-Rechnung.
   Gefragt wird nach der Norm, nicht nach einer Liste dieser Profile, damit ein

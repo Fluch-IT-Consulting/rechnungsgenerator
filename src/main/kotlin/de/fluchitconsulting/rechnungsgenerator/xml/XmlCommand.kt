@@ -25,7 +25,9 @@ import java.io.OutputStream
  * über das XML. Angenommen wird jede E-Rechnung nach ZUGFeRD oder Factur-X,
  * nicht nur die eigene: Das Profil des XML erkennt Mustang am XML selbst.
  * Ein Profil, das nicht der EN 16931 genügt, besteht die Prüfung von Mustang,
- * ist aber keine E-Rechnung und wird deshalb abgelehnt (#399).
+ * ist aber keine E-Rechnung und wird deshalb abgelehnt (#399). Sitzen
+ * Verkäufer und Käufer beide in Deutschland, gilt das XML, und ein Fehler im
+ * PDF/A ist nur ein Hinweis (BR-FX-DE-03, #450).
  *
  * Das XML geht als Bytes auf [standardOutput] und nicht über `echo`: Das
  * schreibt Text, und ein XML in einer anderen Kodierung als UTF-8 käme
@@ -52,17 +54,26 @@ class XmlCommand(
             }
 
         val checked = attachments.singleOrNull()?.let { it to EInvoiceValidator.validate(it.xml) }
-
-        // Alle Gründe beider Prüfer auf einmal, nicht nur der erste (ADR-0004):
-        // Wer eine empfangene Rechnung zurückweist, soll dem Absender alles
-        // nennen können.
-        val reasons =
+        val identificationReason = identificationReason(identification)
+        val pdfAViolations =
+            identification
+                ?.profile
+                ?.takeIf { identificationReason == null }
+                ?.let { BuiltInPdfAValidator.validate(pdf, it) }
+                ?.takeUnless { it.valid }
+        val otherReasons =
             listOfNotNull(
-                pdfAReason(identification),
+                identificationReason,
                 attachmentReason(attachments),
                 checked?.let { (attachment, _) -> specificationReason(attachment) },
                 checked?.let { (attachment, validation) -> xmlReason(attachment, validation) },
             )
+        val pdfAIsWarning = pdfAViolations != null && checked != null && pdfAErrorsAreWarnings(checked.first, otherReasons)
+
+        // Alle Gründe beider Prüfer auf einmal, nicht nur der erste (ADR-0004):
+        // Wer eine empfangene Rechnung zurückweist, soll dem Absender alles
+        // nennen können.
+        val reasons = listOfNotNull(pdfAViolations?.takeUnless { pdfAIsWarning }?.describe()) + otherReasons
 
         // Erst hier und nur ohne Grund etwas auf stdout: Sonst stünde bei
         // einem Abbruch ein halbes Ergebnis in der Datei, in die umgeleitet
@@ -72,6 +83,10 @@ class XmlCommand(
             throw CliktError("$pdf ist keine gültige E-Rechnung nach ZUGFeRD.\n" + reasons.joinToString("\n"))
         }
         val (attachment, validation) = checked
+        if (pdfAIsWarning) {
+            echo("Hinweis: $PDFA_WITHIN_GERMANY", err = true)
+            echo("Hinweis: ${pdfAViolations.describe()}", err = true)
+        }
         // Eine Warnung macht das XML nicht ungültig. Die eigenen Rechnungen
         // tragen keine, eine fremde kann eine tragen, etwa
         // PEPPOL-EN16931-R008 zum leeren ApplicableHeaderTradeDelivery.
@@ -81,11 +96,30 @@ class XmlCommand(
     }
 
     /**
+     * Ob die Verstöße gegen das PDF/A nur ein Hinweis sind. Nach BR-FX-DE-03
+     * ist bei einer Rechnung innerhalb Deutschlands das eingebettete XML die
+     * Rechnung: Ist es gültig und lässt es sich auslesen, liegt eine gültige
+     * E-Rechnung vor, und der Empfänger kann ein berichtigtes PDF verlangen.
+     *
+     * Eng ausgelegt: Die Datei muss sich als PDF/A-3 mit bekannter Stufe
+     * ausgeben, sonst gibt es kein Profil, gegen das veraPDF geprüft hätte, und
+     * jeder andere Grund bleibt ein Abbruch. Die Regel nennt wörtlich
+     * Deutschland, nicht das Inland des Verkäufers (ADR-0023).
+     */
+    private fun pdfAErrorsAreWarnings(
+        attachment: EInvoiceAttachment,
+        otherReasons: List<String>,
+    ): Boolean = otherReasons.isEmpty() && PartyCountries.of(attachment.xml).withinGermany
+
+    /**
+     * Warum die Angabe im XMP kein Profil ergibt, gegen das sich prüfen lässt,
+     * oder null, wenn sie eines ergibt.
+     *
      * Das Profil kommt aus dem XMP und nicht aus einer Vorgabe: Ein PDF/A-3a
      * gegen 3u geprüft fiele durch, obwohl es gültig ist, und eines, das 3a
      * behauptet, soll auch 3a genügen.
      */
-    private fun pdfAReason(identification: PdfAIdentification?): String? {
+    private fun identificationReason(identification: PdfAIdentification?): String? {
         val profile = identification?.profile?.takeIf { it.part == 3 }
         return when {
             identification == null -> {
@@ -105,7 +139,7 @@ class XmlCommand(
                 "Es gibt sich als ${identification.label} aus. $PDFA_3"
             }
             else -> {
-                BuiltInPdfAValidator.validate(pdf, profile).takeUnless { it.valid }?.describe()
+                null
             }
         }
     }
@@ -141,5 +175,9 @@ class XmlCommand(
 
         // Die drei Stufen, die ISO 19005-3 kennt.
         private const val PDFA_3_LEVELS = "Eine E-Rechnung nach ZUGFeRD ist ein PDF/A-3a, -3b oder -3u."
+
+        private const val PDFA_WITHIN_GERMANY =
+            "Das PDF/A ist nicht gültig. Bei einer Rechnung innerhalb Deutschlands gilt das XML (BR-FX-DE-03); " +
+                "der Empfänger kann eine berichtigte Fassung verlangen."
     }
 }
