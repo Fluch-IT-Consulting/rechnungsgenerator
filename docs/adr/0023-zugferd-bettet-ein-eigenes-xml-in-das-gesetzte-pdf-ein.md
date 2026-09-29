@@ -116,10 +116,9 @@ zweiten Zweig.
 Mehrere Notizen verschieben einen Umbau ausdrücklich auf diesen Schritt. In
 diesem Zuschnitt ist er für keinen der Anlass:
 
-- **Die Regeln zum Ziel aus `run` herauslösen** (#359,
-  `docs/notizen/2026-09-16-drei-beobachtungen-ohne-anlass.md`). Es entsteht
-  kein zweiter Weg zu einer Rechnungsdatei, nur andere Quellen hinter
-  derselben Naht.
+- **Die Regeln zum Ziel aus `run` herauslösen** (#359). Es entsteht kein
+  zweiter Weg zu einer Rechnungsdatei, nur andere Quellen hinter derselben
+  Naht.
 - **Gradle-Module und Komposition am Rand**
   (`docs/notizen/2026-09-14-umbauten-vor-dem-wachsen.md`). Der Kern hat
   weiterhin einen Verbraucher, und `einvoice` ist ein Randpaket wie `render`.
