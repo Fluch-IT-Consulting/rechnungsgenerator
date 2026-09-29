@@ -9,13 +9,8 @@ import java.math.BigDecimal
 import java.math.RoundingMode
 
 /**
- * Geldbetrag als Value Object. Intern immer auf 2 Nachkommastellen normalisiert
- * (kaufmännisch, HALF_UP) – die Rundungsregel wohnt damit im Typ, nicht in den Aufrufern.
- * Das entspricht den EN-16931-Regeln BR-DEC-*, die für alle Betragsfelder genau zwei
- * Nachkommastellen vorschreiben.
- *
- * Für Werte, die *nicht* gerundet werden dürfen – allen voran der Einzelpreis
- * (BT-146) – gibt es [Price]. Der Weg von dort hierher heißt [Price.roundToAmount].
+ * Ein Betrag, auf zwei Nachkommastellen HALF_UP normalisiert (BR-DEC-*). Für den Einzelpreis gibt es [Price], der
+ * einzige Weg von dort heißt [Price.roundToAmount].
  */
 @Serializable(with = MoneySerializer::class)
 class Money(value: BigDecimal) : Comparable<Money> {
@@ -23,12 +18,8 @@ class Money(value: BigDecimal) : Comparable<Money> {
 
     constructor(value: String) : this(BigDecimal(value))
 
-    // --- Arithmetik (Operatoren: +, -, *) -------------------------------------
-    // Zwei Operationen fehlen hier bewusst und sollen nicht kompilieren:
-    //   Betrag × Betrag  – fachlich sinnlos.
-    //   Betrag × Menge   – wäre der Schleichweg an [Price] vorbei: Der Einzelpreis
-    //                      wäre schon auf Cent gerundet, bevor die Menge ihn
-    //                      vervielfacht. Bei 0,335 € × 1000 sind das 5 € Fehler.
+    // Bewusst fehlen Betrag × Betrag, fachlich sinnlos, und Betrag × Menge: Das wäre der Schleichweg an [Price]
+    // vorbei, bei 0,335 € × 1000 ein Fehler von 5 €.
 
     operator fun plus(other: Money): Money = Money(value.add(other.value))
 
@@ -36,18 +27,11 @@ class Money(value: BigDecimal) : Comparable<Money> {
 
     operator fun unaryMinus(): Money = Money(value.negate())
 
-    // Der Betrag ohne Vorzeichen. Steht hier, weil das ein Begriff jeder Zahl ist
-    // und nicht einer dessen, der ihn braucht.
     fun abs(): Money = Money(value.abs())
 
-    // Betrag × Steuersatz: Das Ergebnis ist selbst wieder ein Betrag (BT-117, die
-    // USt. je Steuersatz) und darf deshalb gerundet werden.
+    // BT-117: Das Ergebnis ist wieder ein Betrag und darf gerundet werden.
     operator fun times(percent: Percent): Money = Money(value.multiply(percent.valueAsMultiplier))
 
-    // --- Prädikate ------------------------------------------------------------
-
-    // Privat: Draußen wird nach isNegative, isZero oder isPositive gefragt,
-    // nicht nach einem Vorzeichen als Zahl.
     private fun signum(): Int = value.signum()
 
     fun isNegative(): Boolean = signum() < 0
@@ -58,16 +42,12 @@ class Money(value: BigDecimal) : Comparable<Money> {
 
     override operator fun compareTo(other: Money): Int = value.compareTo(other.value)
 
-    // Wertgleichheit statt Identität – bewusst über compareTo, damit die Gleichheit
-    // rein numerisch ist und NICHT an der scale-sensitiven BigDecimal.equals hängt.
-    // hashCode muss dazu passen: stripTrailingZeros() liefert eine kanonische,
-    // scale-unabhängige Form, sodass gleiche Beträge denselben HashCode ergeben.
+    // Gleichheit über compareTo, nicht über BigDecimal.equals, das die Skala mitvergleicht; hashCode passend dazu.
     override fun equals(other: Any?): Boolean = other is Money && compareTo(other) == 0
 
     override fun hashCode(): Int = value.stripTrailingZeros().hashCode()
 
-    // Debug-Darstellung: locale-unabhängig und ohne Währung. Deutsches Zahlenformat
-    // und "€" sind Sache der Ausgabeschicht (LaTeX-Renderer), nicht des Domänentyps.
+    // Nur zum Debuggen: Schreibweise und Währung setzt die Vorlage (ADR-0021).
     override fun toString(): String = value.toPlainString()
 
     companion object {
@@ -75,12 +55,9 @@ class Money(value: BigDecimal) : Comparable<Money> {
     }
 }
 
-// Verlängert die stdlib-Konvention (sumOf/sum gibt es dort nur für eingebaute
-// Zahlentypen) auf Money.
 inline fun <T> Iterable<T>.sumOf(selector: (T) -> Money): Money = fold(Money.ZERO) { acc, element -> acc + selector(element) }
 
-// YAML ↔ Money: "95.00" ↔ Money("95.00"). Als String-Primitive serialisiert,
-// damit nie Fließkomma-Parsing dazwischenfunkt.
+// Als String, damit kein Fließkomma dazwischenkommt.
 object MoneySerializer :
     KSerializer<Money> by stringSerializer(
         name = "Money",
@@ -89,19 +66,8 @@ object MoneySerializer :
     )
 
 /**
- * Gelesen wird nur, was sich auf Cent genau schreiben lässt (#232).
- *
- * Der Konstruktor rundet HALF_UP, und das ist für *gerechnete* Werte richtig:
- * `base * percent` liefert zwangsläufig mehr Stellen, und die Rundungsregel
- * soll im Typ wohnen. Eine dritte Nachkommastelle in der *Eingabe* verschwände
- * damit aber ohne ein Wort – und die ist ein Tippfehler, keine Genauigkeit, die
- * jemand ausdrücken wollte. Abgewiesen wird deshalb, was jemand geschrieben
- * hat, nicht, was das Programm rechnet.
- *
- * `stripTrailingZeros` davor, weil `200.500` nichts verliert: Geprüft wird, ob
- * das Runden den Wert ändern würde, nicht, wie viele Nullen jemand getippt hat.
- * [Price] kennt die Prüfung nicht – der Einzelpreis (BT-146) darf beliebig
- * viele Stellen tragen.
+ * Die Eingabe muss sich auf Cent genau schreiben lassen (#232): Der Konstruktor rundet, und eine dritte
+ * Nachkommastelle in der Datei ist ein Tippfehler, der sonst still verschwände. `200.500` verliert nichts.
  */
 private fun readMoney(raw: String): Money {
     val value = BigDecimal(raw)

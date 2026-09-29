@@ -8,17 +8,11 @@ import kotlinx.serialization.SerializationException
 import java.math.BigDecimal
 import java.math.RoundingMode
 
-/** Wird geworfen, wenn ein Kurs nicht über null liegt. */
 class InvalidExchangeRateException(message: String) : IllegalArgumentException(message)
 
 /**
- * Ein Umrechnungskurs, notiert als Einheiten der Fremdwährung je Euro:
- * `1.1685` heißt 1 € = 1,1685 $.
- *
- * In dieser Richtung, weil BMF und EZB ihre Kurse so veröffentlichen – der
- * Wert wird abgeschrieben, und eine umgekehrte Notierung verlangte, ihn vorher
- * umzurechnen. Exakt wie [Price] und ohne Rundung: Gerundet wird erst der
- * umgerechnete Betrag.
+ * Einheiten der Fremdwährung je Euro, wie BMF und EZB notieren: `1.1685` heißt 1 € = 1,1685 $. Exakt; gerundet
+ * wird erst der umgerechnete Betrag.
  */
 @Serializable(with = ExchangeRateSerializer::class)
 class ExchangeRate(val value: BigDecimal) {
@@ -30,11 +24,7 @@ class ExchangeRate(val value: BigDecimal) {
 
     constructor(value: String) : this(BigDecimal(value))
 
-    /**
-     * Ein Betrag der Fremdwährung in Euro, kaufmännisch auf Cent gerundet.
-     * Geteilt wird mit genau einer Rundung: Ein Zwischenergebnis mit
-     * begrenzter Stellenzahl rundete ein zweites Mal.
-     */
+    /** Mit genau einer Rundung: Ein Zwischenergebnis mit begrenzten Stellen rundete ein zweites Mal. */
     fun toEuro(amount: Money): Money = Money(amount.value.divide(value, 2, RoundingMode.HALF_UP))
 
     override fun equals(other: Any?): Boolean = other is ExchangeRate && value.compareTo(other.value) == 0

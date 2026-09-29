@@ -5,35 +5,12 @@ import kotlinx.serialization.KSerializer
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.SerializationException
 
-/** Wird geworfen, wenn ein Ländercode nicht die Form von ISO 3166-1 alpha-2 hat. */
 class InvalidCountryCodeException(message: String) : IllegalArgumentException(message)
 
 /**
- * Der Ländercode einer Anschrift nach ISO 3166-1 alpha-2 (BT-40 für den
- * Rechnungssteller, BT-55 für den Kunden).
- *
- * Wozu ein eigener Typ für zwei Buchstaben: Wäre `land` ein String,
- * entschiede jede Vergleichsstelle selbst, ob Groß- und Kleinschreibung zählt.
- * Entscheiden zwei verschieden – die eine vergleicht `!= "DE"` zeichengenau,
- * die andere mit `ignoreCase` –, dann gilt dieselbe Rechnung mit `land: de`
- * der einen als Inlandsrechnung, und die andere druckt eine Landzeile unter
- * die Anschrift. Jede tut, was dasteht.
- *
- * Hier ist `de` nicht *wie* `DE`, sondern derselbe Wert – normalisiert wird
- * einmal, im Konstruktor. Damit kann die Frage am Vergleichsort gar nicht erst
- * auftauchen, und keine Vergleichsstelle braucht ein eigenes `uppercase()`.
- *
- * Geprüft wird nur die **Form**, nicht gegen ein Verzeichnis der Staaten.
- * Eine solche Liste wäre eine zweite, die still veraltet und ein eigenes Netz
- * gegen das Veralten bräuchte – und ein falscher, aber existierender Code (AT
- * statt CH) käme ohnehin durch beide Prüfungen. Was die Formprüfung fängt, ist
- * das, was ein Mensch tatsächlich tippt, wenn er das Feld missversteht:
- * "Deutschland", "D", "GER".
- *
- * Nebenbei bleibt damit `EL` zulässig – Griechenland heißt in den
- * Umsatzsteuer-Systemen der EU so, in ISO 3166 dagegen GR. Ausgeschrieben
- * wird es deshalb nicht: Die Landzeile des Blatts kennt nur die Staaten nach
- * ISO 3166 und nennt jeden anderen Code, wie er dasteht (#374).
+ * ISO 3166-1 alpha-2 (BT-40, BT-55), normalisiert im Konstruktor: `de` ist derselbe Wert wie `DE`, und kein
+ * Vergleich braucht ein eigenes `uppercase()`. Geprüft wird nur die Form, eine Liste der Staaten veraltete still;
+ * deshalb bleibt auch `EL` zulässig.
  */
 @Serializable(with = CountryCodeSerializer::class)
 class CountryCode(raw: String) {
@@ -47,9 +24,7 @@ class CountryCode(raw: String) {
         }
     }
 
-    // equals/hashCode von Hand, wie bei den Kennungen in Identifiers.kt: Eine
-    // data class verglich den Rohwert des Konstruktors, nicht den
-    // normalisierten Wert – und genau auf den kommt es hier an.
+    // Von Hand: Eine data class verglich den Rohwert, nicht den normalisierten.
     override fun equals(other: Any?): Boolean = other is CountryCode && value == other.value
 
     override fun hashCode(): Int = value.hashCode()
@@ -60,9 +35,7 @@ class CountryCode(raw: String) {
 object CountryCodeSerializer :
     KSerializer<CountryCode> by stringSerializer("CountryCode", { it.value }, { parseOrFail(it) })
 
-// Wie in Identifiers.kt: Eine fehlerhafte Angabe wird als SerializationException
-// gemeldet, damit die CLI sie wie einen YAML-Fehler nennt und nicht wie einen
-// Programmabsturz.
+// Als SerializationException, damit die CLI sie wie einen YAML-Fehler meldet.
 private fun parseOrFail(raw: String): CountryCode =
     try {
         CountryCode(raw)

@@ -6,16 +6,8 @@ import kotlinx.serialization.Serializable
 import java.math.BigDecimal
 
 /**
- * Die Maßeinheit einer Position – EN 16931 BT-130.
- *
- * Bewusst eine geschlossene Menge statt Freitext: Die Norm verlangt einen Code
- * aus UN/ECE-Empfehlung 20 (Regel BR-CL-23), und die Angabe ist Pflicht
- * (BR-23). Ein Freitextfeld würde den Fehler erst beim Empfänger zeigen; so
- * fällt ein Tippfehler wie "Stnd." schon beim Einlesen auf.
- *
- * [label] ist die Schreibweise in der YAML, eine je Einheit und unabhängig von
- * der Menge; [nameFor] der Text auf dem Blatt, [code] die Kennung fürs
- * ZUGFeRD-XML. Die Liste deckt ab, was in einer Beratungsrechnung vorkommt.
+ * BT-130 als Code nach UN/ECE Rec. 20 (BR-CL-23): Ein Tippfehler wie „Stnd.“ fällt so schon beim Einlesen auf.
+ * [label] ist die Schreibweise in der YAML, in jeder Sprache.
  */
 @Serializable(with = UnitSerializer::class)
 enum class Unit(val label: String, val code: String) {
@@ -25,22 +17,14 @@ enum class Unit(val label: String, val code: String) {
     MONTH("Monate", "MON"),
     PIECE("Stück", "H87"),
 
-    // LS = lump sum. C62 ("one") wäre die neutrale Alternative, benennt aber
-    // nicht, dass es sich um eine Pauschale handelt.
+    // LS und nicht C62 („one“), das nicht sagt, dass es eine Pauschale ist.
     FLAT_RATE("pauschal", "LS"),
     KILOMETRE("km", "KMT"),
     ;
 
     /**
-     * Der Name auf dem Blatt, in [language]: bei genau einer Einheit die
-     * Einzahl, sonst die Mehrzahl, auch bei einem Bruchteil – `0.5 days` wie
-     * `0,5 Tage`. Der Betrag zählt und nicht das Vorzeichen, damit eine
-     * negative Menge dasselbe Wort bekommt; verglichen mit `compareTo`, weil
-     * `equals` bei `1.00` die Skala mitvergleicht.
-     *
-     * Ein `when` ohne `else` über Sprache und Einheit: Eine neue Einheit muss
-     * in jeder Sprache sagen, ob sie eine Einzahl hat. Die Schreibweise in der
-     * YAML bleibt [label], auch auf einer englischen Rechnung.
+     * Einzahl nur bei genau einer Einheit, auch `0,5 Tage`. Nach dem Betrag, damit eine negative Menge dasselbe Wort
+     * bekommt, und mit `compareTo`, weil `equals` bei `1.00` die Skala mitvergleicht.
      */
     fun nameFor(quantity: BigDecimal, language: Language): String {
         val one = quantity.abs().compareTo(BigDecimal.ONE) == 0
