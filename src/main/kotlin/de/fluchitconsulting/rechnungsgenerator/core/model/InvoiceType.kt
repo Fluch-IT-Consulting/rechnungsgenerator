@@ -7,81 +7,25 @@ import kotlinx.serialization.KSerializer
 import kotlinx.serialization.Serializable
 
 /**
- * Die Rechnungsart – EN 16931 BT-3, Codeliste UNTDID 1001.
- *
- * Sie trennt die fünf Dokumente, die dieses Programm kennt (die Begriffe stehen
- * in `CONTEXT.md`). Der Unterschied ist keine Formsache: Wer einen Abschlag wie
- * eine gewöhnliche Rechnung abrechnet und später noch einmal die Gesamtleistung,
- * weist die Umsatzsteuer zweimal aus und schuldet sie nach §14c Abs. 1 UStG
- * auch zweimal.
- *
- * [label] ist die Schreibweise in der YAML, [code] die Kennung fürs spätere
- * ZUGFeRD-XML.
- *
- * Die Eigenschaften danach haben bewusst **keine** Vorgabewerte (ADR-0009):
- * Eine neue Rechnungsart muss sagen, ob ihr Zeitraum eine Prognose ist, ob sie
- * Geld fordert und welcher Satz auf ihr stehen muss, in jeder Sprache. Mit Vorgaben erbte sie
- * still die Antworten der gewöhnlichen Rechnung, und Renderer und Calculator
- * folgten ihnen, ohne dass je jemand darüber entschieden hätte. Ohne Vorgaben
- * übersetzt der neue Eintrag erst, wenn alle dastehen.
+ * Die Rechnungsart, BT-3 nach UNTDID 1001; die Begriffe und ihre englischen Namen stehen in `CONTEXT.md`.
+ * Bewusst ohne Vorgabewerte (ADR-0009): Eine neue Art erbte sonst still die Antworten der gewöhnlichen Rechnung.
  */
 @Serializable(with = InvoiceTypeSerializer::class)
 enum class InvoiceType(
     val label: String,
     val code: String,
-    /**
-     * Ist der Leistungszeitraum eine Prognose statt einer Tatsache?
-     *
-     * Auf einer Abschlagsrechnung ist die Leistung noch nicht erbracht. Als
-     * "Leistungszeitraum" beschriftet, behauptete der Zeitraum das Gegenteil –
-     * und auf den Tag genau genannt eine Genauigkeit, die er nicht hat. UStAE
-     * 14.8 Abs. 1 und 4 lassen dort den Kalendermonat genügen. Aus dieser einen
-     * Eigenschaft folgen beide Beschriftungen und die Schreibweise des Datums.
-     */
+    /** Auf einer Abschlagsrechnung ist die Leistung noch nicht erbracht (UStAE 14.8). */
     val servicePeriodIsForecast: Boolean,
     /**
-     * Rechnet dieses Dokument eine Leistung ab?
-     *
-     * So steht die Rechnung im Glossar, und das Storno tut es nicht: Es nimmt
-     * eine Abrechnung zurück und kündigt eine Erstattung an. Daraus folgen die
-     * Sechs-Monats-Frist des §14 Abs. 2 UStG (die gilt dem Ausstellen einer
-     * Rechnung, nicht dem Aufheben) und der Hinweis auf eine alternde
-     * Bestätigungsabfrage (die musste zur Ursprungsrechnung passen, nicht zum
-     * Storno).
-     *
-     * Ob das Dokument auch zur Zahlung auffordert – mit Zahlungsziel und
-     * Bankverbindung –, sagt erst `CalculatedInvoice.requestsPayment`: Dafür
-     * muss zusätzlich ein positiver Restbetrag bleiben. Eine voll abgesetzte
-     * Schlussrechnung rechnet ab, ohne Geld zu fordern (#94), und ein negativer
-     * Betrag fordert nie etwas (#130).
-     *
-     * Nicht dasselbe wie "ist ein Storno": Das Vorzeichen des Gesamtbetrags
-     * hängt an der Rechnungsart selbst und fragt deshalb nach ihr.
+     * Rechnet das Dokument eine Leistung ab? Das Storno nicht. Ob es auch Geld fordert, sagt erst
+     * `CalculatedInvoice.requestsPayment`.
      */
     val chargesForService: Boolean,
-    /**
-     * Ein Satz, der auf diesem Dokument stehen muss, damit es als das erkennbar
-     * ist, was es ist. Hier steht der Wortlaut, nicht seine Gestalt: Wo er auf
-     * der Seite landet, entscheidet die Vorlage.
-     *
-     * Werte der Rechnung nennt er als Platzhalter `<<NAME>>`, aus
-     * [InvoiceVariable]. Zerlegt wird der Satz schon hier, sodass ein
-     * vertippter Name wirft, sobald diese Klasse geladen wird; eingesetzt
-     * werden die Werte erst beim Setzen, und der Satz selbst bleibt ohne LaTeX.
-     *
-     * Der deutsche Wortlaut; welcher auf der Rechnung steht, sagt
-     * [mandatoryNote] mit ihrer Sprache.
-     */
+    /** Werte als `<<NAME>>` aus [InvoiceVariable]; ein vertippter Name wirft beim Laden der Klasse (ADR-0019). */
     private val germanMandatoryNote: TextTemplate<InvoiceVariable>?,
-    /**
-     * Derselbe Satz auf Englisch (#405). Er darf fachlich nichts anderes
-     * sagen als der deutsche – deshalb stehen beide im selben Eintrag, und
-     * wer den einen ändert, hat den anderen vor Augen.
-     */
+    /** Derselbe Satz; im selben Eintrag, damit wer den einen ändert, den anderen vor Augen hat. */
     private val englishMandatoryNote: TextTemplate<InvoiceVariable>?,
 ) {
-    // Benannte Argumente, obwohl die Reihenfolge eindeutig ist: Ein nacktes
-    // `false, true, null` ließe sich nur mit der Parameterliste daneben lesen.
     INVOICE(
         "rechnung",
         "380",
@@ -91,9 +35,6 @@ enum class InvoiceType(
         englishMandatoryNote = null,
     ),
 
-    // Der Code heißt in der Liste "Prepayment invoice"; das Wort dieses
-    // Projekts ist trotzdem die Abschlagsrechnung – "Anzahlung" steht in
-    // CONTEXT.md unter Vermeiden.
     PREPAYMENT(
         "abschlagsrechnung",
         "386",
@@ -104,9 +45,7 @@ enum class InvoiceType(
                 "Die Leistung ist noch nicht erbracht. Über die Gesamtleistung folgt eine " +
                     "Schlussrechnung, in der dieser Abschlag abgesetzt wird.",
             ),
-        // "provided" und nicht "supplied": Die supply ist ein Begriff des
-        // britischen VAT, wie schon beim "Service period". Der Abschlag ist
-        // die "advance payment", wie im XML der Schlussrechnung.
+        // „provided“, nicht „supplied“ (ADR-0025).
         englishMandatoryNote =
             TextTemplate.parse(
                 "The service has not yet been provided. A final invoice for the complete service will follow, " +
@@ -114,13 +53,8 @@ enum class InvoiceType(
             ),
     ),
 
-    // Für die Schlussrechnung nennt keine Quelle einen eigenen Code, deshalb
-    // derselbe wie bei der gewöhnlichen Rechnung: Sie *ist* die Rechnung über
-    // die Gesamtleistung, kenntlich an der Absetzung der Abschläge, nicht am
-    // Dokumenttyp. Nicht 384 ("Corrected invoice" – eine Schlussrechnung
-    // korrigiert nichts) und nicht die Bau-Codes 875/876/877, die für andere
-    // Leistungen eine Falschangabe wären. Ein neutraler Code ist besser als
-    // einer, der etwas Falsches behauptet.
+    // 380 wie die Rechnung: Sie *ist* die Rechnung über die Gesamtleistung. Nicht 384, sie korrigiert nichts,
+    // und nicht die Bau-Codes 875 bis 877, die für andere Leistungen falsch wären.
     FINAL(
         "schlussrechnung",
         "380",
@@ -130,10 +64,7 @@ enum class InvoiceType(
         englishMandatoryNote = null,
     ),
 
-    // Ändert nur den Code und nichts an der Rechnung. Aufgenommen, damit die
-    // Unterscheidung zur Abschlagsrechnung im Modell sichtbar ist statt nur im
-    // Kopf des Rechnungsstellers: Nicht die Höhe trennt beide, sondern ob die
-    // Leistung erbracht ist.
+    // Ändert nur den Code. Sie trennt sichtbar von der Abschlagsrechnung: nicht die Höhe, sondern ob erbracht ist.
     PARTIAL(
         "teilrechnung",
         "326",
@@ -143,13 +74,7 @@ enum class InvoiceType(
         englishMandatoryNote = null,
     ),
 
-    // 384 ("Corrected invoice") und nicht 381: Die KoSIT führt 384 für Korrektur
-    // und Storno mit Bezug auf die Ursprungsrechnung, 381 für die kaufmännische
-    // Gutschrift ohne Bezug und 389 für die Gutschrift im Sinne des §14 Abs. 2
-    // Satz 2 UStG (ADR-0006). Der Pflichtsatz nennt Nummer und Datum der
-    // Ursprungsrechnung als Platzhalter, eingesetzt beim Setzen. Im Modell
-    // bleibt der Bezug trotzdem Struktur (BG-3): Ein XML-Export liest ihn dort
-    // und nicht aus diesem Satz.
+    // 384 und nicht 381 (ADR-0006).
     CANCELLATION(
         "stornorechnung",
         "384",
@@ -160,9 +85,7 @@ enum class InvoiceType(
                 "Diese Stornorechnung hebt die Rechnung <<URSPRUNGSNUMMER>> vom <<URSPRUNGSDATUM>> vollständig auf. " +
                     "Ein bereits gezahlter Betrag wird erstattet.",
             ),
-        // "dated" ist die englische Wendung für "vom". Das Datum steht am
-        // Satzende, damit der Satz in beiden Varianten stimmt: Mitten im Satz
-        // verlangte das Amerikanische nach dem Jahr ein Komma (#407).
+        // Das Datum am Satzende: Mitten im Satz verlangte das Amerikanische nach dem Jahr ein Komma (#407).
         englishMandatoryNote =
             TextTemplate.parse(
                 "This cancellation invoice fully cancels invoice <<URSPRUNGSNUMMER>> dated <<URSPRUNGSDATUM>>. " +
@@ -171,12 +94,6 @@ enum class InvoiceType(
     ),
     ;
 
-    /**
-     * Der Pflichtsatz in [language], oder `null`, wenn diese Art keinen hat.
-     *
-     * Ohne `else` über die Sprache: Eine neue Sprache bekommt je Art einen
-     * Satz oder ausdrücklich keinen, als eigenen Parameter neben den übrigen.
-     */
     fun mandatoryNote(language: Language): TextTemplate<InvoiceVariable>? =
         when (language) {
             Language.GERMAN -> germanMandatoryNote
@@ -189,19 +106,12 @@ enum class InvoiceType(
             Language.GERMAN -> {
                 if (servicePeriodIsForecast) "Voraussichtlicher Leistungszeitraum" else "Leistungszeitraum"
             }
-            // "Service period" und nicht "Period of supply" oder "Tax point":
-            // Beide sind im britischen VAT eigene Begriffe. "Expected" und
-            // nicht "Estimated", das nach einer Schätzung klingt.
             Language.BRITISH_ENGLISH, Language.AMERICAN_ENGLISH -> {
                 if (servicePeriodIsForecast) "Expected service period" else "Service period"
             }
         }
 
-    /**
-     * Dieselbe Beschriftung, kürzer: für den abweichenden Zeitraum einer
-     * einzelnen Position (BG-26). Sie steht klein unter der Bezeichnung, wo die
-     * lange Fassung die Zeile sprengte.
-     */
+    /** Kürzer, für den Zeitraum einer Position (BG-26). */
     fun itemPeriodLabel(language: Language): String =
         when (language) {
             Language.GERMAN -> {
@@ -212,33 +122,16 @@ enum class InvoiceType(
             }
         }
 
-    /**
-     * Der Name des Dokuments, wie CONTEXT.md ihn führt – für die Meldungen an
-     * den Rechnungssteller und den Jobnamen. Deutsch in jeder Sprache: Die
-     * Meldungen sind es, und am Jobnamen hängt die DocumentID (ADR-0005), die
-     * nicht an der Sprache hängen soll.
-     *
-     * Abgeleitet statt als eigenes Feld geführt: Er ist das Label mit großem
-     * Anfangsbuchstaben, und zwei Felder mit derselben Aussage laufen
-     * irgendwann auseinander.
-     */
+    /** Deutsch in jeder Sprache: für die Meldungen und den Jobnamen, an dem die DocumentID hängt (ADR-0005). */
     val documentName: String get() = label.replaceFirstChar { it.uppercase() }
 
-    /** Der Name des Dokuments auf dem Blatt und in den Metadaten, in [language]. */
+    /** Auf dem Blatt und in den Metadaten. */
     fun documentName(language: Language): String =
         when (language) {
             Language.GERMAN -> {
                 documentName
             }
-            // "Invoice" und nicht "Bill" (CONTEXT.md). "Partial invoice", wie
-            // Code 326 in der Codeliste heißt – nicht "Interim invoice" oder
-            // "Progress invoice", die beide nach einem Abschlag klingen.
-            // "Cancellation invoice" und nicht "Credit note": So heißt Code
-            // 381, den das Storno bewusst nicht trägt (ADR-0006). "Advance
-            // payment invoice" und nicht "Prepayment invoice", obwohl Code
-            // 386 so heißt – aus demselben Grund, aus dem das Deutsche die
-            // Anzahlung meidet. "Final invoice", wie der Pflichtsatz der
-            // Abschlagsrechnung sie ankündigt.
+            // Die Begriffe und was sie meiden, stehen im Glossar.
             Language.BRITISH_ENGLISH, Language.AMERICAN_ENGLISH -> {
                 when (this) {
                     INVOICE -> "Invoice"
