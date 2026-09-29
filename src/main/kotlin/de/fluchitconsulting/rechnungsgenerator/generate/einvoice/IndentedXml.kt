@@ -5,15 +5,8 @@ import javax.xml.stream.XMLOutputFactory
 import javax.xml.stream.XMLStreamWriter
 
 /**
- * Schreibt ein XML-Dokument mit zwei Leerzeichen Einrückung je Ebene.
- *
- * Auf `XMLStreamWriter` aus dem JDK, weil er maskiert und nur Wohlgeformtes
- * schreibt; eingerückt wird hier, weil er es nicht tut. Nicht DOM mit einem
- * `Transformer`: Wie der einrückt, hat sich zwischen JDK-Fassungen geändert,
- * und die Vergleichsdatei verlangt jedes Zeichen.
- *
- * Namen stehen mit Präfix (`ram:Name`); welcher Namensraum dazugehört, sagt
- * [namespaces], und das Wurzelelement erklärt sie alle.
+ * Auf `XMLStreamWriter`, weil er maskiert; eingerückt wird hier. Nicht DOM mit `Transformer`: Dessen Einrückung
+ * änderte sich zwischen JDK-Fassungen, und die Vergleichsdatei verlangt jedes Zeichen.
  */
 internal fun indentedXml(
     root: String,
@@ -41,7 +34,6 @@ internal class XmlElements(
     private val namespaces: Map<String, String>,
     private val depth: Int,
 ) {
-    /** Ein Element mit Text, in einer Zeile. */
     fun element(
         name: String,
         text: String,
@@ -52,7 +44,6 @@ internal class XmlElements(
         writer.writeEndElement()
     }
 
-    /** Ein Element mit Elementen darin, eine Ebene tiefer eingerückt. */
     fun element(
         name: String,
         vararg attributes: Pair<String, String>,
