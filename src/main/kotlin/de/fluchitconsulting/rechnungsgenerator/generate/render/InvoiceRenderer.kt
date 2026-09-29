@@ -5,48 +5,22 @@ import de.fluchitconsulting.rechnungsgenerator.core.model.Logo
 import de.fluchitconsulting.rechnungsgenerator.core.values.Language
 import de.fluchitconsulting.rechnungsgenerator.generate.toolchain.PdfSources
 
-/**
- * Setzt die LaTeX-Vorlage mit den Werten einer Rechnung zusammen.
- *
- * Der Renderer rechnet nichts – er bekommt die fertige
- * [de.fluchitconsulting.rechnungsgenerator.core.calculation.CalculatedInvoice] und
- * formatiert nur. Umgekehrt kennt der Calculator kein LaTeX. Diese Trennung ist
- * der Grund, warum die Steuerlogik ohne einen einzigen LaTeX-Lauf testbar ist.
- *
- * Und er bekommt sie nur angenommen, als [AcceptedInvoice] (ADR-0007): Eine
- * Rechnung mit Abbruch lässt sich nicht setzen, statt bloß nicht gesetzt zu
- * werden, weil beide Kommandos daran denken.
- *
- * Innen wird durchgehend mit [Latex] gearbeitet, nicht mit Zeichenketten: Was
- * hier zusammengesetzt wird, hat die Maskierung schon hinter sich. Ausgepackt
- * wird genau einmal, beim Einsetzen in die Vorlage.
- *
- * Die Blöcke stehen je Gruppe in einer eigenen Datei – [SellerBlocks],
- * [MetadataBlocks], [ItemBlocks], [DeductionBlocks], die geteilten Bausteine
- * in `RenderFragments.kt`, die Vorlage mit ihren Prüfungen in [Template].
- * Hier bleiben der Einstieg und die Werte der Platzhalter. Der Schnitt folgt
- * den Blöcken und nicht den Rechnungsarten (Notiz vom 14.09.2026): Designs
- * vervielfachen sich, die Arten bleiben die geschlossene Menge, die jeder
- * Renderer vollständig beantwortet.
- */
+/** Setzt die Vorlage mit den Werten einer angenommenen Rechnung zusammen. Gerechnet wird hier nichts (ADR-0017). */
 object InvoiceRenderer {
-    // Der Name, unter dem das Logo neben der .tex liegt, ohne Endung: `\input`
-    // und später `\includegraphics` finden die Datei auch so.
+    // Ohne Endung: `\input` in der Vorlage findet die Datei auch so.
     private const val LOGO_NAME = "logo"
 
     fun render(acceptedInvoice: AcceptedInvoice): RenderedInvoice {
         val calculated = acceptedInvoice.calculated
         val template = Template.of(calculated.config.design, calculated.invoice.language)
         val logo = includedLogo(template, acceptedInvoice)
-        // Die Auskunft folgt aus dem eingebundenen Logo und nicht aus den
-        // Dateien: Neben ihm liegt immer die Grundlage (#203).
+        // includesLogo folgt aus dem Logo, nicht aus files: Dort liegt immer auch die Grundlage (#203).
         return RenderedInvoice(
             sources =
                 PdfSources(
                     tex = template.fillIn(values(acceptedInvoice)),
                     xmpMetadata = renderMetadata(acceptedInvoice),
-                    // Das Rechnungsdatum und nicht die Uhr: Eine neu erzeugte
-                    // Rechnung soll nicht jünger aussehen als die verschickte.
+                    // Das Rechnungsdatum, nicht die Uhr: Eine neu erzeugte Rechnung soll nicht jünger aussehen als die verschickte.
                     creationDate = calculated.invoice.issueDate,
                     files = template.files + logo?.let { mapOf("$LOGO_NAME.${it.extension}" to it.content) }.orEmpty(),
                 ),
@@ -55,14 +29,8 @@ object InvoiceRenderer {
     }
 
     /**
-     * Das Logo, wenn die Stammdaten eines nennen **und** die Vorlage es
-     * einbindet (#198), sonst `null`.
-     *
-     * Ob sie es einbindet, zeigt allein ihr Platzhalter – der Renderer kennt
-     * kein Design, er befolgt die Vorlage. Eine, die das Logo übergeht, bekommt
-     * es gar nicht erst: Es ginge sonst in die Trailer-ID ein, und dieselbe
-     * Rechnung ergäbe mit und ohne Logo-Eintrag verschiedene PDFs, obwohl auf
-     * dem Blatt dasselbe steht.
+     * Das Logo nur, wenn die Vorlage `<<LOGO>>` setzt: Sonst ginge es in die Trailer-ID ein, und dasselbe Blatt
+     * ergäbe mit und ohne Logo-Eintrag verschiedene PDFs.
      */
     private fun includedLogo(
         template: Template,
@@ -71,24 +39,9 @@ object InvoiceRenderer {
         acceptedInvoice.calculated.config.logo
             ?.takeIf { template.uses(TemplateValue.LOGO) }
 
-    /**
-     * Die Werte aller Platzhalter – die innere Naht zwischen Inhalt und
-     * [Template]. Eigens abrufbar, damit ein Test fragen kann, was der Renderer
-     * entschieden hat – ob eine Angabe leer ist –, ohne das aus dem gesetzten
-     * Text einer bestimmten Vorlage herauszulesen.
-     */
     internal fun values(acceptedInvoice: AcceptedInvoice): Map<TemplateValue, Latex> =
         TemplateValue.entries.associateWith { value(it, acceptedInvoice) }
 
-    /**
-     * Der Wert eines Platzhalters. Ein `when` über alle [TemplateValue] ohne
-     * `else`: Kommt ein Platzhalter dazu, übersetzt diese Stelle erst, wenn
-     * entschieden ist, was er enthält.
-     *
-     * Eine Angabe, die nicht dasteht, ist leer ([Latex.EMPTY]) und nicht
-     * abwesend. Der Vorlage ist es gleich, warum: weil die Eingabe sie nicht
-     * nennt oder weil ein `when` hier so entschieden hat.
-     */
     private fun value(
         key: TemplateValue,
         acceptedInvoice: AcceptedInvoice,
@@ -176,44 +129,31 @@ object InvoiceRenderer {
             TemplateValue.EMPFAENGER -> {
                 MetadataBlocks.recipient(calculatedInvoice)
             }
-            // BT-48, leer, wenn der Kunde keine hat. Bei Reverse Charge und
-            // innergemeinschaftlicher Lieferung verlangt §14a UStG sie auf der
-            // Rechnung; wo sie steht, entscheidet die Vorlage.
+            // BT-48
             TemplateValue.KUNDE_USTID -> {
                 customer.vatId?.formatted()?.escapeLatex() ?: Latex.EMPTY
             }
-            // BT-46 und BT-14: freiwillige Angaben der Rechnungsdatei, leer,
-            // wenn sie keine nennt – Pflicht ist nur, dass die Vorlage sie
-            // setzt (#190, #191).
+            // BT-46 und BT-14
             TemplateValue.KUNDENNUMMER -> {
                 customer.buyerIdentifier?.escapeLatex() ?: Latex.EMPTY
             }
             TemplateValue.AUFTRAGSNUMMER -> {
                 invoice.salesOrderReference?.escapeLatex() ?: Latex.EMPTY
             }
-            // Die eine Beschriftung, die vom Renderer kommt (#188): Auf einer
-            // Abschlagsrechnung ist der Zeitraum eine Prognose, und eine
-            // Vorlage, die dort fest "Leistungszeitraum" schriebe, wäre falsch.
-            // Den Doppelpunkt setzt die Vorlage.
             TemplateValue.ZEITRAUM_BESCHRIFTUNG -> {
                 invoice.type.servicePeriodLabel(invoice.language).escapeLatex()
             }
-            // Pflichtangabe nach §14 Abs. 4 Nr. 6 UStG, geschrieben wie die Art
-            // es verlangt.
+            // §14 Abs. 4 Nr. 6 UStG
             TemplateValue.LEISTUNGSZEITRAUM -> {
                 servicePeriod(invoice.servicePeriod, invoice)
             }
             TemplateValue.VEREINNAHMT_AM -> {
                 MetadataBlocks.receivedOn(acceptedInvoice)
             }
-            // BT-10, die Referenz des Kunden.
+            // BT-10
             TemplateValue.KUNDENREFERENZ -> {
                 customer.buyerReference?.escapeLatex() ?: Latex.EMPTY
             }
-            // Ob es ein Zahlungsziel gibt, entscheidet der Calculator
-            // (CalculatedInvoice.dueDate); hier wird nur gesetzt, was dasteht.
-            // Ohne eines bleibt der Wert leer, und die Vorlage lässt die Zeile
-            // samt Beschriftung weg.
             TemplateValue.ZAHLUNGSZIEL -> {
                 calculatedInvoice.dueDate?.let { DateFormat(invoice.language).date(it) } ?: Latex.EMPTY
             }
@@ -257,17 +197,8 @@ object InvoiceRenderer {
     }
 
     /**
-     * Die begleitende .xmpdata-Datei, aus der pdfx die XMP-Metadaten des
-     * PDF/A-Dokuments baut. Ohne sie bleiben Titel und Autor im PDF leer –
-     * für PDF/A-1b sind gültige Metadaten Pflicht.
-     *
-     * Bewusst OHNE \Keywords: Die pdfx-Version in TeX Live 2019 schreibt den
-     * Eintrag ins Info-Dictionary, aber nicht als pdf:Keywords ins XMP. PDF/A-1b
-     * verlangt in Klausel 6.7.3, dass beide übereinstimmen – veraPDF lehnt das
-     * Dokument sonst ab. Nachgemessen: mit \Keywords genau ein Verstoß, ohne keiner.
-     *
-     * Auch hier maskierte Werte: Ein `&` im Firmennamen zerlegte sonst die
-     * Metadaten, und ohne gültige Metadaten gibt es kein PDF/A.
+     * Die .xmpdata-Datei, aus der pdfx die XMP-Metadaten baut. Bewusst ohne `\Keywords`: pdfx schreibt sie ins
+     * Info-Dictionary, aber nicht ins XMP, und PDF/A-1b verlangt Übereinstimmung (6.7.3) – nachgemessen ein Verstoß.
      */
     private fun renderMetadata(acceptedInvoice: AcceptedInvoice): String {
         val calculatedInvoice = acceptedInvoice.calculated
@@ -287,10 +218,6 @@ object InvoiceRenderer {
         ).joinToLatex("\n").tex
     }
 
-    /**
-     * Ein Feld der .xmpdata-Datei: `\Title{…}`. Kein [TemplateMacro]: Diese
-     * Felder definiert pdfx und nicht die Vorlage, die Prüfung fände sie dort
-     * nicht. Deshalb privat und nur hier (#76).
-     */
+    /** `\Title{…}`. Kein [TemplateMacro]: Diese Felder definiert pdfx, die Prüfung fände sie in der Vorlage nicht. */
     private fun xmpField(name: String, content: Latex): Latex = Latex.raw("\\$name{") + content + Latex.raw("}")
 }
