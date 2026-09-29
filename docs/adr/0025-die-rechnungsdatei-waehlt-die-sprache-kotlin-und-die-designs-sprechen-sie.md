@@ -95,8 +95,7 @@ Freitexten: Einleitung, Bemerkung, Pflichtsatz und Befreiungsgrund.
 
 ## Verworfen
 
-Die Notiz `docs/notizen/2026-09-26-rechnungen-in-anderen-sprachen.md` hält
-die Abwägung fest. Kurz:
+Die ganze Abwägung steht in #375. Kurz:
 
 - **Ein zweisprachiges Blatt**, „Rechnung / Invoice“. Die Positionen schreibt
   der Rechnungssteller trotzdem in einer Sprache, und jede Beschriftung würde

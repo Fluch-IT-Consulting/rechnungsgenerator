@@ -31,8 +31,7 @@ Die Einmaligkeit (§14 Abs. 4 Satz 1 Nr. 4 UStG) prüft der Generator nicht und
 kann es nicht: Sie ist eine Eigenschaft aller Rechnungen zusammen, und beim
 Erzeugen sieht er eine einzige Datei (ADR-0001). Prüfbar ist allein die Form.
 
-Der Stand des Gesprächs vor dieser Entscheidung steht in
-`docs/notizen/2026-09-11-gueltige-rechnungsnummer.md`.
+Der Stand des Gesprächs vor dieser Entscheidung steht in #54.
 
 ## Verworfen
 
@@ -124,9 +123,9 @@ Die drei Abbrüche tragen damit andere Begründungen:
   ein Dateiname ist er ja weiterhin.
 
 **Die Rechnung ohne Nummer bleibt ausgeschlossen, aber nicht mehr mit dem
-Dateinamen.** Ob sie möglich werden soll, ist eine fachliche Frage (Notiz vom
-11.09.2026). Stellt sie sich, ist der Jobname kein Hindernis mehr, sondern nur
-noch die Frage, woraus dann die DocumentID entsteht.
+Dateinamen.** Ob sie möglich werden soll, ist eine fachliche Frage (#54).
+Stellt sie sich, ist der Jobname kein Hindernis mehr, sondern nur noch die
+Frage, woraus dann die DocumentID entsteht.
 
 Verworfen:
 
