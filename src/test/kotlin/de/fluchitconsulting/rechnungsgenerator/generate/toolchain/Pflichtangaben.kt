@@ -31,19 +31,11 @@ import kotlin.io.path.readLines
 import kotlin.io.path.writeText
 
 /**
- * Ein Design, wie das Netz es sieht: die Stammdaten-Datei, die es wählt, und
- * je Sprache die Wörter, an denen sich zeigt, dass etwas *fehlt* ([Words]).
+ * [closingLineAtPaymentTerm]: Die Zahlungsfrist ist der Satz direkt vor dem
+ * Schlusssatz, wie in prag; helsinki setzt sie in den Kopf.
  *
- * [closingLineAtPaymentTerm]: Das Design nennt die Zahlungsfrist als Satz
- * unter den Summen und hält den Schlusssatz daran fest, damit er nicht allein
- * auf der letzten Seite steht. In helsinki steht die Frist im Kopf, und den
- * Schlusssatz hält der Gruß.
- *
- * [pages] nennt je Beispieldatei, wie viele Seiten sie in diesem Design hat,
- * sobald es mehr als eine sind; jede andere hat eine. Nachgemessen und nicht
- * hergeleitet: "Mehr als eine" übersähe eine Seite mehr oder weniger (#337),
- * und eine gewöhnliche Rechnung, die still auf zwei Seiten wüchse, sähe nicht
- * mehr aus wie bisher (ADR-0020).
+ * [pages] ist nachgemessen, nicht hergeleitet (#337); eine Datei ohne Eintrag
+ * hat genau eine Seite.
  */
 data class Design(
     val name: String,
@@ -54,37 +46,11 @@ data class Design(
 )
 
 /**
- * Die Wörter eines Designs in einer Sprache, an denen sich zeigt, dass etwas
- * *fehlt*.
+ * Die Beschriftungen eines Designs: Dass eine Angabe *fehlt*, zeigt sich nur an
+ * ihrer Beschriftung, denn die IBAN etwa steht auch im Fuß.
  *
- * Diese Wörter stehen in der Vorlage und ihrer Sprachdatei und nicht in der
- * Rechnung, deshalb gehören sie zum Design. Ob eine Angabe dasteht, lässt
- * sich an ihrem Wert prüfen; ob sie fehlt, nur an ihrer Beschriftung – die
- * IBAN etwa steht im Fuß jedes Dokuments, die Überschrift der Bankverbindung
- * nicht.
- *
- * [bankHeading] ist null, wenn das Design keinen eigenen Bankblock setzt:
- * prag führt die Bank nur im Fuß, als Angabe des Briefbogens (ADR-0011).
- * Dann gibt es keine Überschrift, deren Abwesenheit zu prüfen wäre; ob das
- * Dokument Zahlung fordert, zeigt dort allein das Zahlungsziel.
- *
- * Die Beschriftung des Zahlungsziels ist in prag der Anfang des Satzes, der
- * es als Frist nennt (#211), und keine eigene Kopfzeile.
- *
- * [discountHeading] ist der Kopf der Rabattspalte, so wie `pdftotext` ihn
- * liest: helsinki sperrt seine Spaltenköpfe, und dann kommt jeder Buchstabe
- * einzeln zurück (#213) – je nach Wort aber auch nicht.
- *
- * [continuationNote] und [pageNumber] sind die Wörter der Folgeseiten
- * (ADR-0020): der Satz am Ende jeder Seite, auf die eine weitere folgt, und
- * die Seitenzahl im Kopf jeder Folgeseite. Beides fehlt auf einer Rechnung
- * mit einer Seite.
- *
- * [greeting] steht zwischen Schlusssatz und Name; null, wenn das Design
- * keine setzt – prag schließt mit dem Schlusssatz.
- *
- * [columnHeading] ist ein Wort aus dem Kopf der Positionstabelle, so wie
- * `pdftotext` es liest. Es steht auf jeder Seite, die Positionen trägt.
+ * Geschrieben, wie `pdftotext` sie liest: helsinki sperrt die Spaltenköpfe, und
+ * je nach Wort kommen die Buchstaben einzeln zurück (#213).
  */
 data class Words(
     val dueDateLabel: String,
@@ -96,55 +62,23 @@ data class Words(
     val columnHeading: String,
 )
 
-/**
- * Dieselben Wörter für beide Varianten des Englischen: Die Sprachdateien
- * eines Designs schreiben sie gleich (#407). Setzt eine Variante ein Wort
- * anders, bekommt sie hier ihren eigenen Eintrag.
- */
 private fun englishWords(words: Words): Map<Language, Words> =
     mapOf(Language.BRITISH_ENGLISH to words, Language.AMERICAN_ENGLISH to words)
 
 /**
- * Das Pflichtangaben-Netz unter jedem Design: Für jede Rechnungsart entsteht
- * das PDF mit den echten Werkzeugen, veraPDF bestätigt PDF/A-1b, und
- * `pdftotext` liest zurück, ob die Pflichtangaben auf dem Blatt stehen.
+ * Das Pflichtangaben-Netz: prüft am zurückgelesenen Blatt, ob dasteht, was nach
+ * §14 Abs. 4 und 5 UStG und §35a GmbHG dastehen muss. Es kennt keine Schreibweise
+ * eines Designs: Erwartet wird aus der gerechneten Rechnung, formatiert hier und
+ * nicht mit `DateFormat`, und jede Schreibweise gilt, die ein Design wählen darf.
  *
- * Die Vergleichsdateien im `InvoiceRendererTest` schützen Zeichen, nicht das
- * Blatt: je Rechnungsart die Werte, die in die Vorlage gehen
- * (`<art>-inhalt.tex`), und je Design den ganzen Text der gewöhnlichen
- * Rechnung (`rechnung-erwartet.tex`, `prag-rechnung-erwartet.tex`, #204).
- * Wie ein Design die übrigen Arten setzt, steht in keiner davon wörtlich.
- * Dieses Netz fragt etwas anderes: ob auf dem Blatt steht, was dort stehen
- * muss – §14 Abs. 4 und 5 UStG, §35a GmbHG, der Pflichtsatz der Art. Deshalb
- * kennt es keine Schreibweise eines Designs:
- *
- *  - Die erwarteten Werte kommen aus der gerechneten Rechnung und den
- *    Stammdaten, nicht als abgeschriebene Zeichenketten.
- *  - Formatiert werden sie hier, nicht mit `DateFormat` – das liefert LaTeX,
- *    und es ist die Schreibweise *eines* Designs.
- *  - Wo Designs verschieden schreiben dürfen, gilt jede der Schreibweisen:
- *    Datum kurz oder lang, Zeitraum in jeder der Formen, Beträge ohne €, weil
- *    ein Design das Zeichen in den Spaltenkopf stellen darf.
- *  - Leerraum zählt nicht: `pdftotext` bricht Zeilen, wo der Satz sie bricht,
- *    und ein geschütztes Leerzeichen ist nur ein anderes Leerzeichen.
- *
- * Das Netz steht in mehreren Testklassen, weil Gradle Klassen auf die Test-JVMs
- * verteilt und keine teilt (#434): `PflichtangabenArtenTest`,
- * `PflichtangabenSonderfaelleTest`, `PflichtangabenEnglischTest` und
- * `PflichtangabenSeitenTest`. Jede baut sich einen eigenen Lauf, und alle
- * setzen unter denselben [designs] – deshalb hält der Test, dass kein Design
- * und keine Sprache fehlt, in einer davon für alle.
+ * Auf vier Testklassen verteilt, weil Gradle Klassen auf die Forks verteilt (#434).
  */
 class PflichtangabenRun {
     val workDir: Path = createTempDirectory("rechnungsgenerator-pflichtangaben")
     private val run = ToolchainRun(workDir)
     val sellerConfig: Path = Path.of("src/test/resources/stammdaten.yaml")
 
-    // Die Stammdaten des Beispiels, nur mit anderem Design – dieselben Angaben,
-    // damit ein Unterschied im Befund am Design liegt und nicht an den Daten.
-    // Dazu auf Wunsch das Beispiellogo, mit absolutem Pfad: Die Stammdaten
-    // liegen hier im Temp-Verzeichnis, das Logo nicht (#198). Ohne
-    // Geschäftsführung werden sie die eines Einzelunternehmens.
+    // Das Logo mit absolutem Pfad: Diese Stammdaten liegen im Temp-Verzeichnis (#198).
     fun sellerConfigWith(
         design: String,
         logo: Boolean = false,
@@ -158,14 +92,11 @@ class PflichtangabenRun {
         }
     }
 
-    // Ein weiteres Design ist hier ein weiterer Eintrag, eine weitere Sprache
-    // je Design ein Eintrag in words.
     val designs =
         listOf(
             Design(
                 name = "helsinki",
-                // Jedes Design setzt das Logo; so sieht veraPDF es bei jeder
-                // Rechnungsart.
+                // Mit Logo, damit veraPDF es unter jeder Rechnungsart prüft.
                 sellerConfig = sellerConfigWith("helsinki", logo = true),
                 closingLineAtPaymentTerm = false,
                 pages =
@@ -237,7 +168,6 @@ class PflichtangabenRun {
             ),
         )
 
-    // Setzt eine Beispieldatei mit den echten Werkzeugen und prüft das Blatt.
     fun typesetAndCheck(
         file: String,
         design: Design,
@@ -250,13 +180,8 @@ class PflichtangabenRun {
         val (pdf, output) = run.generate(file, targetName = targetName, input = input, sellerConfig = sellerConfig)
         withClue(output.joinToString("\n")) { output shouldContain "PDF/A-1b: gültig" }
 
-        // Eine Rechnung hat keine Lesezeichen, und das PDF sagt das auch (#321):
-        // Mit Lesezeichen verlangte hyperref ohne Not einen weiteren Lauf, und
-        // `/UseOutlines` öffnete im Viewer eine leere Seitenleiste. Geprüft an
-        // den Bytes und nicht am Blatt, deshalb hier und nicht in verify: pdfx
-        // lädt zwar die Grundlage, aber was eine Vorlage oder Sprachdatei
-        // danach lädt, kann hyperref noch umstellen. ISO-8859-1 bildet jedes
-        // Byte auf ein Zeichen ab, so stört der Binärteil beim Suchen nicht.
+        // Keine Lesezeichen (#321), je Design geprüft: Eine Vorlage kann hyperref
+        // noch umstellen. ISO-8859-1, weil es jedes Byte auf ein Zeichen abbildet.
         val bytes = String(pdf.readBytes(), Charsets.ISO_8859_1)
         val sheet = Sheet(run.textOf(pdf))
         assertSoftly {
@@ -270,17 +195,12 @@ class PflichtangabenRun {
     }
 }
 
-/** Eine gesetzte Rechnung: das gerechnete Ergebnis und das zurückgelesene Blatt. */
 data class Typeset(
     val calculated: CalculatedInvoice,
     val sheet: Sheet,
 )
 
-/**
- * Der zurückgelesene Text, mit zusammengefasstem Leerraum – im Ganzen und je
- * Seite. `pdftotext` schließt jede Seite mit einem Seitenvorschub ab; daran
- * zählt der Test die Seiten, ohne ein weiteres Werkzeug.
- */
+/** Der Text von `pdftotext`; der schließt jede Seite mit einem Seitenvorschub ab. */
 class Sheet(
     text: String,
 ) {
@@ -305,11 +225,9 @@ class Sheet(
         vararg spellings: String,
     ) = shows(pageTexts[page - 1], "$detail auf Seite $page", spellings)
 
-    /** Die Seiten, auf denen eine der Schreibweisen vollständig steht. */
     fun pagesWith(vararg spellings: String): Set<Int> =
         (1..pages).filter { page -> spellings.any { normalize(it) in pageTexts[page - 1] } }.toSet()
 
-    /** Die erste Seite, auf der die Angabe vollständig steht, oder null. */
     fun pageWith(detail: String): Int? = pageTexts.indexOfFirst { normalize(detail) in it }.takeIf { it >= 0 }?.plus(1)
 
     fun lacksOnPage(
@@ -339,9 +257,8 @@ class Sheet(
     }
 
     companion object {
-        // \s kennt weder das geschützte (U+00A0) noch die schmalen Leerzeichen.
-        // Das Minuszeichen bleibt, wie es ist: Gleichgesetzt mit "-" ließe das
-        // Netz einen Bindestrich vor einer Zahl durch (#320).
+        // \s kennt weder U+00A0 noch die schmalen Leerzeichen. Das Minuszeichen
+        // nicht mit "-" gleichsetzen, sonst ginge ein Bindestrich durch (#320).
         private val WHITESPACE = Regex("[\\s\\u00A0\\u2009\\u202F]+")
 
         fun normalize(s: String): String = s.replace(WHITESPACE, " ").trim()
@@ -357,9 +274,8 @@ private fun Sheet.verify(
     val words = design.words.getValue(invoice.language)
     val spelling = Spelling(invoice.language, invoice.currency)
 
-    // §14 Abs. 4 Nr. 1: Name und Anschrift beider Seiten. Der vollständige
-    // Name des leistenden Unternehmers ist ohne Geschäftsführung die Person,
-    // nicht die Firmierung.
+    // §14 Abs. 4 Nr. 1 UStG. Ohne Geschäftsführung ist der vollständige Name
+    // die Person, nicht die Firmierung.
     shows("Rechnungssteller", config.companyName)
     if (config.managingDirector == null) shows("Name des Inhabers", config.ownerName)
     shows("Anschrift Rechnungssteller", config.address.street)
@@ -367,39 +283,32 @@ private fun Sheet.verify(
     shows("Kunde", invoice.customer.name)
     shows("Anschrift Kunde", invoice.customer.address.street)
     shows("Ort Kunde", "${invoice.customer.address.postalCode} ${invoice.customer.address.city}")
-    // Die USt-IdNr. des Kunden (BT-48), Pflicht bei AE und K (§14a Abs. 1
-    // UStG). Das Design setzt sie, sobald die Datei sie nennt.
+    // BT-48, Pflicht bei AE und K (§14a Abs. 1 UStG).
     invoice.customer.vatId?.let { shows("USt-IdNr. des Kunden", it.value, it.formatted()) }
 
-    // Nr. 2: Steuernummer oder USt-IdNr. – eine genügt.
+    // Nr. 2: eine von beiden genügt.
     shows(
         "Steuernummer oder USt-IdNr.",
         *listOfNotNull(config.vatId.value, config.vatId.formatted(), config.taxNumber?.value).toTypedArray(),
     )
 
-    // Nr. 3 und 4: Rechnungsdatum und Rechnungsnummer.
+    // Nr. 3 und 4
     shows("Rechnungsdatum", *spelling.date(invoice.issueDate))
     shows("Rechnungsnummer", invoice.number)
 
-    // Nr. 5 und 6: Menge und Art der Leistung, Zeitpunkt der Leistung und –
-    // bei einer Abschlagsrechnung, wenn er feststeht – der Vereinnahmung.
+    // Nr. 5 und 6
     invoice.items.forEachIndexed { i, item ->
         shows("Bezeichnung der Position ${i + 1}", item.name)
         shows("Menge der Position ${i + 1}", spelling.quantity(item.quantity))
     }
-    // Einzelpreis und Betrag einer Position sind keine Pflichtangaben, aber
-    // ohne sie ließe sich die Position nicht nachrechnen (#14). Und nur der
-    // Einzelpreis trägt mehr als zwei Nachkommastellen: Setzte ein Design ihn
-    // in falscher Schreibweise, sähe das Netz es sonst nirgends (ADR-0021).
+    // Keine Pflichtangaben (#14), aber nur der Einzelpreis trägt mehr als zwei
+    // Nachkommastellen (ADR-0021).
     calculated.lines.forEachIndexed { i, line ->
         shows("Einzelpreis der Position ${i + 1}", spelling.price(line.item.unitPrice))
         shows("Betrag der Position ${i + 1}", spelling.amount(line.net))
     }
-    // Der Rabatt ist keine Pflichtangabe: §14 Abs. 4 Nr. 7 verlangt nur
-    // Minderungen, die nicht schon im Entgelt berücksichtigt sind, und der
-    // Rabatt ist es. Geprüft wird trotzdem, dass die Spalte genau dann steht,
-    // wenn eine Position einen Rabatt hat (#213) – sonst sähe man einen
-    // Betrag, der nicht Menge × Einzelpreis ist, ohne Grund.
+    // Keine Pflichtangabe, weil schon im Entgelt berücksichtigt (Nr. 7); die
+    // Spalte steht trotzdem genau dann, wenn eine Position einen Rabatt hat (#213).
     calculated.lines.forEachIndexed { i, line ->
         when (val discount = line.item.discount) {
             null -> {}
@@ -419,13 +328,8 @@ private fun Sheet.verify(
     shows("Leistungszeitraum", *spelling.zeitraum(invoice.servicePeriod.start, invoice.servicePeriod.end))
     invoice.receivedOn?.let { shows("Tag der Vereinnahmung", *spelling.date(it)) }
 
-    // Nr. 7 und 8: Entgelt je Steuersatz, dazu Satz und Steuerbetrag – oder,
-    // bei einer Steuerbefreiung, der Hinweis darauf statt beider (Nr. 8
-    // zweiter Halbsatz, #218). Das Entgelt verlangt Nr. 7 in jedem Fall; bei
-    // einer befreiten Gruppe nennt es der Hinweis selbst. Ob eine Gruppe
-    // befreit ist, sagt ihr Grund und nicht ihr Steuerbetrag von null: Die
-    // Kategorie Z trägt keinen Grund und bleibt deshalb eine Gruppe, die Satz
-    // und Steuerbetrag zeigen muss.
+    // Nr. 7 und 8, bei Befreiung der Hinweis statt Satz und Steuer (#218).
+    // Befreit heißt: mit Grund, nicht Steuer null – Z zeigt Satz und Steuer.
     calculated.vatGroups.forEach { group ->
         val name = "Steuergruppe ${group.category} ${group.rate}"
         shows("$name: Entgelt", spelling.amount(group.base))
@@ -438,9 +342,7 @@ private fun Sheet.verify(
         }
     }
 
-    // Art. 230 MwStSystRL: Die Steuer einer Rechnung in Fremdwährung steht
-    // umgerechnet in Euro da (#418), dazu Kurs und Monat, damit sie sich
-    // nachrechnen lässt. Zeichen und Stellung prüft der Sonderfall wörtlich.
+    // Art. 230 MwStSystRL (#418); Zeichen und Stellung prüft der Sonderfall.
     calculated.vatTotalInEuro?.let { euro ->
         val conversion = checkNotNull(invoice.conversion)
         shows("Umsatzsteuer in Euro", spelling.amount(euro))
@@ -448,8 +350,7 @@ private fun Sheet.verify(
         shows("Monat des Kurses", spelling.month(conversion.month))
     }
 
-    // §14 Abs. 5 Satz 2: Die Schlussrechnung setzt Entgelt und Steuer der
-    // vereinnahmten Abschläge ab.
+    // §14 Abs. 5 Satz 2 UStG
     calculated.prepayments.forEach { abschlag ->
         val number = abschlag.prepayment.invoiceNumber
         shows("Abschlag $number", number)
@@ -462,9 +363,8 @@ private fun Sheet.verify(
     config.registerNumber?.let { shows("Handelsregisternummer", it) }
     config.managingDirector?.let { shows("Geschäftsführer", it) }
 
-    // Der Pflichtsatz der Art, mit eingesetzten Werten.
-    // Die Werte holt der Test selbst und nicht über den InvoiceVariableResolver:
-    // Holte der das falsche Datum, sähe der Test sonst dasselbe falsche Datum.
+    // Die Werte nicht über den InvoiceVariableResolver holen: Ein falsches
+    // Datum von ihm sähe der Test sonst als richtig an.
     val mandatoryNote =
         invoice.type.mandatoryNote(invoice.language)?.let { template ->
             val values =
@@ -479,9 +379,6 @@ private fun Sheet.verify(
         }
     mandatoryNote?.let { shows("Pflichtsatz", *it.toTypedArray()) }
 
-    // Zahlungsziel und Bankverbindung genau dann, wenn das Dokument Zahlung
-    // fordert. Die Abwesenheit zeigt sich an der Beschriftung: Ein Design, das
-    // sie ohne Wert stehen ließe, fiele hier auf.
     val dueDate = calculated.dueDate
     val bankHeading = words.bankHeading
     if (dueDate != null) {
@@ -494,20 +391,16 @@ private fun Sheet.verify(
         bankHeading?.let { lacks("Überschrift der Bankverbindung", it) }
     }
 
-    // §14 Abs. 4 Satz 1 Nr. 7: das im Voraus vereinbarte Skonto, je Stufe mit
-    // Satz und Frist. Die Frist rechnet der Test selbst, aus demselben Grund
-    // wie die Werte des Pflichtsatzes.
+    // §14 Abs. 4 Satz 1 Nr. 7 UStG; die Frist rechnet der Test selbst, wie
+    // die Werte des Pflichtsatzes.
     val skonto = invoice.skonto.map { stufe -> spelling.rate(stufe.rate) to spelling.date(invoice.issueDate.plusDays(stufe.days.toLong())) }
     skonto.forEach { (rate, term) ->
         shows("Skontosatz", *rate)
         shows("Skontofrist", *term)
     }
 
-    // Decken die Abschläge den Gesamtbetrag genau, steht statt eines
-    // Restbetrags von null ein Satz da, und das Dokument fordert kein Geld.
-    // Das prüft der Test hier an den Beträgen und nicht erst an `dueDate`:
-    // Setzte das Programm ein Zahlungsziel, obwohl nichts offen ist, sähe der
-    // Zweig oben es als Forderung.
+    // An den Beträgen und nicht an `dueDate`: Ein Zahlungsziel, obwohl nichts
+    // offen ist, sähe der Zweig oben als Forderung an.
     val settled = calculated.prepayments.isNotEmpty() && calculated.remainingAmount.isZero()
     val settledNote = settledNote(invoice.language)
     if (settled) {
@@ -518,13 +411,8 @@ private fun Sheet.verify(
         lacks("Satz zum ausgeglichenen Restbetrag", settledNote)
     }
 
-    // Die Folgeseiten (ADR-0020): Jede trägt Rechnungsnummer, Datum und
-    // Seitenzahl, damit eine lose Seite zu ihrer Rechnung findet, und den Fuß
-    // des Briefbogens mit Anschrift, Register, USt-IdNr. und Bankverbindung.
-    // Vom Register prüft das Netz nur die Nummer: Das Registergericht heißt
-    // wie ein Ort und stünde meist schon mit der Anschrift da. Jede Seite, auf
-    // die eine folgt, sagt das am Ende. Eine Rechnung mit einer Seite trägt
-    // nichts davon – „Seite 1 von 1“ sagte nichts.
+    // Die Folgeseiten (ADR-0020). Vom Register nur die Nummer: Das Gericht
+    // heißt wie ein Ort und stünde meist schon mit der Anschrift da.
     if (pages == 1) {
         lacks("Seitenzahl", words.pageNumber(1, 1))
         lacks("Fortsetzungshinweis", words.continuationNote)
@@ -548,9 +436,7 @@ private fun Sheet.verify(
             showsOnPage(page, "Rechnungsdatum", *spelling.date(invoice.issueDate))
         }
 
-        // Jede Seite mit Positionen trägt den Spaltenkopf, und die Summen
-        // stehen bei der letzten Position: Summen ohne das, was sie summieren,
-        // waren der Befund aus #318.
+        // #318
         invoice.items
             .mapNotNull { pageWith(it.name) }
             .distinct()
@@ -559,8 +445,6 @@ private fun Sheet.verify(
             showsOnPage(it, "Gesamtbetrag bei der letzten Position", spelling.amount(calculated.grossTotal))
         }
 
-        // Schlusssatz, Grußformel und Name brechen nicht auseinander: Der Satz
-        // steht ganz auf einer Seite, und Gruß und Name stehen auf derselben.
         val closingLine = invoice.note ?: config.closingLine(invoice.language)
         val page = pageWith(closingLine)
         withClue("Schlusssatz steht auf keiner Seite vollständig: $closingLine") { (page != null) shouldBe true }
@@ -574,9 +458,6 @@ private fun Sheet.verify(
             showsOnPage(page, "Zahlungsfrist beim Schlusssatz", words.dueDateLabel)
         }
 
-        // Kein Hinweis auf eine Steuerbefreiung bricht über zwei Seiten: Der
-        // Grund steht ganz auf einer Seite, und das Entgelt, mit dem der Satz
-        // beginnt, auf derselben.
         calculated.vatGroups.forEach { group ->
             val reason = group.exemptionReason ?: return@forEach
             val reasonPage = pageWith(reason)
@@ -584,11 +465,6 @@ private fun Sheet.verify(
             if (reasonPage != null) showsOnPage(reasonPage, "Entgelt beim Befreiungsgrund", spelling.amount(group.base))
         }
 
-        // Ebenso wenig die übrigen fachlichen Sätze: Pflichtsatz und Satz zum
-        // ausgeglichenen Restbetrag stehen ganz auf einer Seite, das Skonto
-        // mit allen Stufen auf einer, das Zahlungsziel auf der Seite seiner
-        // Beschriftung – in helsinki ist das die Kopfzeile, in prag der Anfang
-        // des Satzes.
         mandatoryNote?.let { spellings ->
             withClue("Pflichtsatz steht auf keiner Seite vollständig: ${spellings.first()}") {
                 spellings.any { pageWith(it) != null } shouldBe true
@@ -621,13 +497,8 @@ private fun Sheet.verify(
     }
 }
 
-/**
- * Der Satz, der bei ausgeglichenem Restbetrag statt einer Zahl dasteht, in
- * jeder Sprache. Abgeschrieben und nicht aus `DeductionBlocks` gelesen: Ändert
- * sich der Wortlaut, wird das Netz rot, und das ist eine Frage wie bei den
- * Vergleichsdateien. Er ist ein Satz des Programms und keiner eines Designs,
- * deshalb steht er hier und nicht in [Words].
- */
+// Abgeschrieben, nicht aus `DeductionBlocks` gelesen: Wird das Netz hier rot,
+// ist das eine Frage wie bei den Vergleichsdateien.
 private fun settledNote(language: Language): String =
     when (language) {
         Language.GERMAN -> {
@@ -638,13 +509,8 @@ private fun settledNote(language: Language): String =
         }
     }
 
-/**
- * Der Grund, den eine Kategorie ohne eigenen auf das Blatt bringt, in jeder
- * Sprache (#427). Abgeschrieben und nicht aus `TaxCategory` gelesen: verify
- * prüft den Grund der gerechneten Gruppe und sähe dort einen falschen
- * Wortlaut als richtig an. Ändert er sich, wird das Netz rot, und das ist
- * eine Frage wie bei den Vergleichsdateien.
- */
+// Abgeschrieben, nicht aus `TaxCategory` gelesen, sonst sähe verify einen
+// falschen Wortlaut als richtig an (#427).
 fun defaultReasonOnSheet(
     category: TaxCategory,
     language: Language,
@@ -672,29 +538,16 @@ fun defaultReasonOnSheet(
     }
 }
 
-// --- Schreibweisen ----------------------------------------------------------
-// Bewusst unabhängig von DateFormat, siehe oben. Jede Funktion liefert alle
-// Schreibweisen, die ein Design in der Sprache der Rechnung wählen darf. Ohne
-// `else` über die Sprache: Eine neue sagt hier, wie sie schreibt.
-
 /**
- * Die Schreibweisen einer Sprache, wie das Blatt sie tragen muss.
+ * Jede Schreibweise, die ein Design wählen darf, unabhängig von `DateFormat`.
  *
- * Eine negative Zahl trägt das Minuszeichen U+2212, in jeder Sprache (#320).
- * Hier eigens gesetzt und nicht aus DateFormat übernommen: Es ist die
- * Erwartung an das Blatt, und das JDK brächte den Bindestrich mit.
- *
- * Beträge ohne Währungszeichen, weil ein Design das Zeichen in den
- * Spaltenkopf stellen darf. Im Englischen steht es aber zwischen Minus und
- * Zahl, `−€200.00`; ohne Zeichen stünde `−200.00` nirgends auf dem Blatt. Ein
- * negativer Betrag nennt es dort deshalb mit, das der [currency] (#409).
+ * Das Minuszeichen ist U+2212, nicht der Bindestrich des JDK (#320). Beträge
+ * ohne Währungszeichen, außer negativ im Englischen: `−€200.00` (#409).
  */
 private class Spelling(
     private val language: Language,
     private val currency: Currency,
 ) {
-    // Abgeschrieben und nicht aus der Sprachdatei gelesen, aus demselben
-    // Grund wie die Wörter der Designs.
     private val symbol =
         when (currency) {
             Currency.EUR -> "€"
@@ -784,10 +637,7 @@ private class Spelling(
             }
         }
 
-    /**
-     * Ein Zeitraum auf den Tag genau oder – wo er ganze Kalendermonate füllt –
-     * in Monaten (§31 Abs. 4 UStDV, UStAE 14.8 Abs. 1 und 4).
-     */
+    /** Ganze Kalendermonate auch als Monate (§31 Abs. 4 UStDV, UStAE 14.8 Abs. 1 und 4). */
     fun zeitraum(
         start: LocalDate,
         end: LocalDate,
@@ -813,7 +663,6 @@ private class Spelling(
     }
 }
 
-/** Ein Wortlaut als Klartext, wie ihn pdftotext liest, mit einer Schreibweise des Datums. */
 private fun <V> TextTemplate<V>.plainText(
     resolver: VariableResolver<V>,
     dateFormat: DateTimeFormatter,

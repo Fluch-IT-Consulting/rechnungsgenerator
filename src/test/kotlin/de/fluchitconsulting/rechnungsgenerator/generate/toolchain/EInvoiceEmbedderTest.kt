@@ -18,16 +18,12 @@ import kotlin.io.path.createTempDirectory
 import kotlin.io.path.readBytes
 
 /**
- * Was der Embedder aus einem PDF/A-1b macht – ohne LuaLaTeX.
+ * Drei Zusagen hängen an Eigenheiten, die Mustang nirgends verspricht
+ * (ADR-0023): dass das Dokument nach `setXML` fertig vorbereitet ist, dass ein
+ * weiterer Aufruf das XML ein zweites Mal anhinge, und welche Metadaten Mustang
+ * von sich aus ersetzt.
  *
- * Drei der Zusagen hängen an Eigenheiten von Mustang, die es nirgends
- * verspricht (ADR-0023): dass das Dokument nach `setXML` fertig vorbereitet
- * ist, dass ein weiterer Aufruf das XML ein zweites Mal anhinge, und welche
- * Metadaten es von sich aus ersetzt. Ein Versionssprung von Mustang wird
- * zuerst hier gelesen.
- *
- * `rechnung-a1b.pdf` ist die Beispielrechnung, wie `erzeuge` sie ohne
- * `--zugferd` setzt, `rechnung-erwartet.xml` ihr XML.
+ * `rechnung-a1b.pdf` ist die Beispielrechnung, wie `erzeuge` sie ohne `--zugferd` setzt.
  */
 class EInvoiceEmbedderTest : FunSpec({
 
@@ -43,9 +39,8 @@ class EInvoiceEmbedderTest : FunSpec({
         withClue(result.describe()) { result.valid shouldBe true }
     }
 
-    // Mit einer Pause dazwischen: Datumsangaben im PDF sind auf die Sekunde
-    // genau, und zwei Läufe in derselben Sekunde ergäben dieselben Bytes auch
-    // dann, wenn Mustang die Uhr einsetzte.
+    // Die Pause, weil ein Datum im PDF auf die Sekunde genau ist: Ohne sie fiele
+    // eine eingesetzte Uhrzeit nicht auf.
     test("dieselben Quellen ergeben dieselben Bytes, auch eine Sekunde später") {
         val first = embedded("erster-lauf.pdf").readBytes()
         Thread.sleep(1_100)
@@ -109,13 +104,8 @@ class EInvoiceEmbedderTest : FunSpec({
         error.message!! shouldContain "kein-pdf.pdf"
     }
 
-    // mergeXmp sucht pdfaid:part als Element, so wie pdfx es schreibt, und
-    // prüft das nicht selbst. Dass es trotzdem nie ins Leere greift, liegt an
-    // einer Eigenheit von Mustang: load() prüft den Eingang vorher auf
-    // PDF/A-1 und lehnt ein XMP, das anders gebaut ist als das von pdfx,
-    // schon dort ab – mit einer IOException, die embed() übersetzt (#386).
-    // Fällt die Vorprüfung weg, wird dieser Test rot, bevor es ein
-    // Stacktrace wird.
+    // mergeXmp prüft nicht selbst, ob pdfaid:part ein Element ist, sondern
+    // verlässt sich auf diese Vorprüfung von Mustang (#386).
     test("ein XMP, das anders gebaut ist als das von pdfx, lehnt schon Mustangs Vorprüfung ab") {
         val asAttributes = dir.resolve("pdfaid-als-attribut.pdf")
         Loader.loadPDF(source.toFile()).use { document ->

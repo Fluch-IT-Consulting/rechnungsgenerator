@@ -11,11 +11,7 @@ import kotlin.io.path.createTempDirectory
 import kotlin.io.path.listDirectoryEntries
 import kotlin.io.path.readText
 
-/**
- * Was der Adapter des Betriebs selbst entscheidet, ohne dass ein Werkzeug
- * läuft. Deshalb ohne den Tag `Toolchain`: Das XML prüft Mustang in derselben
- * JVM, und zwar vor LuaLaTeX.
- */
+/** Ohne Tag `Toolchain`: Mustang prüft das XML in derselben JVM, vor LuaLaTeX. */
 class LuaLatexTypesetterTest : FunSpec({
 
     test("ein ungültiges XML bricht vor dem Satz ab, als Fehler des Generators und nicht der Rechnung") {
@@ -27,8 +23,7 @@ class LuaLatexTypesetterTest : FunSpec({
         val workDir = createTempDirectory("rechnungsgenerator-test")
         val sources = PdfSources(tex = "", xmpMetadata = "", creationDate = LocalDate.of(2026, 8, 14), einvoice = xml.toByteArray())
 
-        // Der eigene Typ und nicht bloß ToolchainException: An ihm erkennt
-        // erzeuge, dass kein Logo schuld sein kann (#386).
+        // Der eigene Typ: An ihm erkennt erzeuge, dass kein Logo schuld sein kann (#386).
         val error =
             shouldThrow<InvalidEInvoiceException> {
                 LuaLatexTypesetter(BuiltInPdfAValidator).typeset(workDir, "rechnung", sources)

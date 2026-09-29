@@ -11,25 +11,11 @@ import java.util.concurrent.TimeUnit
 import javax.imageio.ImageIO
 import kotlin.io.path.readText
 
-/**
- * Läufe mit den echten Werkzeugen, geteilt von `ToolchainIntegrationTest` und
- * dem Pflichtangaben-Netz ([PflichtangabenRun]). Alles landet in [workDir].
- */
 class ToolchainRun(
     private val workDir: Path,
 ) {
-    /**
-     * Erzeugt eine Rechnung mit den echten Werkzeugen – über dasselbe Kommando,
-     * das auch ein Mensch aufruft.
-     *
-     * Nicht über die Einzelteile: Rechnen, Setzen und Prüfen stehen genau
-     * einmal zusammen, nämlich im Kommando. Baute ein Test sie noch einmal
-     * nach, gäbe es die Abfolge an zwei Stellen, und die zweite wäre die, die
-     * niemand pflegt.
-     *
-     * Die Ausgaben werden eingesammelt, damit die Meldung von veraPDF im
-     * Testbericht landet – sonst stünde dort nur "expected true but was false".
-     */
+    // Über das Kommando, nicht die Einzelteile: Nur dort steht die Abfolge von
+    // Rechnen, Setzen und Prüfen. Die Ausgabe tragen die Tests in ihre Meldung.
     fun generate(
         example: String,
         targetName: String = example,
@@ -52,13 +38,8 @@ class ToolchainRun(
         return target to output
     }
 
-    /**
-     * Der Text eines PDF, wie `pdftotext` ihn liest – für die Frage, ob etwas
-     * wirklich so gesetzt wurde, wie es in der Eingabe steht.
-     */
     fun textOf(pdf: Path): String {
-        // Die Ausgabe in eine Datei, nicht in einen Stream – aus demselben
-        // Grund wie bei den Werkzeugen des Programms (siehe ProcessRunner).
+        // In eine Datei, nicht in einen Stream, wie im ProcessRunner.
         val text = workDir.resolve("${pdf.fileName}.txt")
         val process =
             ProcessBuilder("pdftotext", "-enc", "UTF-8", pdf.toString(), text.toString())
@@ -70,10 +51,6 @@ class ToolchainRun(
         return text.readText()
     }
 
-    /**
-     * Die erste Seite eines PDF als Bild, wie `pdftoppm` sie rastert – für die
-     * Frage, wie groß etwas gesetzt wurde, die kein Text beantwortet.
-     */
     fun imageOf(
         pdf: Path,
         dpi: Int = 100,
@@ -89,11 +66,6 @@ class ToolchainRun(
         return ImageIO.read(workDir.resolve("${prefix.fileName}.png").toFile())
     }
 
-    /**
-     * Die Wörter der ersten Seite mit ihrer Lage, wie `pdftotext -bbox` sie
-     * liest – für die Frage, wie weit zwei Wörter auseinanderstehen, die weder
-     * der Text noch ein Bild ohne Zuordnung beantwortet.
-     */
     fun wordsOf(pdf: Path): PlacedPage {
         val html = workDir.resolve("${pdf.fileName}.html")
         val process =
@@ -117,7 +89,7 @@ class ToolchainRun(
     }
 }
 
-/** Eine Seite als Wörter in Lesereihenfolge; [height] und alle Lagen in pt, von oben gemessen. */
+/** Alle Lagen in pt, von oben gemessen. */
 class PlacedPage(
     val height: Double,
     val words: List<PlacedWord>,

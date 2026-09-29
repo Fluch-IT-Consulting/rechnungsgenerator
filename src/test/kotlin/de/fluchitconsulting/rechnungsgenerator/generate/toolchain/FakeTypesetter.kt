@@ -7,30 +7,18 @@ import java.io.IOException
 import java.nio.file.Path
 import kotlin.io.path.writeText
 
-/**
- * Der Adapter fürs Testen: liefert ein vorbereitetes PDF und ein vorbereitetes
- * Prüfergebnis, ohne LuaLaTeX und veraPDF zu starten.
- *
- * Er merkt sich, womit er gerufen wurde – das Arbeitsverzeichnis lässt sich
- * sonst nicht prüfen, weil das Kommando es selbst anlegt und niemandem nennt.
- */
+/** Merkt sich seinen Aufruf: Das Arbeitsverzeichnis legt das Kommando selbst an und nennt es niemandem. */
 class FakeTypesetter(
     private val valid: Boolean = true,
-    // Scheitert der Satz, wirft er, was LatexCompiler würfe.
     private val failure: String? = null,
-    // Bricht den Vertrag der Naht, der für alles Scheitern eine
-    // ToolchainException zusagt – für den Test, dass das Kommando eine
-    // IOException aus dem Satz nicht als Schreibfehler ausgibt (#300).
+    // Bricht den Vertrag der Naht absichtlich (#300).
     private val ioFailure: String? = null,
-    // Lehnt Mustang das XML ab, wirft er, was LuaLatexTypesetter würfe.
     private val einvoiceFailure: String? = null,
 ) : Typesetter {
     var workingDir: Path? = null
     var jobName: String? = null
 
-    // Die Quellen als Ganzes (#202): Einzeln gemerkt fehlte leicht einer –
-    // und dass das Kommando ihn weiterreicht, prüfte dann allein der Lauf mit
-    // den echten Werkzeugen.
+    // Als Ganzes, damit keine Quelle fehlt (#202).
     var sources: PdfSources? = null
 
     override fun checkAvailable() = Unit
@@ -46,9 +34,7 @@ class FakeTypesetter(
         if (einvoiceFailure != null) throw InvalidEInvoiceException(einvoiceFailure)
         if (failure != null) throw ToolchainException(failure)
         if (ioFailure != null) throw IOException(ioFailure)
-        // Mit E-Rechnung unter dem Namen, den LuaLatexTypesetter dem
-        // eingebetteten PDF gibt: Daneben läge dort das PDF/A-1b, und eine
-        // Meldung muss sagen, welches der beiden geprüft wurde (#390).
+        // Der Name, den LuaLatexTypesetter dem eingebetteten PDF gibt (#390).
         val name = if (sources.einvoice == null) "$jobName.pdf" else "$jobName-zugferd.pdf"
         val pdf = workingDir.resolve(name).also { it.writeText("%PDF-1.7 kein echtes PDF") }
         val violations =
