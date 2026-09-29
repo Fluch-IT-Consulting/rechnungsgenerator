@@ -6,15 +6,9 @@ import io.kotest.core.test.Enabled
 import io.kotest.matchers.collections.shouldBeEmpty
 import java.io.File
 
-/** Die Ressource, in die Gradle die Namen der ausgelieferten JARs schreibt. */
 private const val SHIPPED_JARS = "/shipped-jars.txt"
 
-/**
- * Nur Gradle erzeugt [SHIPPED_JARS] – es kennt als einziges den
- * runtimeClasspath. Wer die Tests im Editor startet, hat die Datei nicht; dann
- * überspringt sich der Test, statt grün oder rot zu melden. Übersprungen und
- * nicht bestanden, wie beim Altersnachweis der EU-Liste.
- */
+// Übersprungen, nicht bestanden: Nur Gradle erzeugt die Datei, der Editor nicht.
 private val withListFromBuild =
     if (ThirdPartyNoticesTest::class.java.getResource(SHIPPED_JARS) != null) {
         Enabled.enabled
@@ -22,24 +16,12 @@ private val withListFromBuild =
         Enabled.disabled("Die Liste der ausgelieferten JARs erzeugt nur Gradle (./gradlew test).")
     }
 
-/**
- * THIRD-PARTY.md nennt die Lizenzen der mitgelieferten Bibliotheken. Sie ist von
- * Hand geschrieben, weil ein Generator die POMs liest und genau dort bei den
- * veraPDF-Paketen nichts steht (#268).
- *
- * Von Hand heißt aber nicht ungeprüft: Dieser Test hält die Liste gegen das,
- * was wirklich ausgeliefert wird. Er wird rot, sobald eine Abhängigkeit
- * dazukommt, verschwindet oder ihre Fassung wechselt – also genau dann, wenn
- * die Vermerke nachzusehen sind. Ein Dependabot-PR, der eine Fassung anhebt,
- * fällt damit hier auf und nicht erst beim nächsten Release.
- */
+/** THIRD-PARTY.md ist von Hand geschrieben (#268); wird der Test rot, sind die Vermerke nachzusehen. */
 class ThirdPartyNoticesTest : FunSpec({
 
     test("THIRD-PARTY.md nennt genau die ausgelieferten Bibliotheken")
         .config(enabledOrReasonIf = { withListFromBuild }) {
-            // Das eigene JAR gehört in keine Liste fremder Lizenzen – und es
-            // steht auf beiden Seiten: ausgeliefert wird es, und die Einleitung
-            // der Datei nennt es. Deshalb dieselbe Regel für beide Mengen.
+            // Das eigene JAR steht auf beiden Seiten, deshalb für beide Mengen.
             fun Sequence<String>.withoutOwn() = filterNot { it.startsWith("rechnungsgenerator-") }.toSet()
 
             val shipped =

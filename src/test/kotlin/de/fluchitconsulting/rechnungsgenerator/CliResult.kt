@@ -8,14 +8,9 @@ import java.io.ByteArrayOutputStream
 import java.io.PrintStream
 import kotlin.text.Charsets.UTF_8
 
-/** Was ein Aufruf des Programms hinterlässt: den Exitcode und die beiden Kanäle. */
 data class CliResult(val exitCode: Int, val out: String, val err: String)
 
-/**
- * Ruft das Programm über [execute] auf – derselbe Weg wie `main()`, nur ohne
- * einen Prozess zu starten. Statt LuaLaTeX und veraPDF steht der
- * [FakeTypesetter] dahinter, auf Wunsch einer mit anderem Ergebnis.
- */
+/** Derselbe Weg wie `main()`, aber mit dem [FakeTypesetter] statt LuaLaTeX. */
 fun runCli(
     vararg args: String,
     typesetter: Typesetter = FakeTypesetter(),

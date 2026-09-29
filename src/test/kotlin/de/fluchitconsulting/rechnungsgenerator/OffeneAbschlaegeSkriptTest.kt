@@ -16,15 +16,8 @@ import kotlin.io.path.readText
 import kotlin.io.path.writeText
 
 /**
- * Prüft `scripts/offene-abschlaege.py` aus dem `rechnung`-Skill, indem es
- * wirklich läuft – wie `NaechsteNummerSkriptTest` das Skript daneben (#61).
- *
- * Das Skript trägt seit #66 eine Regel, die sonst niemand tragen kann: Ob eine
- * Rechnung storniert wurde, steht in einer *anderen* Datei, und der Generator
- * sieht beim Erzeugen nur eine (ADR-0001). Beide Richtungen kosten Geld –
- * ein stornierter Abschlag, der abgesetzt wird, senkt den Rechnungsbetrag zu
- * Unrecht; ein Abschlag, der wegen einer stornierten Schlussrechnung als
- * abgesetzt gilt, lässt den Kunden zweimal zahlen.
+ * #61, #66. Nur das Skript sieht, ob eine Rechnung storniert wurde: Das steht
+ * in einer anderen Datei, und der Generator liest nur eine (ADR-0001).
  */
 class OffeneAbschlaegeSkriptTest : FunSpec({
 
@@ -33,10 +26,7 @@ class OffeneAbschlaegeSkriptTest : FunSpec({
 
     data class ScriptRun(val exitCode: Int, val stdout: String, val stderr: String)
 
-    // Die Zeile, die eine Rechnung in US-Dollar trägt, gelesen aus einem
-    // Beispiel, das der Generator liest (#409): Benennt er den Schlüssel um,
-    // muss das Beispiel mit, und diese Tests merken es – aus demselben Grund
-    // wie die Beispieltests ganz unten (#139).
+    // Aus einem Beispiel des Generators, damit eine Umbenennung hier ankommt (#409, #139).
     val inDollar =
         Path
             .of("src/test/resources/amerikanische-rechnung.yaml")
@@ -44,7 +34,6 @@ class OffeneAbschlaegeSkriptTest : FunSpec({
             .single { it.startsWith("waehrung:") }
             .also { check(it.endsWith("USD")) { "Das Beispiel steht nicht mehr in US-Dollar: $it" } }
 
-    // Ohne Währung die Vorgabe EUR, mit ihr die Zeile davor.
     fun currencyLine(dollar: Boolean) = if (dollar) "$inDollar\n" else ""
 
     fun prepaymentInvoice(number: String, date: String, dollar: Boolean = false) =
@@ -84,8 +73,7 @@ class OffeneAbschlaegeSkriptTest : FunSpec({
               name: $customer
             """.trimIndent()
 
-    // Der Dateiname bestimmt die Reihenfolge, in der das Skript liest – deshalb
-    // steht er in den Tests und wird nicht aus der Nummer abgeleitet.
+    // Der Dateiname bestimmt die Reihenfolge, in der das Skript liest.
     fun archive(vararg files: Pair<String, String>): Path {
         val dir = createTempDirectory("offene-abschlaege-test")
         files.forEach { (name, content) -> dir.resolve(name).writeText(content) }
@@ -120,7 +108,7 @@ class OffeneAbschlaegeSkriptTest : FunSpec({
     }
 
     test("eine stornierte Abschlagsrechnung gilt nicht als offen") {
-        // Fall 1 aus #66: Das Geld ist zurück, abzusetzen gibt es nichts mehr.
+        // Fall 1 aus #66
         val dir =
             archive(
                 "r009.yaml" to prepaymentInvoice("R26-009", "2026-06-15"),
@@ -131,13 +119,11 @@ class OffeneAbschlaegeSkriptTest : FunSpec({
 
         result.stdout shouldBe ""
         result.stderr shouldContain "R26-009 ist durch R26-010 storniert"
-        // Die Schlussmeldung nennt den Grund, den es hier wirklich gibt.
         result.stderr shouldContain "abgesetzt oder storniert"
     }
 
     test("eine stornierte Schlussrechnung gibt ihre Abschläge wieder frei") {
-        // Fall 2 aus #66. Das Storno liegt hinter seiner Schlussrechnung –
-        // deshalb entscheidet das Skript erst, wenn alle Dateien gelesen sind.
+        // Fall 2 aus #66. Das Storno liegt in der Lesereihenfolge hinter seiner Schlussrechnung.
         val dir =
             archive(
                 "r009.yaml" to prepaymentInvoice("R26-009", "2026-06-15"),
@@ -152,7 +138,6 @@ class OffeneAbschlaegeSkriptTest : FunSpec({
     }
 
     test("stand der Abschlag in zwei stornierten Schlussrechnungen, nennt der Vermerk beide") {
-        // Sonst läse man aus der Meldung eine Geschichte, die zu kurz ist.
         val dir =
             archive(
                 "r009.yaml" to prepaymentInvoice("R26-009", "2026-06-15"),
@@ -169,7 +154,6 @@ class OffeneAbschlaegeSkriptTest : FunSpec({
     }
 
     test("eine gültige Schlussrechnung genügt, damit der Abschlag abgesetzt bleibt") {
-        // Nur eine der beiden ist storniert – die andere setzt weiter ab.
         val dir =
             archive(
                 "r009.yaml" to prepaymentInvoice("R26-009", "2026-06-15"),
@@ -181,13 +165,11 @@ class OffeneAbschlaegeSkriptTest : FunSpec({
         val result = runScript(dir)
 
         result.stdout shouldBe ""
-        // Und es ist auch keine doppelte Absetzung: Die stornierte setzt nichts ab.
         result.stderr shouldNotContain "Achtung"
     }
 
     test("zwei gültige Schlussrechnungen über denselben Abschlag werden gemeldet") {
-        // #67: Der Generator lehnt dieselbe Nummer zweimal ab, aber nur
-        // innerhalb einer Datei. Hier zahlte der Kunde einmal zu wenig.
+        // #67: Der Generator sieht das nur innerhalb einer Datei.
         val dir =
             archive(
                 "r009.yaml" to prepaymentInvoice("R26-009", "2026-06-15"),
@@ -203,8 +185,6 @@ class OffeneAbschlaegeSkriptTest : FunSpec({
     }
 
     test("ein stornierter Abschlag in einer gültigen Schlussrechnung wird gemeldet") {
-        // Weder offen noch in Ordnung: Die Schlussrechnung setzt Geld ab, das
-        // der Kunde zurückbekommen hat.
         val dir =
             archive(
                 "r009.yaml" to prepaymentInvoice("R26-009", "2026-06-15"),
@@ -219,9 +199,7 @@ class OffeneAbschlaegeSkriptTest : FunSpec({
     }
 
     context("Währung (#409)") {
-        // Der Generator sieht beides nicht: Die Schlussrechnung liest ihre
-        // Abschlagsrechnungen nicht, das Storno seine Ursprungsrechnung
-        // nicht (ADR-0001).
+        // ADR-0001
 
         test("eine Schlussrechnung, die einen Abschlag anderer Währung absetzt, wird gemeldet") {
             val dir =
@@ -249,8 +227,6 @@ class OffeneAbschlaegeSkriptTest : FunSpec({
         }
 
         test("ein Storno in anderer Währung als seine Schlussrechnung wird gemeldet, einmal") {
-            // Die Schlussrechnung setzt zwei Abschläge ab; der Befund gilt
-            // ihr, nicht jedem Abschlag.
             val dir =
                 archive(
                     "r009.yaml" to prepaymentInvoice("R26-009", "2026-06-15", dollar = true),
@@ -290,12 +266,8 @@ class OffeneAbschlaegeSkriptTest : FunSpec({
         result.stderr shouldContain "Alle 1 Abschlagsrechnungen an '$customer' sind schon abgesetzt."
     }
 
-    // Die Tests darüber schreiben ihr YAML selbst, und zwar nur die Schlüssel,
-    // die das Skript liest. Benennt der Generator einen davon um, bleiben sie
-    // grün, während das Skript echte Dateien still für "keine Rechnung" hält
-    // (#139). Die beiden folgenden lesen deshalb die Beispielrechnungen, die
-    // andere Tests mit dem Generator lesen: Eine Umbenennung muss dort
-    // nachgezogen werden und kommt so auch hier an.
+    // Die Beispielrechnungen des Generators: Benennt er einen Schlüssel um, blieben
+    // die selbstgeschriebenen YAMLs darüber grün (#139).
     fun examples(vararg names: String): Path {
         val dir = createTempDirectory("offene-abschlaege-beispiele")
         names.forEach { Path.of("src/test/resources", it).copyTo(dir.resolve(it)) }
@@ -303,9 +275,7 @@ class OffeneAbschlaegeSkriptTest : FunSpec({
     }
 
     test("in den Beispielrechnungen setzt die Schlussrechnung beide Abschläge ab") {
-        // Das Storno der Beispiele hebt eine gewöhnliche Rechnung auf und darf
-        // am Ergebnis nichts ändern. Eine Umbenennung von `storniert` fiele
-        // hier deshalb nicht auf – die decken die Beispiele nicht ab.
+        // Eine Umbenennung von `storniert` fiele hier nicht auf.
         val dir =
             examples(
                 "abschlagsrechnung.yaml",
@@ -331,9 +301,7 @@ class OffeneAbschlaegeSkriptTest : FunSpec({
     }
 
     test("die Stammdaten im Ordner der Wurzel stören nicht") {
-        // Seit ADR-0015 liegen sie in einem versteckten Ordner, in den rglob
-        // hineinsteigt. Sie tragen keine `art` und fallen deshalb durch – ohne
-        // Warnung, denn lesbar sind sie ja.
+        // rglob steigt auch in den versteckten Ordner der Stammdaten (ADR-0015).
         val dir = archive("r011.yaml" to prepaymentInvoice("R26-011", "2026-07-15"))
         dir
             .resolve(Root.FOLDER)

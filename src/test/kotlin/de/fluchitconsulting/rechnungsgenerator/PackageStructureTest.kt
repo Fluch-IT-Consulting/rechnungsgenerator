@@ -6,36 +6,20 @@ import io.kotest.matchers.collections.shouldBeEmpty
 import io.kotest.matchers.shouldBe
 
 /**
- * Hält die Paketstruktur aus CLAUDE.md (#107): ein vertikales Paket je
- * Kommando, darunter der gemeinsame Kern, und jede Kante zeigt nach unten.
- *
- * Kotlin kennt keine Paketgrenze – `internal` gilt pro Modul –, deshalb steht
- * die Zeichnung hier als Tabelle: für jedes Paket die Pakete, aus denen es
- * importieren darf. Ein neues Paket muss eingetragen werden, sonst wird der
- * Test rot. Das ist gewollt: Wo es in der Zeichnung steht, ist eine
- * Entscheidung, keine Nebenwirkung.
- *
- * Konsist liest dafür die Quellen; geprüft wird aber mit Kotest, nicht mit
- * Konsists `assertArchitecture`. Das verlangt an jeder Schicht die zwei Punkte
- * für "samt Unterpaketen", und dann enthält `generate..` auch
- * `generate.render`: Ein Import von `generate.render` nach `generate` gilt als
- * schichtintern und fällt nicht auf (nachgemessen mit Konsist 0.17.3). Die
- * Tabelle vergleicht dagegen exakte Paketnamen. Und `shouldBeEmpty` nennt
- * jeden verbotenen Import samt Datei, Konsists `assertFalse` nur die Datei.
+ * #107. Nicht mit Konsists `assertArchitecture`: Dort enthielte `generate..` auch
+ * `generate.render`, und ein Import zwischen beiden fiele nicht auf
+ * (nachgemessen mit Konsist 0.17.3). Die Tabelle vergleicht exakte Paketnamen.
  */
 class PackageStructureTest : FunSpec({
 
     val root = "de.fluchitconsulting.rechnungsgenerator"
 
-    // Der Kern selbst hat keine Zeile: `core` enthält keine Datei, nur seine
-    // sechs Schichten (#310, #432) und die zwei Blätter text und serialization (#312).
+    // `core` selbst enthält keine Datei (#310, #312, #432).
     val core = "$root.core"
 
-    // Wer darf woher importieren – die Zeichnung aus #107, Zeile für Zeile.
     val allowedImports =
         mapOf(
-            // model, rules und toolchain für die Fachfehler, die execute()
-            // übersetzt (#119).
+            // Für die Fachfehler, die execute() übersetzt (#119).
             root to
                 setOf(
                     "$root.generate",
@@ -58,10 +42,7 @@ class PackageStructureTest : FunSpec({
                     "$core.calculation",
                     "$core.model",
                 ),
-            // generate.toolchain für PdfSources: Der Renderer liefert die
-            // Quellen des PDF im Eingabetyp der Werkzeuge (#202). Die Kante
-            // zeigt nach unten: generate.toolchain kennt vom Projekt nur den
-            // gemeinsamen Rand darunter.
+            // generate.toolchain für PdfSources (#202).
             "$root.generate.render" to
                 setOf(
                     "$root.generate.toolchain",
@@ -72,10 +53,7 @@ class PackageStructureTest : FunSpec({
                     "$core.values",
                     "$core.text",
                 ),
-            // Das XML der E-Rechnung liest dieselbe angenommene Rechnung wie
-            // der LaTeX-Renderer, kennt aber weder ihn noch die Werkzeuge
-            // (ADR-0023). core.text für den Pflichtsatz, den es im eigenen
-            // Format setzt (ADR-0019).
+            // ADR-0023; core.text für den Pflichtsatz (ADR-0019).
             "$root.generate.einvoice" to
                 setOf(
                     "$core.accepted",
@@ -85,43 +63,29 @@ class PackageStructureTest : FunSpec({
                     "$core.values",
                     "$core.text",
                 ),
-            // Satz und Einbetten braucht nur erzeuge. Die Prüfer und den
-            // Prozessläufer darunter braucht auch xml, deshalb liegen sie im
-            // gemeinsamen Rand (#380).
+            // #380
             "$root.generate.toolchain" to setOf("$root.toolchain"),
-            // Der gemeinsame Rand zu den fremden Werkzeugen: Er kennt nichts
-            // aus dem Projekt, und jedes Kommando darf ihn benutzen.
             "$root.toolchain" to emptySet(),
             "$root.prepayments" to setOf("$core.accepted", "$core.rules", "$core.calculation", "$core.model", "$core.values"),
-            // setup kennt aus dem Kern nur die Wurzel: den Namen ihres
-            // Ordners und die Frage, ob oberhalb schon eine liegt (#275).
+            // #275
             "$root.setup" to setOf("$core.model"),
-            // xml liest keine Rechnungsdatei und braucht deshalb nichts aus
-            // dem Kern, nur die Prüfer (#380).
+            // #380
             "$root.xml" to setOf("$root.toolchain"),
-            // Über rules, weil AcceptedInvoice.check die Regeln aufruft. Was
-            // die Regeln bauen – InvoiceKind, Deduction –, bleibt dort: Ein
-            // Typ wohnt, wo er gebaut wird, sonst zeigte rules nach oben (#304).
+            // Ein Typ wohnt, wo er gebaut wird, sonst zeigte rules nach oben (#304).
             "$core.accepted" to setOf("$core.rules", "$core.calculation", "$core.model", "$core.values", "$core.text"),
             "$core.rules" to setOf("$core.calculation", "$core.model", "$core.values"),
             "$core.calculation" to setOf("$core.model", "$core.values"),
             "$core.model" to setOf("$core.localization", "$core.values", "$core.text", "$core.serialization"),
-            // Die Tabelle der Texte je Sprachbereich: kein Wert, aber auch nicht
-            // neben text, weil sie Language kennt (#432).
+            // #432
             "$core.localization" to setOf("$core.values"),
             "$core.values" to setOf("$core.serialization"),
-            // Die Platzhalter-Texte liegen neben values und nicht darunter:
-            // Sie kennen weder Werte noch Vokabular, und gebraucht werden sie
-            // erst in model, bei den Fachkatalogen (#312).
+            // #312
             "$core.text" to emptySet(),
-            // Das Gerüst, über das jeder Werttyp seinen Serializer baut.
             "$core.serialization" to emptySet(),
         )
 
-    // Nur die Quellen unter src/main: Ein Test darf jedes Paket sehen. Und nur
-    // die dieses Checkouts – scopeFromProduction() liest alles unterhalb der
-    // Projektwurzel, auch die Worktrees in .claude/worktrees mit ihrem
-    // eigenen, womöglich alten Stand.
+    // Nur src/main dieses Checkouts: scopeFromProduction() läse auch die
+    // Worktrees unter .claude/worktrees.
     val sourceFiles =
         Konsist.scopeFromDirectory("src/main/kotlin").files.map { file ->
             SourceFile(
@@ -131,12 +95,7 @@ class PackageStructureTest : FunSpec({
             )
         }
 
-    /**
-     * Das Paket, aus dem ein Import stammt: der längste Eintrag der Tabelle,
-     * der ihm vorangeht. `substringBeforeLast('.')` reichte nicht, weil
-     * `core.rules.InvoiceKindRules.Result` einen verschachtelten Typ nennt und
-     * dann die Klasse herauskäme, nicht das Paket.
-     */
+    // Nicht `substringBeforeLast('.')`: Bei einem verschachtelten Typ käme die Klasse heraus.
     fun packageOf(importName: String): String? = allowedImports.keys.filter { importName.startsWith("$it.") }.maxByOrNull { it.length }
 
     test("die Tabelle nennt genau die Pakete, die es gibt") {
@@ -154,9 +113,7 @@ class PackageStructureTest : FunSpec({
         violations.shouldBeEmpty()
     }
 
-    // ktlint lässt diese Importe absichtlich stehen (seit 0.50.0), und der
-    // Hook feuert bei `git mv` plus `sed` gar nicht – 99 Stück blieben beim
-    // Umzug in #111 liegen.
+    // ktlint lässt diese Importe stehen, und der Hook feuert bei `git mv` nicht (#111).
     test("keine Datei importiert aus ihrem eigenen Paket") {
         val violations =
             sourceFiles.flatMap { file ->
@@ -168,5 +125,4 @@ class PackageStructureTest : FunSpec({
     }
 })
 
-/** Was der Test von einer Quelldatei wissen muss: Name, Paket, projektinterne Importe. */
 private data class SourceFile(val name: String, val packageName: String, val imports: List<String>)
