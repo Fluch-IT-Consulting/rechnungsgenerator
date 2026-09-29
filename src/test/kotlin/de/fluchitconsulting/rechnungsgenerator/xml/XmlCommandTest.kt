@@ -45,16 +45,34 @@ class XmlCommandTest : FunSpec({
     val xml = Path.of("src/test/resources/rechnung-erwartet.xml").readBytes()
     val withoutCountry = xml.decodeToString().replaceFirst("<ram:CountryID>DE</ram:CountryID>", "").toByteArray()
 
+    // Die eigenen Rechnungen tragen keine Warnung (ADR-0023). Ein leerer
+    // Lieferblock steht für eine fremde, die eine trägt: PEPPOL-EN16931-R008.
+    val withoutDelivery =
+        xml
+            .decodeToString()
+            .replace(
+                Regex("(?s)<ram:ApplicableHeaderTradeDelivery>.*?</ram:ApplicableHeaderTradeDelivery>"),
+                "<ram:ApplicableHeaderTradeDelivery/>",
+            ).toByteArray()
+
     fun einvoice(
         name: String,
         xml: ByteArray,
     ): Path = dir.resolve(name).also { EInvoiceEmbedder.embed(a1b, xml, it) }
 
-    test("aus einer E-Rechnung des Generators kommt ihr XML Byte für Byte, die Warnung als Hinweis auf stderr") {
+    test("aus einer E-Rechnung des Generators kommt ihr XML Byte für Byte, und stderr bleibt leer") {
         val result = runProgram("xml", einvoice("e-rechnung.pdf", xml).toString())
 
         withClue(result.err) { result.exitCode shouldBe 0 }
         result.out.contentEquals(xml) shouldBe true
+        result.err shouldBe ""
+    }
+
+    test("eine Warnung steht als Hinweis auf stderr, und das XML kommt trotzdem") {
+        val result = runProgram("xml", einvoice("mit-warnung.pdf", withoutDelivery).toString())
+
+        withClue(result.err) { result.exitCode shouldBe 0 }
+        result.out.contentEquals(withoutDelivery) shouldBe true
         result.err shouldContain "Hinweis: [PEPPOL-EN16931-R008]"
     }
 

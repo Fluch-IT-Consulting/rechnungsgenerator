@@ -191,9 +191,8 @@ Es trägt kein XML einer E-Rechnung, gesucht unter factur-x.xml, zugferd-invoice
 ```
 
 Eine Warnung macht das XML nicht ungültig: Sie steht als Hinweis auf stderr,
-und das XML kommt trotzdem. Die eigenen E-Rechnungen tragen eine, zum leeren
-Lieferblock (`PEPPOL-EN16931-R008`). Stammdaten braucht das Kommando nicht,
-LuaLaTeX auch nicht.
+und das XML kommt trotzdem. Stammdaten braucht das Kommando nicht, LuaLaTeX
+auch nicht.
 
 ### Abschläge für die Schlussrechnung vorbereiten
 

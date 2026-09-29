@@ -64,13 +64,6 @@ internal class XmlElements(
         writer.writeEndElement()
     }
 
-    /** Ein Element ohne Inhalt, geschrieben als `<name/>`. */
-    fun empty(name: String) {
-        indent()
-        val (prefix, localName) = split(name)
-        writer.writeEmptyElement(prefix, localName, namespaceOf(prefix))
-    }
-
     private fun start(
         name: String,
         attributes: Array<out Pair<String, String>>,

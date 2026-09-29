@@ -68,7 +68,7 @@ class CiiWriterTest : FunSpec({
             example(name).xml() shouldBe resource("$name-erwartet.xml")
         }
 
-        test("das XML aus $name.yaml ist gültig, mit keiner Warnung außer PEPPOL-EN16931-R008") {
+        test("das XML aus $name.yaml ist gültig, ohne Warnung") {
             example(name).xml().shouldBeValidExtended()
         }
     }
@@ -99,7 +99,7 @@ class CiiWriterTest : FunSpec({
     // Warnung an. Die englische Rechnung in Pfund steht schon oben, mit
     // Vergleichsdatei.
     listOf("amerikanische-rechnung", "dollar-auf-deutsch").forEach { name ->
-        test("das XML aus $name.yaml ist gültig, mit keiner Warnung außer PEPPOL-EN16931-R008") {
+        test("das XML aus $name.yaml ist gültig, ohne Warnung") {
             example(name).xml().shouldBeValidExtended()
         }
     }
@@ -112,7 +112,7 @@ class CiiWriterTest : FunSpec({
             example("umsatzsteuer-in-dollar").xml() shouldBe resource("umsatzsteuer-in-dollar-erwartet.xml")
         }
 
-        test("das XML aus umsatzsteuer-in-dollar.yaml ist gültig, mit keiner Warnung außer PEPPOL-EN16931-R008") {
+        test("das XML aus umsatzsteuer-in-dollar.yaml ist gültig, ohne Warnung") {
             example("umsatzsteuer-in-dollar").xml().shouldBeValidExtended()
         }
 
@@ -292,8 +292,10 @@ class CiiWriterTest : FunSpec({
             }
         }
 
-        // Das Lieferland füllt den Lieferblock, und damit entfällt auch die
-        // Warnung zum leeren Element.
+        // Das Lieferland steht auf jeder Rechnung (BR-FX-DE-04), im Inland
+        // hält es rechnung-erwartet.xml fest. Bei K verlangt es zusätzlich
+        // BR-IC-12, und dort ist das Land des Kunden ein anderes als das des
+        // Verkäufers.
         test("K nennt das Land des Kunden als Lieferland") {
             val xml = invoiceIn(TaxCategory.INTRA_COMMUNITY, "AT").xml()
 
@@ -635,10 +637,8 @@ private fun invoiceIn(
 private fun String.occurrencesOf(text: String): Int = split(text).size - 1
 
 /**
- * Gültig heißt für Mustang auch "gültig mit Warnungen". Erlaubt ist nur die
- * zum leeren `ApplicableHeaderTradeDelivery` (siehe `CiiWriter`), und die
- * fehlt, sobald der Block ein Lieferland trägt. Jede andere wäre ein Befund,
- * der sonst unbemerkt durchginge.
+ * Gültig heißt für Mustang auch "gültig mit Warnungen". Erlaubt ist keine:
+ * Jede wäre ein Befund, der sonst unbemerkt durchginge.
  *
  * Gezählt wird jede Warnung und nicht nur die mit Kennung: Mustangs eigene
  * Rechenprüfung meldet eine abweichende Summe als Warnung ohne `[ID …]`, und
@@ -653,7 +653,7 @@ private fun String.shouldBeValidExtended() {
 
     withClue(report) {
         validator.wasCompletelyValid() shouldBe true
-        warnings(report).filterNot { "[ID PEPPOL-EN16931-R008]" in it }.shouldBeEmpty()
+        warnings(report).shouldBeEmpty()
     }
     schematronReports(this).shouldBeEmpty()
 }

@@ -72,9 +72,9 @@ class XmlCommand(
             throw CliktError("$pdf ist keine gültige E-Rechnung nach ZUGFeRD.\n" + reasons.joinToString("\n"))
         }
         val (attachment, validation) = checked
-        // Eine Warnung macht das XML nicht ungültig; bei den eigenen
-        // Rechnungen steht etwa PEPPOL-EN16931-R008 zum leeren
-        // ApplicableHeaderTradeDelivery (ADR-0023).
+        // Eine Warnung macht das XML nicht ungültig. Die eigenen Rechnungen
+        // tragen keine, eine fremde kann eine tragen, etwa
+        // PEPPOL-EN16931-R008 zum leeren ApplicableHeaderTradeDelivery.
         validation.warnings.forEach { echo("Hinweis: $it", err = true) }
         standardOutput.write(attachment.xml)
         standardOutput.flush()

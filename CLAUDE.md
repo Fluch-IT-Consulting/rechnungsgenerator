@@ -619,12 +619,14 @@ PDF/A-Prüfung über veraPDF.
   kennt `SpecifiedAdvancePayment` nicht. `<art>-erwartet.xml` ist je Art, die
   der Writer schreibt, die Vergleichsdatei, dazu `englische-rechnung-erwartet.xml`
   für die Freitexte auf Englisch – eine Frage und keine Aufgabe wie
-  die `.tex`-Dateien; daneben prüft Mustang das XML, und erlaubt ist allein
-  die Warnung `PEPPOL-EN16931-R008` zum leeren
-  `ApplicableHeaderTradeDelivery`. Leer ist es nicht bei K: Dort steht das Land
-  des Kunden als Lieferland (BR-IC-12). Auch eine Warnung ohne Kennung zählt:
-  So meldet Mustang eine Summe, die er anders nachrechnet. Satz und Basis
-  eines Rabatts rechnet er nicht nach, die hält der Test wörtlich fest.
+  die `.tex`-Dateien; daneben prüft Mustang das XML, und erlaubt ist keine
+  Warnung. Das Lieferland (BT-80) steht auf jeder Art, das Land des Kunden:
+  BR-FX-DE-04 verlangt es ohne Lieferdatum, bei K auch BR-IC-12, und ohne
+  wäre `ApplicableHeaderTradeDelivery` leer (`PEPPOL-EN16931-R008`). Mustang
+  prüft BR-FX-DE-04 nicht; es halten die Vergleichsdateien (#452). Auch eine
+  Warnung ohne Kennung zählt: So meldet Mustang eine Summe, die er anders
+  nachrechnet. Satz und Basis eines Rabatts rechnet er nicht nach, die hält
+  der Test wörtlich fest.
   Vom Schematron wertet Mustang nur `failed-assert` aus und übergeht den
   `successful-report`, mit dem es ein Element meldet, das EXTENDED an dieser
   Stelle nicht kennt – das XSD lässt es durch. Deshalb wendet der Test das

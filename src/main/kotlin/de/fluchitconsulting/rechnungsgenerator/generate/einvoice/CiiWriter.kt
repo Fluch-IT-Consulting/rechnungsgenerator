@@ -84,27 +84,27 @@ object CiiWriter {
     }
 
     /**
-     * Meist leer, weil hier nur ein Lieferdatum (BT-72) stünde, und bei einem
-     * Leistungszeitraum wäre jedes Datum erfunden. Der Zeitraum steht in der
-     * Abrechnung (BG-14). Das Schematron warnt deshalb mit
-     * PEPPOL-EN16931-R008, das Schema verlangt das Element.
+     * Das Lieferland (BT-80), auf jeder Art das Land des Kunden. BR-FX-DE-04
+     * verlangt es, wenn kein Lieferdatum (BT-72) dasteht, und bei K ohnehin
+     * BR-IC-12. Ein Lieferdatum gibt es hier nicht: Bei einem
+     * Leistungszeitraum wäre jedes Datum erfunden, der Zeitraum steht in der
+     * Abrechnung (BG-14).
      *
-     * Nur die innergemeinschaftliche Lieferung braucht ein Lieferland (BT-80,
-     * BR-IC-12). Das ist das Land des Kunden: Ein eigenes Feld für eine
-     * abweichende Lieferanschrift, etwa beim Reihengeschäft, kennt das Modell
-     * nicht, und bei einer Beratungsrechnung kommt K praktisch nicht vor.
+     * Das Land des Kunden, weil der Ort einer Dienstleistung an einen
+     * Unternehmer nach §3a Abs. 2 UStG bei ihm liegt. Eine Leistung mit
+     * anderem Ort (§3a Abs. 3) oder eine abweichende Lieferanschrift beim
+     * Reihengeschäft kennt das Modell nicht; sie kommt erst mit einem Fall.
+     * Auch auf der Abschlagsrechnung, die BR-FX-DE-04 ausnimmt: Ohne Land
+     * bliebe der Block leer, und das Schematron warnte mit
+     * PEPPOL-EN16931-R008 (ADR-0023).
      */
     private fun XmlElements.delivery(calculated: CalculatedInvoice) {
-        if (TaxCategory.INTRA_COMMUNITY in calculated.taxCategories) {
-            element("ram:ApplicableHeaderTradeDelivery") {
-                element("ram:ShipToTradeParty") {
-                    element("ram:PostalTradeAddress") {
-                        element("ram:CountryID", calculated.invoice.customer.address.countryCode.value)
-                    }
+        element("ram:ApplicableHeaderTradeDelivery") {
+            element("ram:ShipToTradeParty") {
+                element("ram:PostalTradeAddress") {
+                    element("ram:CountryID", calculated.invoice.customer.address.countryCode.value)
                 }
             }
-        } else {
-            empty("ram:ApplicableHeaderTradeDelivery")
         }
     }
 

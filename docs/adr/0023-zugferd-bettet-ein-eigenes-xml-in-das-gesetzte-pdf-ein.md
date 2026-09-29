@@ -182,9 +182,8 @@ einmal, etwa zu XRechnung, ist die Frage neu zu stellen.
 **Das Lieferland der innergemeinschaftlichen Lieferung ist das Land des
 Kunden.** BR-IC-12 verlangt es (BT-80). Ein eigenes Feld für eine abweichende
 Lieferanschrift, etwa beim Reihengeschäft, kommt erst mit einem Fall: Bei
-einer Beratungsrechnung kommt K praktisch nicht vor. Nur dann trägt
-`ApplicableHeaderTradeDelivery` etwas, und die Warnung
-`PEPPOL-EN16931-R008` entfällt.
+einer Beratungsrechnung kommt K praktisch nicht vor. Seit dem Nachtrag vom
+29.09.2026 zum Lieferland steht es auf jeder Art, nicht nur bei K.
 
 **Der Befreiungsgrund steht zweimal**: in der Aufschlüsselung und an jeder
 Position, beide Male der Grund der Gruppe. EXTENDED verlangt beide gleich
@@ -384,3 +383,26 @@ Gegentest hält fest, dass die Prüfung das `BasisAmount` von damals sieht.
 über Mustang. Für das eigene XML genügt der Test; für fremde Rechnungen bei
 `xml` bräuchte es eine eigene Auswertung, und die kommt, wenn eine den Fall
 auslöst.
+
+## Nachtrag vom 29.09.2026: Das Lieferland steht auf jeder Rechnung
+
+Seit #452 schreibt der Writer das Lieferland (BT-80) auf jeder Art, und es
+ist immer das Land des Kunden. ZUGFeRD 2.5.2 verlangt es mit BR-FX-DE-04:
+Eine deutsche Rechnung nennt das Leistungsdatum als Lieferdatum (BT-72),
+Rechnungszeitraum (BG-14) oder Zeitraum je Position (BG-26), und fehlt BT-72,
+dazu das Lieferland. Unser Zeitraum steht in BG-14; ein Lieferdatum gibt es
+nicht, weil bei einem Leistungszeitraum jedes Datum erfunden wäre.
+
+Das Land des Kunden, weil der Ort einer Dienstleistung an einen Unternehmer
+nach §3a Abs. 2 UStG beim Empfänger liegt. Eine Leistung mit anderem Ort,
+etwa nach §3a Abs. 3 UStG, kommt erst mit einem Fall, wie die abweichende
+Lieferanschrift bei K. Auch die Abschlagsrechnung trägt das Land, obwohl
+BR-FX-DE-04 sie ausnimmt: So kennt der Writer keinen Zweig nach der Art, und
+ohne Land bliebe `ApplicableHeaderTradeDelivery` leer.
+
+Damit entfällt `PEPPOL-EN16931-R008`, die Warnung zum leeren Block, und die
+Tests erlauben keine Warnung mehr. Mustang prüft BR-FX-DE-04 nicht: Die
+Regel steht in der Tabelle der hybriden Geschäftsregeln der Spezifikation,
+nicht im Schematron von EXTENDED. Dass das Land dasteht, halten deshalb die
+Vergleichsdateien je Art fest und das Verbot jeder Warnung, das einen leeren
+Block nicht mehr durchlässt.
