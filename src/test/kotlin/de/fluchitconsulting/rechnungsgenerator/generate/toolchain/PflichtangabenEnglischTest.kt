@@ -13,19 +13,13 @@ import java.nio.file.Path
 import kotlin.io.path.readText
 import kotlin.io.path.writeText
 
-/**
- * Das Pflichtangaben-Netz ([PflichtangabenRun]) an jedem Beispiel einer
- * Rechnungsart und jeder Steuerkategorie mit Vorgabegrund auf Englisch, in
- * beiden Varianten und jedem Design (ADR-0025).
- */
+/** ADR-0025 */
 class PflichtangabenEnglischTest : FunSpec({
     tags(Toolchain)
 
     val net = PflichtangabenRun()
     val designs = net.designs
 
-    // Setzt die Beispieldatei [file] in [language], mit vorangestellter
-    // Sprache, in jedem Design – samt dem XML der E-Rechnung.
     fun typesetIn(
         language: Language,
         file: String,
@@ -47,10 +41,7 @@ class PflichtangabenEnglischTest : FunSpec({
         }
     }
 
-    // Jedes Beispiel auf Englisch (#377, #406), in beiden Varianten (#407):
-    // Es entsteht ein PDF, samt dem XML der E-Rechnung. Die Freitexte der
-    // Dateien bleiben deutsch; geprüft ist, dass jeder Satz aus Kotlin einen
-    // englischen Wortlaut hat.
+    // #377, #406, #407. Die Freitexte der Dateien bleiben deutsch.
     for (language in listOf(Language.BRITISH_ENGLISH, Language.AMERICAN_ENGLISH)) {
         for ((_, file) in exampleInvoices) {
             test("$file auf ${language.tag}: gültiges PDF/A-1b mit allen Pflichtangaben") {
@@ -58,9 +49,7 @@ class PflichtangabenEnglischTest : FunSpec({
             }
         }
 
-        // Ebenso jede Kategorie, die einen Grund mitbringt (#406, #427), hier
-        // mit dem Grund wörtlich wie im PflichtangabenArtenTest. Kein
-        // deutsches Wort des Programms steht auf dem Blatt.
+        // #406, #427
         for ((category, file) in taxCategoryExamples) {
             test("$file auf ${language.tag}: gültiges PDF/A-1b mit dem Grund der Kategorie ${category.code}") {
                 typesetIn(language, file).forEach { (calculated, sheet) ->
