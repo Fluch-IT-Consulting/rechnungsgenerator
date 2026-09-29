@@ -5,21 +5,11 @@ import kotlinx.serialization.KSerializer
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.SerializationException
 
-/** Wird geworfen, wenn eine Farbe nicht aus sechs Hexadezimalziffern besteht. */
 class InvalidRgbColorException(message: String) : IllegalArgumentException(message)
 
 /**
- * Eine Farbe in RGB, geschrieben als sechs Hexadezimalziffern: `31AE34`.
- *
- * Ohne `#` davor, obwohl man Farben so aus Webseiten kennt: In YAML beginnt
- * mit einem `#` nach einem Leerzeichen ein Kommentar, und `farbe: #31AE34`
- * ist ein Schlüssel ohne Wert. Wer das `#` in Anführungszeichen schreibt,
- * bekommt deshalb eine Meldung statt einer stillen Annahme – sonst wäre die
- * Schreibweise mit Anführungszeichen richtig und dieselbe ohne falsch, und
- * niemand sähe den Unterschied.
- *
- * Normalisiert auf Großbuchstaben, damit `31ae34` und `31AE34` derselbe Wert
- * sind. Geprüft wird nur die Form; jede Farbe aus sechs Ziffern ist eine.
+ * Sechs Hexadezimalziffern ohne `#`: In YAML beginnt mit `#` ein Kommentar. Deshalb meldet sich auch ein `#` in
+ * Anführungszeichen, sonst wäre dieselbe Schreibweise mal richtig und mal still falsch.
  */
 @Serializable(with = RgbColorSerializer::class)
 class RgbColor(raw: String) {

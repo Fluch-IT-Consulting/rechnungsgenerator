@@ -6,28 +6,14 @@ import kotlinx.serialization.Serializable
 import kotlinx.serialization.SerializationException
 import java.math.BigInteger
 
-// Kennungen aus den Stammdaten, die beim Einlesen geprüft werden.
-//
-// Warum überhaupt prüfen: Diese vier Werte tippt man einmal und schaut sie nie
-// wieder an. Eine falsche IBAN heißt, dass Geld nicht ankommt; eine falsche
-// USt-IdNr. macht die Rechnung angreifbar. Beides fällt ohne Prüfung erst
-// Wochen später auf – und im ZUGFeRD-XML werden diese Felder ohnehin maschinell
-// gelesen, also müssen sie dann syntaktisch stimmen.
-//
-// Die Werte werden normalisiert abgelegt (ohne Leerzeichen, Großbuchstaben) und
-// über formatted() wieder lesbar ausgegeben. So steht auf der Rechnung die
-// gewohnte Gruppierung, während im XML später die kanonische Form landet.
+// Kennungen aus den Stammdaten, beim Einlesen geprüft: Man tippt sie einmal und sieht sie nie wieder an.
+// Normalisiert abgelegt, über formatted() gruppiert ausgegeben.
 
-/** Wird geworfen, wenn eine Kennung syntaktisch nicht stimmt. */
 class InvalidIdentifierException(message: String) : IllegalArgumentException(message)
 
 private fun normalize(raw: String): String = raw.replace(Regex("[\\s.]"), "").uppercase()
 
-/**
- * IBAN nach ISO 13616, geprüft über die Prüfsumme mod 97 – das ist keine
- * Formalie: Die Prüfziffer erkennt Zahlendreher, also genau den Fehler, den man
- * beim Abtippen einer Kontonummer macht.
- */
+/** ISO 13616, mit der Prüfsumme mod 97 gegen Zahlendreher. */
 @Serializable(with = IbanSerializer::class)
 class Iban(raw: String) {
     val value: String = normalize(raw)
@@ -51,11 +37,7 @@ class Iban(raw: String) {
     override fun toString(): String = formatted()
 
     private companion object {
-        /**
-         * Die ersten vier Zeichen ans Ende, Buchstaben zu Zahlen (A=10 … Z=35),
-         * das Ganze als eine große Zahl modulo 97. Ergibt 1, wenn die IBAN stimmt.
-         * BigInteger, weil die Zahl bis zu 38 Stellen lang wird.
-         */
+        /** Die ersten vier Zeichen ans Ende, Buchstaben zu Zahlen, modulo 97 muss 1 ergeben; BigInteger bei 38 Stellen. */
         fun checksum(iban: String): BigInteger {
             val rearranged = iban.substring(4) + iban.substring(0, 4)
             val digits = rearranged.map { if (it.isDigit()) it.toString() else (it - 'A' + 10).toString() }
@@ -83,11 +65,7 @@ class Bic(raw: String) {
 }
 
 /**
- * Umsatzsteuer-Identifikationsnummer. Der Länderpräfix ist Pflicht – EN 16931
- * fordert ihn in Regel BR-CO-09.
- *
- * Für deutsche Nummern wird zusätzlich die Prüfziffer gerechnet. Für andere
- * Länder bleibt es beim Formatabgleich: Jedes Land hat ein eigenes Verfahren,
+ * Mit Länderpräfix (BR-CO-09). Die Prüfziffer nur für deutsche Nummern: Jedes Land hat ein eigenes Verfahren,
  * und eine halbe Prüfung wäre schlechter als eine ehrlich fehlende.
  */
 @Serializable(with = VatIdSerializer::class)
@@ -137,12 +115,8 @@ class VatId(raw: String) {
 }
 
 /**
- * Steuernummer des Finanzamts.
- *
- * Bewusst nur eine grobe Strukturprüfung: Die Formate unterscheiden sich je
- * Bundesland (10 bis 11 Ziffern, verschieden gruppiert), und eine Prüfziffer
- * gibt es im geschriebenen Format nicht. Eine strengere Regel würde gültige
- * Nummern ablehnen – schlimmer als eine fehlende Prüfung.
+ * Nur eine grobe Strukturprüfung: Die Formate unterscheiden sich je Bundesland, und eine strengere Regel lehnte
+ * gültige Nummern ab.
  */
 @Serializable(with = TaxNumberSerializer::class)
 class TaxNumber(raw: String) {
@@ -164,10 +138,7 @@ class TaxNumber(raw: String) {
     override fun toString(): String = value
 }
 
-// --- Serializer -----------------------------------------------------------
-// Alle vier nach demselben Muster: als String lesen, beim Bauen prüfen, eine
-// fehlerhafte Kennung als SerializationException melden. Dadurch nennt die
-// CLI den Fehler wie einen YAML-Fehler und nicht wie einen Programmabsturz.
+// Eine fehlerhafte Kennung als SerializationException, damit die CLI sie wie einen YAML-Fehler meldet.
 
 private inline fun <T> parseOrFail(raw: String, build: (String) -> T): T =
     try {
