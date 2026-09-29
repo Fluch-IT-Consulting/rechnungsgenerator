@@ -5,3 +5,9 @@ Diese Datei trägt die Vermerke, die Abschnitt 4 der Apache-Lizenz 2.0 bei der
 Weitergabe mitverlangt. Die Vermerke der mitgelieferten Fremdbibliotheken
 gehören ebenfalls hierher, sobald das Programm als Binärfassung ausgeliefert
 wird – sie stehen dann in THIRD-PARTY.md neben dem Archiv.
+
+Dieses Programm ist eine Anwendung der Norm EN 16931-1 und der Technischen
+Spezifikation CEN/TS 16931-2 zur elektronischen Rechnungsstellung. Es gibt
+Informationen aus diesen Veröffentlichungen wieder, darunter ihre Kennungen
+und ihr Datenmodell, und zwar mit Erlaubnis von CEN und DIN als Inhabern des
+Copyrights.
