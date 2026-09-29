@@ -5,10 +5,7 @@ import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.string.shouldContain
 
-/**
- * Die zwei Regeln der Grundlage (ADR-0022), durch dieselbe Tür wie die
- * mitgebrachte: kein Platzhalter und kein Makro, das der Renderer aufruft.
- */
+/** ADR-0022 */
 class FoundationTest : FunSpec({
 
     test("die mitgebrachte Grundlage hält beide Regeln und behält ihre Kommentare") {

@@ -13,9 +13,7 @@ class LatexTest : FunSpec({
 
     test("maskiert die LaTeX-Sonderzeichen") {
         assertSoftly {
-            // Der häufigste reale Fall: ein Firmenname mit kaufmännischem Und.
             "Meier & Söhne".escapeLatex().tex shouldBe "Meier \\& Söhne"
-            // Und der gefährlichste: % kommentiert in LaTeX den Zeilenrest aus.
             "50 % Anzahlung".escapeLatex().tex shouldBe "50 \\% Anzahlung"
             "Preis in \$".escapeLatex().tex shouldBe "Preis in \\\$"
             "Nr. #7".escapeLatex().tex shouldBe "Nr. \\#7"
@@ -40,7 +38,6 @@ class LatexTest : FunSpec({
     }
 
     test("Umlaute und das Eurozeichen bleiben unangetastet") {
-        // LuaLaTeX liest UTF-8 direkt – hier darf nichts passieren.
         "Würzburg 95,00 € Größe".escapeLatex().tex shouldBe "Würzburg 95,00 € Größe"
     }
 
@@ -49,8 +46,7 @@ class LatexTest : FunSpec({
     }
 
     test("ein Makro ohne Argument endet mit {}, damit der folgende Text nicht zum Namen wird") {
-        // Ohne {} stünde hier \zeilenwechselMusterweg – ein unbekanntes Makro,
-        // das erst LuaLaTeX bemerkte (#76).
+        // #76
         (Latex.macro(TemplateMacro.ZEILENWECHSEL) + "Musterweg".escapeLatex()).tex shouldBe
             "\\zeilenwechsel{}Musterweg"
     }
