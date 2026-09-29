@@ -3,18 +3,9 @@ package de.fluchitconsulting.rechnungsgenerator.prepayments
 import de.fluchitconsulting.rechnungsgenerator.core.model.TaxShare
 
 /**
- * Der `abschlaege`-Block einer Schlussrechnung als YAML-Text – das, was
- * `rechnungsgenerator abschlaege` ausgibt (ADR-0003).
- *
- * Von Hand zusammengesetzt statt über kaml: kaml schreibt keine Kommentare,
- * und ein fehlendes `vereinnahmt-am` käme als `null` heraus statt als leeres
- * Feld mit Hinweis. Ob der Text trotzdem das Format trifft, das der Einleser
- * erwartet, prüft der Test durch Zurücklesen – wer hier eine Schreibweise
- * ändert, merkt es dort.
- *
- * Gleiche Eingabe, zeichengleiche Ausgabe: kein Datum, keine Version, kein
- * Pfad. Nur so lässt sich ein eingefügter Block später durch erneutes
- * Erzeugen gegenprüfen.
+ * Der `abschlaege`-Block als YAML-Text (ADR-0003), von Hand gesetzt statt über kaml: kaml schreibt keine
+ * Kommentare und ein fehlendes `vereinnahmt-am` als `null`. Gleiche Eingabe, zeichengleiche Ausgabe, damit sich
+ * ein eingefügter Block durch erneutes Erzeugen gegenprüfen lässt.
  */
 object PrepaymentBlock {
     private val header =
@@ -40,28 +31,20 @@ object PrepaymentBlock {
             "  # ${entry.name}",
             "  - rechnungsnummer: ${yamlScalar(abschlag.invoiceNumber)}",
             "    rechnungsdatum: ${abschlag.issueDate}",
-            // Leer statt weggelassen: So steht die Lücke dort, wo sie zu füllen
-            // ist, und ABSCHLAG_OHNE_VEREINNAHMUNG fordert sie beim Erzeugen ein.
+            // Leer statt weggelassen: Die Lücke steht, wo sie zu füllen ist (ABSCHLAG_OHNE_VEREINNAHMUNG).
             abschlag.receivedOn?.let { "    vereinnahmt-am: $it" }
                 ?: "    vereinnahmt-am:                 # Datum der Vereinnahmung eintragen",
             "    steueranteile:",
         ) + abschlag.taxShares.flatMap(::shareLines)
     }
 
-    // Was nur aus Buchstaben, Ziffern und . _ / - besteht und nicht mit einem
-    // Zeichen beginnt, das YAML besonders liest, bleibt ohne Anführungszeichen –
-    // eine gewöhnliche Nummer sieht so aus wie von Hand geschrieben. Alles
-    // andere kommt in doppelte Anführungszeichen: Ohne sie begänne mit " #" ein
-    // Kommentar, und aus "R26 #9" würde still "R26".
+    // Ohne Anführungszeichen nur, was YAML nicht besonders liest: Aus R26 #9 würde sonst still R26.
     private val plainScalar = Regex("[A-Za-z0-9][A-Za-z0-9._/-]*")
 
     private fun yamlScalar(text: String): String =
         if (plainScalar.matches(text)) text else "\"" + text.replace("\\", "\\\\").replace("\"", "\\\"") + "\""
 
-    // Die Schreibweisen wie in MoneySerializer und PercentSerializer: Beträge mit
-    // zwei Stellen, der Satz ohne nachlaufende Nullen. Die Kategorie immer
-    // ausgeschrieben, auch die Vorgabe S – wer sie nicht sieht, fragt sich, ob
-    // sie vergessen wurde.
+    // Die Kategorie immer ausgeschrieben, auch S: Wer sie nicht sieht, fragt sich, ob sie vergessen wurde.
     private fun shareLines(anteil: TaxShare): List<String> =
         listOf(
             "      - steuerkategorie: ${anteil.taxCategory.code}",

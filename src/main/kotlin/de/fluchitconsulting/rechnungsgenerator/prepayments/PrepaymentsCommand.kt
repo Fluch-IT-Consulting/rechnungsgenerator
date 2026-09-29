@@ -12,17 +12,7 @@ import de.fluchitconsulting.rechnungsgenerator.core.rules.RejectedException
 import de.fluchitconsulting.rechnungsgenerator.core.values.Currency
 import kotlin.io.path.name
 
-/**
- * `rechnungsgenerator abschlaege`: aus Abschlagsrechnungen den `abschlaege`-Block
- * einer Schlussrechnung (ADR-0003).
- *
- * Das Kommando liest nur und schreibt auf stdout; eingefügt wird von Hand oder
- * per `>>`. Die Regeln stehen in [prepaymentsOf], die Schreibweise in
- * [PrepaymentBlock] – hier kommen beide mit echten Dateien zusammen.
- *
- * Fehler beim Lesen und die Ablehnung wirft es nur durch; zur Meldung auf
- * stderr macht sie `execute()`, für alle Kommandos an einer Stelle (#119).
- */
+/** `rechnungsgenerator abschlaege` (ADR-0003): liest nur und schreibt den Block auf stdout. */
 class PrepaymentsCommand : CoreCliktCommand(name = "abschlaege") {
     override fun help(context: Context) = "Bereitet aus Abschlagsrechnungen den abschlaege-Block einer Schlussrechnung vor."
 
@@ -39,34 +29,15 @@ class PrepaymentsCommand : CoreCliktCommand(name = "abschlaege") {
     ).path(mustExist = true, canBeDir = false)
 
     override fun run() {
-        // Gesucht wird je Datei (ADR-0015), und verschiedene Wurzeln brechen
-        // ab: Abschläge zweier Rechnungssteller in einem Block sind fachlich
-        // sinnlos, und "die erste gewinnt" verschleierte das nur.
         val config = YamlLoader.loadSellerConfig(configFile ?: Root.of(invoiceFiles).sellerConfig)
-        // Einzeln geladen, weil jede Datei ihre eigene Meldung verdient:
-        // kaml sagt nur, welcher Schlüssel falsch ist, nicht wo. Den
-        // Dateinamen setzt das Lesen selbst davor (#52). Der Name reist
-        // von hier an mit der Rechnung: Er soll am Ende über ihrem
-        // Abschlag stehen, aber nie der Pfad – der wechselt, sobald die
-        // Datei in einen Jahresordner wandert.
+        // Der Name reist mit der Rechnung, nie der Pfad: Der wechselt, sobald die Datei in einen Jahresordner wandert.
         val prepaymentInvoices = invoiceFiles.map { NamedInvoice(it.name, YamlLoader.loadInvoice(it)) }
 
-        // Alles oder nichts (ADR-0003), und dann alle Gründe auf einmal: Wer
-        // fünf Dateien übergibt, soll nicht fünfmal starten müssen. Ob es
-        // alles ist, sagt der Typ (#118): Einträge gibt es nur, wenn kein
-        // Befund entstand. Und erst ganz am Ende und in einem Stück auf
-        // stdout – bis hierher kann jede Datei noch scheitern, und dann soll
-        // dort gar nichts stehen. Ein halber Block fiele keiner Regel der
-        // Schlussrechnung auf.
+        // Erst ganz am Ende und in einem Stück auf stdout: Ein halber Block fiele keiner Regel der Schlussrechnung auf.
         when (val collected = prepaymentsOf(prepaymentInvoices, config)) {
             is CollectedPrepayments.Complete -> {
                 echo(PrepaymentBlock.render(collected.entries))
-                // Der Block nennt die Währung nicht, die Schlussrechnung trägt
-                // sie selbst (#409). Fehlt dort der Eintrag, gilt EUR, und kein
-                // Befund sieht es: Die Abschlagsrechnungen liest nur dieses
-                // Kommando (ADR-0001). Ein Hinweis nach dem Ergebnis und auf
-                // stderr, damit `>>` nur den Block anhängt; bei EUR keiner,
-                // denn das ist schon die Vorgabe.
+                // Die Währung auf stderr, damit `>>` nur den Block anhängt: Fehlt sie in der Schlussrechnung, gilt still EUR.
                 if (collected.currency != Currency.EUR) {
                     echo(
                         "Hinweis: Die Abschläge stehen in ${collected.currency}. Die Schlussrechnung braucht " +
