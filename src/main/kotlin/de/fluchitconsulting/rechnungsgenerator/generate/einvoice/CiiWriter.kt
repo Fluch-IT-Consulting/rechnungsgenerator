@@ -20,19 +20,8 @@ import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 
 /**
- * Schreibt eine Rechnung als CII-XML im Profil EXTENDED von ZUGFeRD (ADR-0023).
- *
- * Der Writer rechnet nichts, wie der LaTeX-Renderer: Jede Zahl kommt aus der
- * [CalculatedInvoice], damit im XML dieselbe steht wie auf dem Blatt. Das XML
- * ist die maßgebliche Fassung der E-Rechnung, und eine Abweichung um einen
- * Cent wäre dort ein Fehler der Rechnung und nicht der Darstellung.
- *
- * Die Reihenfolge der Elemente ist die des Schemas, nicht die des Blatts.
- *
- * Was eine Rechnungsart zusätzlich trägt – Vereinnahmung, Ursprungsrechnung,
- * abgesetzte Abschläge –, fragt der Writer die [InvoiceKind], je in einem
- * `when` ohne `else`: Eine neue Art muss dort entscheiden, was sie trägt
- * (ADR-0008).
+ * CII im Profil EXTENDED (ADR-0023). Jede Zahl kommt aus der [CalculatedInvoice], damit im XML dieselbe steht wie
+ * auf dem Blatt. Die Reihenfolge ist die des Schemas; was eine Art zusätzlich trägt, fragt ein `when` ohne `else`.
  */
 object CiiWriter {
     private const val EXTENDED = "urn:cen.eu:en16931:2017#conformant#urn:factur-x.eu:1p0:extended"
@@ -57,15 +46,8 @@ object CiiWriter {
                 element("ram:ID", calculated.invoice.number)
                 element("ram:TypeCode", calculated.invoice.type.code)
                 date("ram:IssueDateTime", calculated.invoice.issueDate)
-                // Einleitung und Bemerkung der Rechnungsdatei, BT-22. Nicht der
-                // Schlusssatz aus den Stammdaten, den die Bemerkung auf dem
-                // Blatt ersetzt: Er ist eine Höflichkeit und keine Angabe zur
-                // Rechnung.
-                //
-                // Dazu der Pflichtsatz der Rechnungsart, der erst das Dokument
-                // zu dem macht, was es ist: Ohne ihn stünde der Abschlag wie
-                // eine Rechnung über die Leistung da und das Storno ohne den
-                // Satz, dass es die Ursprungsrechnung aufhebt.
+                // BT-22: Einleitung, Bemerkung und der Pflichtsatz der Art, nicht der Schlusssatz der Stammdaten, der nur eine
+                // Höflichkeit ist.
                 val mandatoryNote =
                     calculated.invoice.type
                         .mandatoryNote(calculated.invoice.language)
@@ -84,19 +66,9 @@ object CiiWriter {
     }
 
     /**
-     * Das Lieferland (BT-80), auf jeder Art das Land des Kunden. BR-FX-DE-04
-     * verlangt es, wenn kein Lieferdatum (BT-72) dasteht, und bei K ohnehin
-     * BR-IC-12. Ein Lieferdatum gibt es hier nicht: Bei einem
-     * Leistungszeitraum wäre jedes Datum erfunden, der Zeitraum steht in der
-     * Abrechnung (BG-14).
-     *
-     * Das Land des Kunden, weil der Ort einer Dienstleistung an einen
-     * Unternehmer nach §3a Abs. 2 UStG bei ihm liegt. Eine Leistung mit
-     * anderem Ort (§3a Abs. 3) oder eine abweichende Lieferanschrift beim
-     * Reihengeschäft kennt das Modell nicht; sie kommt erst mit einem Fall.
-     * Auch auf der Abschlagsrechnung, die BR-FX-DE-04 ausnimmt: Ohne Land
-     * bliebe der Block leer, und das Schematron warnte mit
-     * PEPPOL-EN16931-R008 (ADR-0023).
+     * BT-80, auf jeder Art das Land des Kunden: BR-FX-DE-04 verlangt es ohne Lieferdatum, das es bei einem Zeitraum
+     * nicht gibt, und bei K BR-IC-12. Der Kunde, weil dort der Ort der Leistung liegt (§3a Abs. 2 UStG). Auch auf der
+     * Abschlagsrechnung: Ohne Land bliebe der Block leer (PEPPOL-EN16931-R008).
      */
     private fun XmlElements.delivery(calculated: CalculatedInvoice) {
         element("ram:ApplicableHeaderTradeDelivery") {
@@ -134,10 +106,7 @@ object CiiWriter {
             element("ram:SpecifiedLineTradeSettlement") {
                 element("ram:ApplicableTradeTax") {
                     element("ram:TypeCode", "VAT")
-                    // Der Grund der Gruppe und nicht der der Position: EXTENDED
-                    // verlangt beide gleich (BR-FXEXT-E-08rev und die
-                    // Geschwister je Kategorie), und die Gruppe trägt schon den
-                    // Vorgabegrund der Kategorie.
+                    // Der Grund der Gruppe: EXTENDED verlangt ihn an Position und Gruppe gleich (BR-FXEXT-E-08rev).
                     group.exemptionReason?.let { element("ram:ExemptionReason", it) }
                     element("ram:CategoryCode", item.taxCategory.code)
                     // Nicht steuerbar heißt ohne Satz, nicht mit 0 % (BR-O-05).
@@ -156,13 +125,8 @@ object CiiWriter {
     }
 
     /**
-     * Der Rabatt als Abschlag auf die Position (BG-27, ADR-0013). Ein Satz
-     * steht mit seiner Basis da, ein vereinbarter Betrag allein: Eine Basis
-     * ohne Satz sagte nichts, woraus der Betrag folgt.
-     *
-     * Nur der Code 95 (Discount, UNTDID 5189) und kein Text: BR-42 verlangt
-     * eines von beiden, und ein Text müsste nach BR-CO-07 dasselbe sagen wie
-     * der Code.
+     * BG-27 (ADR-0013). Ein Satz mit seiner Basis, ein Betrag allein. Nur Code 95 und kein Text: Ein Text müsste nach
+     * BR-CO-07 dasselbe sagen.
      */
     private fun XmlElements.discount(line: CalculatedLine) {
         val discount = line.item.discount ?: return
@@ -174,8 +138,7 @@ object CiiWriter {
                     element("ram:BasisAmount", amount(line.base))
                 }
                 is Discount.Amount -> {
-                    // Vereinbart ist nur der Betrag; Satz und Basis kämen
-                    // aus einer Rechnung, die niemand vereinbart hat.
+                    // Satz und Basis kämen aus einer Rechnung, die niemand vereinbart hat.
                 }
             }
             element("ram:ActualAmount", amount(checkNotNull(line.discountAmount)))
@@ -190,12 +153,8 @@ object CiiWriter {
             customer.buyerReference?.let { element("ram:BuyerReference", it) }
             element("ram:SellerTradeParty") {
                 element("ram:Name", config.companyName)
-                // Die Registernummer allein ist nicht eindeutig, erst mit dem
-                // Gericht; BT-30 hat aber nur ein Feld, das Gericht steht
-                // deshalb in BT-33. Dort auch die Geschäftsführung, die das
-                // Blatt nennt (§35a GmbHG): Das XML ist die maßgebliche
-                // Fassung (ADR-0023). BT-33 gibt es nur einmal; getrennt wird
-                // mit Semikolon, weil mehrere Namen schon Kommas tragen.
+                // BT-30 hat nur ein Feld, das Gericht steht deshalb in BT-33, dort auch die Geschäftsführung (§35a GmbHG).
+                // Getrennt mit Semikolon, weil Namen schon Kommas tragen.
                 listOfNotNull(
                     config.registerCourt?.let { "Registergericht $it" },
                     config.managingDirector?.let { "Geschäftsführung: $it" },
@@ -257,11 +216,9 @@ object CiiWriter {
         val servicePeriod = calculated.invoice.servicePeriod
         val currency = calculated.invoice.currency.name
         element("ram:ApplicableHeaderTradeSettlement") {
-            // BT-6, die Währung der Umsatzsteuer, nur mit einer Umrechnung
-            // (#418): Dann verlangt BR-53 die Steuersumme in Euro darunter.
-            // Das Schema stellt BT-6 vor BT-5.
+            // BT-6 nur mit Umrechnung, dann verlangt BR-53 die Steuer in Euro. Das Schema stellt BT-6 vor BT-5.
             calculated.vatTotalInEuro?.let { element("ram:TaxCurrencyCode", Currency.EUR.name) }
-            // BT-5, die Währung jedes Betrags (#409).
+            // BT-5
             element("ram:InvoiceCurrencyCode", currency)
             if (calculated.requestsPayment) {
                 element("ram:SpecifiedTradeSettlementPaymentMeans") {
@@ -293,10 +250,7 @@ object CiiWriter {
                     date("ram:DueDateDateTime", dueDate)
                 }
             }
-            // Je Skontostufe eigene Zahlungsbedingungen, weil jede nur eine
-            // Stufe trägt; die Frist zählt ab dem Rechnungsdatum, wie auf dem
-            // Blatt. Kein Skontobetrag, aus demselben Grund wie dort: Bei
-            // mehreren Steuersätzen müsste er aufgeteilt werden.
+            // Je Skontostufe eigene Zahlungsbedingungen, weil jede nur eine trägt; kein Skontobetrag, wie auf dem Blatt.
             calculated.skonto.forEach { stufe ->
                 element("ram:SpecifiedTradePaymentTerms") {
                     element("ram:ApplicableTradePaymentDiscountTerms") {
@@ -310,8 +264,7 @@ object CiiWriter {
                 element("ram:LineTotalAmount", amount(calculated.netTotal))
                 element("ram:TaxBasisTotalAmount", amount(calculated.netTotal))
                 element("ram:TaxTotalAmount", amount(calculated.vatTotal), "currencyID" to currency)
-                // BT-111, dieselbe Steuer in Euro. Mustang rechnet sie nicht
-                // nach, er kennt den Kurs nicht; das hält die Vergleichsdatei.
+                // BT-111. Mustang rechnet sie nicht nach, das hält die Vergleichsdatei.
                 calculated.vatTotalInEuro?.let { element("ram:TaxTotalAmount", amount(it), "currencyID" to Currency.EUR.name) }
                 element("ram:GrandTotalAmount", amount(calculated.grossTotal))
                 if (deductions.isNotEmpty()) {
@@ -329,14 +282,7 @@ object CiiWriter {
         }
     }
 
-    /**
-     * Ein abgesetzter Abschlag (ADR-0002), wie im Block `abschlaege` der
-     * Schlussrechnung (ADR-0001): gezahlter Betrag, Tag der Vereinnahmung, je
-     * Steueranteil Kategorie, Satz und Steuer, und die Abschlagsrechnung, auf
-     * die er zurückgeht. Das Netto des Anteils fehlt, weil EXTENDED in BG-X-46
-     * kein Feld dafür hat; das Schematron meldet ein `BasisAmount` dort als
-     * nicht verwendet (#453).
-     */
+    /** Ohne Netto des Anteils: EXTENDED hat in BG-X-46 kein Feld dafür, und das Schematron meldet es (#453). */
     private fun XmlElements.advancePayment(deduction: Deduction) {
         val prepayment = deduction.deducted.prepayment
         element("ram:SpecifiedAdvancePayment") {
@@ -358,19 +304,13 @@ object CiiWriter {
         }
     }
 
-    /** Die abgesetzten Abschläge einer Schlussrechnung, bei jeder anderen Art keine. */
     private fun deductionsOf(acceptedInvoice: AcceptedInvoice): List<Deduction> =
         when (val kind = acceptedInvoice.kind) {
             is InvoiceKind.FinalInvoice -> kind.deductions
             is InvoiceKind.Ordinary, is InvoiceKind.PrepaymentInvoice, is InvoiceKind.Cancellation -> emptyList()
         }
 
-    /**
-     * Der Tag der Vereinnahmung eines Abschlags (§14 Abs. 4 Nr. 6 UStG). Im
-     * XML ist das der Steuerzeitpunkt (BT-7): Die Steuer auf eine Anzahlung
-     * entsteht mit ihrem Eingang. Steht er noch nicht fest, fehlt er auch
-     * hier, wie auf dem Blatt.
-     */
+    /** BT-7: Die Steuer auf eine Anzahlung entsteht mit ihrem Eingang. Steht er nicht fest, fehlt er, wie auf dem Blatt. */
     private fun receivedOn(acceptedInvoice: AcceptedInvoice): LocalDate? =
         when (val kind = acceptedInvoice.kind) {
             is InvoiceKind.PrepaymentInvoice -> kind.receivedOn
@@ -391,10 +331,7 @@ object CiiWriter {
         }
     }
 
-    /**
-     * Ein Datum im Format 102 der Codeliste UNTDID 2379: JJJJMMTT. Das
-     * innere Element hängt am Typ, den das Schema für [name] vorsieht.
-     */
+    /** Format 102 (JJJJMMTT); das innere Element hängt am Typ, den das Schema für [name] vorsieht. */
     private fun XmlElements.date(
         name: String,
         date: LocalDate,
@@ -405,8 +342,7 @@ object CiiWriter {
         }
     }
 
-    // toPlainString und nie toString: Das Schema verlangt eine Dezimalzahl, und
-    // toString schriebe große oder kleine Werte als 1E+3.
+    // toPlainString, nie toString: Das Schema verlangt eine Dezimalzahl und kein 1E+3.
     private fun amount(money: Money): String = money.value.toPlainString()
 
     private fun percent(percent: Percent): String = percent.valueAsPercentage.stripTrailingZeros().toPlainString()
