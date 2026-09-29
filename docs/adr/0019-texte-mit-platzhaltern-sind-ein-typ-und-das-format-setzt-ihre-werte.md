@@ -100,3 +100,11 @@ Rechnungsart anfasst, und nicht erst der Vergleich einer Stornorechnung.
   zeichengleich.
 
 Umgesetzt in #283.
+
+## Nachtrag vom 29.09.2026: Wo die Typen heute liegen
+
+Die Pakete oben sind die des Stands von #283. Seit #310 und #312 liegen
+`TextTemplate`, `VariableResolver` und `TextValue` in `core.text`, einem Blatt
+ohne Projektimporte, und `InvoiceVariable` als Vokabular der Rechnung in
+`core.model`; in `values` stehen nur noch Werte. An der Aufteilung auf die vier
+Stellen ändert das nichts.
