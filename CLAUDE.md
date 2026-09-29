@@ -123,6 +123,8 @@ Gründe stehen in #107, #304, #310, #312, #431 und #432.
   Kennung für genau sie ab, statt sie wegzulassen (ADR-0023).
 - XML liest das Programm nur über `XmlParser`.
 - Bei einem Versionssprung von Mustang zuerst `EInvoiceEmbedderTest` lesen.
+  Bringt er eine neue ZUGFeRD-Fassung mit, braucht `CiiWriterTest` den neuen
+  Pfad zum Schematron (`/xslt/ZF_…`).
 - Externe Programme laufen über `ProcessRunner`.
 - veraPDF ist unter **MPL-2.0** eingebunden, nicht unter GPLv3+ (ADR-0014).
 
