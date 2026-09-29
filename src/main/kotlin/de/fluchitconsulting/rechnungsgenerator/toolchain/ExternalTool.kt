@@ -9,28 +9,10 @@ import kotlin.io.path.isExecutable
 import kotlin.io.path.readText
 import kotlin.time.Duration
 
-/**
- * Wird geworfen, wenn ein externes Werkzeug fehlt, abstürzt oder hängen bleibt.
- *
- * Offen, damit ein Kommando ein Scheitern, das es anders erklären muss, am
- * Typ erkennt und nicht am Wortlaut (#386).
- */
+/** Offen, damit ein Kommando ein Scheitern am Typ erkennt und nicht am Wortlaut (#386). */
 open class ToolchainException(message: String, cause: Throwable? = null) : Exception(message, cause)
 
-/**
- * Was ein Programmlauf hinterlassen hat.
- *
- * stdout und stderr kommen getrennt zurück (#227). Für die meisten Aufrufer
- * ist das gleichgültig – sie nehmen [output] und bekommen beides. Für einen
- * ist es entscheidend: `verapdf` schreibt seinen Bericht auf stdout und sein
- * Protokoll auf stderr, und zusammengeführt landen Log-Zeilen mitten im XML.
- *
- * [output] hängt die Kanäle aneinander, statt sie zu verschränken. Die
- * Reihenfolge zwischen ihnen geht damit verloren; innerhalb eines Kanals
- * bleibt sie. Für den Zweck – ein Protokoll in eine Fehlermeldung legen –
- * genügt das. An der Nahtstelle steht ein Zeilenumbruch, damit nicht zwei
- * Quellen in einer Zeile stehen.
- */
+/** stdout und stderr getrennt: `verapdf` schreibt den Bericht auf stdout und sein Protokoll auf stderr (#227). */
 data class ToolResult(
     val exitCode: Int,
     val standardOutput: String,
@@ -38,14 +20,7 @@ data class ToolResult(
 ) {
     val failed: Boolean get() = exitCode != 0
 
-    /**
-     * Beide Kanäle, für Meldungen und für Protokolle, die alles wollen.
-     *
-     * Der Umbruch an der Nahtstelle ist kein Schmuck: Endet stdout nicht auf
-     * einem, klebt seine letzte Zeile an der ersten von stderr, und in einer
-     * Fehlermeldung sieht das aus wie eine Zeile aus einer Quelle (#246). Ist
-     * ein Kanal leer, gibt es keine Nahtstelle und kommt nichts dazu.
-     */
+    /** Beide Kanäle nacheinander. Der Umbruch an der Nahtstelle verhindert eine Zeile aus zwei Quellen (#246). */
     val output: String
         get() =
             when {
@@ -56,27 +31,13 @@ data class ToolResult(
 }
 
 /**
- * Dünne Hülle um [ProcessBuilder] für die beiden externen Werkzeuge.
- *
- * Die Ausgabe wird in eine Datei umgeleitet statt in einen Stream gelesen. Das
- * klingt umständlich, erspart aber einen Lesethread: Würde man den Stream im
- * selben Thread lesen und danach auf das Ende warten, blockiert das Lesen bei
- * einem hängenden Prozess für immer – die Zeitgrenze käme nie zum Zug.
- *
- * Zwei Dateien, weil stdout und stderr Verschiedenes bedeuten können (#227).
+ * Ausgabe in Dateien statt Streams: Das Lesen im selben Thread blockierte bei einem hängenden Prozess, und die
+ * Zeitgrenze käme nie zum Zug.
  */
 object ExternalTool : ProcessRunner {
-    // Verzeichnisse, in denen die Werkzeuge typischerweise liegen, falls die JVM
-    // einen kürzeren PATH geerbt hat als die Shell (häufig bei GUI-gestarteten IDEs).
+    // Falls die JVM einen kürzeren PATH geerbt hat als die Shell, etwa in einer IDE.
     private val EXTRA_PATHS = listOf("/Library/TeX/texbin", "/usr/local/bin", "/opt/homebrew/bin")
 
-    /**
-     * Sucht ein Programm im PATH. `null`, wenn es nirgends gefunden wird.
-     *
-     * Privat: Nach draußen geht die Antwort als [canRun], nicht der Pfad. Wo
-     * das Programm liegt, ist Sache dieses Adapters – ein anderer hat womöglich
-     * gar keinen Pfad zu nennen.
-     */
     private fun locate(name: String): Path? {
         val fromPath = System.getenv("PATH").orEmpty().split(java.io.File.pathSeparator)
         return (fromPath + EXTRA_PATHS)
@@ -96,11 +57,7 @@ object ExternalTool : ProcessRunner {
         environment: Map<String, String>,
     ): ToolResult {
         val executable = locate(program) ?: throw ToolchainException("Programm nicht gefunden: $program")
-        // Eine IOException hier – Temp-Dateien, Start, Ausgabe lesen – heißt,
-        // der Lauf kam nicht zustande. Das ist ein Werkzeugfehler, auch wenn
-        // das Betriebssystem ihn als IOException meldet; sonst müsste jeder
-        // Aufrufer sie selbst deuten und riete, was geschrieben werden sollte
-        // (#300).
+        // Eine IOException heißt hier, der Lauf kam nicht zustande: ein Fehler des Werkzeugs (#300).
         return try {
             runLocated(executable, params, workingDir, timeout, environment)
         } catch (e: IOException) {
@@ -123,8 +80,6 @@ object ExternalTool : ProcessRunner {
                     .directory(workingDir.toFile())
                     .redirectOutput(outFile.toFile())
                     .redirectError(errFile.toFile())
-                    // environment() liefert die geerbte Umgebung als veränderbare
-                    // Map; was hier hineinkommt, sieht nur dieser Prozess.
                     .also { it.environment().putAll(environment) }
                     .start()
             if (!process.waitFor(timeout.inWholeSeconds, TimeUnit.SECONDS)) {

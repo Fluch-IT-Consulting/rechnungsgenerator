@@ -13,14 +13,8 @@ import java.nio.file.Path
 import kotlin.io.path.absolutePathString
 
 /**
- * Wogegen geprüft wird. `erzeuge` setzt PDF/A-1b, mit E-Rechnung PDF/A-3u
- * (ADR-0023). `xml` nimmt jedes PDF/A-3 an, ob a, b oder u, und prüft es
- * gegen das Profil, als das es sich ausgibt (#380).
- *
- * [part] und [conformance] sind die Werte, die ein PDF/A in seinem XMP über
- * sich angibt (`pdfaid:part`, `pdfaid:conformance`). [flavour] und [cliFlag]
- * nennen dasselbe Profil für die beiden Wege zu veraPDF, die Bibliothek und
- * das Programm.
+ * `erzeuge` setzt 1b oder 3u, `xml` prüft gegen das Profil, als das sich die Datei im XMP ausgibt (#380).
+ * [flavour] nennt es der Bibliothek, [cliFlag] dem Programm.
  */
 enum class PdfAProfile(
     val part: Int,
@@ -38,10 +32,6 @@ enum class PdfAProfile(
     val cliFlag: String get() = "$part${conformance.lowercase()}"
 }
 
-/**
- * Ein von veraPDF gemeldeter Regelverstoß. Welcher Teil der Norm, sagt
- * [specification] so, wie veraPDF es meldet, etwa "ISO 19005-1:2005".
- */
 data class PdfAViolation(
     val specification: String,
     val clause: String,
@@ -65,37 +55,13 @@ data class ValidationResult(
         }
 }
 
-/**
- * Die PDF/A-Prüfung: Ist das gesetzte Dokument ein gültiges PDF/A im
- * verlangten [PdfAProfile]?
- *
- * Nicht zu verwechseln mit der *Prüfung* der Rechnung, die Befunde liefert und
- * über Annahme oder Ablehnung entscheidet (ADR-0004). Anderer Gegenstand,
- * anderes Ergebnis, anderer Zeitpunkt – siehe das Glossar in `CONTEXT.md`.
- *
- * Zwei Adapter, wie beim `Typesetter` eine echte Naht und keine gedachte
- * (ADR-0014): [BuiltInPdfAValidator] prüft in derselben JVM, [ExternalPdfAValidator]
- * ruft das Programm `verapdf` auf. Eingebaut ist die Vorgabe; der externe
- * Prüfer urteilt dafür unabhängig – getrennt installiert, getrennt versioniert.
- */
+/** Die PDF/A-Prüfung, nicht die Prüfung der Rechnung (ADR-0004). Eingebaut ist die Vorgabe, extern das unabhängige Urteil (ADR-0014). */
 interface PdfAValidator {
-    /**
-     * Prüft, ob der Prüfer einsatzbereit ist. Gehört zum Adapter und nicht
-     * daneben: Der eingebaute braucht nichts, der externe ein installiertes
-     * Programm. Deshalb verlangt der Generator veraPDF beim Start nur, wenn
-     * der externe Prüfer gewählt ist.
-     */
     fun checkAvailable()
 
     /**
-     * Urteilt über [pdf]: gültig oder nicht, und wenn nicht, welche Regeln es
-     * verletzt. Ein nicht konformes PDF ist ein Ergebnis und keine Ausnahme.
-     *
-     * Kann der Prüfer gar nicht urteilen – die Datei ist kein lesbares PDF,
-     * das Werkzeug bricht mitten in der Prüfung ab –, wirft er
-     * [ToolchainException]. Die Zusage steht hier und nicht in einem Adapter,
-     * weil `execute()` genau diese Ausnahme als Meldung ausgibt; jede andere
-     * verließe `main` als Stacktrace (#294).
+     * Ein nicht konformes PDF ist ein Ergebnis und keine Ausnahme. Kann der Prüfer nicht urteilen, wirft er
+     * [ToolchainException]; jede andere Ausnahme verließe `main` als Stacktrace (#294).
      */
     fun validate(
         pdf: Path,
@@ -104,27 +70,11 @@ interface PdfAValidator {
 }
 
 /**
- * Prüft in derselben JVM, über `org.verapdf:validation-model-jakarta`.
- *
- * Der Grund ist die Startzeit: Das Programm `verapdf` braucht für ein einzelnes
- * Dokument rund 6,4 s, davon 6,2 s für den Start seines CLI-Wrappers. Die
- * Prüfung selbst dauert rund 50 ms, und genau die bleibt hier übrig (#226).
- *
- * Jedes Validierungsprofil wird einmal geladen und dann behalten: Es zu lesen
- * kostet 0,7 s, jede Prüfung danach Bruchteile davon.
+ * In derselben JVM wegen der Startzeit: Das Programm braucht 6,2 s für den Start, die Prüfung 50 ms (#226). Ein
+ * Profil zu laden kostet 0,7 s, deshalb bleibt es geladen.
  */
 object BuiltInPdfAValidator : PdfAValidator {
-    // by lazy statt im Initialisierer: Ein Profil wird erst gelesen, wenn
-    // wirklich danach geprüft wird – ein Lauf, der vorher abbricht, zahlt es
-    // nicht, und ein Lauf ohne E-Rechnung liest das für PDF/A-3u nie.
-    //
-    // Ohne Argument ist das `LazyThreadSafetyMode.SYNCHRONIZED`, und das soll es
-    // bleiben: `initialise()` setzt globalen statischen Zustand in veraPDF, und
-    // ein Profil ist danach ein geteilter Wert. Hier läuft heute nur ein Thread,
-    // die Zusage kostet aber nichts – mit `NONE` wäre sie still weg. Benutzt wird
-    // ein Profil danach nur lesend (`getRuleByRuleId`), und das bewacht veraPDF
-    // selbst: Seine eigene faule Befüllung steht samt Prüfung in einem
-    // `synchronized`-Block.
+    // SYNCHRONIZED, die Vorgabe von lazy, soll bleiben: `initialise()` setzt globalen Zustand in veraPDF.
     private val initialised by lazy { VeraGreenfieldFoundryProvider.initialise() }
 
     private val validationProfiles: Map<PdfAProfile, Lazy<ValidationProfile>> =
@@ -135,7 +85,6 @@ object BuiltInPdfAValidator : PdfAValidator {
             }
         }
 
-    /** Nichts zu prüfen: Der Prüfer liegt im Klassenpfad. */
     override fun checkAvailable() = Unit
 
     override fun validate(
@@ -145,12 +94,8 @@ object BuiltInPdfAValidator : PdfAValidator {
         // Erzwingt das Laden, bevor die Foundry gefragt wird.
         val validationProfile = validationProfiles.getValue(profile).value
         val validator = Foundries.defaultInstance().createValidator(profile.flavour, false)
-        // Gefangen wird VeraPDFException und nicht mehr: Sie ist die gemeinsame
-        // Oberklasse dessen, was beide Aufrufe deklarieren, also genau "konnte
-        // nicht urteilen". Dazu die IOException, die `use` beim Schließen des
-        // Parsers werfen kann (#300). Eine RuntimeException aus der Bibliothek
-        // ist ein Programmfehler, und den soll ein Stacktrace zeigen, keine
-        // Meldung.
+        // VeraPDFException heißt „konnte nicht urteilen“, dazu die IOException aus `use` (#300). Eine
+        // RuntimeException ist ein Programmfehler und soll als Stacktrace erscheinen.
         val result =
             try {
                 Foundries.defaultInstance().createParser(pdf.toFile(), profile.flavour).use { parser ->
@@ -168,9 +113,7 @@ object BuiltInPdfAValidator : PdfAValidator {
                 result.testAssertions
                     .filter { it.status == TestAssertion.Status.FAILED }
                     .map { assertion ->
-                        // Die Meldung steht im Profil, nicht an der Aussage:
-                        // getErrorMessage() der Aussage ist null, den Wortlaut
-                        // trägt die Regel.
+                        // getErrorMessage() der Aussage ist null, den Wortlaut trägt die Regel im Profil.
                         val rule = validationProfile.getRuleByRuleId(assertion.ruleId)
                         PdfAViolation(
                             specification = assertion.ruleId.specification.id,
@@ -183,12 +126,7 @@ object BuiltInPdfAValidator : PdfAValidator {
         )
     }
 
-    /**
-     * Alle Meldungen der Ursachenkette, von außen nach innen. veraPDF sagt
-     * außen nur, *dass* es scheiterte ("Couldn't parse stream"), und legt das
-     * *Warum* in die Ursache ("End of file is reached"). `execute()` gibt die
-     * Ursache nicht aus, also muss sie in die Meldung.
-     */
+    /** veraPDF legt das Warum in die Ursache, und `execute()` gibt die nicht aus. */
     private fun cannotJudge(
         pdf: Path,
         e: Exception,
@@ -201,18 +139,7 @@ object BuiltInPdfAValidator : PdfAValidator {
             .joinToString(": ")
 }
 
-/**
- * Prüft mit dem Programm `verapdf` als eigenem Prozess.
- *
- * veraPDF unterscheidet über den Exitcode: 0 = konform, 1 = nicht konform,
- * alles andere = das Werkzeug selbst kam nicht klar (etwa Datei nicht lesbar).
- * Nur der dritte Fall ist ein Fehler unsererseits; ein nicht konformes PDF ist
- * ein gültiges Prüfergebnis und wird als solches zurückgegeben.
- *
- * Langsamer als der eingebaute Prüfer und trotzdem behalten: Er ist getrennt
- * installiert und getrennt versioniert und urteilt damit unabhängig von dem
- * Stück Software, das der Generator selbst mitbringt (ADR-0014).
- */
+/** Das Programm `verapdf`: Exitcode 0 heißt konform, 1 nicht konform, alles andere kam nicht klar. */
 class ExternalPdfAValidator(private val runner: ProcessRunner) : PdfAValidator {
     private companion object {
         private const val PROGRAM = "verapdf"
@@ -242,27 +169,14 @@ class ExternalPdfAValidator(private val runner: ProcessRunner) : PdfAValidator {
         )
     }
 
-    /**
-     * Schneidet weg, was vor dem XML steht.
-     *
-     * Gelesen wird allein stdout, und dort steht der Bericht für sich: Sein
-     * Protokoll schreibt veraPDF auf stderr, die JVM ihre Warnungen ebenfalls
-     * (#227). Nötig ist das Abschneiden damit nicht – es bleibt als
-     * Sicherung, weil ein fremdes Programm jederzeit etwas auf stdout legen
-     * kann und der Parser sonst mit "Content ist nicht zulässig in Prolog"
-     * abbräche. Drei Zeilen gegen eine Ausnahme, die der Benutzerin als
-     * Absturz erschiene.
-     *
-     * Was *mitten* im Bericht steht, fängt es nicht – genau daran ist #227
-     * gescheitert. Dagegen hilft nur, die Kanäle getrennt zu lassen.
-     */
+    /** Nur eine Sicherung, das Protokoll steht auf stderr. Was mitten im Bericht stünde, fängt es nicht (#227). */
     private fun extractXml(output: String): String {
         val start = output.indexOf("<?xml")
         if (start < 0) throw ToolchainException("verapdf lieferte keinen XML-Bericht:\n${output.take(800)}")
         return output.substring(start)
     }
 
-    /** Die verletzten Regeln aus dem Bericht; bestandene Regeln stehen dort auch drin. */
+    /** Der Bericht nennt auch die bestandenen Regeln. */
     private fun parseViolations(xml: String): List<PdfAViolation> {
         val document = XmlParser.parse(xml.toByteArray())
         val rules = document.getElementsByTagName("rule")
@@ -280,8 +194,6 @@ class ExternalPdfAValidator(private val runner: ProcessRunner) : PdfAValidator {
             }
     }
 
-    // Kleine private Extension: holt den Text des ersten Kindelements mit diesem
-    // Namen. Erspart an vier Stellen dieselbe Null- und Längenprüfung.
     private fun Element.childText(tag: String): String =
         getElementsByTagName(tag)
             .item(0)
