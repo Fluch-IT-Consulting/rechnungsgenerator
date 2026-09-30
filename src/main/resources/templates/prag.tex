@@ -55,9 +55,17 @@
 %% Etwas Luft in den Zeilen des Gitters, sonst kleben die Ziffern an den Linien.
 \renewcommand{\arraystretch}{1.35}
 
+%% Ein Code ist breiter als €, um so viel wachsen die drei Betragsspalten: So hat ein Betrag in jeder Währung Platz
+%% wie in Euro (#480). Mit \normalfont, denn vor \begin{document} gilt die Schrift des Designs noch nicht.
+\newlength{\zeichenmehrbreite}\settowidth{\zeichenmehrbreite}{\normalfont\betrag{0}}
+\newlength{\eurozeichenbreite}\settowidth{\eurozeichenbreite}{\normalfont\eurobetrag{0}}
+\addtolength{\zeichenmehrbreite}{-\eurozeichenbreite}
+%% $ und £ sind schmaler als €, trotzdem schrumpft keine Spalte: Sonst sähe jede Rechnung in US-Dollar anders aus.
+\ifdim\zeichenmehrbreite<0pt \setlength{\zeichenmehrbreite}{0pt}\fi
+
 %% Dieselbe Breite in allen drei Tabellen, sonst fluchten ihre Linien nicht. Nachgemessen braucht „−19.040,00 €“
 %% rund 21 mm.
-\newlength{\betragsbreite}\setlength{\betragsbreite}{24mm}
+\newlength{\betragsbreite}\setlength{\betragsbreite}{\dimexpr 24mm+\zeichenmehrbreite\relax}
 \newcolumntype{B}{>{\raggedleft\arraybackslash}p{\betragsbreite}}
 
 %% Die Summen stehen ohne Linie untereinander, erst die Abschlusszeile setzt wieder eine.
@@ -96,7 +104,7 @@
 \newtoggle{rabattspalte}
 \ifblank{<<RABATTSPALTE>>}{}{\toggletrue{rabattspalte}}
 \newcommand{\mitrabatt}[1]{\iftoggle{rabattspalte}{#1}{}}
-\iftoggle{rabattspalte}{\newcolumntype{R}{>{\raggedleft\arraybackslash}p{14mm}|}}{\newcolumntype{R}{}}
+\iftoggle{rabattspalte}{\newcolumntype{R}{>{\raggedleft\arraybackslash}p{\dimexpr 14mm+\zeichenmehrbreite\relax}|}}{\newcolumntype{R}{}}
 
 \newcommand{\positionszeile}[7]{#1 & \textbf{#2} & #3 & #4 & #5\mitrabatt{ & #6} & #7}
 
@@ -195,7 +203,7 @@
 %% und \\* änderte daran nichts. \LTpre und \LTpost halten den Abstand der früheren tabularx.
 \setlength{\LTpre}{\lineskip}\setlength{\LTpost}{0pt}%
 \setlength{\LTleft}{0pt}\setlength{\LTright}{0pt}%
-\begin{xltabular}{\linewidth}{|>{\centering\arraybackslash}p{7mm}|>{\raggedright\arraybackslash}X|>{\raggedleft\arraybackslash}p{13mm}|>{\raggedright\arraybackslash}p{15mm}|>{\raggedleft\arraybackslash}p{22mm}|RB|}
+\begin{xltabular}{\linewidth}{|>{\centering\arraybackslash}p{7mm}|>{\raggedright\arraybackslash}X|>{\raggedleft\arraybackslash}p{13mm}|>{\raggedright\arraybackslash}p{15mm}|>{\raggedleft\arraybackslash}p{\dimexpr 22mm+\zeichenmehrbreite\relax}|RB|}
   \positionskopf
   \endfirsthead
   \positionskopf

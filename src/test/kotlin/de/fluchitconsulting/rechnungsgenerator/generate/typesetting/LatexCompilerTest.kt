@@ -8,6 +8,7 @@ import io.kotest.assertions.withClue
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.ints.shouldBeLessThan
+import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
 import io.kotest.matchers.string.shouldContain
@@ -158,9 +159,10 @@ class LatexCompilerTest : FunSpec({
     test("ein Lauf genügt, wenn das Protokoll keinen zweiten verlangt") {
         val runner = FakeProcessRunner(successfulRun())
 
-        val pdf = typeset(runner)
+        val compiled = typeset(runner)
 
-        pdf.exists() shouldBe true
+        compiled.pdf.exists() shouldBe true
+        compiled.overflowHint shouldBe null
         runner.commands shouldHaveSize 1
         runner.commands.single().first() shouldBe "lualatex"
     }
@@ -263,10 +265,16 @@ class LatexCompilerTest : FunSpec({
             error.message!! shouldNotContain "luaotfload"
         }
 
-        test("eine zu breite Zeile bricht nicht ab: Sie ragt in den Rand, sie fehlt nicht") {
+        test("eine zu breite Zeile bricht nicht ab, sie ist ein Hinweis mit Fundstelle und Text (#480)") {
             val runner = FakeProcessRunner(successfulRun(transcript("lualatex-zeile-zu-breit.log")))
 
-            typeset(runner).exists() shouldBe true
+            val compiled = typeset(runner)
+
+            compiled.pdf.exists() shouldBe true
+            val hint = compiled.overflowHint.shouldNotBeNull()
+            hint shouldContain "über den Rand"
+            hint shouldContain "Overfull \\hbox (97.70374pt too wide) detected at line 3"
+            hint shouldContain "Ein Satz, der nicht in drei Zen-time-ter passt"
         }
 
         test("es zählt der letzte Lauf, denn aus ihm stammt das PDF") {
@@ -274,7 +282,7 @@ class LatexCompilerTest : FunSpec({
             // einen zweiten verlangt.
             val overflowFirst = overflow + transcript("lualatex-verlangt-zweiten-lauf.log")
 
-            typeset(FakeProcessRunner(successfulRun(overflowFirst), successfulRun())).exists() shouldBe true
+            typeset(FakeProcessRunner(successfulRun(overflowFirst), successfulRun())).pdf.exists() shouldBe true
 
             shouldThrow<ToolchainException> {
                 typeset(FakeProcessRunner(successfulRun(transcript("lualatex-verlangt-zweiten-lauf.log")), successfulRun(overflow)))
