@@ -290,6 +290,28 @@ class ToolchainIntegrationTest : FunSpec({
         run.textOf(pdf) shouldContain street
     }
 
+    // #485: pdfx liest die .xmpdata mit eigenen Catcodes; LaTeX-maskiert wichen Info-Dictionary und XMP ab.
+    test("Sonderzeichen in Nummer und Firma stehen gleich in Info-Dictionary und XMP") {
+        // In YAML: \\ ein Backslash, \_ ein geschütztes Leerzeichen.
+        val sellerConfig = workDir.resolve("stammdaten-sonderzeichen.yaml")
+        sellerConfig.writeText(
+            Path
+                .of("src/test/resources/stammdaten.yaml")
+                .readText()
+                .replace(Regex("(?m)^rechnungsnummer-muster: .*\n"), "")
+                .replace(Regex("(?m)^firma: .*$"), Regex.escapeReplacement("""firma: "Muster_ # ~ ^ & % {} \\ Müller\_GmbH"""")),
+        )
+        val input = workDir.resolve("sonderzeichen.yaml")
+        input.writeText(Path.of("src/test/resources/rechnung.yaml").readText().replace("nummer: R26-042", "nummer: \"RE_2026_042\""))
+
+        val (pdf, _) = run.generate("sonderzeichen", input = input, sellerConfig = sellerConfig)
+
+        Loader.loadPDF(pdf.toFile()).use { document ->
+            document.documentInformation.title shouldBe "Rechnung RE_2026_042"
+            document.documentInformation.author shouldBe "Muster_ # ~ ^ & % {} \\ Müller GmbH"
+        }
+    }
+
     // #488: In prag stand die Bezeichnung in \textbf, und das nimmt keinen Absatz an.
     test("eine Leerzeile in der Beschreibung setzt jedes Design") {
         val example = Path.of("src/test/resources/rechnung.yaml").readText()

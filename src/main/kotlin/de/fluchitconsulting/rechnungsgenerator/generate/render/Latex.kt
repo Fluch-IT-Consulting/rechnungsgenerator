@@ -5,9 +5,9 @@ import de.fluchitconsulting.rechnungsgenerator.core.text.TextValue
 import de.fluchitconsulting.rechnungsgenerator.core.text.VariableResolver
 
 /**
- * Ein fertiges Stück LaTeX. Hinein kommt nur, was einen von drei Wegen nimmt: [escapeLatex] für Daten,
- * [DateFormat] und [Numbers] für Daten und Zahlen, [raw] für Markup. Ein unmaskiertes `&` oder `%` zerlegte
- * sonst den Satz; deshalb ist auch der Konstruktor privat.
+ * Ein fertiges Stück LaTeX. Hinein kommt nur, was einen von vier Wegen nimmt: [escapeLatex] für Daten,
+ * [escapeXmpData] für Daten in der .xmpdata, [DateFormat] und [Numbers] für Daten und Zahlen, [raw] für Markup.
+ * Ein unmaskiertes `&` oder `%` zerlegte sonst den Satz; deshalb ist auch der Konstruktor privat.
  */
 @JvmInline
 value class Latex private constructor(val tex: String) {
@@ -56,6 +56,29 @@ fun String.escapeLatex(): Latex =
                     '\u2009' -> append("\\,")
                     else -> append(char)
                 }
+            }
+        },
+    )
+
+/**
+ * Maskiert Text für die .xmpdata. pdfx liest sie mit eigenen Catcodes: `_ # ^ ~ $` sind dort gewöhnliche Zeichen, `&`
+ * setzt es selbst um. Maskiert stünden Info-Dictionary und XMP verschieden da, gegen PDF/A 6.7.3 (#485, pdfx.sty).
+ */
+fun String.escapeXmpData(): Latex =
+    Latex.raw(
+        buildString(length) {
+            var afterBackslash = false
+            for (char in this@escapeXmpData) {
+                when {
+                    // `{}` stünde im XMP wörtlich da; das Leerzeichen danach verschluckt TeX, ebenso das nächste.
+                    char == '\\' -> append("\\backslash ")
+                    char == '%' || char == '{' || char == '}' -> append('\\').append(char)
+                    char.isWhitespace() && afterBackslash -> append("\\ ")
+                    // pdfx verbietet eine Leerzeile, und `~` stünde wörtlich da.
+                    char.isWhitespace() -> append(' ')
+                    else -> append(char)
+                }
+                afterBackslash = char == '\\'
             }
         },
     )
