@@ -294,7 +294,8 @@ Prüfer aufbaut. Satz und Einbetten braucht nur `erzeuge`: `Typesetter`,
 ist damit der Rand, nicht mehr `generate.toolchain`. `xml` braucht nichts aus
 dem Kern, weil es keine Rechnungsdatei liest. Der Kern bekommt also keinen
 Verbraucher dazu, und für den Modulschnitt gilt weiter, was unter „Was
-ZUGFeRD nicht auslöst“ steht.
+ZUGFeRD nicht auslöst“ steht. (Aufgehoben: Die Werkzeuge sind nach Art
+geschnitten, siehe ADR-0029.)
 
 **`EInvoiceValidator` liefert ein Ergebnis, statt zu werfen.** Dass ein
 Verstoß eine Lücke im Generator ist, stimmt nur beim Erzeugen; bei `xml` ist
