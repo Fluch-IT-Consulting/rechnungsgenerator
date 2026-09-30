@@ -481,7 +481,7 @@ class GenerateCommandTest : FunSpec({
             val error =
                 shouldThrow<ToolchainException> {
                     generate(
-                        FakeTypesetter(failure = "lualatex konnte Rechnung-R26-042.tex nicht übersetzen"),
+                        FakeTypesetter(typesettingFailure = "lualatex konnte Rechnung-R26-042.tex nicht übersetzen"),
                         "-o",
                         target("logo-kaputt"),
                         sellerConfigFile = sellerConfigWithLogo("prag"),
@@ -502,27 +502,37 @@ class GenerateCommandTest : FunSpec({
             error.message!! shouldContain "Die Stammdaten nennen ein Logo"
         }
 
-        test("ein ungültiges XML der E-Rechnung nennt das Logo nicht, denn daran kann es nicht liegen") {
-            val error =
-                shouldThrow<ToolchainException> {
-                    generate(
-                        FakeTypesetter(einvoiceFailure = "Das XML der E-Rechnung ist ungültig."),
-                        "--zugferd",
-                        "-o",
-                        target("logo-xml-ungueltig"),
-                        sellerConfigFile = sellerConfigWithLogo("prag"),
-                    )
-                }
+        // #386, #491
+        test("scheitern Prüfer, XML oder Einbetten, nennt die Meldung das Logo nicht, denn daran kann es nicht liegen") {
+            listOf(
+                "verapdf brach mit Exitcode 7 ab",
+                "veraPDF konnte Rechnung-R26-042.pdf nicht prüfen",
+                "Das XML der E-Rechnung ist ungültig.",
+                "Die E-Rechnung ließ sich nicht in Rechnung-R26-042.pdf einbetten",
+            ).forEach { failure ->
+                withClue(failure) {
+                    val error =
+                        shouldThrow<ToolchainException> {
+                            generate(
+                                FakeTypesetter(failure = failure),
+                                "--zugferd",
+                                "-o",
+                                target("logo-kein-satzfehler"),
+                                sellerConfigFile = sellerConfigWithLogo("prag"),
+                            )
+                        }
 
-            error.message!! shouldContain "Das XML der E-Rechnung ist ungültig."
-            error.message!! shouldNotContain "Logo"
+                    error.message!! shouldContain failure
+                    error.message!! shouldNotContain "Logo"
+                }
+            }
         }
 
         test("ohne Logo in den Stammdaten nennt die Meldung keines") {
             val error =
                 shouldThrow<ToolchainException> {
                     generate(
-                        FakeTypesetter(failure = "lualatex konnte Rechnung-R26-042.tex nicht übersetzen"),
+                        FakeTypesetter(typesettingFailure = "lualatex konnte Rechnung-R26-042.tex nicht übersetzen"),
                         "-o",
                         target("ohne-logo-kaputt"),
                     )

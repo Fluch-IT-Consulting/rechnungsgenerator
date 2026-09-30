@@ -10,10 +10,11 @@ import kotlin.io.path.writeText
 /** Merkt sich seinen Aufruf: Das Arbeitsverzeichnis legt das Kommando selbst an und nennt es niemandem. */
 class FakeTypesetter(
     private val valid: Boolean = true,
+    private val typesettingFailure: String? = null,
+    // Ein Werkzeug scheitert, aber nicht am Satz: Prüfer, XML, Einbetten (#491).
     private val failure: String? = null,
     // Bricht den Vertrag der Naht absichtlich (#300).
     private val ioFailure: String? = null,
-    private val einvoiceFailure: String? = null,
     private val overflowHint: String? = null,
 ) : Typesetter {
     var workingDir: Path? = null
@@ -32,7 +33,7 @@ class FakeTypesetter(
         this.workingDir = workingDir
         this.jobName = jobName
         this.sources = sources
-        if (einvoiceFailure != null) throw InvalidEInvoiceException(einvoiceFailure)
+        if (typesettingFailure != null) throw TypesettingException(typesettingFailure)
         if (failure != null) throw ToolchainException(failure)
         if (ioFailure != null) throw IOException(ioFailure)
         // Der Name, den LuaLatexTypesetter dem eingebetteten PDF gibt (#390).

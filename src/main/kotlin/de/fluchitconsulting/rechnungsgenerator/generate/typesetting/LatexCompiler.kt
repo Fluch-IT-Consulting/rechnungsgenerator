@@ -47,12 +47,12 @@ class LatexCompiler(private val luaLatex: LuaLatex) {
         do {
             val run = luaLatex.run(workingDir, jobName, id, creationDate)
             log = run.log
-            if (run.failed) throw ToolchainException(errorReport(jobName, log))
+            if (run.failed) throw TypesettingException(errorReport(jobName, log))
             passes++
         } while (needsAnotherPass(log) && passes < MAX_PASSES)
         // Gefragt wird das Protokoll des letzten Laufs: Aus ihm stammt das PDF.
-        overflowReport(jobName, log)?.let { throw ToolchainException(it) }
-        missingCharactersReport(jobName, log)?.let { throw ToolchainException(it) }
+        overflowReport(jobName, log)?.let { throw TypesettingException(it) }
+        missingCharactersReport(jobName, log)?.let { throw TypesettingException(it) }
         return CompiledPdf(pdfOrFail(workingDir, jobName), overflowHint(jobName, log))
     }
 
@@ -158,3 +158,9 @@ class LatexCompiler(private val luaLatex: LuaLatex) {
             if (!it.exists()) throw ToolchainException("$PROGRAM meldete Erfolg, hat aber kein PDF geschrieben: $it")
         }
 }
+
+/**
+ * LuaLaTeX ist an den Quellen gescheitert. Nur hier kann das Logo schuld sein, nicht an Prüfer, XML oder Einbetten;
+ * deshalb nennt `erzeuge` es allein bei diesem Typ (#491).
+ */
+class TypesettingException(message: String) : ToolchainException(message)
