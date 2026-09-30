@@ -52,6 +52,9 @@ enum class Rule(val severity: Severity) {
     RECHNUNGSNUMMER_OHNE_DATEINAMEN(Severity.ABORT),
     RECHNUNGSNUMMER_PASST_NICHT(Severity.ABORT),
 
+    // Stammdaten
+    REGISTERANGABEN_UNVOLLSTAENDIG(Severity.ABORT),
+
     // Freitextangaben
     ANSPRECHPARTNER_LEER(Severity.ABORT),
     ANSPRECHPARTNER_MIT_LEERRAUM(Severity.ABORT),

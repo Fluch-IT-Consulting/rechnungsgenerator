@@ -49,7 +49,8 @@ bank:
   institut:
 
 # Handelsregister: für Kapitalgesellschaften (UG, GmbH) nach §35a GmbHG auf
-# Geschäftsbriefen Pflicht, für Einzelunternehmer gegenstandslos.
+# Geschäftsbriefen Pflicht, für Einzelunternehmer gegenstandslos. Gericht und
+# Nummer nur zusammen.
 # Beispiel: Würzburg
 #registergericht:
 # Beispiel: HRB 12345

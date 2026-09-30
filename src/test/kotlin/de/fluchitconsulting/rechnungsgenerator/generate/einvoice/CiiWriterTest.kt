@@ -207,7 +207,13 @@ class CiiWriterTest : FunSpec({
         // Auch die Positionsbeschreibung (BT-154) heißt ram:Description und steht
         // davor; gelesen wird nur im Verkäufer.
         fun description(registerCourt: String?, managingDirector: String?): String {
-            val config = testSellerConfig().copy(registerCourt = registerCourt, managingDirector = managingDirector)
+            // Die Nummer mit dem Gericht: Allein lehnt es REGISTERANGABEN_UNVOLLSTAENDIG ab.
+            val config =
+                testSellerConfig().copy(
+                    registerCourt = registerCourt,
+                    registerNumber = registerCourt?.let { "HRB 12345" },
+                    managingDirector = managingDirector,
+                )
             val invoice = testInvoice(items = listOf(testItem(description = "Arbeitspaket Nord")))
             val xml = CalculatedInvoice(invoice, config).accepted().xml()
             xml.shouldBeValidExtended()
