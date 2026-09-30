@@ -230,7 +230,8 @@ Auch mit `gültig` und Exitcode 0 lies die Zeilen danach. Jede, die mit
 `Hinweis:` beginnt, gibst du dem Nutzer weiter. Sagt ein Hinweis, dass etwas
 über den Rand seiner Zeile oder Spalte steht, sieh dir das PDF an der
 genannten Stelle an, bevor du es vorlegst: In einer Tabelle kann ein Betrag
-über der Spalte daneben stehen.
+über der Spalte daneben stehen. Verlangte LuaLaTeX noch einen Lauf, sieh dir
+die Tabellen und die Seitenzahlen an.
 
 **5. Vorlegen.** Zeige das PDF (`SendUserFile` oder als Bild über `pdftoppm`)
 und nenne Nummer, Kunde, Zeitraum und Gesamtbetrag in einem Satz. Der Nutzer

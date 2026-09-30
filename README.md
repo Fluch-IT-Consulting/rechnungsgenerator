@@ -136,10 +136,12 @@ sich gefahrlos umleiten.
 
 Steht etwas über den Rand seiner Zeile oder Spalte – in einer Tabelle
 womöglich über der Spalte daneben –, folgt dem Ergebnis ein Hinweis mit der
-Fundstelle aus dem Protokoll von LuaLaTeX. Das PDF ist gültig und vollständig,
-der Exitcode bleibt 0; vor dem Versand gehört es trotzdem angesehen. Fehlt
-dagegen Inhalt, weil eine Seite mehr trägt, als das Blatt fasst, oder weil die
-Schrift des Designs ein Zeichen nicht hat, bricht der Satz mit Exitcode 1 ab.
+Fundstelle aus dem Protokoll von LuaLaTeX. Ebenso, wenn LuaLaTeX nach drei
+Läufen noch einen weiteren verlangt: Dann stimmen womöglich Spaltenbreiten oder
+Seitenzahlen nicht. Das PDF ist gültig und vollständig, der Exitcode bleibt 0;
+vor dem Versand gehört es trotzdem angesehen. Fehlt dagegen Inhalt, weil eine
+Seite mehr trägt, als das Blatt fasst, oder weil die Schrift des Designs ein
+Zeichen nicht hat, bricht der Satz mit Exitcode 1 ab.
 
 ### E-Rechnung (ZUGFeRD)
 

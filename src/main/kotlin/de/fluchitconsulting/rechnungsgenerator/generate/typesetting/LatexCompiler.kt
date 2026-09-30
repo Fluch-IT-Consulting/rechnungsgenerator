@@ -12,8 +12,11 @@ import kotlin.io.path.exists
 import kotlin.io.path.writeBytes
 import kotlin.io.path.writeText
 
-/** [overflowHint]: Was über den Rand seiner Zeile oder Spalte steht; das PDF ist trotzdem vollständig (#480). */
-data class CompiledPdf(val pdf: Path, val overflowHint: String?)
+/**
+ * [overflowHint]: Was über den Rand seiner Zeile oder Spalte steht; [rerunHint]: Der letzte Lauf verlangte noch einen.
+ * Das PDF ist in beiden Fällen vollständig (#480, #493).
+ */
+data class CompiledPdf(val pdf: Path, val overflowHint: String?, val rerunHint: String?)
 
 /** Setzt eine .tex mit LuaLaTeX zu einem PDF/A. Die .xmpdata trägt denselben Namen, daraus baut pdfx das XMP. */
 class LatexCompiler(private val luaLatex: LuaLatex) {
@@ -53,7 +56,7 @@ class LatexCompiler(private val luaLatex: LuaLatex) {
         // Gefragt wird das Protokoll des letzten Laufs: Aus ihm stammt das PDF.
         overflowReport(jobName, log)?.let { throw TypesettingException(it) }
         missingCharactersReport(jobName, log)?.let { throw TypesettingException(it) }
-        return CompiledPdf(pdfOrFail(workingDir, jobName), overflowHint(jobName, log))
+        return CompiledPdf(pdfOrFail(workingDir, jobName), overflowHint(jobName, log), rerunHint(log))
     }
 
     /**
@@ -81,8 +84,21 @@ class LatexCompiler(private val luaLatex: LuaLatex) {
      * Nicht jedes Paket sagt es gleich: lastpage „Rerun to get“, longtable „Rerun LaTeX“. Fehlte eine Wendung,
      * fiele das erst auf, wenn kein anderes Paket den Lauf mehr verlangt – dann entstünde das PDF aus dem ersten (#321).
      */
-    private fun needsAnotherPass(log: String): Boolean =
-        log.lineSequence().any { it.contains("Rerun to get") || it.contains("Please rerun") || it.contains("Rerun LaTeX") }
+    private fun needsAnotherPass(log: String): Boolean = log.lineSequence().any(::requestsRerun)
+
+    private fun requestsRerun(line: String): Boolean =
+        line.contains("Rerun to get") || line.contains("Please rerun") || line.contains("Rerun LaTeX")
+
+    /**
+     * Ein Hinweis und kein Abbruch (#493): Der Inhalt steht im PDF, doch Spaltenbreiten und Seitenzahlen sind
+     * womöglich die eines früheren Laufs (#321).
+     */
+    private fun rerunHint(log: String): String? {
+        val lines = log.lines().filter(::requestsRerun).distinct()
+        if (lines.isEmpty()) return null
+        return "$PROGRAM verlangte nach $MAX_PASSES Läufen noch einen weiteren. Spaltenbreiten oder Seitenzahlen im PDF " +
+            "stimmen womöglich nicht; vor dem Versand das PDF ansehen. $PROGRAM meldet:\n\n${lines.joinToString("\n")}"
+    }
 
     /**
      * Bei `Overfull \vbox` schneidet LuaLaTeX mit Exitcode 0 ab, was übersteht – ein gültiges PDF/A ohne den Inhalt

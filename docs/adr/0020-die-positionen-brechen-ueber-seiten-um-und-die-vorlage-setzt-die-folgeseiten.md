@@ -232,3 +232,16 @@ Verworfen ist `\tracinglostchars=3` in der Grundlage: LuaLaTeX bricht dann
 zwar beim ersten fehlenden Zeichen ab, aber die einzige `!`-Zeile ist „Fatal
 error occurred, no output PDF file produced!“. Die Meldung aus der
 Fehlerzeile nennte weder das Zeichen noch die Schrift, und nur das erste.
+
+## Nachtrag vom 30.09.2026: Verlangt der letzte Lauf noch einen, ist das ein Hinweis
+
+`longtable` und `lastpage` brauchen mehr als einen Lauf. `LatexCompiler`
+setzt, bis das Protokoll keinen weiteren verlangt, höchstens dreimal.
+Verlangte auch der dritte Lauf noch einen, entstand das PDF bisher ohne ein
+Wort, mit Spaltenbreiten oder Seitenzahlen eines früheren Laufs (#321). Seit
+#493 meldet `erzeuge` das als Hinweis nach dem Ergebnis, mit den Zeilen aus
+dem Protokoll.
+
+Ein Abbruch ist es nicht, aus demselben Grund wie beim `Overfull \hbox`: Der
+Inhalt steht vollständig im PDF, falsch sein kann nur das Satzbild. Das
+Pflichtangaben-Netz verlangt, dass keine Beispieldatei den Hinweis bekommt.

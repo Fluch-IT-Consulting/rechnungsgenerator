@@ -612,6 +612,17 @@ class GenerateCommandTest : FunSpec({
             Regex("""Die Datei liegt unter \S+/Rechnung-R26-042\.tex\.""")
     }
 
+    // #493
+    test("verlangte der letzte Lauf noch einen, ist das ein Hinweis nach dem Ergebnis, und das PDF liegt am Ziel") {
+        val target = inputDir.resolve("ohne-letzten-lauf.pdf")
+
+        val output = generate(FakeTypesetter(rerunHint = "lualatex verlangte noch einen Lauf."), "-o", target.toString())
+
+        target.exists() shouldBe true
+        output.indexOfFirst { it.contains("PDF/A-1b") } shouldBeLessThan
+            output.indexOfFirst { it == "Hinweis: lualatex verlangte noch einen Lauf." }
+    }
+
     context("ohne -s kommen die Stammdaten aus der Wurzel (ADR-0015)") {
         // [company] steht später im Satz und zeigt, welche Stammdaten gelesen wurden.
         fun archive(company: String? = null): Path {

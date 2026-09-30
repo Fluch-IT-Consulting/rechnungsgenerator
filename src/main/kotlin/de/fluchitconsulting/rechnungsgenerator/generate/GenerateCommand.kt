@@ -174,6 +174,7 @@ class GenerateCommand(
                     }
                 echo("Hinweis: $hint\n\n$inspectionNote")
             }
+            typesetPdf.rerunHint?.let { echo("Hinweis: $it") }
             if (keepWorkFiles) echo("Arbeitsdateien: $workDir")
             // Zuletzt und nur für ein gültiges PDF am Ziel. Ein Fehlschlag ist ein Hinweis, der Exitcode bleibt 0.
             if (openAfterwards) {
