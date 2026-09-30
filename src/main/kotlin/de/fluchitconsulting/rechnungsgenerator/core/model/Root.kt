@@ -1,10 +1,13 @@
 package de.fluchitconsulting.rechnungsgenerator.core.model
 
+import java.nio.file.LinkOption
 import java.nio.file.Path
 import kotlin.io.path.exists
 import kotlin.io.path.isDirectory
 import kotlin.io.path.isRegularFile
+import kotlin.io.path.isSymbolicLink
 import kotlin.io.path.name
+import kotlin.io.path.readSymbolicLink
 
 /** Das Verzeichnis mit dem Ordner `.rechnungsgenerator/` (ADR-0015). Privater Konstruktor: Eine Wurzel stammt aus der Suche. */
 @JvmInline
@@ -27,8 +30,12 @@ value class Root private constructor(val directory: Path) {
             val start = invoiceFile.toAbsolutePath().normalize().parent
             for (directory in generateSequence(start) { it.parent }) {
                 val folder = directory.resolve(FOLDER)
-                if (!folder.exists()) continue
+                // NOFOLLOW_LINKS: Ein Link ins Leere ist halb eingerichtet und kein fehlender Ordner (#508).
+                if (!folder.exists(LinkOption.NOFOLLOW_LINKS)) continue
                 // Halb eingerichtet bricht ab, statt weiter oben zu suchen: Sonst stünde der falsche Aussteller da.
+                if (folder.isSymbolicLink() && !folder.exists()) {
+                    throw InputFileException("Der Link $folder zeigt auf ${folder.readSymbolicLink()}, und das gibt es nicht. $NOT_ABOVE")
+                }
                 if (!folder.isDirectory()) {
                     throw InputFileException(
                         "$folder ist eine Datei und kein Ordner. Eine Wurzel gibt sich mit dem Ordner $FOLDER " +

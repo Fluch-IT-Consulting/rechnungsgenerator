@@ -9,6 +9,7 @@ import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.collections.shouldBeEmpty
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.string.shouldContain
+import io.kotest.matchers.string.shouldNotContain
 import java.nio.file.Path
 import kotlin.io.path.createDirectories
 import kotlin.io.path.createSymbolicLinkPointingTo
@@ -80,6 +81,19 @@ class SetupCommandTest : FunSpec({
 
         failure.message shouldBe "Die Datei $link gibt es schon; eingerichtet ist hier also bereits."
         elsewhere.exists() shouldBe false
+    }
+
+    test("ein Link ins Leere an Stelle des Ordners wird genannt, statt als eingerichtet zu gelten (#508)") {
+        val dir = createTempDirectory("einrichten-test")
+        val missing = dir.resolve("nicht-eingehaengt").resolve(Root.FOLDER)
+        val link = dir.resolve(Root.FOLDER).createSymbolicLinkPointingTo(missing)
+
+        val failure = shouldThrow<CliktError> { runSetup(dir) }
+
+        failure.message!! shouldContain link.toString()
+        failure.message!! shouldContain missing.toString()
+        failure.message!! shouldNotContain "eingerichtet ist hier also bereits"
+        missing.exists() shouldBe false
     }
 
     test("ein nicht beschreibbarer Ort nennt die Zieldatei und den Grund") {
