@@ -36,7 +36,14 @@ object LocalDateSerializer :
     KSerializer<LocalDate> by stringSerializer(
         name = "LocalDate",
         encode = LocalDate::toString,
-        decode = LocalDate::parse,
+        // Übersetzt wie beim Monat: YamlLoader fängt nur SerializationException (#486).
+        decode = { raw ->
+            try {
+                LocalDate.parse(raw)
+            } catch (e: DateTimeParseException) {
+                throw SerializationException("Kein gültiges Datum: '$raw' (erwartet JJJJ-MM-TT, etwa 2026-08-14)", e)
+            }
+        },
     )
 
 object YearMonthSerializer :
