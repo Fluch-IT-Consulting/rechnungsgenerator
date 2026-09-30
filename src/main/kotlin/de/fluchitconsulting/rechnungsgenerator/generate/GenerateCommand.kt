@@ -15,9 +15,9 @@ import de.fluchitconsulting.rechnungsgenerator.core.model.YamlLoader
 import de.fluchitconsulting.rechnungsgenerator.core.rules.RejectedException
 import de.fluchitconsulting.rechnungsgenerator.generate.einvoice.CiiWriter
 import de.fluchitconsulting.rechnungsgenerator.generate.render.InvoiceRenderer
-import de.fluchitconsulting.rechnungsgenerator.generate.typesetting.InvalidEInvoiceException
 import de.fluchitconsulting.rechnungsgenerator.generate.typesetting.LuaLatexTypesetter
 import de.fluchitconsulting.rechnungsgenerator.generate.typesetting.TypesetterFactory
+import de.fluchitconsulting.rechnungsgenerator.generate.typesetting.TypesettingException
 import de.fluchitconsulting.rechnungsgenerator.toolchain.ToolchainException
 import de.fluchitconsulting.rechnungsgenerator.toolchain.process.ExternalTool
 import de.fluchitconsulting.rechnungsgenerator.toolchain.process.VeraPdf
@@ -133,10 +133,7 @@ class GenerateCommand(
                 try {
                     val sources = einvoice?.let(rendered.sources::withEInvoice) ?: rendered.sources
                     typesetter.typeset(workingDir = workDir, jobName = jobName, sources = sources)
-                } catch (e: InvalidEInvoiceException) {
-                    // Am XML kann das Logo nicht schuld sein (#386).
-                    throw e
-                } catch (e: ToolchainException) {
+                } catch (e: TypesettingException) {
                     throw ToolchainException(e.message + logoNote, e)
                 }
             // Ein ungültiges PDF/A kommt nicht ans Ziel, auch nicht mit --ueberschreiben, und endet mit Exitcode 1.

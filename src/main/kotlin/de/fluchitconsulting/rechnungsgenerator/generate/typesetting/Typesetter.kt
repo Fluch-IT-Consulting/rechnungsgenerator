@@ -21,7 +21,8 @@ interface Typesetter {
 
     /**
      * Die Arbeitsdateien bleiben in [workingDir] liegen. Wirft [ToolchainException], auch für eine IOException:
-     * Beim Kommando heißt eine IOException, die Zieldatei ließ sich nicht schreiben (#300).
+     * Beim Kommando heißt eine IOException, die Zieldatei ließ sich nicht schreiben (#300). Scheitert der Satz
+     * selbst, ist es eine [TypesettingException] (#491).
      */
     fun typeset(
         workingDir: Path,
@@ -59,13 +60,10 @@ class LuaLatexTypesetter(private val validator: PdfAValidator) : Typesetter {
     private fun checkEInvoice(xml: ByteArray) {
         val result = EInvoiceValidator.validate(xml)
         if (!result.valid) {
-            throw InvalidEInvoiceException(
+            throw ToolchainException(
                 "Das XML der E-Rechnung ist ungültig. Das ist ein Fehler des Generators, nicht der Rechnung:\n" +
                     result.errors.joinToString("\n") { "  $it" },
             )
         }
     }
 }
-
-/** Ein eigener Typ: Am XML ist, anders als am Satz, nie das Logo schuld (#386). */
-class InvalidEInvoiceException(message: String) : ToolchainException(message)

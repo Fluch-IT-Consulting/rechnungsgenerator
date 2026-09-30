@@ -1,10 +1,12 @@
 package de.fluchitconsulting.rechnungsgenerator.generate.typesetting
 
+import de.fluchitconsulting.rechnungsgenerator.toolchain.ToolchainException
 import de.fluchitconsulting.rechnungsgenerator.toolchain.validation.BuiltInPdfAValidator
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.collections.shouldBeEmpty
 import io.kotest.matchers.string.shouldContain
+import io.kotest.matchers.types.shouldNotBeInstanceOf
 import java.nio.file.Path
 import java.time.LocalDate
 import kotlin.io.path.createTempDirectory
@@ -23,12 +25,13 @@ class LuaLatexTypesetterTest : FunSpec({
         val workDir = createTempDirectory("rechnungsgenerator-test")
         val sources = PdfSources(tex = "", xmpMetadata = "", creationDate = LocalDate.of(2026, 8, 14), einvoice = xml.toByteArray())
 
-        // Der eigene Typ: An ihm erkennt erzeuge, dass kein Logo schuld sein kann (#386).
         val error =
-            shouldThrow<InvalidEInvoiceException> {
+            shouldThrow<ToolchainException> {
                 LuaLatexTypesetter(BuiltInPdfAValidator).typeset(workDir, "rechnung", sources)
             }
 
+        // Kein Satzfehler, sonst nennte erzeuge das Logo (#491).
+        error.shouldNotBeInstanceOf<TypesettingException>()
         error.message!! shouldContain "Fehler des Generators, nicht der Rechnung"
         error.message!! shouldContain "[BR-09]"
         // LatexCompiler schriebe als Erstes die .tex hierher.

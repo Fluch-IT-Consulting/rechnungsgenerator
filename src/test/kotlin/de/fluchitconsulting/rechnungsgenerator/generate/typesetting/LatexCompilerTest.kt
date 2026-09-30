@@ -13,6 +13,7 @@ import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
 import io.kotest.matchers.string.shouldContain
 import io.kotest.matchers.string.shouldNotContain
+import io.kotest.matchers.types.shouldNotBeInstanceOf
 import java.io.File
 import java.time.LocalDate
 import kotlin.io.path.createTempDirectory
@@ -154,6 +155,8 @@ class LatexCompilerTest : FunSpec({
         val error = shouldThrow<ToolchainException> { typeset(FakeProcessRunner(successfulRun()), missing) }
 
         error.message!! shouldContain missing.toString()
+        // Daran ist kein Logo schuld (#491).
+        error.shouldNotBeInstanceOf<TypesettingException>()
     }
 
     test("ein Lauf genügt, wenn das Protokoll keinen zweiten verlangt") {
@@ -214,7 +217,7 @@ class LatexCompilerTest : FunSpec({
                 FakeProcessRunner.Run(exitCode = 1, files = mapOf("rechnung.log" to transcript("lualatex-abbruch.log"))),
             )
 
-        val error = shouldThrow<ToolchainException> { typeset(runner) }
+        val error = shouldThrow<TypesettingException> { typeset(runner) }
 
         error.message!! shouldContain "Undefined control sequence"
         error.message!! shouldContain "gibtesnicht"
@@ -258,7 +261,7 @@ class LatexCompilerTest : FunSpec({
         test("bricht ab, obwohl LuaLaTeX Erfolg meldet, und nennt die Zeile aus dem Protokoll") {
             val runner = FakeProcessRunner(successfulRun(overflow))
 
-            val error = shouldThrow<ToolchainException> { typeset(runner) }
+            val error = shouldThrow<TypesettingException> { typeset(runner) }
 
             error.message!! shouldContain "mehr, als das Blatt fasst"
             error.message!! shouldContain "Overfull \\vbox (405.0pt too high)"
@@ -296,7 +299,7 @@ class LatexCompilerTest : FunSpec({
         test("bricht ab, obwohl LuaLaTeX Erfolg meldet, und nennt jedes Zeichen einmal, mit Codepunkt und Schrift") {
             val runner = FakeProcessRunner(successfulRun(missing))
 
-            val message = shouldThrow<ToolchainException> { typeset(runner) }.message!!
+            val message = shouldThrow<TypesettingException> { typeset(runner) }.message!!
 
             message shouldContain "[texgyreheros-regular.otf]: П (U+041F), р (U+0440), и (U+0438), м (U+043C), е (U+0435), ✓ (U+2713)"
             message shouldContain "[texgyreheros-bold.otf]: С (U+0421), о (U+043E), ф (U+0444), и (U+0438), я (U+044F)"
