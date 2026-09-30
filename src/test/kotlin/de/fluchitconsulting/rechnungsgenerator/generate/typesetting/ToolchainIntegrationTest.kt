@@ -290,6 +290,38 @@ class ToolchainIntegrationTest : FunSpec({
         run.textOf(pdf) shouldContain street
     }
 
+    // #487: Hält die Annahme von `LatexCompilerTest` fest, das Protokoll nenne jedes fehlende Zeichen.
+    test("ein Zeichen, das die Schrift des Designs nicht hat, bricht den Satz ab") {
+        val example = Path.of("src/test/resources/rechnung.yaml").readText()
+        val input = workDir.resolve("kyrillisch.yaml")
+        input.writeText(example.replace("name: Beispiel Software GmbH", "name: Пример ЕООД").replace("ort: Nürnberg", "ort: София"))
+
+        val accepted =
+            CalculatedInvoice(
+                YamlLoader.loadInvoice(input),
+                YamlLoader.loadSellerConfig(sellerConfigFor(Design.HELSINKI)),
+            ).accepted()
+        val rendered = InvoiceRenderer.render(accepted).sources
+        val sources = PdfSources(rendered.tex, rendered.xmpMetadata, rendered.creationDate, rendered.files)
+        val typesetter = LuaLatexTypesetter(BuiltInPdfAValidator)
+
+        val error =
+            shouldThrow<ToolchainException> {
+                typesetter.typeset(
+                    createTempDirectory(workDir, "kyrillisch"),
+                    accepted.fileBaseName,
+                    sources,
+                )
+            }
+
+        error.message!! shouldContain "[texgyreheros-regular.otf]: П (U+041F)"
+        error.message!! shouldContain "С (U+0421)"
+
+        // Fira Sans hat Kyrillisch: Dort steht der Name im PDF.
+        val (pdf, _) = run.generate("kyrillisch-prag", input = input, sellerConfig = sellerConfigFor(Design.PRAG))
+        run.textOf(pdf) shouldContain "Пример ЕООД"
+    }
+
     // Kein Doppelgänger von `ExternalPdfAValidatorTest`: Dieser hält fest, dass
     // dessen Mitschnitt von veraPDF noch stimmt.
     test("ein nicht konformes PDF wird als solches gemeldet, nicht als Fehler")

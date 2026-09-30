@@ -213,3 +213,21 @@ Ein Abbruch ist es weiterhin nicht: Was übersteht, fehlt nicht im PDF, und
 weil die Silbentrennung aus ist, kann auch ein langer Name aus den
 Eingabedaten eine Zeile überschreiten, ohne dass das Blatt falsch wird. Das
 Pflichtangaben-Netz verlangt, dass keine Beispieldatei den Hinweis bekommt.
+
+## Nachtrag vom 30.09.2026: Ein Zeichen, das die Schrift nicht hat, bricht ab
+
+Dieselbe Lage wie beim `Overfull \vbox`, aus einem anderen Grund: Hat die
+Schrift eines Designs ein Zeichen nicht, lässt LuaLaTeX es weg, schreibt
+`Missing character: There is no … in font …` ins Protokoll und endet mit
+Exitcode 0. Ein bulgarischer Kundenname in `helsinki` (TeX Gyre Heros hat
+kein Kyrillisch) ergab ein gültiges PDF/A ohne Namen und Ort des Kunden – eine
+fehlende Pflichtangabe nach §14 Abs. 4 Nr. 1 UStG (#487).
+
+Seit #487 liest `LatexCompiler` das Protokoll des letzten Laufs auch auf diese
+Zeilen und bricht ab, wie beim `Overfull \vbox`. Die Meldung nennt jedes
+fehlende Zeichen einmal, mit Codepunkt, je Schrift. Das greift für jedes
+Design und auch für das Logo, ohne dass die Vorlage etwas davon weiß.
+
+Verworfen ist `\tracinglostchars=3` in der Grundlage: LuaLaTeX endet dann
+zwar mit Exitcode 1, aber ohne `!`-Zeile, und die Meldung zeigte nur den
+Schluss des Protokolls.
