@@ -179,3 +179,15 @@ eigenes Vorhaben.
 
 Eine Rechnung ohne `waehrung` sieht aus wie zuvor, bei 300 dpi pixelgleich
 über alle Beispiele beider Designs, auch auf Englisch.
+
+## Nachtrag vom 30.09.2026: Die Betragsspalten in `prag` wachsen mit dem Zeichen
+
+Ein Code ist gut 4 mm breiter als €, und die festen Spalten von `prag` für
+Einzelpreis, Rabatt und Gesamt fassten ihn nicht: Schon ein Rabatt von
+200,00 PLN lief über den Rand (#480). `prag` misst deshalb, um wie viel
+`\betrag{0}` in der Währung der Rechnung breiter ist als in Euro, und gibt
+das jeder dieser Spalten dazu. Ein Betrag hat damit in jeder Währung so viel
+Platz wie in Euro. Ist das Zeichen schmaler, wie $ und £, bleiben die
+Spalten, wie sie sind; eine Rechnung in Euro, US-Dollar oder Pfund sieht aus
+wie zuvor. `helsinki` setzt die Beträge in Spalten, die mitwachsen, und
+braucht nichts davon.
