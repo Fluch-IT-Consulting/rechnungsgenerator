@@ -1,6 +1,7 @@
 package de.fluchitconsulting.rechnungsgenerator.core.model
 
 import com.charleskorn.kaml.Yaml
+import com.charleskorn.kaml.YamlException
 import kotlinx.serialization.DeserializationStrategy
 import kotlinx.serialization.SerializationException
 import java.io.IOException
@@ -53,6 +54,16 @@ object YamlLoader {
 
     /** `decodeFromString` in zwei Schritten: Dazwischen sehen [ControlCharacters] und [BlankValues] den Knotenbaum. */
     private fun <T> decode(
+        deserializer: DeserializationStrategy<T>,
+        text: String,
+    ): T =
+        try {
+            decodeChecked(deserializer, text)
+        } catch (e: YamlException) {
+            throw SerializationException(YamlErrors.describe(e), e)
+        }
+
+    private fun <T> decodeChecked(
         deserializer: DeserializationStrategy<T>,
         text: String,
     ): T {

@@ -14,6 +14,7 @@ import io.kotest.assertions.withClue
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.string.shouldContain
+import io.kotest.matchers.string.shouldNotContain
 import kotlinx.serialization.SerializationException
 import java.nio.file.Path
 import java.time.LocalDate
@@ -536,6 +537,83 @@ class YamlLoaderTest : FunSpec({
 
         failure.message!! shouldContain file.toString()
         failure.message!! shouldContain "gibtsnicht"
+    }
+
+    context("die Lesefehler von kaml kommen deutsch und mit Fundstelle (#515)") {
+        val invoice = resource("rechnung.yaml")
+        val period = "leistungszeitraum:\n  von: 2026-07-01\n  bis: 2026-07-31"
+
+        // Je Typ, den kaml wirft, ein Fall; die Zeilen sind die von rechnung.yaml.
+        mapOf(
+            "ein fehlender Pflichtschlüssel" to
+                (invoice.replace("datum: 2026-08-14\n", "") to "Es fehlt der Pflichtschlüssel 'datum'."),
+            "ein fehlender Pflichtschlüssel weiter unten" to
+                (
+                    invoice.replace("    ort: Nürnberg\n", "") to
+                        "Unter kunde.anschrift (Zeile 10, Spalte 5) fehlt der Pflichtschlüssel 'ort'."
+                ),
+            "ein Pflichtschlüssel ohne Wert" to
+                (
+                    invoice.replace("datum: 2026-08-14", "datum:") to
+                        "datum (Zeile 3, Spalte 7) steht ohne Wert da, braucht aber einen."
+                ),
+            "ein unbekannter Schlüssel" to
+                (
+                    invoice.replace("    ort: Nürnberg", "    ort: Nürnberg\n    ortsteil: Mitte") to
+                        "Unbekannter Schlüssel kunde.anschrift.ortsteil (Zeile 13, Spalte 5). " +
+                        "Bekannt sind dort: land, ort, plz, strasse."
+                ),
+            "ein doppelter Schlüssel" to
+                (
+                    "nummer: R26-001\n" + invoice to
+                        "Der Schlüssel nummer (Zeile 3, Spalte 1) steht doppelt, zuerst in Zeile 1, Spalte 1."
+                ),
+            "eine Liste statt eines Werts" to
+                (
+                    invoice.replace("nummer: R26-042", "nummer: [R26-042]") to
+                        "nummer (Zeile 2, Spalte 9): Hier gehört ein einzelner Wert hin, keine Liste."
+                ),
+            "ein Wert statt eines Abschnitts" to
+                (
+                    invoice.replace(period, "leistungszeitraum: Juli 2026") to
+                        "leistungszeitraum (Zeile 4, Spalte 20): Hier gehört ein Abschnitt mit eigenen Schlüsseln hin, " +
+                        "kein einzelner Wert."
+                ),
+            "keine ganze Zahl" to
+                (
+                    "zahlungsziel-tage: vierzehn\n" + invoice to
+                        "zahlungsziel-tage (Zeile 1, Spalte 20): 'vierzehn' ist keine ganze Zahl."
+                ),
+            "kein gültiges YAML" to ("nummer: [R26-042" to "Kein gültiges YAML in Zeile 1, Spalte 17 oder kurz davor."),
+            "eine leere Datei" to ("# nur ein Kommentar\n" to "Die Datei ist leer oder enthält nur Kommentare."),
+            "ein Anker" to
+                (
+                    invoice.replace("name: Beispiel Software GmbH", "name: &kunde Beispiel Software GmbH") to
+                        "Anker und Verweise (& und *) gehen nicht"
+                ),
+        ).forEach { (case, input) ->
+            val (text, expected) = input
+            test(case) {
+                val failure = shouldThrow<SerializationException> { YamlLoader.parseInvoice(text) }
+
+                failure.message!! shouldContain expected
+                failure.message!! shouldNotContain
+                    failure.cause!!
+                        .message!!
+                        .lines()
+                        .first()
+            }
+        }
+
+        test("auch in den Stammdaten, und die Datei wird weiter genannt") {
+            val file = createTempDirectory("loader-test").resolve("stammdaten.yaml")
+            file.writeText(resource("stammdaten.yaml").replace("email: rechnung@muster-it-consulting.example\n", ""))
+
+            val failure = shouldThrow<InputFileException> { YamlLoader.loadSellerConfig(file) }
+
+            failure.message!! shouldContain file.toString()
+            failure.message!! shouldContain "Es fehlt der Pflichtschlüssel 'email'."
+        }
     }
 
     context("leere Werte (#504)") {

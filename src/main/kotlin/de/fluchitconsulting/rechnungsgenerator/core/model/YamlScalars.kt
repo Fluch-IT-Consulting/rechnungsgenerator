@@ -4,6 +4,7 @@ import com.charleskorn.kaml.YamlList
 import com.charleskorn.kaml.YamlMap
 import com.charleskorn.kaml.YamlNode
 import com.charleskorn.kaml.YamlNull
+import com.charleskorn.kaml.YamlPath
 import com.charleskorn.kaml.YamlScalar
 import com.charleskorn.kaml.YamlTaggedNode
 
@@ -30,7 +31,6 @@ internal fun scalarsOf(node: YamlNode): Sequence<YamlScalar> =
     }
 
 /** Feld, Zeile und Spalte, etwa `positionen[0].bezeichnung (Zeile 17, Spalte 18)`. */
-internal fun YamlScalar.location(): String {
-    val end = path.endLocation
-    return "${path.toHumanReadableString()} (Zeile ${end.line}, Spalte ${end.column})"
-}
+internal fun YamlScalar.location(): String = path.location()
+
+internal fun YamlPath.location(): String = "${toHumanReadableString()} (Zeile ${endLocation.line}, Spalte ${endLocation.column})"

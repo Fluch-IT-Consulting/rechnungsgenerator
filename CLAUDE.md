@@ -91,7 +91,7 @@ Gründe stehen in #107, #304, #310, #312, #431, #432 und ADR-0029.
   im Glossar, ihr Eintrag in `InvoiceType` nennt jede Antwort ausdrücklich
   (ADR-0009).
 - Eingaben liest `YamlLoader`, und er übersetzt die Lesefehler samt
-  Dateiname (#52).
+  Dateiname und Fundstelle, auch die von kaml (#52, #515).
 
 ### Satz
 
