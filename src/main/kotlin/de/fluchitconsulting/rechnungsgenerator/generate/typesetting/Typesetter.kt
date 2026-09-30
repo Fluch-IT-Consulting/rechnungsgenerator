@@ -11,7 +11,8 @@ import java.nio.file.Path
 /** Eine Funktion, weil der Prüfer erst mit dem Schalter `--externe-pdfa-pruefung` feststeht. */
 typealias TypesetterFactory = (PdfAValidator) -> Typesetter
 
-data class TypesetPdf(val pdf: Path, val validation: ValidationResult, val overflowHint: String? = null)
+/** [overflowHint] ohne Vorgabewert: Ein Typesetter, der ihn nicht weiterreicht, soll nicht übersetzen (#488). */
+data class TypesetPdf(val pdf: Path, val validation: ValidationResult, val overflowHint: String?)
 
 /** Aus Quelltext wird ein geprüftes PDF: die Naht zu den Werkzeugen, im Test mit vorbereitetem Ergebnis. */
 interface Typesetter {

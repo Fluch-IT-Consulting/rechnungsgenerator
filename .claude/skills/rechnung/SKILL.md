@@ -226,6 +226,12 @@ und endet mit Exitcode 0. Bei jedem
 anderen Ergebnis ist die Rechnung **nicht** fertig: Melde den Fehler, statt ihn
 zu übergehen – ein ungültiges PDF/A fällt sonst erst beim Finanzamt auf.
 
+Auch mit `gültig` und Exitcode 0 lies die Zeilen danach. Jede, die mit
+`Hinweis:` beginnt, gibst du dem Nutzer weiter. Sagt ein Hinweis, dass etwas
+über den Rand seiner Zeile oder Spalte steht, sieh dir das PDF an der
+genannten Stelle an, bevor du es vorlegst: In einer Tabelle kann ein Betrag
+über der Spalte daneben stehen.
+
 **5. Vorlegen.** Zeige das PDF (`SendUserFile` oder als Bild über `pdftoppm`)
 und nenne Nummer, Kunde, Zeitraum und Gesamtbetrag in einem Satz. Der Nutzer
 soll die Zahlen prüfen können, ohne die Datei zu öffnen.

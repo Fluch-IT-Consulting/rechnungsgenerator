@@ -585,7 +585,21 @@ class GenerateCommandTest : FunSpec({
         val output = generate(FakeTypesetter(overflowHint = "Etwas steht über den Rand."), "-o", target.toString())
 
         target.exists() shouldBe true
-        output.indexOfFirst { it.contains("PDF/A-1b") } shouldBeLessThan output.indexOf("Hinweis: Etwas steht über den Rand.")
+        output.indexOfFirst { it.contains("PDF/A-1b") } shouldBeLessThan
+            output.indexOfFirst { it.startsWith("Hinweis: Etwas steht über den Rand.") }
+    }
+
+    // #488: Ohne den Schalter ist die .tex gelöscht, die der Hinweis nennt.
+    test("der Hinweis auf den Überstand sagt, wo die .tex liegt oder wie sie liegen bleibt") {
+        val typesetter = FakeTypesetter(overflowHint = "In Rechnung-R26-042.tex steht etwas über den Rand.")
+
+        val withoutFlag = generate(typesetter, "-o", inputDir.resolve("ohne.pdf").toString())
+        val withFlag = generate(typesetter, "-o", inputDir.resolve("mit.pdf").toString(), "--arbeitsdateien-behalten")
+
+        withoutFlag.single { it.startsWith("Hinweis: In Rechnung-R26-042.tex") } shouldContain
+            "Mit --arbeitsdateien-behalten bleibt Rechnung-R26-042.tex zum Ansehen liegen."
+        withFlag.single { it.startsWith("Hinweis: In Rechnung-R26-042.tex") } shouldContain
+            Regex("""Die Datei liegt unter \S+/Rechnung-R26-042\.tex\.""")
     }
 
     context("ohne -s kommen die Stammdaten aus der Wurzel (ADR-0015)") {
