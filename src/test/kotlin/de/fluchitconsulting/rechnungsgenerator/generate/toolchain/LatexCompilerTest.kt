@@ -2,6 +2,7 @@ package de.fluchitconsulting.rechnungsgenerator.generate.toolchain
 
 import de.fluchitconsulting.rechnungsgenerator.toolchain.FakeProcessRunner
 import de.fluchitconsulting.rechnungsgenerator.toolchain.ToolchainException
+import io.kotest.assertions.throwables.shouldNotThrowAny
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.assertions.withClue
 import io.kotest.core.spec.style.FunSpec
@@ -307,5 +308,19 @@ class LatexCompilerTest : FunSpec({
         val error = shouldThrow<ToolchainException> { typeset(runner) }
 
         error.message!! shouldContain "meldete Erfolg, hat aber kein PDF geschrieben"
+    }
+
+    // Keiner der beiden Zweige fragt die Maschine, auf der der Test läuft (#475).
+    test("fehlt lualatex, nennt die Meldung das Programm und seinen Installationshinweis") {
+        val compiler = LatexCompiler(FakeProcessRunner(missing = setOf("lualatex")))
+
+        val error = shouldThrow<ToolchainException> { compiler.checkAvailable() }
+
+        error.message!! shouldContain "lualatex"
+        error.message!! shouldContain "https://tug.org/texlive/"
+    }
+
+    test("ist lualatex da, meldet checkAvailable nichts") {
+        shouldNotThrowAny { LatexCompiler(FakeProcessRunner()).checkAvailable() }
     }
 })
