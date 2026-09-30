@@ -1,5 +1,6 @@
 package de.fluchitconsulting.rechnungsgenerator.generate.typesetting
 
+import de.fluchitconsulting.rechnungsgenerator.core.accepted.accepted
 import de.fluchitconsulting.rechnungsgenerator.core.calculation.CalculatedInvoice
 import de.fluchitconsulting.rechnungsgenerator.core.model.Discount
 import de.fluchitconsulting.rechnungsgenerator.core.model.InvoiceVariable
@@ -13,6 +14,9 @@ import de.fluchitconsulting.rechnungsgenerator.core.values.Language
 import de.fluchitconsulting.rechnungsgenerator.core.values.Money
 import de.fluchitconsulting.rechnungsgenerator.core.values.Percent
 import de.fluchitconsulting.rechnungsgenerator.core.values.Price
+import de.fluchitconsulting.rechnungsgenerator.generate.render.InvoiceRenderer
+import de.fluchitconsulting.rechnungsgenerator.toolchain.process.ExternalTool
+import de.fluchitconsulting.rechnungsgenerator.toolchain.process.LuaLatex
 import io.kotest.assertions.assertSoftly
 import io.kotest.assertions.withClue
 import io.kotest.matchers.collections.shouldContain
@@ -28,6 +32,7 @@ import java.util.Locale
 import kotlin.io.path.createTempDirectory
 import kotlin.io.path.readBytes
 import kotlin.io.path.readLines
+import kotlin.io.path.readText
 import kotlin.io.path.writeText
 
 /**
@@ -192,6 +197,51 @@ class PflichtangabenRun {
             sheet.verify(calculated, design)
         }
         return Typeset(calculated, sheet)
+    }
+
+    /**
+     * Die Zeichenprobe (#479): je Währung eine Zeile mit einem positiven und
+     * einem negativen Betrag, gesetzt mit Grundlage, Schrift und Sprachdatei
+     * des Designs – ein Lauf je Sprachdatei, gleich wie viele Währungen es
+     * gibt. Die Präambel kommt vom Renderer, abgeschrieben prüfte die Probe
+     * eine andere Vorlage.
+     */
+    fun typesetCurrencySample(
+        design: Design,
+        language: Language,
+    ): List<String> {
+        val input = workDir.resolve("zeichenprobe-${language.tag}.yaml")
+        input.writeText("sprache: ${language.tag}\n" + Path.of("src/test/resources/rechnung.yaml").readText())
+        val calculated = CalculatedInvoice(YamlLoader.loadInvoice(input), YamlLoader.loadSellerConfig(design.sellerConfig))
+        val rendered = InvoiceRenderer.render(calculated.accepted()).sources
+
+        val amounts = listOf(Money("1000.00"), Money("-200.00"))
+        val body =
+            Currency.entries.joinToString("\n") { currency ->
+                val row = amounts.joinToString("\\quad") { "\\betrag{${it.value.toPlainString()}}" }
+                "\\begingroup\\def\\waehrung{${currency.name}}$row\\endgroup\\par"
+            }
+        val tex =
+            rendered.tex.substringBefore("\\begin{document}") +
+                "\\begin{document}\n\\thispagestyle{empty}\n$body\n\\end{document}\n"
+        val sources = PdfSources(tex, rendered.xmpMetadata, rendered.creationDate, rendered.files)
+        // Ein eigenes Verzeichnis je Lauf: Die Sprachdatei heißt in jedem Design gleich.
+        val pdf =
+            LatexCompiler(LuaLatex(ExternalTool))
+                .compile(createTempDirectory(workDir, "zeichenprobe"), "zeichenprobe-${design.name}-${language.tag}", sources)
+
+        val lines =
+            run
+                .textOf(pdf)
+                .lines()
+                .filter { it.isNotBlank() }
+                .map { Sheet.normalize(it) }
+        lines shouldBe
+            Currency.entries.map { currency ->
+                val spelling = Spelling(language, currency)
+                amounts.joinToString(" ") { spelling.withSymbol(it) }
+            }
+        return lines
     }
 }
 
@@ -542,17 +592,31 @@ fun defaultReasonOnSheet(
  * Jede Schreibweise, die ein Design wählen darf, unabhängig von `DateFormat`.
  *
  * Das Minuszeichen ist U+2212, nicht der Bindestrich des JDK (#320). Beträge
- * ohne Währungszeichen, außer negativ im Englischen: `−€200.00` (#409).
+ * ohne Währungszeichen, außer negativ im Englischen: `−€200.00` (#409); ganz
+ * mit Zeichen in [withSymbol].
  */
 private class Spelling(
     private val language: Language,
-    private val currency: Currency,
+    currency: Currency,
 ) {
+    // Samt Abstand, wie es vor der Zahl steht: Sonst ginge `PLN1,000.00` durch (#479).
     private val symbol =
         when (currency) {
-            Currency.EUR -> "€"
-            Currency.USD -> "$"
-            Currency.GBP -> "£"
+            Currency.EUR -> {
+                "€"
+            }
+            Currency.USD -> {
+                "$"
+            }
+            Currency.GBP -> {
+                "£"
+            }
+            Currency.PLN, Currency.CZK, Currency.RON, Currency.SEK, Currency.NOK, Currency.CHF -> {
+                when (language) {
+                    Language.GERMAN -> currency.name
+                    Language.BRITISH_ENGLISH, Language.AMERICAN_ENGLISH -> "${currency.name} "
+                }
+            }
         }
 
     private val symbols =
@@ -586,22 +650,22 @@ private class Spelling(
                 maximumFractionDigits = maxOf(value.stripTrailingZeros().scale(), minFraction)
             }.format(value)
 
-    fun amount(money: Money): String {
-        val digits = number(money.value, minFraction = 2)
-        return when (language) {
+    fun amount(money: Money): String =
+        when (language) {
             Language.GERMAN -> {
-                digits
+                number(money.value, minFraction = 2)
             }
             Language.BRITISH_ENGLISH, Language.AMERICAN_ENGLISH -> {
-                if (money.isNegative()) {
-                    "\u2212$symbol" +
-                        digits.removePrefix(
-                            "\u2212",
-                        )
-                } else {
-                    digits
-                }
+                if (money.isNegative()) withSymbol(money) else number(money.value, minFraction = 2)
             }
+        }
+
+    fun withSymbol(money: Money): String {
+        val digits = number(money.value.abs(), minFraction = 2)
+        val minus = if (money.isNegative()) "\u2212" else ""
+        return when (language) {
+            Language.GERMAN -> "$minus$digits $symbol"
+            Language.BRITISH_ENGLISH, Language.AMERICAN_ENGLISH -> "$minus$symbol$digits"
         }
     }
 

@@ -9,6 +9,13 @@
 \newcommand{\zeichenEUR}{€}
 \newcommand{\zeichenUSD}{\$}
 \newcommand{\zeichenGBP}{£}
+%% Den Abstand hinter dem Code trägt das Zeichen, \betrag setzt keinen: PLN 1,000.00, aber €1,000.00.
+\newcommand{\zeichenPLN}{PLN~}
+\newcommand{\zeichenCZK}{CZK~}
+\newcommand{\zeichenRON}{RON~}
+\newcommand{\zeichenSEK}{SEK~}
+\newcommand{\zeichenNOK}{NOK~}
+\newcommand{\zeichenCHF}{CHF~}
 \newcommand{\waehrungszeichen}{\csname zeichen\waehrung\endcsname}
 %% Das Zeichen vor der Zahl, das Minus davor: −€200.00. siunitx setzt kein Zeichen vor die Zahl, deshalb trennt
 %% \betrag@zeichen das Vorzeichen ab und setzt es als \textminus (#320). Kotlin liefert nie ein Plus (ADR-0021).
