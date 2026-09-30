@@ -199,3 +199,17 @@ Zusammenhalt trägt in jeder Vorlage ein Makro, `\ungeteilt`, und das prüft
 das Netz an zwei Grenzen, beim Schluss und beim Befreiungsgrund; jeder Satz
 in `\hinweisabsatz` bekommt es von dort. Eine Grenzdatei je Satz prüfte
 dasselbe Makro noch einmal und wanderte mit jeder Änderung am Satzbild.
+
+## Nachtrag vom 30.09.2026: Ein `Overfull \hbox` ist ein Hinweis
+
+Oben heißt es, ein `Overfull \hbox` bleibe eine Warnung, weil eine zu breite
+Zeile nur in den Rand rage. In einer Tabelle mit fester Spalte ragt sie aber
+über die Spalte daneben: In `prag` stand ein Betrag mit Währungscode über der
+Tabellenlinie (#480). Seit #480 liest `LatexCompiler` das Protokoll des
+letzten Laufs auch auf `Overfull \hbox`, und `erzeuge` meldet jede Fundstelle
+als Hinweis nach dem Ergebnis.
+
+Ein Abbruch ist es weiterhin nicht: Was übersteht, fehlt nicht im PDF, und
+weil die Silbentrennung aus ist, kann auch ein langer Name aus den
+Eingabedaten eine Zeile überschreiten, ohne dass das Blatt falsch wird. Das
+Pflichtangaben-Netz verlangt, dass keine Beispieldatei den Hinweis bekommt.
