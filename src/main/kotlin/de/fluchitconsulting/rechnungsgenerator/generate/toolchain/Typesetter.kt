@@ -5,7 +5,6 @@ import de.fluchitconsulting.rechnungsgenerator.toolchain.ExternalTool
 import de.fluchitconsulting.rechnungsgenerator.toolchain.PdfAValidator
 import de.fluchitconsulting.rechnungsgenerator.toolchain.ToolchainException
 import de.fluchitconsulting.rechnungsgenerator.toolchain.ValidationResult
-import de.fluchitconsulting.rechnungsgenerator.toolchain.requireAll
 import java.nio.file.Path
 
 /** Eine Funktion, weil der Prüfer erst mit dem Schalter `--externe-pdfa-pruefung` feststeht. */
@@ -33,9 +32,9 @@ interface Typesetter {
 class LuaLatexTypesetter(private val validator: PdfAValidator) : Typesetter {
     private val compiler = LatexCompiler(ExternalTool)
 
-    /** LuaLaTeX immer, den Prüfer fragt sein Adapter: Ohne `--externe-pdfa-pruefung` braucht es kein veraPDF. */
+    /** Jeder Adapter fragt nach seinem Programm: Ohne `--externe-pdfa-pruefung` braucht es kein veraPDF. */
     override fun checkAvailable() {
-        ExternalTool.requireAll("lualatex" to "TeX Live, siehe https://tug.org/texlive/")
+        compiler.checkAvailable()
         validator.checkAvailable()
     }
 

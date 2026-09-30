@@ -2,6 +2,7 @@ package de.fluchitconsulting.rechnungsgenerator.generate.toolchain
 
 import de.fluchitconsulting.rechnungsgenerator.toolchain.ProcessRunner
 import de.fluchitconsulting.rechnungsgenerator.toolchain.ToolchainException
+import de.fluchitconsulting.rechnungsgenerator.toolchain.requireAll
 import java.io.IOException
 import java.nio.file.FileSystemException
 import java.nio.file.Path
@@ -15,6 +16,8 @@ import kotlin.io.path.writeText
 
 /** Setzt eine .tex mit LuaLaTeX zu einem PDF/A. Die .xmpdata trägt denselben Namen, daraus baut pdfx das XMP. */
 class LatexCompiler(private val runner: ProcessRunner) {
+    fun checkAvailable() = runner.requireAll(PROGRAM to "TeX Live, siehe https://tug.org/texlive/")
+
     fun compile(
         workingDir: Path,
         jobName: String,
