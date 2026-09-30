@@ -186,8 +186,9 @@ tasks.test {
     // Fork, Klasse k an Fork k mod N, und ein freier Fork übernimmt nichts
     // (MaxNParallelTestDefinitionProcessor, Gradle 9.8). Ob zwei schwere
     // Klassen hintereinander auf einem Fork landen, hängt damit an N und an
-    // den Namen der Klassen in generate.toolchain, wo alle fünf liegen – nicht
-    // an ihrer Dauer. Eine neue Klasse dort kann die Zuteilung verschieben.
+    // den Namen der Klassen in generate.typesetting, wo alle fünf liegen –
+    // nicht an ihrer Dauer. Eine neue Klasse dort kann die Zuteilung
+    // verschieben.
     // Ebenso ein roter Lauf: Klassen, die zuletzt scheiterten, stellt Gradle
     // nach vorn (RunPreviousFailedFirstTestDefinitionProcessor) – gemessen
     // wird deshalb nach einem grünen Lauf, sonst gilt eine andere Zuteilung.

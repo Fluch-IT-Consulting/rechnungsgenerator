@@ -3,7 +3,7 @@ package de.fluchitconsulting.rechnungsgenerator.generate.render
 import de.fluchitconsulting.rechnungsgenerator.core.accepted.AcceptedInvoice
 import de.fluchitconsulting.rechnungsgenerator.core.model.Logo
 import de.fluchitconsulting.rechnungsgenerator.core.values.Language
-import de.fluchitconsulting.rechnungsgenerator.generate.toolchain.PdfSources
+import de.fluchitconsulting.rechnungsgenerator.generate.typesetting.PdfSources
 
 /** Setzt die Vorlage mit den Werten einer angenommenen Rechnung zusammen. Gerechnet wird hier nichts (ADR-0017). */
 object InvoiceRenderer {
