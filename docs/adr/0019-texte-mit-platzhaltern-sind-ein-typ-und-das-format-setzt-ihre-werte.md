@@ -90,7 +90,8 @@ Rechnungsart anfasst, und nicht erst der Vergleich einer Stornorechnung.
   einem eigenen Vokabular.
 - **Eine weitere Variable** ist ein Eintrag in `InvoiceVariable` und ein Zweig
   in jedem Resolver, heute `InvoiceVariableResolver` und der im
-  `PflichtangabenTest`. Beide hält der Compiler an.
+  `PflichtangabenTest`. Beide hält der Compiler an. (Seit #434 steht der
+  zweite in `Pflichtangaben.kt`.)
 - **Ein weiterer Werttyp**, etwa ein Betrag, ist ein Eintrag in `TextValue` und
   ein Zweig in jedem Format, heute `toLatex` und die Klartext-Fassung im Test.
 - **Ein weiteres Format**, etwa eine Notiz im ZUGFeRD-XML, ist eine Funktion
