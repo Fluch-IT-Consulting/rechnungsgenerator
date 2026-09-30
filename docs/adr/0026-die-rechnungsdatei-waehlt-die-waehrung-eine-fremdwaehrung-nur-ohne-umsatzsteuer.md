@@ -166,9 +166,9 @@ bleibt es beim Zeichen.
 
 Verworfen:
 
-- **Die Landeszeichen** (`zł`, `Kč`, `Ft`, `lei`, `kr`) mit Abstand je
+- **Die Landeszeichen** (`zł`, `Kč`, `lei`, `kr`) mit Abstand je
   Zeichen. „kr“ bliebe doppelt, und nur BT-5 sagte, welche Krone gemeint ist.
-- **Der Code für alle zehn Währungen.** Das widerspräche dem Grund oben für
+- **Der Code für alle Währungen.** Das widerspräche dem Grund oben für
   `$` und `£`, ohne dass es dort ein Problem gibt.
 - **Eine Beispielrechnung je neuer Währung und Design**: 12 Läufe mehr im
   Netz, je Sprache sogar 36, und jede weitere Währung brächte neue.
