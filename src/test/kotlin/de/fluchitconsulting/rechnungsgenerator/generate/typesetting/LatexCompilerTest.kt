@@ -41,18 +41,20 @@ class LatexCompilerTest : FunSpec({
         dir: java.nio.file.Path = workDir(),
         tex: String = "\\documentclass{article}",
         files: Map<String, ByteArray> = emptyMap(),
+        einvoice: ByteArray? = null,
     ) = LatexCompiler(LuaLatex(runner)).compile(
         dir,
         "rechnung",
-        PdfSources(tex = tex, xmpMetadata = "\\Title{Test}", creationDate = LocalDate.of(2026, 8, 14), files = files),
+        PdfSources(tex = tex, xmpMetadata = "\\Title{Test}", creationDate = LocalDate.of(2026, 8, 14), files = files, einvoice = einvoice),
     )
 
     fun trailerIdOf(
         tex: String = "\\documentclass{article}",
         files: Map<String, ByteArray> = emptyMap(),
+        einvoice: ByteArray? = null,
     ): String =
         FakeProcessRunner(successfulRun())
-            .also { typeset(it, tex = tex, files = files) }
+            .also { typeset(it, tex = tex, files = files, einvoice = einvoice) }
             .commands
             .single()
             .last()
@@ -135,6 +137,22 @@ class LatexCompilerTest : FunSpec({
                     }
                 }
             }
+        }
+    }
+
+    context("das XML der E-Rechnung (#499)") {
+        val xml = "<rsm:CrossIndustryInvoice/>".toByteArray()
+
+        test("geht in die Trailer-ID ein: mit XML eine andere als ohne, ein anderes XML eine andere") {
+            val withXml = trailerIdOf(einvoice = xml)
+
+            trailerIdOf(einvoice = xml.copyOf()) shouldBe withXml
+            trailerIdOf(einvoice = "<rsm:CrossIndustryInvoice />".toByteArray()) shouldNotBe withXml
+            trailerIdOf() shouldNotBe withXml
+        }
+
+        test("zählt nicht als weitere Datei, auch nicht unter dem Namen, den es im PDF trägt") {
+            trailerIdOf(einvoice = xml) shouldNotBe trailerIdOf(files = mapOf("factur-x.xml" to xml))
         }
     }
 
