@@ -11,7 +11,8 @@ import javax.xml.parsers.DocumentBuilderFactory
 /**
  * Jedes XML des Programms geht hier durch: Ohne eigenen [ErrorHandler] druckte der Parser des JDK `[Fatal Error]`
  * auf stderr, auch wenn die Ausnahme gefangen wird (#395). Deutsch je Parser und nicht über `Locale.setDefault`,
- * das auch veraPDF und Mustang träfe (#425).
+ * das auch veraPDF und Mustang träfe (#425). Keine externe Entität und DTD: `xml` liest das XML aus fremden PDFs,
+ * und Mustang bekommt es erst, wenn es hier durchging (#494).
  */
 object XmlParser {
     /** Eigenschaft des Xerces im JDK; die API von `javax.xml` kennt keine Sprache je Parser. */
