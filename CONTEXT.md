@@ -66,6 +66,7 @@ dem Blatt aber eine Rechnungskorrektur.
 Die Rechnung, auf die sich eine Stornorechnung bezieht. Genannt wird sie mit
 Nummer und Datum (EN 16931 BG-3, BT-25 und BT-26).
 _Vermeiden_: Originalrechnung, vorausgegangene Rechnung, Ausgangsrechnung
+_Englisch_: Original invoice
 
 **E-Rechnung**:
 Eine Rechnung, die neben dem Blatt als XML nach ZUGFeRD vorliegt, beides in

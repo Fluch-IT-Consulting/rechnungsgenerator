@@ -1,6 +1,7 @@
 package de.fluchitconsulting.rechnungsgenerator.core.model
 
 import com.charleskorn.kaml.Yaml
+import de.fluchitconsulting.rechnungsgenerator.core.values.Language
 import io.kotest.assertions.assertSoftly
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.FunSpec
@@ -23,6 +24,15 @@ class InvoiceTypeTest : FunSpec({
     test("die Schlussrechnung teilt den Code der gewöhnlichen Rechnung") {
         // Kenntlich ist sie an der Absetzung, nicht am Code.
         InvoiceType.FINAL.code shouldBe InvoiceType.INVOICE.code
+    }
+
+    // Einen Leistungszeitraum gibt es nur, wenn die Leistung erbracht ist; das weiß das Storno nicht.
+    test("das Storno beschriftet seinen Zeitraum neutral, gleich welcher Art die Ursprungsrechnung war (#510)") {
+        assertSoftly {
+            InvoiceType.CANCELLATION.servicePeriodLabel(Language.GERMAN) shouldBe "Zeitraum der Ursprungsrechnung"
+            InvoiceType.CANCELLATION.servicePeriodLabel(Language.BRITISH_ENGLISH) shouldBe "Period of the original invoice"
+            InvoiceType.CANCELLATION.servicePeriodLabel(Language.AMERICAN_ENGLISH) shouldBe "Period of the original invoice"
+        }
     }
 
     test("die YAML-Schreibweisen werden gelesen") {
