@@ -228,6 +228,7 @@ Zeilen und bricht ab, wie beim `Overfull \vbox`. Die Meldung nennt jedes
 fehlende Zeichen einmal, mit Codepunkt, je Schrift. Das greift für jedes
 Design und auch für das Logo, ohne dass die Vorlage etwas davon weiß.
 
-Verworfen ist `\tracinglostchars=3` in der Grundlage: LuaLaTeX endet dann
-zwar mit Exitcode 1, aber ohne `!`-Zeile, und die Meldung zeigte nur den
-Schluss des Protokolls.
+Verworfen ist `\tracinglostchars=3` in der Grundlage: LuaLaTeX bricht dann
+zwar beim ersten fehlenden Zeichen ab, aber die einzige `!`-Zeile ist „Fatal
+error occurred, no output PDF file produced!“. Die Meldung aus der
+Fehlerzeile nennte weder das Zeichen noch die Schrift, und nur das erste.
