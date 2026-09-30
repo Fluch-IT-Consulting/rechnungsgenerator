@@ -7,8 +7,12 @@ import io.kotest.matchers.collections.shouldBeEmpty
 import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.string.shouldContain
+import io.kotest.matchers.string.shouldNotContain
+import io.kotest.matchers.string.shouldStartWith
 import java.nio.file.Path
+import kotlin.io.path.createTempFile
 import kotlin.io.path.readText
+import kotlin.io.path.writeText
 
 /** BR-09 zeigt, dass das Schematron läuft und nicht nur das Schema. */
 class EInvoiceValidatorTest : FunSpec({
@@ -106,5 +110,21 @@ class EInvoiceValidatorTest : FunSpec({
 
         result.errors.single() shouldContain "Kein wohlgeformtes XML"
         stderr shouldBe ""
+    }
+
+    // #494: Das XML kann aus einem fremden PDF stammen. „Kein wohlgeformtes
+    // XML“ meldet allein die eigene Vorprüfung.
+    test("eine externe Entität weist schon die Vorprüfung ab, bevor Mustang das XML sieht") {
+        val secret = createTempFile("einvoice-validator", ".txt").also { it.writeText("GEHEIM-494") }
+        val withEntity =
+            xml
+                .replaceFirst("?>", "?>\n<!DOCTYPE rsm:CrossIndustryInvoice [<!ENTITY x SYSTEM \"${secret.toUri()}\">]>")
+                .replaceFirst("IT-Beratungsleistungen", "&x;")
+
+        val result = EInvoiceValidator.validate(withEntity.toByteArray())
+
+        result.valid shouldBe false
+        result.errors.single() shouldStartWith "Kein wohlgeformtes XML"
+        result.errors.single() shouldNotContain "GEHEIM-494"
     }
 })
