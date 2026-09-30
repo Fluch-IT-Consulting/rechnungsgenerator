@@ -3,7 +3,9 @@
 Das Vokabular der deutschen Rechnungsstellung, soweit dieses Projekt es abbildet.
 Die Begriffe stammen aus dem Umsatzsteuerrecht (§14 UStG, UStAE 14.8) und aus
 EN 16931; wo beide verschiedene Wörter für dieselbe Sache haben, gilt das
-deutsche.
+deutsche. Die Zeile _Englisch_ nennt den Wortlaut auf dem Blatt einer
+englischen Rechnung; ihr _Vermeiden_ gilt dort und nicht für Bezeichner im
+Code.
 
 Diese Datei ist ein Glossar, keine Spezifikation. Wie etwas gerechnet oder
 gesetzt wird, steht im Code; warum eine Entscheidung so gefallen ist, in
