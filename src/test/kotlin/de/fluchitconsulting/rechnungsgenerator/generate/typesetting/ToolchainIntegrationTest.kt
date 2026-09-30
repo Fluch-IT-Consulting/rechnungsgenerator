@@ -8,6 +8,7 @@ import de.fluchitconsulting.rechnungsgenerator.generate.einvoice.CiiWriter
 import de.fluchitconsulting.rechnungsgenerator.generate.render.InvoiceRenderer
 import de.fluchitconsulting.rechnungsgenerator.toolchain.ToolchainException
 import de.fluchitconsulting.rechnungsgenerator.toolchain.process.ExternalTool
+import de.fluchitconsulting.rechnungsgenerator.toolchain.process.VeraPdf
 import de.fluchitconsulting.rechnungsgenerator.toolchain.validation.BuiltInPdfAValidator
 import de.fluchitconsulting.rechnungsgenerator.toolchain.validation.ExternalPdfAValidator
 import de.fluchitconsulting.rechnungsgenerator.toolchain.validation.PdfAProfile
@@ -304,7 +305,7 @@ class ToolchainIntegrationTest : FunSpec({
                         ),
                 )
 
-            val validation = ExternalPdfAValidator(ExternalTool).validate(plain, PdfAProfile.PDFA_1B)
+            val validation = ExternalPdfAValidator(VeraPdf(ExternalTool)).validate(plain, PdfAProfile.PDFA_1B)
 
             validation.valid shouldBe false
             validation.violations.shouldNotBeEmpty()
@@ -319,7 +320,7 @@ class ToolchainIntegrationTest : FunSpec({
                     .of("src/test/resources/nicht-konform-mit-warnung.pdf")
                     .copyTo(workDir.resolve("nicht-konform-mit-warnung.pdf"), overwrite = true)
 
-            val result = ExternalPdfAValidator(ExternalTool).validate(noisy, PdfAProfile.PDFA_1B)
+            val result = ExternalPdfAValidator(VeraPdf(ExternalTool)).validate(noisy, PdfAProfile.PDFA_1B)
 
             result.valid shouldBe false
             result.violations.shouldNotBeEmpty()
@@ -348,7 +349,7 @@ class ToolchainIntegrationTest : FunSpec({
 
             for ((pdf, profile) in cases) {
                 val builtIn = BuiltInPdfAValidator.validate(pdf, profile)
-                val external = ExternalPdfAValidator(ExternalTool).validate(pdf, profile)
+                val external = ExternalPdfAValidator(VeraPdf(ExternalTool)).validate(pdf, profile)
 
                 // Mit dem Teil der Norm, weil jeder Weg ihn selbst aus veraPDF liest.
                 fun rules(result: ValidationResult) =
@@ -360,7 +361,7 @@ class ToolchainIntegrationTest : FunSpec({
 
             val noPdf =
                 Path.of("src/test/resources/kein-pdf.pdf").copyTo(workDir.resolve("kein-pdf.pdf"), overwrite = true)
-            val external = ExternalPdfAValidator(ExternalTool)
+            val external = ExternalPdfAValidator(VeraPdf(ExternalTool))
             withClue("eingebaut") { shouldThrow<ToolchainException> { BuiltInPdfAValidator.validate(noPdf, PdfAProfile.PDFA_1B) } }
             withClue("extern") { shouldThrow<ToolchainException> { external.validate(noPdf, PdfAProfile.PDFA_1B) } }
         }

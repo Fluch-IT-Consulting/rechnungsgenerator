@@ -20,6 +20,7 @@ import de.fluchitconsulting.rechnungsgenerator.generate.typesetting.LuaLatexType
 import de.fluchitconsulting.rechnungsgenerator.generate.typesetting.TypesetterFactory
 import de.fluchitconsulting.rechnungsgenerator.toolchain.ToolchainException
 import de.fluchitconsulting.rechnungsgenerator.toolchain.process.ExternalTool
+import de.fluchitconsulting.rechnungsgenerator.toolchain.process.VeraPdf
 import de.fluchitconsulting.rechnungsgenerator.toolchain.validation.BuiltInPdfAValidator
 import de.fluchitconsulting.rechnungsgenerator.toolchain.validation.ExternalPdfAValidator
 import java.io.IOException
@@ -77,7 +78,7 @@ class GenerateCommand(
     // gibt nur einen Weg zu einer Rechnungsdatei. Mit einem zweiten müssen sie heraus (#359). Eine IOException
     // fängt nur, wer weiß, was geschrieben werden sollte (#300).
     override fun run() {
-        val validator = if (externalPdfACheck) ExternalPdfAValidator(ExternalTool) else BuiltInPdfAValidator
+        val validator = if (externalPdfACheck) ExternalPdfAValidator(VeraPdf(ExternalTool)) else BuiltInPdfAValidator
         val typesetter = typesetterFor(validator)
 
         // Erst die Werkzeuge prüfen: Ein Abbruch mitten im Satz wäre schwerer zu deuten.
