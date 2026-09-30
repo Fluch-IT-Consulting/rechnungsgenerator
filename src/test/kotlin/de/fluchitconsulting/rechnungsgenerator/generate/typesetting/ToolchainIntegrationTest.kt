@@ -127,7 +127,7 @@ class ToolchainIntegrationTest : FunSpec({
         val pdfs =
             jobNames.map { jobName ->
                 val ownDir = createTempDirectory(workDir, "jobname")
-                String(LatexCompiler(LuaLatex(ExternalTool)).compile(ownDir, jobName, sources).readBytes(), Charsets.ISO_8859_1)
+                String(LatexCompiler(LuaLatex(ExternalTool)).compile(ownDir, jobName, sources).pdf.readBytes(), Charsets.ISO_8859_1)
             }
 
         val documentId = Regex("<xmpMM:DocumentID>uuid:([0-9A-F-]+)</xmpMM:DocumentID>")
@@ -295,16 +295,17 @@ class ToolchainIntegrationTest : FunSpec({
     test("ein nicht konformes PDF wird als solches gemeldet, nicht als Fehler")
         .config(enabledOrReasonIf = { withVerapdf }) {
             val plain =
-                LatexCompiler(LuaLatex(ExternalTool)).compile(
-                    workingDir = workDir,
-                    jobName = "ohne-pdfa",
-                    sources =
-                        PdfSources(
-                            tex = "\\documentclass{article}\\begin{document}Kein PDF/A.\\end{document}",
-                            xmpMetadata = "",
-                            creationDate = LocalDate.of(2026, 1, 1),
-                        ),
-                )
+                LatexCompiler(LuaLatex(ExternalTool))
+                    .compile(
+                        workingDir = workDir,
+                        jobName = "ohne-pdfa",
+                        sources =
+                            PdfSources(
+                                tex = "\\documentclass{article}\\begin{document}Kein PDF/A.\\end{document}",
+                                xmpMetadata = "",
+                                creationDate = LocalDate.of(2026, 1, 1),
+                            ),
+                    ).pdf
 
             val validation = ExternalPdfAValidator(VeraPdf(ExternalTool)).validate(plain, PdfAProfile.PDFA_1B)
 

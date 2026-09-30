@@ -194,6 +194,8 @@ class PflichtangabenRun {
             // Als Wahrheitswert: shouldContain druckte das ganze PDF in die Meldung.
             withClue("/PageMode/UseNone fehlt im PDF") { ("/PageMode/UseNone" in bytes) shouldBe true }
             withClue("/Outlines steht im PDF") { ("/Outlines" in bytes) shouldBe false }
+            // #480: Was über den Rand steht, meldet das Kommando nur als Hinweis.
+            output.filter { "über den Rand" in it } shouldBe emptyList()
             sheet.verify(calculated, design)
         }
         return Typeset(calculated, sheet)
@@ -229,6 +231,7 @@ class PflichtangabenRun {
         val pdf =
             LatexCompiler(LuaLatex(ExternalTool))
                 .compile(createTempDirectory(workDir, "zeichenprobe"), "zeichenprobe-${design.name}-${language.tag}", sources)
+                .pdf
 
         val lines =
             run

@@ -4,6 +4,9 @@ import de.fluchitconsulting.rechnungsgenerator.core.values.Currency
 import de.fluchitconsulting.rechnungsgenerator.core.values.Language
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import java.nio.file.Path
+import kotlin.io.path.readText
+import kotlin.io.path.writeText
 
 /** ADR-0020. Was beisammenbleiben muss, prüft `verify`; diese Dateien sind die, bei denen es darauf ankommt. */
 class PflichtangabenSeitenTest : FunSpec({
@@ -59,6 +62,27 @@ class PflichtangabenSeitenTest : FunSpec({
                 val lines = net.typesetCurrencySample(design, language)
 
                 lines[Currency.entries.indexOf(Currency.PLN)] shouldBe zloty
+            }
+        }
+    }
+
+    // #480, aus demselben Grund hier. Vorher lief in prag jede der drei Betragsspalten über.
+    for (language in listOf(Language.GERMAN, Language.BRITISH_ENGLISH)) {
+        for (design in designs) {
+            test("Beträge mit Code auf ${language.tag} im Design ${design.name}: jede Spalte fasst sie") {
+                val input = net.workDir.resolve("betraege-mit-code-${language.tag}.yaml")
+                input.writeText("sprache: ${language.tag}\n" + Path.of("src/test/resources/betraege-mit-code.yaml").readText())
+
+                val (calculated, _) =
+                    net.typesetAndCheck(
+                        "betraege-mit-code",
+                        design,
+                        design.sellerConfig,
+                        targetName = "${design.name}-betraege-mit-code-${language.tag}",
+                        input = input,
+                    )
+
+                calculated.invoice.currency shouldBe Currency.PLN
             }
         }
     }

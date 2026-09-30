@@ -167,6 +167,7 @@ class GenerateCommand(
             echo(typesetPdf.validation.describe())
             // Hinweise nach dem Ergebnis, damit sie nicht wie ein Fehler wirken.
             acceptedInvoice.hints.forEach { echo("Hinweis: ${it.describe()}") }
+            typesetPdf.overflowHint?.let { echo("Hinweis: $it") }
             if (keepWorkFiles) echo("Arbeitsdateien: $workDir")
             // Zuletzt und nur für ein gültiges PDF am Ziel. Ein Fehlschlag ist ein Hinweis, der Exitcode bleibt 0.
             if (openAfterwards) {

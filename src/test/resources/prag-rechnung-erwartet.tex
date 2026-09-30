@@ -44,7 +44,12 @@
 
 \renewcommand{\arraystretch}{1.35}
 
-\newlength{\betragsbreite}\setlength{\betragsbreite}{24mm}
+\newlength{\zeichenmehrbreite}\settowidth{\zeichenmehrbreite}{\normalfont\betrag{0}}
+\newlength{\eurozeichenbreite}\settowidth{\eurozeichenbreite}{\normalfont\eurobetrag{0}}
+\addtolength{\zeichenmehrbreite}{-\eurozeichenbreite}
+\ifdim\zeichenmehrbreite<0pt \setlength{\zeichenmehrbreite}{0pt}\fi
+
+\newlength{\betragsbreite}\setlength{\betragsbreite}{\dimexpr 24mm+\zeichenmehrbreite\relax}
 \newcolumntype{B}{>{\raggedleft\arraybackslash}p{\betragsbreite}}
 
 \newcommand{\positionstrenner}{\\\hline}
@@ -72,7 +77,7 @@
 \newtoggle{rabattspalte}
 \ifblank{}{}{\toggletrue{rabattspalte}}
 \newcommand{\mitrabatt}[1]{\iftoggle{rabattspalte}{#1}{}}
-\iftoggle{rabattspalte}{\newcolumntype{R}{>{\raggedleft\arraybackslash}p{14mm}|}}{\newcolumntype{R}{}}
+\iftoggle{rabattspalte}{\newcolumntype{R}{>{\raggedleft\arraybackslash}p{\dimexpr 14mm+\zeichenmehrbreite\relax}|}}{\newcolumntype{R}{}}
 
 \newcommand{\positionszeile}[7]{#1 & \textbf{#2} & #3 & #4 & #5\mitrabatt{ & #6} & #7}
 
@@ -148,7 +153,7 @@
 
 \setlength{\LTpre}{\lineskip}\setlength{\LTpost}{0pt}%
 \setlength{\LTleft}{0pt}\setlength{\LTright}{0pt}%
-\begin{xltabular}{\linewidth}{|>{\centering\arraybackslash}p{7mm}|>{\raggedright\arraybackslash}X|>{\raggedleft\arraybackslash}p{13mm}|>{\raggedright\arraybackslash}p{15mm}|>{\raggedleft\arraybackslash}p{22mm}|RB|}
+\begin{xltabular}{\linewidth}{|>{\centering\arraybackslash}p{7mm}|>{\raggedright\arraybackslash}X|>{\raggedleft\arraybackslash}p{13mm}|>{\raggedright\arraybackslash}p{15mm}|>{\raggedleft\arraybackslash}p{\dimexpr 22mm+\zeichenmehrbreite\relax}|RB|}
   \positionskopf
   \endfirsthead
   \positionskopf

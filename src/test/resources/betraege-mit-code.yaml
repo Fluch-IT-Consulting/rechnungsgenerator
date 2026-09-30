@@ -1,0 +1,32 @@
+# Fiktive Rechnung in Złoty (#480): Jede Betragsspalte trägt einen Betrag, der
+# mit dem Code breiter ist, als die Spalte in Euro wäre – Einzelpreis, Rabatt
+# als Betrag, Gesamt und negativ.
+waehrung: PLN
+nummer: R26-077
+datum: 2026-08-14
+leistungszeitraum:
+  von: 2026-07-01
+  bis: 2026-07-31
+kunde:
+  name: Przykład sp. z o.o.
+  anschrift:
+    strasse: ul. Przykładowa 1
+    plz: 00-001
+    ort: Warszawa
+    land: PL
+positionen:
+  - bezeichnung: Rahmenvertrag Beratung
+    menge: 1
+    einheit: pauschal
+    einzelpreis: 999999.99
+    rabatt-betrag: 200.00
+    ust-satz: 0
+    steuerkategorie: O
+    steuerbefreiungsgrund: Nicht im Inland steuerbar
+  - bezeichnung: Gutschrift aus dem Vorjahr
+    menge: -1
+    einheit: pauschal
+    einzelpreis: 500000.00
+    ust-satz: 0
+    steuerkategorie: O
+    steuerbefreiungsgrund: Nicht im Inland steuerbar

@@ -12,6 +12,9 @@ import kotlin.io.path.exists
 import kotlin.io.path.writeBytes
 import kotlin.io.path.writeText
 
+/** [overflowHint]: Was über den Rand seiner Zeile oder Spalte steht; das PDF ist trotzdem vollständig (#480). */
+data class CompiledPdf(val pdf: Path, val overflowHint: String?)
+
 /** Setzt eine .tex mit LuaLaTeX zu einem PDF/A. Die .xmpdata trägt denselben Namen, daraus baut pdfx das XMP. */
 class LatexCompiler(private val luaLatex: LuaLatex) {
     fun checkAvailable() = luaLatex.checkAvailable()
@@ -20,7 +23,7 @@ class LatexCompiler(private val luaLatex: LuaLatex) {
         workingDir: Path,
         jobName: String,
         sources: PdfSources,
-    ): Path {
+    ): CompiledPdf {
         // "." und ".." sind für Path schlichte Namen, meinen aber Verzeichnisse.
         sources.files.keys.forEach { name ->
             require(name.isNotBlank() && name != "." && name != "..") { "Kein Dateiname: '$name'" }
@@ -49,7 +52,7 @@ class LatexCompiler(private val luaLatex: LuaLatex) {
         } while (needsAnotherPass(log) && passes < MAX_PASSES)
         // Gefragt wird das Protokoll des letzten Laufs: Aus ihm stammt das PDF.
         overflowReport(jobName, log)?.let { throw ToolchainException(it) }
-        return pdfOrFail(workingDir, jobName)
+        return CompiledPdf(pdfOrFail(workingDir, jobName), overflowHint(jobName, log))
     }
 
     /**
@@ -82,13 +85,30 @@ class LatexCompiler(private val luaLatex: LuaLatex) {
 
     /**
      * Bei `Overfull \vbox` schneidet LuaLaTeX mit Exitcode 0 ab, was übersteht – ein gültiges PDF/A ohne den Inhalt
-     * (ADR-0020). `Overfull \hbox` ragt nur in den Rand und bleibt erlaubt.
+     * (ADR-0020). `Overfull \hbox` ragt nur über den Rand, das meldet [overflowHint].
      */
     private fun overflowReport(jobName: String, log: String): String? {
         val lines = log.lines().filter { it.startsWith("Overfull \\vbox") }.distinct()
         if (lines.isEmpty()) return null
         return "$PROGRAM hat $jobName.tex gesetzt, aber auf einer Seite steht mehr, als das Blatt fasst. " +
             "Was übersteht, fehlte im PDF:\n\n${lines.joinToString("\n")}"
+    }
+
+    /**
+     * Ein Hinweis und kein Abbruch (#480): Was übersteht, ist im PDF, in einer Tabelle aber womöglich über der Spalte
+     * daneben. Die Folgezeile nennt den Text, der übersteht.
+     */
+    private fun overflowHint(jobName: String, log: String): String? {
+        val lines = log.lines()
+        val found =
+            lines
+                .withIndex()
+                .filter { (_, line) -> line.startsWith("Overfull \\hbox") }
+                .map { (index, line) -> line + lines.getOrNull(index + 1)?.let { "\n  ${it.trim()}" }.orEmpty() }
+                .distinct()
+        if (found.isEmpty()) return null
+        return "In $jobName.tex steht etwas über den Rand seiner Zeile oder Spalte hinaus, in einer Tabelle womöglich " +
+            "über der Spalte daneben. Vor dem Versand das PDF ansehen. $PROGRAM meldet:\n\n${found.joinToString("\n")}"
     }
 
     /** Die Zeilen ab „!“ samt zwei Folgezeilen mit der Fundstelle; ohne „!“ der Schluss des Protokolls. */

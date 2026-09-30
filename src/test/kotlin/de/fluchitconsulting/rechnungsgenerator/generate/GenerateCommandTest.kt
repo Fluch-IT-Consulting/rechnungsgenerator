@@ -20,6 +20,7 @@ import io.kotest.assertions.withClue
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.collections.shouldContain
 import io.kotest.matchers.collections.shouldContainInOrder
+import io.kotest.matchers.ints.shouldBeLessThan
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.string.shouldContain
 import io.kotest.matchers.string.shouldNotContain
@@ -575,6 +576,16 @@ class GenerateCommandTest : FunSpec({
         val hint = output.indexOfFirst { it.startsWith("Hinweis:") }
         (hint > result) shouldBe true
         output[hint] shouldContain "nicht qualifiziert"
+    }
+
+    // #480
+    test("was über den Rand steht, ist ein Hinweis nach dem Ergebnis, und das PDF liegt am Ziel") {
+        val target = inputDir.resolve("zu-breit.pdf")
+
+        val output = generate(FakeTypesetter(overflowHint = "Etwas steht über den Rand."), "-o", target.toString())
+
+        target.exists() shouldBe true
+        output.indexOfFirst { it.contains("PDF/A-1b") } shouldBeLessThan output.indexOf("Hinweis: Etwas steht über den Rand.")
     }
 
     context("ohne -s kommen die Stammdaten aus der Wurzel (ADR-0015)") {
