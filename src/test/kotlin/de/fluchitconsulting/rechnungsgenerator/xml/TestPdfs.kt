@@ -21,6 +21,16 @@ fun xmpClaiming(
     </x:xmpmeta>
     """.trimIndent()
 
+/** Eine UBL-Rechnung mit nichts als ihrer Kennung, wie XRechnung und Peppol sie tragen. */
+fun ubl(customizationId: String) =
+    """
+    <Invoice xmlns="urn:oasis:names:specification:ubl:schema:xsd:Invoice-2"
+        xmlns:cbc="urn:oasis:names:specification:ubl:schema:xsd:CommonBasicComponents-2">
+      <cbc:CustomizationID>$customizationId</cbc:CustomizationID>
+      <cbc:ID>L-2026-0815</cbc:ID>
+    </Invoice>
+    """.trimIndent().toByteArray()
+
 /**
  * Hat sonst nichts, was ein PDF/A verlangt. Mit [inKids] stehen die Anhänge in
  * einem Kindknoten des Namensbaums, wie bei einem Baum mit vielen Einträgen.

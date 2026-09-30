@@ -64,6 +64,13 @@ class SpecificationIdentifierTest : FunSpec({
         identifier.isEn16931 shouldBe false
     }
 
+    test("in UBL steht die Kennung unter CustomizationID, wie Mustang sie liest (#509)") {
+        SpecificationIdentifier.of(ubl("urn:example:minimum"))!!.value shouldBe "urn:example:minimum"
+        SpecificationIdentifier
+            .of(ubl("urn:cen.eu:en16931:2017#compliant#urn:xeinkauf.de:kosit:xrechnung_3.0"))!!
+            .isEn16931 shouldBe true
+    }
+
     test("ohne lesbare Kennung gibt es keine") {
         SpecificationIdentifier.of("<kein xml".toByteArray()).shouldBeNull()
         SpecificationIdentifier.of("<rsm:CrossIndustryInvoice xmlns:rsm=\"urn:x\"/>".toByteArray()).shouldBeNull()

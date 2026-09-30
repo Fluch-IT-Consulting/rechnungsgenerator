@@ -56,11 +56,19 @@ object EInvoiceValidator {
             } catch (e: SAXParseException) {
                 return "Kein wohlgeformtes XML (Zeile ${e.lineNumber}, Spalte ${e.columnNumber}): ${e.message}"
             }
-        val specification = XPathFactory.newInstance().newXPath().evaluate(SPECIFICATION, document, XPathConstants.NODESET) as NodeList
-        return "Keine Kennung der Spezifikation (BT-24), gegen die sich das XML prüfen ließe.".takeIf { specification.length == 0 }
+        return "Keine Kennung der Spezifikation (BT-24), gegen die sich das XML prüfen ließe.".takeIf { specificationOf(document) == null }
     }
 
-    /** Wo Mustang das Profil sucht, aus `XMLValidator`: in CII unter BT-24, in UBL unter `CustomizationID`. */
+    /**
+     * BT-24, gesucht, wo Mustang das Profil sucht. Die einzige Stelle, die das weiß: Wer die Kennung woanders liest,
+     * urteilt über eine andere als die, gegen die Mustang prüft (#509). `null` ohne Element oder für ein leeres.
+     */
+    fun specificationOf(document: Document): String? =
+        (XPathFactory.newInstance().newXPath().evaluate(SPECIFICATION, document, XPathConstants.NODESET) as NodeList)
+            .item(0)
+            ?.textContent
+
+    /** Aus `XMLValidator`: in CII unter BT-24, in UBL unter `CustomizationID`; nach dem lokalen Namen wegen ZUGFeRD 1. */
     private const val SPECIFICATION =
         "(//*[local-name()=\"GuidelineSpecifiedDocumentContextParameter\"]/*[local-name()=\"ID\"])/text()" +
             "|//*[local-name()=\"CustomizationID\"]/text()"
