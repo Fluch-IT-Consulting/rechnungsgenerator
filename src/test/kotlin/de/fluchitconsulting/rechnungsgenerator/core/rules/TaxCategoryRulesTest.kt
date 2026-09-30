@@ -100,6 +100,21 @@ class TaxCategoryRulesTest : FunSpec({
         CalculatedInvoice(invoice, config).messageOf(Rule.REGELSATZ_MIT_NULL) shouldContain "vermutlich"
     }
 
+    test("Regelsatz unter 0 % wird abgelehnt, und nur mit dieser Kennung (#488, BR-S-05)") {
+        val invoice = testInvoice(items = listOf(testItem(vatRate = "-19")))
+
+        val calculated = CalculatedInvoice(invoice, config)
+
+        calculated.messageOf(Rule.STEUERSATZ_NEGATIV) shouldContain "angegeben ist -19%"
+        calculated.rules() shouldBe listOf(Rule.STEUERSATZ_NEGATIV)
+    }
+
+    test("ein Satz unter 0 % bei einer Kategorie mit Nullsatz meldet nur SATZ_MUSS_NULL_SEIN") {
+        val invoice = testInvoice(items = listOf(testItem(vatRate = "-19", taxCategory = TaxCategory.ZERO_RATED)))
+
+        CalculatedInvoice(invoice, config).rules() shouldBe listOf(Rule.SATZ_MUSS_NULL_SEIN)
+    }
+
     test("Steuerbefreiung ohne Grund wird abgelehnt, wenn die Kategorie keinen vorgibt") {
         // E hat anders als AE keinen vorgesehenen Wortlaut.
         val invoice = testInvoice(items = listOf(testItem(vatRate = "0", taxCategory = TaxCategory.EXEMPT)))
