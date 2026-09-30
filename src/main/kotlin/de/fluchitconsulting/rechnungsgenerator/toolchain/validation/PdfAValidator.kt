@@ -2,8 +2,7 @@ package de.fluchitconsulting.rechnungsgenerator.toolchain.validation
 
 import de.fluchitconsulting.rechnungsgenerator.toolchain.ToolchainException
 import de.fluchitconsulting.rechnungsgenerator.toolchain.XmlParser
-import de.fluchitconsulting.rechnungsgenerator.toolchain.process.ProcessRunner
-import de.fluchitconsulting.rechnungsgenerator.toolchain.process.requireAll
+import de.fluchitconsulting.rechnungsgenerator.toolchain.process.VeraPdf
 import org.verapdf.core.VeraPDFException
 import org.verapdf.gf.foundry.VeraGreenfieldFoundryProvider
 import org.verapdf.pdfa.Foundries
@@ -14,7 +13,6 @@ import org.verapdf.pdfa.validation.profiles.ValidationProfile
 import org.w3c.dom.Element
 import java.io.IOException
 import java.nio.file.Path
-import kotlin.io.path.absolutePathString
 
 /**
  * `erzeuge` setzt 1b oder 3u, `xml` prüft gegen das Profil, als das sich die Datei im XMP ausgibt (#380).
@@ -143,41 +141,20 @@ object BuiltInPdfAValidator : PdfAValidator {
             .joinToString(": ")
 }
 
-/** Das Programm `verapdf`: Exitcode 0 heißt konform, 1 nicht konform, alles andere kam nicht klar. */
-class ExternalPdfAValidator(private val runner: ProcessRunner) : PdfAValidator {
-    private companion object {
-        private const val PROGRAM = "verapdf"
-        private const val EXIT_COMPLIANT = 0
-        private const val EXIT_NOT_COMPLIANT = 1
-    }
-
-    override fun checkAvailable() = runner.requireAll(PROGRAM to "brew install verapdf")
+/** Liest die Verstöße aus dem Bericht von [VeraPdf]; Aufruf und Exitcodes kennt der Adapter (ADR-0029). */
+class ExternalPdfAValidator(private val veraPdf: VeraPdf) : PdfAValidator {
+    override fun checkAvailable() = veraPdf.checkAvailable()
 
     override fun validate(
         pdf: Path,
         profile: PdfAProfile,
     ): ValidationResult {
-        val result =
-            runner.run(
-                PROGRAM,
-                listOf("--format", "xml", "-f", profile.cliFlag, pdf.absolutePathString()),
-                pdf.parent,
-            )
-        if (result.exitCode !in listOf(EXIT_COMPLIANT, EXIT_NOT_COMPLIANT)) {
-            throw ToolchainException("$PROGRAM brach mit Exitcode ${result.exitCode} ab:\n${result.output.take(800)}")
-        }
+        val report = veraPdf.validate(pdf, profile.cliFlag)
         return ValidationResult(
             profile = profile,
-            valid = result.exitCode == EXIT_COMPLIANT,
-            violations = parseViolations(extractXml(result.standardOutput)),
+            valid = report.compliant,
+            violations = parseViolations(report.xml),
         )
-    }
-
-    /** Nur eine Sicherung, das Protokoll steht auf stderr. Was mitten im Bericht stünde, fängt es nicht (#227). */
-    private fun extractXml(output: String): String {
-        val start = output.indexOf("<?xml")
-        if (start < 0) throw ToolchainException("verapdf lieferte keinen XML-Bericht:\n${output.take(800)}")
-        return output.substring(start)
     }
 
     /** Der Bericht nennt auch die bestandenen Regeln. */
