@@ -88,6 +88,16 @@ class EInvoiceValidatorTest : FunSpec({
         }
     }
 
+    // #488: Mustang liefert dann einen Bericht, der nur aus der XML-Deklaration besteht.
+    test("ein Bericht, den Mustang nicht lesbar liefert, ist ein Fehler und keine Ausnahme") {
+        val withAmpersand = xml.replaceFirst("#conformant#", "#conformant&amp;#")
+
+        val result = EInvoiceValidator.validate(withAmpersand.toByteArray())
+
+        result.valid shouldBe false
+        result.errors.single() shouldContain "Mustang lieferte keinen lesbaren Bericht"
+    }
+
     // Mustang parst mit Namensräumen, also muss es die Vorprüfung auch.
     test("ein unbekanntes Präfix ist nicht wohlgeformt") {
         val withUnknownPrefix = xml.replaceFirst("<ram:CountryID>", "<unbekannt:CountryID>")

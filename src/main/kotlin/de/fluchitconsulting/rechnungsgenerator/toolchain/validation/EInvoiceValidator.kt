@@ -25,7 +25,16 @@ object EInvoiceValidator {
         unfitForMustang(xml)?.let { return EInvoiceValidationResult(errors = listOf(it), warnings = emptyList()) }
         val validator = ZUGFeRDValidator()
         val report = validator.validate(xml, "factur-x.xml")
-        val document = parse(report)
+        // Bei `&amp;` in BT-24 besteht der Bericht nur aus der XML-Deklaration (#488).
+        val document =
+            try {
+                parse(report)
+            } catch (e: SAXParseException) {
+                return EInvoiceValidationResult(
+                    errors = listOf("Mustang lieferte keinen lesbaren Bericht (${e.message}). Der Bericht lautet:\n$report"),
+                    warnings = emptyList(),
+                )
+            }
         // Was Mustang nicht prüfen konnte, steht als exception da und macht ebenso ungültig.
         val errors = messages(document, "error") + messages(document, "exception")
         return EInvoiceValidationResult(
