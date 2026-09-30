@@ -69,7 +69,7 @@ internal object CancellationRules {
                         Finding(
                             Rule.ABSCHLAGSRECHNUNG_OHNE_BETRAG,
                             Subject.WholeInvoice,
-                            "Der Gesamtbetrag ist 0.00. Eine Abschlagsrechnung über null fordert nichts und stünde " +
+                            "Der Gesamtbetrag ist 0.00. Eine Abschlagsrechnung ohne Betrag fordert nichts und stünde " +
                                 "später als leerer Abschlag in der Schlussrechnung.",
                         ),
                     )
