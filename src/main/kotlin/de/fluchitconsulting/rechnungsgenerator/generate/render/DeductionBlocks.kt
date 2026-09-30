@@ -8,16 +8,26 @@ import de.fluchitconsulting.rechnungsgenerator.core.values.Language
 internal object DeductionBlocks {
     /**
      * Die Absetzung der Schlussrechnung, unter den Summen und nie als Position: Die senkte die ausgewiesene
-     * Umsatzsteuer (ADR-0002). Jeder Abschlag einzeln, obwohl UStAE 14.8 Abs. 7 die Summe genügen ließe.
+     * Umsatzsteuer (ADR-0002). Jeder Abschlag einzeln, obwohl UStAE 14.8 Abs. 7 die Summe genügen ließe. Eine
+     * vereinnahmte Abschlagsrechnung setzt ihren ganzen Betrag ab, wie BT-113 im XML; dort steht nur der Satz (#503).
      */
     fun deductionBlock(acceptedInvoice: AcceptedInvoice): Latex {
         val calculatedInvoice = acceptedInvoice.calculated
+        val language = calculatedInvoice.invoice.language
         val deductions =
             when (val kind = acceptedInvoice.kind) {
-                is InvoiceKind.FinalInvoice -> kind.deductions
-                is InvoiceKind.Ordinary, is InvoiceKind.PrepaymentInvoice, is InvoiceKind.Cancellation -> return Latex.EMPTY
+                is InvoiceKind.FinalInvoice -> {
+                    kind.deductions
+                }
+                is InvoiceKind.PrepaymentInvoice -> {
+                    return kind.receivedOn
+                        ?.let { Latex.macro(TemplateMacro.HINWEISABSATZ, listOf(receivedNote(language).escapeLatex())) }
+                        ?: Latex.EMPTY
+                }
+                is InvoiceKind.Ordinary, is InvoiceKind.Cancellation -> {
+                    return Latex.EMPTY
+                }
             }
-        val language = calculatedInvoice.invoice.language
 
         // Das Vorzeichen kommt aus der Zahl und nicht aus der Vorlage (ADR-0021).
         val rows =
@@ -102,6 +112,12 @@ internal object DeductionBlocks {
         when (language) {
             Language.GERMAN -> "Restbetrag"
             Language.BRITISH_ENGLISH, Language.AMERICAN_ENGLISH -> "Balance due"
+        }
+
+    private fun receivedNote(language: Language): String =
+        when (language) {
+            Language.GERMAN -> "Der Abschlag ist bereits vereinnahmt; es ist nichts zu zahlen."
+            Language.BRITISH_ENGLISH, Language.AMERICAN_ENGLISH -> "The advance payment has already been received; nothing is due."
         }
 
     private fun settledNote(language: Language): String =

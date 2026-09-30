@@ -354,6 +354,25 @@ class CalculatedInvoiceTest : FunSpec({
             calculated.settledByPrepayments shouldBe false
         }
 
+        // #503: Vereinnahmt ist der ganze Abschlag, nicht ein Teil.
+        test("eine Abschlagsrechnung mit vereinnahmt-am ist ganz vereinnahmt und fordert nichts") {
+            val calculated =
+                CalculatedInvoice(testInvoice(type = InvoiceType.PREPAYMENT, receivedOn = LocalDate.of(2026, 8, 10)), config)
+
+            calculated.paidAmount shouldBe calculated.grossTotal
+            calculated.amountDue.isZero() shouldBe true
+            calculated.requestsPayment shouldBe false
+            calculated.dueDate shouldBe null
+        }
+
+        test("eine Abschlagsrechnung ohne vereinnahmt-am fordert ihren ganzen Betrag") {
+            val calculated = CalculatedInvoice(testInvoice(type = InvoiceType.PREPAYMENT), config)
+
+            calculated.paidAmount.isZero() shouldBe true
+            calculated.amountDue shouldBe calculated.grossTotal
+            calculated.requestsPayment shouldBe true
+        }
+
         test("eine Stornorechnung fordert kein Geld") {
             val calculated =
                 CalculatedInvoice(

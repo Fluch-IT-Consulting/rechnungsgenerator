@@ -94,16 +94,6 @@
     </ram:ApplicableHeaderTradeDelivery>
     <ram:ApplicableHeaderTradeSettlement>
       <ram:InvoiceCurrencyCode>EUR</ram:InvoiceCurrencyCode>
-      <ram:SpecifiedTradeSettlementPaymentMeans>
-        <ram:TypeCode>58</ram:TypeCode>
-        <ram:PayeePartyCreditorFinancialAccount>
-          <ram:IBANID>DE89370400440532013000</ram:IBANID>
-          <ram:AccountName>Muster IT-Consulting UG (haftungsbeschränkt)</ram:AccountName>
-        </ram:PayeePartyCreditorFinancialAccount>
-        <ram:PayeeSpecifiedCreditorFinancialInstitution>
-          <ram:BICID>MUSTDEFFXXX</ram:BICID>
-        </ram:PayeeSpecifiedCreditorFinancialInstitution>
-      </ram:SpecifiedTradeSettlementPaymentMeans>
       <ram:ApplicableTradeTax>
         <ram:CalculatedAmount>760.00</ram:CalculatedAmount>
         <ram:TypeCode>VAT</ram:TypeCode>
@@ -122,17 +112,13 @@
           <udt:DateTimeString format="102">20261031</udt:DateTimeString>
         </ram:EndDateTime>
       </ram:BillingSpecifiedPeriod>
-      <ram:SpecifiedTradePaymentTerms>
-        <ram:DueDateDateTime>
-          <udt:DateTimeString format="102">20260629</udt:DateTimeString>
-        </ram:DueDateDateTime>
-      </ram:SpecifiedTradePaymentTerms>
       <ram:SpecifiedTradeSettlementHeaderMonetarySummation>
         <ram:LineTotalAmount>4000.00</ram:LineTotalAmount>
         <ram:TaxBasisTotalAmount>4000.00</ram:TaxBasisTotalAmount>
         <ram:TaxTotalAmount currencyID="EUR">760.00</ram:TaxTotalAmount>
         <ram:GrandTotalAmount>4760.00</ram:GrandTotalAmount>
-        <ram:DuePayableAmount>4760.00</ram:DuePayableAmount>
+        <ram:TotalPrepaidAmount>4760.00</ram:TotalPrepaidAmount>
+        <ram:DuePayableAmount>0.00</ram:DuePayableAmount>
       </ram:SpecifiedTradeSettlementHeaderMonetarySummation>
     </ram:ApplicableHeaderTradeSettlement>
   </rsm:SupplyChainTradeTransaction>

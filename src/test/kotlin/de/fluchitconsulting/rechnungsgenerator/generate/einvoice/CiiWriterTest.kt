@@ -448,11 +448,24 @@ class CiiWriterTest : FunSpec({
                 """.trimMargin()
         }
 
-        test("ohne Vereinnahmung fehlt der Steuerzeitpunkt, wie auf dem Blatt") {
+        // #503: Vereinnahmt ist der ganze Abschlag, das XML fordert nichts.
+        test("vereinnahmt ist der Bruttobetrag vorausbezahlt, fällig nichts, und es gibt weder Frist noch Konto") {
+            val xml = example("abschlagsrechnung").xml()
+
+            xml shouldContain "<ram:TotalPrepaidAmount>4760.00</ram:TotalPrepaidAmount>"
+            xml shouldContain "<ram:DuePayableAmount>0.00</ram:DuePayableAmount>"
+            xml shouldNotContain "ram:SpecifiedTradePaymentTerms"
+            xml shouldNotContain "ram:SpecifiedTradeSettlementPaymentMeans"
+        }
+
+        test("ohne Vereinnahmung fehlt der Steuerzeitpunkt, wie auf dem Blatt, und der ganze Betrag ist fällig") {
             val invoice = example("abschlagsrechnung").calculated.invoice.copy(receivedOn = null)
             val xml = CalculatedInvoice(invoice, testSellerConfig()).accepted().xml()
 
             xml shouldNotContain "ram:TaxPointDate"
+            xml shouldNotContain "ram:TotalPrepaidAmount"
+            xml shouldContain "<ram:DuePayableAmount>4760.00</ram:DuePayableAmount>"
+            xml shouldContain "ram:DueDateDateTime"
             xml.shouldBeValidExtended()
         }
 

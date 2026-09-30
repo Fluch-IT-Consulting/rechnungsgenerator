@@ -314,7 +314,7 @@ datum: 2026-06-15
 leistungszeitraum:                  # der voraussichtliche; Monate genügen
   von: 2026-06-01
   bis: 2026-10-31
-vereinnahmt-am: 2026-06-10          # nur wenn das Geld schon da ist
+vereinnahmt-am: 2026-06-10          # nur wenn der ganze Abschlag schon da ist
 kunde: …
 positionen:
   - bezeichnung: Abschlag auf Projekt Nord
@@ -337,7 +337,10 @@ und schreibst den Betrag hin; woher er stammt, gehört in `beschreibung`.
 Abschlagsrechnung. Steht er nicht fest, weglassen; **nicht schätzen**. Auf einer
 anderen Rechnungsart bricht der Generator ab (dort entsteht die Steuer mit der
 Leistung, nicht mit dem Geldeingang), ebenso bei einem Datum nach dem
-Rechnungsdatum – dann ist der Betrag für diese Rechnung nicht vereinnahmt.
+Rechnungsdatum – dann ist der Betrag für diese Rechnung nicht vereinnahmt. Mit
+`vereinnahmt-am` gilt der ganze Abschlag als vereinnahmt: Das PDF fordert dann
+nichts, ohne Zahlungsziel und Bankverbindung. Ist nur ein Teil eingegangen,
+weglassen.
 
 **Schlussrechnung** – die Gesamtleistung, abzüglich der vereinnahmten
 Abschläge: Ablauf, Format und Abbruchregeln stehen in
