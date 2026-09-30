@@ -69,7 +69,8 @@ dieselbe Datei ist, nicht ob die Pfade gleich lauten. So fallen auch
   gelöscht wird. ADR-0005 begründet drei Abbrüche mit dem Dateinamen aus der
   Nummer – `RECHNUNGSNUMMER_FEHLT`, `RECHNUNGSNUMMER_MIT_LEERRAUM` und
   `RECHNUNGSNUMMER_OHNE_DATEINAMEN`. Ob sie eine andere Begründung tragen oder
-  entfallen, klärt #297.
+  entfallen, klärt #297. (`RECHNUNGSNUMMER_FEHLT` entfiel mit #514, weil die
+  leere Nummer schon beim Einlesen abbricht.)
 - **Der Skill `rechnung` behält sein `-o`.** Ist `build/install/…` nicht neu
   gebaut, legte eine ältere Fassung das PDF ins Arbeitsverzeichnis, beim Skill
   also ins Projektverzeichnis, und dort ist `*.pdf` nicht ignoriert. Ein
