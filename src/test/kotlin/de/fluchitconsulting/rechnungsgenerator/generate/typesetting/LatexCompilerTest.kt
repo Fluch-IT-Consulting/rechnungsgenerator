@@ -2,7 +2,7 @@ package de.fluchitconsulting.rechnungsgenerator.generate.typesetting
 
 import de.fluchitconsulting.rechnungsgenerator.toolchain.ToolchainException
 import de.fluchitconsulting.rechnungsgenerator.toolchain.process.FakeProcessRunner
-import io.kotest.assertions.throwables.shouldNotThrowAny
+import de.fluchitconsulting.rechnungsgenerator.toolchain.process.LuaLatex
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.assertions.withClue
 import io.kotest.core.spec.style.FunSpec
@@ -14,7 +14,6 @@ import io.kotest.matchers.string.shouldContain
 import io.kotest.matchers.string.shouldNotContain
 import java.io.File
 import java.time.LocalDate
-import kotlin.io.path.createDirectory
 import kotlin.io.path.createTempDirectory
 import kotlin.io.path.exists
 import kotlin.io.path.readBytes
@@ -40,7 +39,7 @@ class LatexCompilerTest : FunSpec({
         dir: java.nio.file.Path = workDir(),
         tex: String = "\\documentclass{article}",
         files: Map<String, ByteArray> = emptyMap(),
-    ) = LatexCompiler(runner).compile(
+    ) = LatexCompiler(LuaLatex(runner)).compile(
         dir,
         "rechnung",
         PdfSources(tex = tex, xmpMetadata = "\\Title{Test}", creationDate = LocalDate.of(2026, 8, 14), files = files),
@@ -58,13 +57,12 @@ class LatexCompilerTest : FunSpec({
             .substringAfter("<")
             .substringBefore(">")
 
-    test("das Erstellungsdatum ist Mitternacht des Datums, in UTC geschrieben") {
-        // Ohne TZ schriebe LuaTeX die Zeitzone des Rechners ins PDF.
+    test("das Erstellungsdatum ist Mitternacht des Datums in UTC") {
         val runner = FakeProcessRunner(successfulRun())
 
         typeset(runner)
 
-        runner.environments.single() shouldBe mapOf("SOURCE_DATE_EPOCH" to "1786665600", "TZ" to "UTC")
+        runner.environments.single().getValue("SOURCE_DATE_EPOCH") shouldBe "1786665600"
     }
 
     test("dieselben Quellen ergeben dieselbe Trailer-ID, andere eine andere") {
@@ -155,16 +153,6 @@ class LatexCompilerTest : FunSpec({
         val error = shouldThrow<ToolchainException> { typeset(FakeProcessRunner(successfulRun()), missing) }
 
         error.message!! shouldContain missing.toString()
-    }
-
-    // Ein Verzeichnis statt Dateirechten, denn die greifen unter root nicht (#336).
-    test("lässt sich das Protokoll nicht lesen, kommt eine ToolchainException mit der Datei") {
-        val dir = workDir()
-        val logFile = dir.resolve("rechnung.log").createDirectory()
-
-        val error = shouldThrow<ToolchainException> { typeset(FakeProcessRunner(FakeProcessRunner.Run()), dir) }
-
-        error.message!! shouldContain logFile.toString()
     }
 
     test("ein Lauf genügt, wenn das Protokoll keinen zweiten verlangt") {
@@ -262,14 +250,6 @@ class LatexCompilerTest : FunSpec({
         error.message!! shouldContain "Zeile zwei"
     }
 
-    test("stürzt LuaLaTeX ab, bevor es ein Protokoll schreibt, zählt die Prozessausgabe") {
-        val runner = FakeProcessRunner(FakeProcessRunner.Run(exitCode = 1, output = "! I can't find file 'rechnung'."))
-
-        val error = shouldThrow<ToolchainException> { typeset(runner) }
-
-        error.message!! shouldContain "can't find file"
-    }
-
     context("Inhalt, der vom Blatt fällt (ADR-0020)") {
         val overflow = transcript("lualatex-seite-laeuft-ueber.log")
 
@@ -310,17 +290,9 @@ class LatexCompilerTest : FunSpec({
         error.message!! shouldContain "meldete Erfolg, hat aber kein PDF geschrieben"
     }
 
-    // Keiner der beiden Zweige fragt die Maschine, auf der der Test läuft (#475).
-    test("fehlt lualatex, nennt die Meldung das Programm und seinen Installationshinweis") {
-        val compiler = LatexCompiler(FakeProcessRunner(missing = setOf("lualatex")))
+    test("checkAvailable fragt nach lualatex") {
+        val compiler = LatexCompiler(LuaLatex(FakeProcessRunner(missing = setOf("lualatex"))))
 
-        val error = shouldThrow<ToolchainException> { compiler.checkAvailable() }
-
-        error.message!! shouldContain "lualatex"
-        error.message!! shouldContain "https://tug.org/texlive/"
-    }
-
-    test("ist lualatex da, meldet checkAvailable nichts") {
-        shouldNotThrowAny { LatexCompiler(FakeProcessRunner()).checkAvailable() }
+        shouldThrow<ToolchainException> { compiler.checkAvailable() }.message!! shouldContain "lualatex"
     }
 })

@@ -2,6 +2,7 @@ package de.fluchitconsulting.rechnungsgenerator.generate.typesetting
 
 import de.fluchitconsulting.rechnungsgenerator.toolchain.ToolchainException
 import de.fluchitconsulting.rechnungsgenerator.toolchain.process.ExternalTool
+import de.fluchitconsulting.rechnungsgenerator.toolchain.process.LuaLatex
 import de.fluchitconsulting.rechnungsgenerator.toolchain.validation.EInvoiceValidator
 import de.fluchitconsulting.rechnungsgenerator.toolchain.validation.PdfAValidator
 import de.fluchitconsulting.rechnungsgenerator.toolchain.validation.ValidationResult
@@ -30,7 +31,7 @@ interface Typesetter {
 
 /** LuaLaTeX setzt, ein [PdfAValidator] prüft (ADR-0014); mit E-Rechnung prüft Mustang davor das XML (ADR-0023). */
 class LuaLatexTypesetter(private val validator: PdfAValidator) : Typesetter {
-    private val compiler = LatexCompiler(ExternalTool)
+    private val compiler = LatexCompiler(LuaLatex(ExternalTool))
 
     /** Jeder Adapter fragt nach seinem Programm: Ohne `--externe-pdfa-pruefung` braucht es kein veraPDF. */
     override fun checkAvailable() {
