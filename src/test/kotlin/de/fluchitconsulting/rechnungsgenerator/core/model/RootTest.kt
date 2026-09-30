@@ -6,6 +6,7 @@ import io.kotest.matchers.shouldBe
 import io.kotest.matchers.string.shouldContain
 import java.nio.file.Path
 import kotlin.io.path.createDirectories
+import kotlin.io.path.createSymbolicLinkPointingTo
 import kotlin.io.path.createTempDirectory
 import kotlin.io.path.writeText
 
@@ -102,6 +103,26 @@ class RootTest : FunSpec({
             failure.message!! shouldContain inner.resolve(Root.FOLDER).toString()
             failure.message!! shouldContain "kein Ordner"
         }
+
+        test("ein Link ins Leere, etwa auf ein nicht eingehängtes Laufwerk (#508)") {
+            val outer = archive()
+            val inner = outer.resolve("zweitfirma").createDirectories()
+            val missing = outer.resolve("nicht-eingehaengt").resolve(Root.FOLDER)
+            inner.resolve(Root.FOLDER).createSymbolicLinkPointingTo(missing)
+
+            val failure = shouldThrow<InputFileException> { Root.of(invoice(inner, "R26-009.yaml")) }
+
+            failure.message!! shouldContain inner.resolve(Root.FOLDER).toString()
+            failure.message!! shouldContain missing.toString()
+        }
+    }
+
+    test("ein Link auf einen eingerichteten Ordner ist eine Wurzel") {
+        val elsewhere = archive()
+        val archive = createTempDirectory("wurzel-test")
+        archive.resolve(Root.FOLDER).createSymbolicLinkPointingTo(elsewhere.resolve(Root.FOLDER))
+
+        Root.of(invoice(archive, "R26-009.yaml")).directory shouldBe archive
     }
 
     context("mehrere Rechnungen") {
