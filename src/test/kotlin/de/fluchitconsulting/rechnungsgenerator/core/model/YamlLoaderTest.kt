@@ -290,6 +290,17 @@ class YamlLoaderTest : FunSpec({
             listOf(SkontoTier(rate = Percent("1.5"), days = 10), SkontoTier(rate = Percent("2"), days = 7))
     }
 
+    // #496: SKONTOSATZ_UNGUELTIG sähe nur den gerundeten Satz, 2 %.
+    test("ein Skontosatz, der erst gerundet zwei Nachkommastellen hätte, bricht das Lesen ab und nennt Datei und Wert") {
+        val file = createTempDirectory("loader-test").resolve("rechnung.yaml")
+        file.writeText(resource("rechnung.yaml").replace("positionen:", "skonto:\n  - satz: 2.0000000001\n    tage: 7\npositionen:"))
+
+        val failure = shouldThrow<InputFileException> { YamlLoader.loadInvoice(file) }
+
+        failure.message!! shouldContain file.toString()
+        failure.message!! shouldContain "Der Prozentwert '2.0000000001' hat mehr als 7 Nachkommastellen"
+    }
+
     test("eine Rechnungsdatei ohne skonto hat keine Skontostufen") {
         YamlLoader.parseInvoice(resource("rechnung.yaml")).skonto shouldBe emptyList()
     }

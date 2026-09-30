@@ -49,7 +49,8 @@ internal object SkontoRules {
     ): List<Finding> =
         buildList {
             val percentage = stufe.rate.valueAsPercentage
-            // Zwei Nachkommastellen wie `PROZENT=2.00` der XRechnung; Percent führt intern mehr.
+            // Zwei Nachkommastellen wie `PROZENT=2.00` der XRechnung. Gerundet ist der Satz schon: Mehr Stellen, als
+            // Percent führt, weist das Lesen ab (#496).
             if (percentage <= BigDecimal.ZERO || percentage >= HUNDRED || percentage.stripTrailingZeros().scale() > 2) {
                 add(
                     Finding(

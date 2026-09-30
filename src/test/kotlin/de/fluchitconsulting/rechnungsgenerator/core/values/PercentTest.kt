@@ -2,9 +2,12 @@ package de.fluchitconsulting.rechnungsgenerator.core.values
 
 import com.charleskorn.kaml.Yaml
 import io.kotest.assertions.assertSoftly
+import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.comparables.shouldBeEqualComparingTo
 import io.kotest.matchers.shouldBe
+import io.kotest.matchers.string.shouldContain
+import kotlinx.serialization.SerializationException
 import java.math.BigDecimal
 
 class PercentTest : FunSpec({
@@ -41,6 +44,25 @@ class PercentTest : FunSpec({
         }
         test("schreibt ohne überflüssige Nullen") {
             Yaml.default.encodeToString(PercentSerializer, Percent("19")) shouldBe "\"19\""
+        }
+
+        // #496: Der Konstruktor rundet, die Eingabe nicht.
+        test("eine achte Nachkommastelle bricht ab, statt still zu runden") {
+            val error =
+                shouldThrow<SerializationException> {
+                    Yaml.default.decodeFromString(PercentSerializer, "12.34567891")
+                }
+            assertSoftly {
+                error.message shouldContain "12.34567891"
+                error.message shouldContain "7 Nachkommastellen"
+            }
+        }
+        test("sieben Nachkommastellen und nachgestellte Nullen werden gelesen") {
+            Yaml.default.decodeFromString(PercentSerializer, "12.3456789") shouldBe Percent("12.3456789")
+            Yaml.default.decodeFromString(PercentSerializer, "19.000000000") shouldBe Percent("19")
+        }
+        test("der Konstruktor rundet unverändert weiter") {
+            Percent("12.34567891") shouldBe Percent("12.3456789")
         }
     }
 
