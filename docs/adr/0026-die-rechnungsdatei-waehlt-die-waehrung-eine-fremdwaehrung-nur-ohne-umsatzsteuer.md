@@ -139,3 +139,43 @@ dreierlei nicht mehr, wie es oben steht:
 
 Die Gründe dieses ADR bleiben, wie sie sind; der Titel auch, damit Verweise
 auf ihn nicht brechen.
+
+## Nachtrag vom 30.09.2026: Sechs Währungen mehr, auf dem Blatt als Code
+
+Mit #479 kennt `Currency` auch `PLN`, `CZK`, `RON`, `SEK`, `NOK` und `CHF`.
+Für sie steht auf dem Blatt der ISO-Code und kein Zeichen: Deutsch
+`1.000,00 PLN`, Englisch `PLN 1,000.00` und `−PLN 200.00`. Für €, $ und £
+bleibt es beim Zeichen.
+
+- **Der Abstand steht im englischen Zeichen**,
+  `\newcommand{\zeichenPLN}{PLN~}`. `\betrag` und `Template.of` bleiben,
+  wie sie sind, und die Stellung bleibt in der Sprachdatei.
+- **Warum hier der Code, obwohl er oben für `USD` verworfen ist:** Der Grund
+  dort, der Empfänger erwarte das Zeichen, das er kennt, trägt hier weniger.
+  Die Rechnung geht auf Deutsch oder Englisch an einen Empfänger, dessen
+  Landeszeichen in diesen Sprachen nicht eingebürgert ist, und im
+  internationalen Geschäftsverkehr ist für diese Währungen der Code üblich.
+  Er ist auch dort eindeutig, wo sich zwei Währungen ein Zeichen teilen, wie
+  `SEK` und `NOK` das „kr“.
+- **Geprüft von einer Zeichenprobe statt von Beispielrechnungen.** Je
+  Sprachdatei setzt ein Lauf im Pflichtangaben-Netz jede Währung mit einem
+  positiven und einem negativen Betrag, mit der Präambel, die der Renderer
+  für eine Rechnung liefert: sechs Läufe, gleich wie viele Währungen es
+  gibt. `Spelling` nimmt das Zeichen dafür aus Sprache und Währung. Die
+  Beispiele in Pfund und US-Dollar oben bleiben.
+
+Verworfen:
+
+- **Die Landeszeichen** (`zł`, `Kč`, `Ft`, `lei`, `kr`) mit Abstand je
+  Zeichen. „kr“ bliebe doppelt, und nur BT-5 sagte, welche Krone gemeint ist.
+- **Der Code für alle zehn Währungen.** Das widerspräche dem Grund oben für
+  `$` und `£`, ohne dass es dort ein Problem gibt.
+- **Eine Beispielrechnung je neuer Währung und Design**: 12 Läufe mehr im
+  Netz, je Sprache sogar 36, und jede weitere Währung brächte neue.
+
+Nicht dabei ist `HUF`: Für den Forint gelten andere Rundungsregeln, er wird
+ohne Nachkommastellen gerechnet, obwohl ISO 4217 ihm zwei gibt. Das ist ein
+eigenes Vorhaben.
+
+Eine Rechnung ohne `waehrung` sieht aus wie zuvor, bei 300 dpi pixelgleich
+über alle Beispiele beider Designs, auch auf Englisch.

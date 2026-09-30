@@ -428,9 +428,10 @@ als Betrag. Eine Rechnung, die über mehrere Seiten geht, setzt die Folgeseiten
 mit eigenem Kopf.
 
 Jede Rechnung steht auf Deutsch oder Englisch, britisch oder amerikanisch
-(`sprache: en-GB`), und in Euro, US-Dollar oder Pfund (`waehrung: USD`). Wird
-in einer anderen Währung als Euro Umsatzsteuer berechnet, nennt die Rechnung
-sie zusätzlich in Euro, zum Kurs aus der Rechnungsdatei.
+(`sprache: en-GB`), und in Euro, US-Dollar oder Pfund, ebenso in PLN, CZK,
+RON, SEK, NOK oder CHF (`waehrung: USD`). Wird in einer anderen Währung als
+Euro Umsatzsteuer berechnet, nennt die Rechnung sie zusätzlich in Euro, zum
+Kurs aus der Rechnungsdatei.
 
 Jede Rechnungsart geht auch als E-Rechnung nach ZUGFeRD, und das XML einer
 E-Rechnung lässt sich wieder auslesen, auch aus einer fremden.
