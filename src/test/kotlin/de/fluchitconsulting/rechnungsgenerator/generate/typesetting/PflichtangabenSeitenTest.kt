@@ -1,5 +1,7 @@
 package de.fluchitconsulting.rechnungsgenerator.generate.typesetting
 
+import de.fluchitconsulting.rechnungsgenerator.core.values.Currency
+import de.fluchitconsulting.rechnungsgenerator.core.values.Language
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
 
@@ -39,6 +41,25 @@ class PflichtangabenSeitenTest : FunSpec({
                 )
 
             calculated.vatGroups.count { it.exemptionReason != null } shouldBe 1
+        }
+    }
+
+    // #479. Hier und nicht bei den Sonderfällen: Die teilen sich einen Fork mit den
+    // Arten, dem längsten (Messung an maxParallelForks). Złoty wörtlich, den Rest
+    // vergleicht Spelling.
+    val zlotySpellings =
+        mapOf(
+            Language.GERMAN to "1.000,00 PLN −200,00 PLN",
+            Language.BRITISH_ENGLISH to "PLN 1,000.00 −PLN 200.00",
+            Language.AMERICAN_ENGLISH to "PLN 1,000.00 −PLN 200.00",
+        )
+    for ((language, zloty) in zlotySpellings) {
+        for (design in designs) {
+            test("Zeichenprobe auf ${language.tag} im Design ${design.name}: jede Währung mit Zeichen an ihrer Stelle") {
+                val lines = net.typesetCurrencySample(design, language)
+
+                lines[Currency.entries.indexOf(Currency.PLN)] shouldBe zloty
+            }
         }
     }
 })

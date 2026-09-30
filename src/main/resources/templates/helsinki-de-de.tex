@@ -9,9 +9,16 @@
 }
 %% Ein Zeichen für jeden Code aus Currency, das prüft Template.of: \csname setzte für ein fehlendes still
 %% nichts. $ und nicht US$: Welcher Dollar gemeint ist, sagt das XML (BT-5).
+%% Die übrigen als Code und nicht mit dem Zeichen ihres Landes: SEK und NOK teilten sich „kr“ (#479).
 \newcommand{\zeichenEUR}{€}
 \newcommand{\zeichenUSD}{\$}
 \newcommand{\zeichenGBP}{£}
+\newcommand{\zeichenPLN}{PLN}
+\newcommand{\zeichenCZK}{CZK}
+\newcommand{\zeichenRON}{RON}
+\newcommand{\zeichenSEK}{SEK}
+\newcommand{\zeichenNOK}{NOK}
+\newcommand{\zeichenCHF}{CHF}
 \newcommand{\waehrungszeichen}{\csname zeichen\waehrung\endcsname}
 \newcommand{\betrag}[1]{\num{#1}~\waehrungszeichen}
 %% In einer Gruppe, damit danach wieder die Währung der Rechnung gilt.

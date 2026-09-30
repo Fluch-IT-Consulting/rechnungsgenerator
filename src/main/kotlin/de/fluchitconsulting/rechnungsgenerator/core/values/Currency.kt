@@ -13,6 +13,12 @@ enum class Currency {
     EUR,
     USD,
     GBP,
+    PLN,
+    CZK,
+    RON,
+    SEK,
+    NOK,
+    CHF,
 }
 
 object CurrencySerializer :

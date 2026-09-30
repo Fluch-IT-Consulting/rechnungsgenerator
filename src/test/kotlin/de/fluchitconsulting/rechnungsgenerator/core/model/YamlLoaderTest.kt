@@ -222,14 +222,15 @@ class YamlLoaderTest : FunSpec({
 
         test("waehrung wählt die Währung, ohne Rücksicht auf die Schreibweise") {
             assertSoftly {
-                YamlLoader.parseInvoice(invoiceIn("USD")).currency shouldBe Currency.USD
-                YamlLoader.parseInvoice(invoiceIn("gbp")).currency shouldBe Currency.GBP
-                YamlLoader.parseInvoice(invoiceIn("EUR")).currency shouldBe Currency.EUR
+                Currency.entries.forEach { currency ->
+                    YamlLoader.parseInvoice(invoiceIn(currency.name)).currency shouldBe currency
+                    YamlLoader.parseInvoice(invoiceIn(currency.name.lowercase())).currency shouldBe currency
+                }
             }
         }
 
         test("eine andere Währung bricht das Lesen ab und nennt Datei und Wert") {
-            listOf("CHF", "$", "Euro").forEach { currency ->
+            listOf("DKK", "$", "Euro").forEach { currency ->
                 withClue(currency) {
                     val file = createTempDirectory("loader-test").resolve("rechnung.yaml")
                     file.writeText(invoiceIn("'$currency'"))
@@ -238,7 +239,7 @@ class YamlLoaderTest : FunSpec({
 
                     failure.message!! shouldContain file.toString()
                     failure.message!! shouldContain "Unbekannte Währung '$currency'"
-                    failure.message!! shouldContain "EUR, USD, GBP"
+                    failure.message!! shouldContain "EUR, USD, GBP, PLN, CZK, RON, SEK, NOK, CHF"
                 }
             }
         }
