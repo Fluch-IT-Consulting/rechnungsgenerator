@@ -290,6 +290,24 @@ class ToolchainIntegrationTest : FunSpec({
         run.textOf(pdf) shouldContain street
     }
 
+    // #488: In prag stand die Bezeichnung in \textbf, und das nimmt keinen Absatz an.
+    test("eine Leerzeile in der Beschreibung setzt jedes Design") {
+        val example = Path.of("src/test/resources/rechnung.yaml").readText()
+        val input = workDir.resolve("absatz.yaml")
+        input.writeText(
+            example.replace(
+                "    beschreibung: Rahmenvertrag vom 01.02.2026\n",
+                "    beschreibung: |\n      Rahmenvertrag vom 01.02.2026\n\n      Zweiter Absatz\n",
+            ),
+        )
+
+        for (design in Design.entries) {
+            val (pdf, _) = run.generate("absatz-$design", input = input, sellerConfig = sellerConfigFor(design))
+
+            withClue(design) { run.textOf(pdf) shouldContain "Zweiter Absatz" }
+        }
+    }
+
     // #487: Hält die Annahme von `LatexCompilerTest` fest, das Protokoll nenne jedes fehlende Zeichen.
     test("ein Zeichen, das die Schrift des Designs nicht hat, bricht den Satz ab") {
         val example = Path.of("src/test/resources/rechnung.yaml").readText()
