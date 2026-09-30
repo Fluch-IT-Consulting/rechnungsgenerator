@@ -2,9 +2,9 @@ package de.fluchitconsulting.rechnungsgenerator.core.rules
 
 import de.fluchitconsulting.rechnungsgenerator.core.calculation.CalculatedInvoice
 import de.fluchitconsulting.rechnungsgenerator.core.calculation.EuMemberStates
-import de.fluchitconsulting.rechnungsgenerator.core.model.Address
 import de.fluchitconsulting.rechnungsgenerator.core.model.CheckMethod
 import de.fluchitconsulting.rechnungsgenerator.core.model.Customer
+import de.fluchitconsulting.rechnungsgenerator.core.model.CustomerAddress
 import de.fluchitconsulting.rechnungsgenerator.core.model.TaxCategory
 import de.fluchitconsulting.rechnungsgenerator.core.model.VatIdCheck
 import de.fluchitconsulting.rechnungsgenerator.core.model.testInvoice
@@ -35,7 +35,13 @@ class VatIdCheckRulesTest : FunSpec({
         customer =
             Customer(
                 name = "Beispiel Software GmbH",
-                address = Address(street = "Industriestraße 1", postalCode = "1010", city = "Wien", countryCode = CountryCode(country)),
+                address =
+                    CustomerAddress(
+                        street = "Industriestraße 1",
+                        postalCode = "1010",
+                        city = "Wien",
+                        countryCode = CountryCode(country),
+                    ),
                 vatId = vatId,
                 vatIdCheck = vatIdCheck,
             ),

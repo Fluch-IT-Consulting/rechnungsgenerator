@@ -59,15 +59,24 @@ data class SellerConfig(
             }
 }
 
+/** Was Blatt und XML von einer Anschrift lesen, gleich ob des Rechnungsstellers oder des Kunden. */
+sealed interface PostalAddress {
+    val street: String
+    val postalCode: String?
+    val city: String
+    val countryCode: CountryCode
+}
+
+/** Die Anschrift des Rechnungsstellers. Die Postleitzahl ist Pflicht, anders als beim Kunden ([CustomerAddress]). */
 @Serializable
 data class Address(
-    @SerialName("strasse") val street: String,
+    @SerialName("strasse") override val street: String,
     // String, nicht Int: Sonst ginge die führende Null von „01067“ verloren.
-    @SerialName("plz") val postalCode: String,
-    @SerialName("ort") val city: String,
-    // BT-40/BT-55
-    @SerialName("land") val countryCode: CountryCode = CountryCode("DE"),
-)
+    @SerialName("plz") override val postalCode: String,
+    @SerialName("ort") override val city: String,
+    // BT-40
+    @SerialName("land") override val countryCode: CountryCode = CountryCode("DE"),
+) : PostalAddress
 
 @Serializable
 data class BankDetails(

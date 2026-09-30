@@ -12,6 +12,7 @@ internal object InvoiceRules {
         listOf(
             InvoiceNumberRules.check(calculated),
             SellerConfigRules.check(calculated),
+            AddressRules.check(calculated),
             FreeTextRules.check(calculated),
             kindCheck.findings,
             CancellationRules.check(calculated),

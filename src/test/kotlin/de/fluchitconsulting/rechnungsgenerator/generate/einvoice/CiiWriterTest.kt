@@ -195,6 +195,17 @@ class CiiWriterTest : FunSpec({
         xml.shouldBeValidExtended()
     }
 
+    test("ein Kunde ohne Postleitzahl trägt keinen PostcodeCode, und das XML bleibt gültig (#512)") {
+        val invoice = testInvoice(items = listOf(testItem(vatRate = "0", taxCategory = TaxCategory.EXPORT)))
+        val address = invoice.customer.address.copy(postalCode = null, city = "Dubai", countryCode = CountryCode("AE"))
+        val inDubai = invoice.copy(customer = invoice.customer.copy(address = address))
+
+        val xml = CalculatedInvoice(inDubai, testSellerConfig()).accepted().xml()
+
+        xml.substringAfter("<ram:BuyerTradeParty>").substringBefore("</ram:BuyerTradeParty>") shouldNotContain "PostcodeCode"
+        xml.shouldBeValidExtended()
+    }
+
     test("ohne Registerangaben steht nichts davon im XML") {
         val xml = CalculatedInvoice(testInvoice(), testSellerConfig()).accepted().xml()
 

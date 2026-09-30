@@ -1,10 +1,10 @@
 package de.fluchitconsulting.rechnungsgenerator.core.rules
 
 import de.fluchitconsulting.rechnungsgenerator.core.calculation.CalculatedInvoice
-import de.fluchitconsulting.rechnungsgenerator.core.model.Address
 import de.fluchitconsulting.rechnungsgenerator.core.model.CancelledInvoice
 import de.fluchitconsulting.rechnungsgenerator.core.model.CheckMethod
 import de.fluchitconsulting.rechnungsgenerator.core.model.Customer
+import de.fluchitconsulting.rechnungsgenerator.core.model.CustomerAddress
 import de.fluchitconsulting.rechnungsgenerator.core.model.Invoice
 import de.fluchitconsulting.rechnungsgenerator.core.model.InvoiceType
 import de.fluchitconsulting.rechnungsgenerator.core.model.ServicePeriod
@@ -154,7 +154,7 @@ class CancellationRulesTest : FunSpec({
                         Customer(
                             name = "Voorbeeld Software B.V.",
                             address =
-                                Address(
+                                CustomerAddress(
                                     street = "Keizersgracht 1",
                                     postalCode = "1015",
                                     city = "Amsterdam",

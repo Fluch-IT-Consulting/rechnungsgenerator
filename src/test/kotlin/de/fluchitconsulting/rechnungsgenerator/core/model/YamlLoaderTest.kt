@@ -165,6 +165,17 @@ class YamlLoaderTest : FunSpec({
         YamlLoader.parseInvoice(resource("rechnung.yaml")).introduction shouldBe null
     }
 
+    test("beim Kunden darf plz fehlen, in den Stammdaten nicht (#512)") {
+        val withoutPostalCode = resource("rechnung.yaml").replace("    plz: \"90402\"\n", "")
+
+        YamlLoader
+            .parseInvoice(withoutPostalCode)
+            .customer.address.postalCode shouldBe null
+        shouldThrow<SerializationException> {
+            YamlLoader.parseSellerConfig(resource("stammdaten.yaml").replace("  plz: \"97070\"\n", ""))
+        }.message!! shouldContain "plz"
+    }
+
     test("eine Rechnungsdatei ohne art ist eine gewöhnliche Rechnung") {
         YamlLoader.parseInvoice(resource("rechnung.yaml")).type shouldBe InvoiceType.INVOICE
     }
