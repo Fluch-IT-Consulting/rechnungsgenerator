@@ -134,7 +134,14 @@ class GenerateCommand(
                     val sources = einvoice?.let(rendered.sources::withEInvoice) ?: rendered.sources
                     typesetter.typeset(workingDir = workDir, jobName = jobName, sources = sources)
                 } catch (e: TypesettingException) {
-                    throw ToolchainException(e.message + logoNote, e)
+                    // Die Meldung zitiert Zeilen der .tex, und ohne den Schalter ist sie gleich gelöscht (#507).
+                    val inspectionNote =
+                        if (keepWorkFiles) {
+                            "Die Arbeitsdateien samt $jobName.tex liegen unter $workDir."
+                        } else {
+                            "Mit --arbeitsdateien-behalten bleiben die Arbeitsdateien samt $jobName.tex zum Ansehen liegen."
+                        }
+                    throw ToolchainException("${e.message}\n\n$inspectionNote$logoNote", e)
                 }
             // Ein ungültiges PDF/A kommt nicht ans Ziel, auch nicht mit --ueberschreiben, und endet mit Exitcode 1.
             if (!typesetPdf.validation.valid) {

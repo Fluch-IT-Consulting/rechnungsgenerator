@@ -7,7 +7,8 @@ import kotlin.time.Duration.Companion.minutes
 
 /**
  * Die Naht zum Betriebssystem, eine Etage unter `Typesetter`; im Test spielt `FakeProcessRunner` einen Lauf nach.
- * Nach [timeout] wird hart abgeräumt, [environment] ergänzt die geerbte Umgebung, statt sie zu ersetzen.
+ * Nach [timeout] wird hart abgeräumt und [ToolTimeoutException] geworfen, [environment] ergänzt die geerbte Umgebung,
+ * statt sie zu ersetzen.
  */
 interface ProcessRunner {
     fun run(
@@ -21,6 +22,12 @@ interface ProcessRunner {
     /** Über dieselbe Naht wie der Aufruf, sonst hinge ein Test daran, was installiert ist (#245). */
     fun canRun(program: String): Boolean
 }
+
+/** Ein eigener Typ: Woran ein Programm hing, weiß nur, wer es aufrief (#507). */
+class ToolTimeoutException(
+    program: String,
+    timeout: Duration,
+) : ToolchainException("$program hat nach $timeout nicht geantwortet und wurde abgebrochen.")
 
 /** Eine Erweiterung und keine Methode der Naht: Kein Adapter soll den Wortlaut abwandeln. */
 fun ProcessRunner.requireAll(vararg tools: Pair<String, String>) {

@@ -37,13 +37,14 @@ class ExternalToolTest : FunSpec({
         error.message!! shouldContain missing.toString()
     }
 
+    // Als eigener Typ: Den Satz, der hängt, erkennt LatexCompiler daran (#507).
     test("ein hängender Prozess wird nach der Zeitgrenze abgeräumt") {
-        lateinit var error: ToolchainException
+        lateinit var error: ToolTimeoutException
 
         val needed =
             measureTime {
                 error =
-                    shouldThrow<ToolchainException> {
+                    shouldThrow<ToolTimeoutException> {
                         ExternalTool.run("sleep", listOf("10"), workDir, timeout = 1.seconds)
                     }
             }

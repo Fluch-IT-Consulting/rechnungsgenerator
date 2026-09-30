@@ -3,6 +3,7 @@ package de.fluchitconsulting.rechnungsgenerator.generate.typesetting
 import de.fluchitconsulting.rechnungsgenerator.toolchain.ToolchainException
 import de.fluchitconsulting.rechnungsgenerator.toolchain.process.LuaLatex
 import de.fluchitconsulting.rechnungsgenerator.toolchain.process.LuaLatex.Companion.PROGRAM
+import de.fluchitconsulting.rechnungsgenerator.toolchain.process.ToolTimeoutException
 import java.io.IOException
 import java.nio.file.Path
 import java.security.MessageDigest
@@ -48,7 +49,13 @@ class LatexCompiler(private val luaLatex: LuaLatex) {
         var log: String
         var passes = 0
         do {
-            val run = luaLatex.run(workingDir, jobName, id, creationDate)
+            val run =
+                try {
+                    luaLatex.run(workingDir, jobName, id, creationDate)
+                } catch (e: ToolTimeoutException) {
+                    // Ein Satzfehler: Die Eingaben sind maskiert, hängen kann am ehesten ein Logo (#507).
+                    throw TypesettingException(e.message!!, e)
+                }
             log = run.log
             if (run.failed) throw TypesettingException(errorReport(jobName, log))
             passes++
@@ -183,7 +190,7 @@ class LatexCompiler(private val luaLatex: LuaLatex) {
 }
 
 /**
- * LuaLaTeX ist an den Quellen gescheitert. Nur hier kann das Logo schuld sein, nicht an Prüfer, XML oder Einbetten;
- * deshalb nennt `erzeuge` es allein bei diesem Typ (#491).
+ * LuaLaTeX ist an den Quellen gescheitert oder hing. Nur hier kann das Logo schuld sein, nicht an Prüfer, XML oder
+ * Einbetten; deshalb nennt `erzeuge` es allein bei diesem Typ (#491, #507).
  */
-class TypesettingException(message: String) : ToolchainException(message)
+class TypesettingException(message: String, cause: Throwable? = null) : ToolchainException(message, cause)

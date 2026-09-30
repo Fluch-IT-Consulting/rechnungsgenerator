@@ -82,7 +82,7 @@ object ExternalTool : ProcessRunner {
                     .start()
             if (!process.waitFor(timeout.inWholeSeconds, TimeUnit.SECONDS)) {
                 process.destroyForcibly()
-                throw ToolchainException("${executable.fileName} hat nach $timeout nicht geantwortet und wurde abgebrochen.")
+                throw ToolTimeoutException(executable.fileName.toString(), timeout)
             }
             ToolResult(process.exitValue(), outFile.readText(), errFile.readText())
         } finally {
