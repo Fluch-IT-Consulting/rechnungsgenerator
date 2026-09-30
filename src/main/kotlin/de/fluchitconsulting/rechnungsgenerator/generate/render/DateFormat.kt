@@ -18,8 +18,8 @@ class DateFormat(
      */
     fun date(date: LocalDate): Latex = format(longDatePattern("\u00A0"), date).escapeLatex()
 
-    /** Mit gewöhnlichem Leerzeichen: pdfx läse ein `~` als Tilde in die Dokumenteigenschaften. */
-    fun dateInMetadata(date: LocalDate): Latex = format(longDatePattern(" "), date).escapeLatex()
+    /** Für die .xmpdata, maskiert wie sie (#485). */
+    fun dateInMetadata(date: LocalDate): Latex = format(longDatePattern(" "), date).escapeXmpData()
 
     /** Ein voller Kalendermonat genügt als `Juli 2026`, §31 Abs. 4 UStDV. */
     fun servicePeriod(start: LocalDate, end: LocalDate): Latex =

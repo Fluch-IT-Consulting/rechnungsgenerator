@@ -204,7 +204,7 @@ object InvoiceRenderer {
         val calculatedInvoice = acceptedInvoice.calculated
         val invoice = calculatedInvoice.invoice
         val language = invoice.language
-        val document = invoice.type.documentName(language).escapeLatex() + " ".escapeLatex() + invoice.number.escapeLatex()
+        val document = "${invoice.type.documentName(language)} ${invoice.number}".escapeXmpData()
         val dated =
             when (language) {
                 Language.GERMAN -> " vom "
@@ -212,9 +212,9 @@ object InvoiceRenderer {
             }
         return listOf(
             xmpField("Title", document),
-            xmpField("Author", calculatedInvoice.config.companyName.escapeLatex()),
-            xmpField("Subject", document + dated.escapeLatex() + DateFormat(language).dateInMetadata(invoice.issueDate)),
-            xmpField("Language", language.tag.escapeLatex()),
+            xmpField("Author", calculatedInvoice.config.companyName.escapeXmpData()),
+            xmpField("Subject", document + dated.escapeXmpData() + DateFormat(language).dateInMetadata(invoice.issueDate)),
+            xmpField("Language", language.tag.escapeXmpData()),
         ).joinToLatex("\n").tex
     }
 

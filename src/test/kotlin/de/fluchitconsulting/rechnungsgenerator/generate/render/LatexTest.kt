@@ -45,6 +45,25 @@ class LatexTest : FunSpec({
         "IT-Beratung gemäß Rahmenvertrag".escapeLatex().tex shouldBe "IT-Beratung gemäß Rahmenvertrag"
     }
 
+    context("Metadaten für pdfx (#485)") {
+        test("was pdfx wörtlich liest, bleibt stehen, sonst stünden Info-Dictionary und XMP verschieden da") {
+            "RE_2026 #7 ~5 2^10 \$ Meier & Söhne <a> \"b\" 'c'".escapeXmpData().tex shouldBe
+                "RE_2026 #7 ~5 2^10 \$ Meier & Söhne <a> \"b\" 'c'"
+        }
+
+        test("Prozent, Klammern und Backslash nimmt pdfx nur maskiert") {
+            "50 % {a} a\\b".escapeXmpData().tex shouldBe "50 \\% \\{a\\} a\\backslash b"
+        }
+
+        test("ein Leerzeichen nach dem Backslash ist ausdrücklich, sonst verschluckte es TeX") {
+            "a\\ b".escapeXmpData().tex shouldBe "a\\backslash \\ b"
+        }
+
+        test("jeder Leerraum wird ein Leerzeichen, auch das geschützte und das schmale") {
+            "Muster GmbH 01.06. – 31.08. a\nb".escapeXmpData().tex shouldBe "Muster GmbH 01.06. – 31.08. a b"
+        }
+    }
+
     test("ein Makro ohne Argument endet mit {}, damit der folgende Text nicht zum Namen wird") {
         // #76
         (Latex.macro(TemplateMacro.ZEILENWECHSEL) + "Musterweg".escapeLatex()).tex shouldBe
