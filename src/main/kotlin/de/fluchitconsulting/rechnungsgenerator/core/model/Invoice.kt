@@ -1,5 +1,6 @@
 package de.fluchitconsulting.rechnungsgenerator.core.model
 
+import de.fluchitconsulting.rechnungsgenerator.core.values.CountryCode
 import de.fluchitconsulting.rechnungsgenerator.core.values.Currency
 import de.fluchitconsulting.rechnungsgenerator.core.values.ExchangeRate
 import de.fluchitconsulting.rechnungsgenerator.core.values.Language
@@ -99,7 +100,7 @@ data class Customer(
     @SerialName("name") val name: String,
     // BT-56. Das Programm setzt nichts davor, kein „z. Hd.“ und keine Anrede.
     @SerialName("ansprechpartner") val contactPoint: String? = null,
-    @SerialName("anschrift") val address: Address,
+    @SerialName("anschrift") val address: CustomerAddress,
     // BT-46
     @SerialName("kundennummer") val buyerIdentifier: String? = null,
     // BT-10, etwa Bestellnummer oder Leitweg-ID.
@@ -108,6 +109,20 @@ data class Customer(
     @SerialName("umsatzsteuer-id") val vatId: VatId? = null,
     @SerialName("ust-id-geprueft") val vatIdCheck: VatIdCheck? = null,
 )
+
+/**
+ * Ohne Postleitzahl für ein Land, das keine kennt (#512); BT-53 ist nicht Pflicht. Im Inland meldet ihr Fehlen
+ * POSTLEITZAHL_FEHLT.
+ */
+@Serializable
+data class CustomerAddress(
+    @SerialName("strasse") override val street: String,
+    // String wie beim Rechnungssteller, sonst ginge die führende Null verloren.
+    @SerialName("plz") override val postalCode: String? = null,
+    @SerialName("ort") override val city: String,
+    // BT-55
+    @SerialName("land") override val countryCode: CountryCode = CountryCode("DE"),
+) : PostalAddress
 
 /**
  * Drei Textfelder nach EN 16931: [name] (BT-153), [description] (BT-154) und [note] (BT-127). Ein einziges Feld

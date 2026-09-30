@@ -109,7 +109,7 @@ fun testInvoice(
             name = "Beispiel Software GmbH",
             contactPoint = contactPoint,
             buyerIdentifier = buyerIdentifier,
-            address = Address(street = "Industriestraße 1", postalCode = "90402", city = "Nürnberg"),
+            address = CustomerAddress(street = "Industriestraße 1", postalCode = "90402", city = "Nürnberg"),
             vatId = customerVatId,
         ),
     items = items,

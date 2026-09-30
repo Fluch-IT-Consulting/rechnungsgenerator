@@ -55,6 +55,9 @@ enum class Rule(val severity: Severity) {
     // Stammdaten
     REGISTERANGABEN_UNVOLLSTAENDIG(Severity.ABORT),
 
+    // Die Anschrift des Kunden (#512)
+    POSTLEITZAHL_FEHLT(Severity.ABORT),
+
     // Freitextangaben
     ANSPRECHPARTNER_LEER(Severity.ABORT),
     ANSPRECHPARTNER_MIT_LEERRAUM(Severity.ABORT),

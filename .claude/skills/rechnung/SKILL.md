@@ -255,7 +255,7 @@ kunde:
   kundennummer: K-17                    # optional, Text – führende Nullen bleiben nur gequotet
   anschrift:
     strasse: Industriestraße 1
-    plz: "90402"                    # Text, keine Zahl – führende Nullen bleiben
+    plz: "90402"                    # Text, keine Zahl – führende Nullen bleiben; fehlt nur im Ausland ohne Postleitzahlen
     ort: Nürnberg
   referenz: BST-2026-0815           # optional, Referenz des Kunden (BT-10), etwa eine Leitweg-ID
 einleitung: >-                      # optional, Satz über den Positionen; >- und nicht |

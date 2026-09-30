@@ -2,7 +2,7 @@ package de.fluchitconsulting.rechnungsgenerator.generate.render
 
 import de.fluchitconsulting.rechnungsgenerator.core.accepted.AcceptedInvoice
 import de.fluchitconsulting.rechnungsgenerator.core.calculation.CalculatedInvoice
-import de.fluchitconsulting.rechnungsgenerator.core.model.Address
+import de.fluchitconsulting.rechnungsgenerator.core.model.CustomerAddress
 import de.fluchitconsulting.rechnungsgenerator.core.rules.InvoiceKind
 import de.fluchitconsulting.rechnungsgenerator.core.values.CountryCode
 import de.fluchitconsulting.rechnungsgenerator.core.values.Language
@@ -21,13 +21,13 @@ internal object MetadataBlocks {
     }
 
     private fun addressLines(
-        address: Address,
+        address: CustomerAddress,
         showCountry: Boolean,
         language: Language,
     ): List<Latex> =
         buildList {
             add(address.street.escapeLatex())
-            add("${address.postalCode} ${address.city}".escapeLatex())
+            add(listOfNotNull(address.postalCode, address.city).joinToString(" ").escapeLatex())
             if (showCountry) add(Latex.macro(TemplateMacro.LANDZEILE, listOf(countryName(address.countryCode, language).escapeLatex())))
         }
 

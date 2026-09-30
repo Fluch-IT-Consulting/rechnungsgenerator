@@ -294,6 +294,14 @@ class InvoiceRendererTest : FunSpec({
                 """Beispiel Software GmbH\zeilenwechsel{}Industriestraße 1\zeilenwechsel{}90402 Nürnberg\zeilenwechsel{}\landzeile{Österreich}"""
         }
 
+        test("ohne Postleitzahl steht der Ort allein (#512)") {
+            val basis = testInvoice()
+            val address = basis.customer.address.copy(postalCode = null, city = "Dubai", countryCode = CountryCode("AE"))
+            val invoice = basis.copy(customer = basis.customer.copy(address = address))
+
+            valueOf(TemplateValue.EMPFAENGER, invoice) shouldContain """Industriestraße 1\zeilenwechsel{}Dubai\zeilenwechsel{}\landzeile{"""
+        }
+
         // EL ist Griechenland nur in der Umsatzsteuer der EU; ZZ nennt das JDK
         // "Unbekannte Region".
         for (code in listOf("EL", "ZZ", "XX")) {

@@ -5,10 +5,10 @@ import de.fluchitconsulting.rechnungsgenerator.core.accepted.InvoiceVariableReso
 import de.fluchitconsulting.rechnungsgenerator.core.calculation.CalculatedInvoice
 import de.fluchitconsulting.rechnungsgenerator.core.calculation.CalculatedLine
 import de.fluchitconsulting.rechnungsgenerator.core.calculation.VatGroup
-import de.fluchitconsulting.rechnungsgenerator.core.model.Address
 import de.fluchitconsulting.rechnungsgenerator.core.model.CancelledInvoice
 import de.fluchitconsulting.rechnungsgenerator.core.model.Discount
 import de.fluchitconsulting.rechnungsgenerator.core.model.InvoiceType
+import de.fluchitconsulting.rechnungsgenerator.core.model.PostalAddress
 import de.fluchitconsulting.rechnungsgenerator.core.model.ServicePeriod
 import de.fluchitconsulting.rechnungsgenerator.core.model.TaxCategory
 import de.fluchitconsulting.rechnungsgenerator.core.rules.Deduction
@@ -209,9 +209,10 @@ object CiiWriter {
         }
     }
 
-    private fun XmlElements.address(address: Address) {
+    private fun XmlElements.address(address: PostalAddress) {
         element("ram:PostalTradeAddress") {
-            element("ram:PostcodeCode", address.postalCode)
+            // Ohne Postleitzahl kein Element; ein leeres warnte PEPPOL-EN16931-R008 (#512).
+            address.postalCode?.let { element("ram:PostcodeCode", it) }
             element("ram:LineOne", address.street)
             element("ram:CityName", address.city)
             element("ram:CountryID", address.countryCode.value)
