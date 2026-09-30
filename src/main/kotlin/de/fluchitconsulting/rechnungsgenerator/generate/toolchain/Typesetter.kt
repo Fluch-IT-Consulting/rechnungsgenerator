@@ -1,10 +1,10 @@
 package de.fluchitconsulting.rechnungsgenerator.generate.toolchain
 
-import de.fluchitconsulting.rechnungsgenerator.toolchain.EInvoiceValidator
-import de.fluchitconsulting.rechnungsgenerator.toolchain.ExternalTool
-import de.fluchitconsulting.rechnungsgenerator.toolchain.PdfAValidator
 import de.fluchitconsulting.rechnungsgenerator.toolchain.ToolchainException
-import de.fluchitconsulting.rechnungsgenerator.toolchain.ValidationResult
+import de.fluchitconsulting.rechnungsgenerator.toolchain.process.ExternalTool
+import de.fluchitconsulting.rechnungsgenerator.toolchain.validation.EInvoiceValidator
+import de.fluchitconsulting.rechnungsgenerator.toolchain.validation.PdfAValidator
+import de.fluchitconsulting.rechnungsgenerator.toolchain.validation.ValidationResult
 import java.nio.file.Path
 
 /** Eine Funktion, weil der Prüfer erst mit dem Schalter `--externe-pdfa-pruefung` feststeht. */

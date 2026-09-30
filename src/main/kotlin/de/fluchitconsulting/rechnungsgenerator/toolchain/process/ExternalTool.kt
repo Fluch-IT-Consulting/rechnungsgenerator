@@ -1,5 +1,6 @@
-package de.fluchitconsulting.rechnungsgenerator.toolchain
+package de.fluchitconsulting.rechnungsgenerator.toolchain.process
 
+import de.fluchitconsulting.rechnungsgenerator.toolchain.ToolchainException
 import java.io.IOException
 import java.nio.file.Files
 import java.nio.file.Path
@@ -8,9 +9,6 @@ import kotlin.io.path.deleteIfExists
 import kotlin.io.path.isExecutable
 import kotlin.io.path.readText
 import kotlin.time.Duration
-
-/** Offen, damit ein Kommando ein Scheitern am Typ erkennt und nicht am Wortlaut (#386). */
-open class ToolchainException(message: String, cause: Throwable? = null) : Exception(message, cause)
 
 /** stdout und stderr getrennt: `verapdf` schreibt den Bericht auf stdout und sein Protokoll auf stderr (#227). */
 data class ToolResult(

@@ -11,10 +11,10 @@ import de.fluchitconsulting.rechnungsgenerator.generate.toolchain.FakeTypesetter
 import de.fluchitconsulting.rechnungsgenerator.generate.toolchain.Typesetter
 import de.fluchitconsulting.rechnungsgenerator.runCli
 import de.fluchitconsulting.rechnungsgenerator.setup.SetupCommand
-import de.fluchitconsulting.rechnungsgenerator.toolchain.BuiltInPdfAValidator
-import de.fluchitconsulting.rechnungsgenerator.toolchain.ExternalPdfAValidator
-import de.fluchitconsulting.rechnungsgenerator.toolchain.PdfAValidator
 import de.fluchitconsulting.rechnungsgenerator.toolchain.ToolchainException
+import de.fluchitconsulting.rechnungsgenerator.toolchain.validation.BuiltInPdfAValidator
+import de.fluchitconsulting.rechnungsgenerator.toolchain.validation.ExternalPdfAValidator
+import de.fluchitconsulting.rechnungsgenerator.toolchain.validation.PdfAValidator
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.assertions.withClue
 import io.kotest.core.spec.style.FunSpec

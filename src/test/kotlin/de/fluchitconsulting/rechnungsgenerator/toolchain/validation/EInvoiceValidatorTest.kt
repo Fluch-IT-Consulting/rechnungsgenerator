@@ -1,5 +1,6 @@
-package de.fluchitconsulting.rechnungsgenerator.toolchain
+package de.fluchitconsulting.rechnungsgenerator.toolchain.validation
 
+import de.fluchitconsulting.rechnungsgenerator.toolchain.capturingStandardError
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.inspectors.forAll
 import io.kotest.matchers.collections.shouldBeEmpty

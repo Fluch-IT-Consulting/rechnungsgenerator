@@ -1,7 +1,7 @@
 package de.fluchitconsulting.rechnungsgenerator.xml
 
-import de.fluchitconsulting.rechnungsgenerator.toolchain.PdfAProfile
 import de.fluchitconsulting.rechnungsgenerator.toolchain.XmlParser
+import de.fluchitconsulting.rechnungsgenerator.toolchain.validation.PdfAProfile
 import org.apache.pdfbox.pdmodel.PDDocument
 import org.w3c.dom.Document
 import org.w3c.dom.Element

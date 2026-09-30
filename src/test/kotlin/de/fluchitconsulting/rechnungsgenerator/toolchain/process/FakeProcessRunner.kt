@@ -1,4 +1,4 @@
-package de.fluchitconsulting.rechnungsgenerator.toolchain
+package de.fluchitconsulting.rechnungsgenerator.toolchain.process
 
 import java.nio.file.Path
 import kotlin.io.path.writeText
