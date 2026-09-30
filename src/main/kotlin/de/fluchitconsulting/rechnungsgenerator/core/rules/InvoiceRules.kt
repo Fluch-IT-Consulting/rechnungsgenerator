@@ -11,6 +11,7 @@ internal object InvoiceRules {
     fun check(calculated: CalculatedInvoice, kindCheck: InvoiceKindRules.Result): List<Finding> =
         listOf(
             InvoiceNumberRules.check(calculated),
+            SellerConfigRules.check(calculated),
             FreeTextRules.check(calculated),
             kindCheck.findings,
             CancellationRules.check(calculated),
