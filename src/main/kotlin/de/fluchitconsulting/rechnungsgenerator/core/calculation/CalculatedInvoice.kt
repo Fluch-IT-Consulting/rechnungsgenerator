@@ -128,11 +128,21 @@ data class CalculatedInvoice(
     val settledByPrepayments: Boolean get() = prepayments.isNotEmpty() && remainingAmount.isZero()
 
     /**
-     * Fordert das Dokument Geld? Daran hängen Zahlungsziel und Bankverbindung. Nicht dasselbe wie
-     * [InvoiceType.chargesForService]: Eine ausgeglichene Schlussrechnung rechnet ab, fordert aber nichts.
-     * Positiv statt „nicht null“, damit die Aussage nicht an den Regeln gegen negative Beträge hängt (#130).
+     * BT-113. Mit `vereinnahmt-am`, das nur die Abschlagsrechnung trägt, ist der ganze Abschlag vereinnahmt, nicht
+     * ein Teil: So lesen es das Glossar, `abschlaege` und die Schlussrechnung (#503).
      */
-    val requestsPayment: Boolean get() = invoice.type.chargesForService && remainingAmount.isPositive()
+    val paidAmount: Money get() = if (invoice.receivedOn != null) grossTotal else prepaymentTotal
+
+    // BT-115
+    val amountDue: Money get() = grossTotal - paidAmount
+
+    /**
+     * Fordert das Dokument Geld? Daran hängen Zahlungsziel und Bankverbindung. Nicht dasselbe wie
+     * [InvoiceType.chargesForService]: Eine ausgeglichene Schlussrechnung oder eine vereinnahmte Abschlagsrechnung
+     * rechnet ab, fordert aber nichts. Positiv statt „nicht null“, damit die Aussage nicht an den Regeln gegen
+     * negative Beträge hängt (#130).
+     */
+    val requestsPayment: Boolean get() = invoice.type.chargesForService && amountDue.isPositive()
 
     // Glossar *Inland*: im Land des Rechnungsstellers, nicht „in Deutschland“.
     val isDomestic: Boolean get() = invoice.customer.address.countryCode == config.address.countryCode

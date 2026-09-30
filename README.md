@@ -323,7 +323,7 @@ Rechnung, und bestehende Dateien bleiben unverändert gültig.
 | `art` | Dokument | Besonderheit |
 |---|---|---|
 | `rechnung` | über eine erbrachte Leistung | Vorgabe |
-| `abschlagsrechnung` | über einen Teil des Entgelts, bevor geleistet wurde | Zeitraum gilt als voraussichtlich, optional `vereinnahmt-am` |
+| `abschlagsrechnung` | über einen Teil des Entgelts, bevor geleistet wurde | Zeitraum gilt als voraussichtlich; mit `vereinnahmt-am` ist der Abschlag ganz vereinnahmt, und sie fordert nichts |
 | `schlussrechnung` | über die Gesamtleistung | setzt unter `abschlaege` die vereinnahmten Abschläge ab |
 | `teilrechnung` | über eine abgeschlossene Teilleistung | wie eine Rechnung; in der E-Rechnung ein eigener Code (326) |
 | `stornorechnung` | hebt eine ausgestellte Rechnung auf | nennt sie unter `storniert`, Positionen mit negativer Menge |

@@ -277,10 +277,10 @@ object CiiWriter {
                 // BT-111. Mustang rechnet sie nicht nach, das hält die Vergleichsdatei.
                 calculated.vatTotalInEuro?.let { element("ram:TaxTotalAmount", amount(it), "currencyID" to Currency.EUR.name) }
                 element("ram:GrandTotalAmount", amount(calculated.grossTotal))
-                if (deductions.isNotEmpty()) {
-                    element("ram:TotalPrepaidAmount", amount(calculated.prepaymentTotal))
+                if (deductions.isNotEmpty() || receivedOn(acceptedInvoice) != null) {
+                    element("ram:TotalPrepaidAmount", amount(calculated.paidAmount))
                 }
-                element("ram:DuePayableAmount", amount(calculated.remainingAmount))
+                element("ram:DuePayableAmount", amount(calculated.amountDue))
             }
             cancelled(acceptedInvoice)?.let { cancelled ->
                 element("ram:InvoiceReferencedDocument") {
