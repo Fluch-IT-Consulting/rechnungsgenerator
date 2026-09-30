@@ -167,7 +167,16 @@ class GenerateCommand(
             echo(typesetPdf.validation.describe())
             // Hinweise nach dem Ergebnis, damit sie nicht wie ein Fehler wirken.
             acceptedInvoice.hints.forEach { echo("Hinweis: ${it.describe()}") }
-            typesetPdf.overflowHint?.let { echo("Hinweis: $it") }
+            typesetPdf.overflowHint?.let { hint ->
+                // Der Hinweis nennt die .tex, und ohne den Schalter ist sie gleich gelöscht (#488).
+                val inspectionNote =
+                    if (keepWorkFiles) {
+                        "Die Datei liegt unter ${workDir.resolve("$jobName.tex")}."
+                    } else {
+                        "Mit --arbeitsdateien-behalten bleibt $jobName.tex zum Ansehen liegen."
+                    }
+                echo("Hinweis: $hint\n\n$inspectionNote")
+            }
             if (keepWorkFiles) echo("Arbeitsdateien: $workDir")
             // Zuletzt und nur für ein gültiges PDF am Ziel. Ein Fehlschlag ist ein Hinweis, der Exitcode bleibt 0.
             if (openAfterwards) {

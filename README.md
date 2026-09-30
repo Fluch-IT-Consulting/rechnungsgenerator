@@ -133,6 +133,13 @@ ebenso ein Aufruf ohne Unterkommando, der nur die Hilfe zeigt. Die
 Fehlermeldung steht dann auf stderr; stdout trägt nur das Ergebnis und lässt
 sich gefahrlos umleiten.
 
+Steht etwas über den Rand seiner Zeile oder Spalte – in einer Tabelle
+womöglich über der Spalte daneben –, folgt dem Ergebnis ein Hinweis mit der
+Fundstelle aus dem Protokoll von LuaLaTeX. Das PDF ist gültig und vollständig,
+der Exitcode bleibt 0; vor dem Versand gehört es trotzdem angesehen. Fehlt
+dagegen Inhalt, weil eine Seite mehr trägt, als das Blatt fasst, oder weil die
+Schrift des Designs ein Zeichen nicht hat, bricht der Satz mit Exitcode 1 ab.
+
 ### E-Rechnung (ZUGFeRD)
 
 Mit `--zugferd` entsteht statt des PDF/A-1b eine E-Rechnung nach ZUGFeRD im
