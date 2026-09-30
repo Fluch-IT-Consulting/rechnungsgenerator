@@ -33,6 +33,17 @@ internal object TaxCategoryRules {
                         ),
                     )
                 }
+                // BR-S-05. Nur bei S: Bei den übrigen Kategorien meldet SATZ_MUSS_NULL_SEIN den Satz schon.
+                if (category == TaxCategory.STANDARD && item.vatRate.valueAsMultiplier.signum() < 0) {
+                    add(
+                        Finding(
+                            Rule.STEUERSATZ_NEGATIV,
+                            position,
+                            "Kategorie S (Regelsatz) verlangt einen Steuersatz über 0%, angegeben ist ${item.vatRate}. " +
+                                "Einen negativen Betrag ergibt eine negative Menge, nicht ein negativer Satz.",
+                        ),
+                    )
+                }
                 if (!category.requiresReason && item.taxExemptionReason != null) {
                     add(
                         Finding(
