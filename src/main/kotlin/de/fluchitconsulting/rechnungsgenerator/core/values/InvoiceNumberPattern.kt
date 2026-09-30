@@ -1,10 +1,12 @@
 package de.fluchitconsulting.rechnungsgenerator.core.values
 
+import de.fluchitconsulting.rechnungsgenerator.core.serialization.InvalidValueException
 import de.fluchitconsulting.rechnungsgenerator.core.serialization.stringSerializer
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.Serializable
-import kotlinx.serialization.SerializationException
 import java.util.regex.PatternSyntaxException
+
+class InvalidInvoiceNumberPatternException(message: String) : InvalidValueException(message)
 
 /**
  * Ein regulärer Ausdruck aus den Stammdaten (ADR-0005). Er muss die ganze Nummer überdecken ([Regex.matches]),
@@ -17,7 +19,7 @@ class InvoiceNumberPattern(val value: String) {
             Regex(value)
         } catch (e: PatternSyntaxException) {
             // Die Meldung zeigt mit `^` auf die schadhafte Stelle.
-            throw InvalidIdentifierException("Kein gültiger regulärer Ausdruck für Rechnungsnummern: '$value'\n${e.message}")
+            throw InvalidInvoiceNumberPatternException("Kein gültiger regulärer Ausdruck für Rechnungsnummern: '$value'\n${e.message}")
         }
 
     fun matches(number: String): Boolean = regex.matches(number)
@@ -31,14 +33,4 @@ class InvoiceNumberPattern(val value: String) {
 }
 
 object InvoiceNumberPatternSerializer :
-    KSerializer<InvoiceNumberPattern> by stringSerializer(
-        "InvoiceNumberPattern",
-        { it.value },
-        {
-            try {
-                InvoiceNumberPattern(it)
-            } catch (e: InvalidIdentifierException) {
-                throw SerializationException(e.message, e)
-            }
-        },
-    )
+    KSerializer<InvoiceNumberPattern> by stringSerializer("InvoiceNumberPattern", { it.value }, ::InvoiceNumberPattern)

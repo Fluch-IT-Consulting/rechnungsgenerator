@@ -1,11 +1,11 @@
 package de.fluchitconsulting.rechnungsgenerator.core.values
 
+import de.fluchitconsulting.rechnungsgenerator.core.serialization.InvalidValueException
 import de.fluchitconsulting.rechnungsgenerator.core.serialization.stringSerializer
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.Serializable
-import kotlinx.serialization.SerializationException
 
-class InvalidRgbColorException(message: String) : IllegalArgumentException(message)
+class InvalidRgbColorException(message: String) : InvalidValueException(message)
 
 /**
  * Sechs Hexadezimalziffern ohne `#`: In YAML beginnt mit `#` ein Kommentar. Deshalb meldet sich auch ein `#` in
@@ -32,14 +32,4 @@ class RgbColor(raw: String) {
 }
 
 object RgbColorSerializer :
-    KSerializer<RgbColor> by stringSerializer(
-        "RgbColor",
-        { it.value },
-        {
-            try {
-                RgbColor(it)
-            } catch (e: InvalidRgbColorException) {
-                throw SerializationException(e.message, e)
-            }
-        },
-    )
+    KSerializer<RgbColor> by stringSerializer("RgbColor", { it.value }, ::RgbColor)

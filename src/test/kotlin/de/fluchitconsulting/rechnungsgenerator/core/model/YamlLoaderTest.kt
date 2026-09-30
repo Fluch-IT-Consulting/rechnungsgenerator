@@ -371,6 +371,27 @@ class YamlLoaderTest : FunSpec({
         }
     }
 
+    // #495: Jeder Werttyp meldet sich über denselben Weg.
+    test("eine ungültige Kennung oder ein ungültiger Ländercode nennt Datei und Grund") {
+        listOf(
+            "iban: DE89 3704 0044 0532 0130 00" to "iban: DE89 3704 0044 0532 0130 09",
+            "bic: MUSTDEFFXXX" to "bic: MUSTDEF",
+            "umsatzsteuer-id: DE123456788" to "umsatzsteuer-id: 123456788",
+            "steuernummer: 257/123/45678" to "steuernummer: 123",
+            "ort: Würzburg" to "ort: Würzburg\n  land: Deutschland",
+        ).forEach { (valid, invalid) ->
+            withClue(invalid) {
+                val file = createTempDirectory("loader-test").resolve("stammdaten.yaml")
+                file.writeText(resource("stammdaten.yaml").replaceFirst(valid, invalid))
+
+                val failure = shouldThrow<InputFileException> { YamlLoader.loadSellerConfig(file) }
+
+                failure.message!! shouldContain file.toString()
+                failure.message!! shouldContain "'${invalid.substringAfterLast(": ")}'"
+            }
+        }
+    }
+
     test("ein Muster, das kein regulärer Ausdruck ist, nennt die Datei") {
         val file = createTempDirectory("loader-test").resolve("stammdaten.yaml")
         file.writeText(resource("stammdaten.yaml").replace("R\\d{2}-\\d{3}", "R\\d{2-3}"))

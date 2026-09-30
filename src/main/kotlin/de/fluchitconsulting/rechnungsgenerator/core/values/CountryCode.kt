@@ -1,11 +1,11 @@
 package de.fluchitconsulting.rechnungsgenerator.core.values
 
+import de.fluchitconsulting.rechnungsgenerator.core.serialization.InvalidValueException
 import de.fluchitconsulting.rechnungsgenerator.core.serialization.stringSerializer
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.Serializable
-import kotlinx.serialization.SerializationException
 
-class InvalidCountryCodeException(message: String) : IllegalArgumentException(message)
+class InvalidCountryCodeException(message: String) : InvalidValueException(message)
 
 /**
  * ISO 3166-1 alpha-2 (BT-40, BT-55), normalisiert im Konstruktor: `de` ist derselbe Wert wie `DE`, und kein
@@ -33,12 +33,4 @@ class CountryCode(raw: String) {
 }
 
 object CountryCodeSerializer :
-    KSerializer<CountryCode> by stringSerializer("CountryCode", { it.value }, { parseOrFail(it) })
-
-// Als SerializationException, damit die CLI sie wie einen YAML-Fehler meldet.
-private fun parseOrFail(raw: String): CountryCode =
-    try {
-        CountryCode(raw)
-    } catch (e: InvalidCountryCodeException) {
-        throw SerializationException(e.message, e)
-    }
+    KSerializer<CountryCode> by stringSerializer("CountryCode", { it.value }, ::CountryCode)
