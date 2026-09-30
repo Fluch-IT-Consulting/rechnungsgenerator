@@ -51,7 +51,7 @@ object YamlLoader {
 
     private fun decodeSellerConfig(text: String): SellerConfig = decode(SellerConfig.serializer(), text)
 
-    /** `decodeFromString` in zwei Schritten: Dazwischen sieht [ControlCharacters] den Knotenbaum. */
+    /** `decodeFromString` in zwei Schritten: Dazwischen sehen [ControlCharacters] und [BlankValues] den Knotenbaum. */
     private fun <T> decode(
         deserializer: DeserializationStrategy<T>,
         text: String,
@@ -64,6 +64,14 @@ object YamlLoader {
                     found.joinToString("\n") { "  $it" } +
                     "\nSie entstehen in doppelten Anführungszeichen aus Escapes wie \\x0B oder \\r. " +
                     "Tabulator und Zeilenumbruch sind erlaubt.",
+            )
+        }
+        val blank = BlankValues.findIn(root)
+        if (blank.isNotEmpty()) {
+            throw SerializationException(
+                "Ein leerer Wert nennt nichts:\n" +
+                    blank.joinToString("\n") { "  $it" } +
+                    "\nIst nichts gemeint, entfällt der Schlüssel ganz; ein Pflichtfeld braucht einen Wert.",
             )
         }
         return yaml.decodeFromYamlNode(deserializer, root)

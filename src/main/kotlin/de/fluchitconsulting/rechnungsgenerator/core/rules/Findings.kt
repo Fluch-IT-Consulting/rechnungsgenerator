@@ -59,13 +59,9 @@ enum class Rule(val severity: Severity) {
     POSTLEITZAHL_FEHLT(Severity.ABORT),
 
     // Freitextangaben
-    ANSPRECHPARTNER_LEER(Severity.ABORT),
     ANSPRECHPARTNER_MIT_LEERRAUM(Severity.ABORT),
-    KUNDENNUMMER_LEER(Severity.ABORT),
     KUNDENNUMMER_MIT_LEERRAUM(Severity.ABORT),
-    AUFTRAGSNUMMER_LEER(Severity.ABORT),
     AUFTRAGSNUMMER_MIT_LEERRAUM(Severity.ABORT),
-    EINLEITUNG_LEER(Severity.ABORT),
     EINLEITUNG_MIT_LEERRAUM(Severity.ABORT),
 
     // Positionen und Steuerkategorie
