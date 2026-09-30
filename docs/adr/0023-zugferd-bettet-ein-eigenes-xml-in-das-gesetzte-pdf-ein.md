@@ -475,3 +475,15 @@ Verworfen:
   PDF/A-3 ausgibt, ist keine E-Rechnung, die nur einen Formfehler hat.
 - **Das Inland des Verkäufers statt Deutschland.** Das Glossar trennt beides
   mit Absicht, und die Regel gehört zur deutschen Fassung der Spezifikation.
+
+## Nachtrag vom 30.09.2026: Das XML geht in die Trailer-ID ein
+
+Oben heißt es, Mustang lasse die Trailer-ID aus `LatexCompiler` stehen. Die
+bildete sich aus `.tex`, `.xmpdata` und den weiteren Dateien, nicht aber aus
+dem XML in `PdfSources.einvoice`. Änderte eine Fassung nur `CiiWriter`, ergab
+dieselbe Rechnungsdatei eine E-Rechnung mit anderen Bytes und derselben ID –
+der Fall, den #198 für das Logo ausgeschlossen hat.
+
+Seit #499 geht das XML in die Prüfsumme ein, wie die weiteren Dateien. Das
+PDF/A-1b und das PDF/A-3u derselben Rechnung tragen damit verschiedene IDs.
+Ohne E-Rechnung bleibt die ID, wie sie war.

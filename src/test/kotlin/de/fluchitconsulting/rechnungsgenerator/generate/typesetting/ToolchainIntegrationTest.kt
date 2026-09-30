@@ -24,8 +24,10 @@ import io.kotest.matchers.collections.shouldNotBeEmpty
 import io.kotest.matchers.doubles.plusOrMinus
 import io.kotest.matchers.ints.shouldBeGreaterThan
 import io.kotest.matchers.shouldBe
+import io.kotest.matchers.shouldNotBe
 import io.kotest.matchers.string.shouldContain
 import org.apache.pdfbox.Loader
+import org.apache.pdfbox.cos.COSString
 import java.awt.image.BufferedImage
 import java.nio.file.Path
 import java.security.MessageDigest
@@ -114,6 +116,27 @@ class ToolchainIntegrationTest : FunSpec({
                     .getValue("factur-x.xml")
             attachment.embeddedFile.toByteArray().contentEquals(xml) shouldBe true
         }
+    }
+
+    // #499: Mustang lässt die ID stehen (ADR-0023), und die schließt das XML ein.
+    test("das PDF/A-3u trägt die Trailer-ID seines Satzes, und die ist eine andere als die des PDF/A-1b") {
+        val (einvoice, _) = typesetWithEInvoice("trailer-id")
+        val (plain, _) = run.generate("rechnung", "trailer-id-1b")
+        // Das PDF/A-1b vor dem Einbetten liegt im selben Arbeitsverzeichnis.
+        val beforeEmbedding =
+            einvoice.pdf.resolveSibling(
+                einvoice.pdf.fileName
+                    .toString()
+                    .replace("-zugferd", ""),
+            )
+
+        fun trailerIdOf(pdf: Path): List<String> =
+            Loader.loadPDF(pdf.toFile()).use { document ->
+                document.document.documentID.map { HexFormat.of().formatHex((it as COSString).bytes) }
+            }
+
+        trailerIdOf(einvoice.pdf) shouldBe trailerIdOf(beforeEmbedding)
+        trailerIdOf(einvoice.pdf) shouldNotBe trailerIdOf(plain)
     }
 
     // #297. Wird der Test rot, gehört die Begründung in ADR-0005 neu geprüft.

@@ -62,22 +62,29 @@ class LatexCompiler(private val luaLatex: LuaLatex) {
     /**
      * Aus den Quellen statt, wie LuaTeX von sich aus, aus dem Pfad des Temp-Verzeichnisses. Die Null trennt die
      * Quellen („ab“ + „c“ ist nicht „a“ + „bc“), bei Bytes die Länge, weil dort die Null selbst vorkommt. Die
-     * Dateien gehen mit ein, sonst änderte ein Logo das PDF, aber nicht die ID (#198).
+     * Dateien gehen mit ein, sonst änderte ein Logo das PDF, aber nicht die ID (#198). Ebenso das XML der E-Rechnung,
+     * unter dem leeren Namen, den keine Datei tragen darf (#499).
      */
     private fun trailerId(sources: PdfSources): String {
         val md5 = MessageDigest.getInstance("MD5")
         md5.update(sources.tex.toByteArray())
         md5.update(0.toByte())
         md5.update(sources.xmpMetadata.toByteArray())
-        sources.files.toSortedMap().forEach { (name, content) ->
-            md5.update(0.toByte())
-            md5.update(name.toByteArray())
-            md5.update(0.toByte())
-            md5.update(content.size.toString().toByteArray())
-            md5.update(0.toByte())
-            md5.update(content)
-        }
+        sources.files.toSortedMap().forEach { (name, content) -> md5.updateEntry(name, content) }
+        sources.einvoice?.let { md5.updateEntry("", it) }
         return HexFormat.of().withUpperCase().formatHex(md5.digest())
+    }
+
+    private fun MessageDigest.updateEntry(
+        name: String,
+        content: ByteArray,
+    ) {
+        update(0.toByte())
+        update(name.toByteArray())
+        update(0.toByte())
+        update(content.size.toString().toByteArray())
+        update(0.toByte())
+        update(content)
     }
 
     /**
