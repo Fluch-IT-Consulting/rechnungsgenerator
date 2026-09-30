@@ -1,8 +1,7 @@
-# CI ohne die externen Werkzeuge (#136): baut, lintet und testet alles, was
-# kein LuaLaTeX, veraPDF oder pdftotext braucht – das ist dank der
-# Typesetter-Naht alles außer dem ToolchainIntegrationTest. Was hier grün
-# wird, beweist NICHT die PDF/A-Gültigkeit; die prüft weiterhin der lokale
-# `./gradlew build` vor dem Merge.
+# CI ohne die externen Werkzeuge (#136): baut, lintet und testet alles außer
+# den Tests mit dem Kotest-Tag `Toolchain`, die LuaLaTeX und pdftotext
+# brauchen. Was hier grün wird, beweist NICHT die PDF/A-Gültigkeit; die prüft
+# weiterhin der lokale `./gradlew build` vor dem Merge.
 #
 # Der EU-Alterstest läuft absichtlich mit (kein EU_LISTE_ALTERSPRUEFUNG=aus):
 # Wird er rot, ist EuMemberStates.AS_OF nachzuprüfen – das ist der Zweck.

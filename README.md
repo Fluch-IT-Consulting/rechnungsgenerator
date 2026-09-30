@@ -47,11 +47,12 @@ Daneben braucht das Programm im PATH:
 Zum Bauen aus dem Quelltext genügt ein JDK 17+; Gradle lädt das Build-JDK bei
 Bedarf selbst.
 
-Nur für den `rechnung`-Skill in `.claude/skills/`: Python 3 mit
+Für den `rechnung`-Skill in `.claude/skills/`: Python 3 mit
 [PyYAML](https://pyyaml.org/) – `pip3 install pyyaml`. Das Skript
 `offene-abschlaege.py` liest damit die Rechnungsdateien, um die noch offenen
 Abschlagsrechnungen eines Kunden zu finden. Fehlt PyYAML, sagt das Skript, wie
-man es installiert. Der Generator selbst braucht kein Python.
+man es installiert. Der Generator selbst braucht kein Python, sein Build schon
+(siehe [Entwicklung](#entwicklung)).
 
 ## Verwendung
 
@@ -414,15 +415,24 @@ er liest beim Erzeugen eine einzige Datei.
 ## Entwicklung
 
 ```
-./gradlew build          # kompiliert, testet, lintet
-./gradlew test           # nur Tests
-./gradlew ktlintFormat   # Formatierung korrigieren
-./gradlew installDist    # Programm nach build/install/rechnungsgenerator/bin/
+./gradlew build                   # kompiliert, testet, lintet
+./gradlew build -PohneToolchain   # ohne die Tests mit LuaLaTeX; so baut die CI
+./gradlew test                    # nur Tests
+./gradlew ktlintFormat            # Formatierung korrigieren
+./gradlew installDist             # Programm nach build/install/rechnungsgenerator/bin/
 ```
 
-Der Build ruft LuaLaTeX und veraPDF wirklich auf: Ein Integrationstest erzeugt
-aus den Beispieldaten ein PDF und prüft es gegen PDF/A-1b, als E-Rechnung
-gegen PDF/A-3u. Ohne gültiges PDF/A ist der Build rot.
+Der volle Build setzt echte PDFs: Ein Integrationstest und das
+Pflichtangaben-Netz erzeugen aus den Beispieldaten PDFs mit LuaLaTeX, lesen
+ihren Text mit `pdftotext` und prüfen sie gegen PDF/A-1b, als E-Rechnung gegen
+PDF/A-3u. Ohne gültiges PDF/A ist der Build rot. Geprüft wird mit der
+eingebauten Fassung von veraPDF; das Programm `verapdf` brauchen nur Tests,
+die sich ohne es überspringen.
+
+Dafür braucht der volle Build neben TeX Live `pdftotext` aus poppler
+(`brew install poppler`). Python 3 mit PyYAML braucht jeder Build, auch der mit
+`-PohneToolchain`: Tests rufen die Skripte des `rechnung`-Skills auf. Der
+Schalter lässt die Tests mit dem Kotest-Tag `Toolchain` aus.
 
 ## Stand
 
