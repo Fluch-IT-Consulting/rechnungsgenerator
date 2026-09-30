@@ -236,6 +236,12 @@ class LatexCompilerTest : FunSpec({
         hint shouldContain "Table widths have changed. Rerun LaTeX."
     }
 
+    test("hängt LuaLaTeX über die Zeitgrenze, ist das ein Satzfehler (#507)") {
+        val error = shouldThrow<TypesettingException> { typeset(FakeProcessRunner(FakeProcessRunner.Run(timedOut = true))) }
+
+        error.message shouldBe "lualatex hat nach 2m nicht geantwortet und wurde abgebrochen."
+    }
+
     test("ein gescheiterter Lauf nennt die Fundstelle statt tausend Zeilen Paketgeplauder") {
         val runner =
             FakeProcessRunner(

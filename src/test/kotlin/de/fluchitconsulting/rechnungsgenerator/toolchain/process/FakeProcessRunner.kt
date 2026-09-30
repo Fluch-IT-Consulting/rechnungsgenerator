@@ -18,6 +18,8 @@ class FakeProcessRunner(
         val output: String = "",
         val errorOutput: String = "",
         val files: Map<String, String> = emptyMap(),
+        // Wie ExternalTool nach Ablauf der Zeitgrenze.
+        val timedOut: Boolean = false,
     )
 
     private val runs = runs.toList()
@@ -41,6 +43,7 @@ class FakeProcessRunner(
                 ?: error("Es war ${runs.size} Lauf/Läufe vorbereitet, das Modul ruft den ${commands.size + 1}.")
         commands += listOf(program) + params
         environments += environment
+        if (run.timedOut) throw ToolTimeoutException(program, timeout)
         run.files.forEach { (name, content) -> workingDir.resolve(name).writeText(content) }
         return ToolResult(run.exitCode, run.output, run.errorOutput)
     }

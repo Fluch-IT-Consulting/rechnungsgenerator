@@ -8,10 +8,12 @@ import de.fluchitconsulting.rechnungsgenerator.core.model.Root
 import de.fluchitconsulting.rechnungsgenerator.generate.render.Foundation
 import de.fluchitconsulting.rechnungsgenerator.generate.render.Template
 import de.fluchitconsulting.rechnungsgenerator.generate.typesetting.FakeTypesetter
+import de.fluchitconsulting.rechnungsgenerator.generate.typesetting.LuaLatexTypesetter
 import de.fluchitconsulting.rechnungsgenerator.generate.typesetting.Typesetter
 import de.fluchitconsulting.rechnungsgenerator.runCli
 import de.fluchitconsulting.rechnungsgenerator.setup.SetupCommand
 import de.fluchitconsulting.rechnungsgenerator.toolchain.ToolchainException
+import de.fluchitconsulting.rechnungsgenerator.toolchain.process.FakeProcessRunner
 import de.fluchitconsulting.rechnungsgenerator.toolchain.validation.BuiltInPdfAValidator
 import de.fluchitconsulting.rechnungsgenerator.toolchain.validation.ExternalPdfAValidator
 import de.fluchitconsulting.rechnungsgenerator.toolchain.validation.PdfAValidator
@@ -492,6 +494,19 @@ class GenerateCommandTest : FunSpec({
             error.message!! shouldContain "Die Stammdaten nennen ein Logo (${logo.toAbsolutePath()})"
         }
 
+        // Mit dem echten Typesetter: Erst LatexCompiler macht aus der Zeitüberschreitung einen Satzfehler.
+        test("hängt der Satz über die Zeitgrenze, nennt die Meldung das Logo mit seinem Pfad (#507)") {
+            val hanging = LuaLatexTypesetter(BuiltInPdfAValidator, FakeProcessRunner(FakeProcessRunner.Run(timedOut = true)))
+
+            val error =
+                shouldThrow<ToolchainException> {
+                    generate(hanging, "-o", target("logo-haengt"), sellerConfigFile = sellerConfigWithLogo("prag"))
+                }
+
+            error.message!! shouldContain "lualatex hat nach 2m nicht geantwortet"
+            error.message!! shouldContain "Die Stammdaten nennen ein Logo (${logo.toAbsolutePath()})"
+        }
+
         test("auch ein ungültiges PDF/A nennt das Logo, denn es kann daran liegen") {
             val error =
                 shouldThrow<ToolchainException> {
@@ -586,6 +601,23 @@ class GenerateCommandTest : FunSpec({
         val hint = output.indexOfFirst { it.startsWith("Hinweis:") }
         (hint > result) shouldBe true
         output[hint] shouldContain "nicht qualifiziert"
+    }
+
+    // #507: Die Meldung zitiert Zeilen der .tex, und ohne den Schalter ist sie gelöscht.
+    test("scheitert der Satz, sagt die Meldung, wo die Arbeitsdateien liegen oder wie sie liegen bleiben") {
+        val typesetter = FakeTypesetter(typesettingFailure = "lualatex konnte Rechnung-R26-042.tex nicht übersetzen")
+
+        val withoutFlag =
+            shouldThrow<ToolchainException> { generate(typesetter, "-o", inputDir.resolve("satz-ohne.pdf").toString()) }
+        val withFlag =
+            shouldThrow<ToolchainException> {
+                generate(typesetter, "-o", inputDir.resolve("satz-mit.pdf").toString(), "--arbeitsdateien-behalten")
+            }
+
+        withoutFlag.message!! shouldContain
+            "Mit --arbeitsdateien-behalten bleiben die Arbeitsdateien samt Rechnung-R26-042.tex zum Ansehen liegen."
+        withFlag.message!! shouldContain "Die Arbeitsdateien samt Rechnung-R26-042.tex liegen unter ${typesetter.workingDir}."
+        typesetter.workingDir!!.exists() shouldBe true
     }
 
     // #480
