@@ -8,7 +8,7 @@ import io.kotest.matchers.collections.shouldBeEmpty
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.string.shouldContain
 
-/** Die Freitextangaben der Rechnung (#196, #190, #191, #209). */
+/** Die Freitextangaben der Rechnung (#196, #190, #191, #209). Einen leeren Wert hält YamlLoaderTest (#504). */
 class FreeTextRulesTest : FunSpec({
 
     fun withContactPoint(contactPoint: String?) =
@@ -33,15 +33,6 @@ class FreeTextRulesTest : FunSpec({
             withContactPoint("Kreditorenbuchhaltung").aborts().shouldBeEmpty()
         }
 
-        test("ein leerer Ansprechpartner wird abgelehnt") {
-            withContactPoint("").messageOf(Rule.ANSPRECHPARTNER_LEER) shouldContain "kunde: ansprechpartner"
-        }
-
-        test("einer aus lauter Leerzeichen ist leer, er trägt nicht bloß Leerraum") {
-            withContactPoint("   ").rules().filter { it.name.startsWith("ANSPRECHPARTNER_") } shouldBe
-                listOf(Rule.ANSPRECHPARTNER_LEER)
-        }
-
         test("Leerraum am Rand wird abgelehnt und die gemeinte Fassung genannt") {
             val message = withContactPoint(" Einkauf").messageOf(Rule.ANSPRECHPARTNER_MIT_LEERRAUM)
 
@@ -60,15 +51,6 @@ class FreeTextRulesTest : FunSpec({
             withBuyerIdentifier("0017").aborts().shouldBeEmpty()
         }
 
-        test("eine leere Kundennummer wird abgelehnt") {
-            withBuyerIdentifier("").messageOf(Rule.KUNDENNUMMER_LEER) shouldContain "kunde: kundennummer"
-        }
-
-        test("eine aus lauter Leerzeichen ist leer, sie trägt nicht bloß Leerraum") {
-            withBuyerIdentifier("  ").rules().filter { it.name.startsWith("KUNDENNUMMER_") } shouldBe
-                listOf(Rule.KUNDENNUMMER_LEER)
-        }
-
         test("Leerraum am Rand wird abgelehnt und die gemeinte Fassung genannt") {
             val message = withBuyerIdentifier("K-17 ").messageOf(Rule.KUNDENNUMMER_MIT_LEERRAUM)
 
@@ -77,10 +59,10 @@ class FreeTextRulesTest : FunSpec({
         }
 
         test("Ansprechpartner und Kundennummer werden beide gerügt, nicht nur der erste") {
-            val both = CalculatedInvoice(testInvoice(contactPoint = "", buyerIdentifier = ""), testSellerConfig())
+            val both = CalculatedInvoice(testInvoice(contactPoint = " Einkauf", buyerIdentifier = "K-17 "), testSellerConfig())
 
             both.rules().filter { it.name.startsWith("ANSPRECHPARTNER_") || it.name.startsWith("KUNDENNUMMER_") } shouldBe
-                listOf(Rule.ANSPRECHPARTNER_LEER, Rule.KUNDENNUMMER_LEER)
+                listOf(Rule.ANSPRECHPARTNER_MIT_LEERRAUM, Rule.KUNDENNUMMER_MIT_LEERRAUM)
         }
     }
 
@@ -91,10 +73,6 @@ class FreeTextRulesTest : FunSpec({
 
         test("jede Form geht durch, ein Muster gibt es nicht") {
             withSalesOrderReference("A-2026-014").aborts().shouldBeEmpty()
-        }
-
-        test("eine leere Auftragsnummer wird abgelehnt und nennt den Schlüssel") {
-            withSalesOrderReference("").messageOf(Rule.AUFTRAGSNUMMER_LEER) shouldContain "'auftragsnummer'"
         }
 
         test("Leerraum am Rand wird abgelehnt und die gemeinte Fassung genannt") {
@@ -114,10 +92,6 @@ class FreeTextRulesTest : FunSpec({
             withIntroduction("Für den Workshop am 04.08.2026 in Würzburg berechnen wir Folgendes:")
                 .aborts()
                 .shouldBeEmpty()
-        }
-
-        test("eine leere Einleitung wird abgelehnt und nennt den Schlüssel") {
-            withIntroduction("").messageOf(Rule.EINLEITUNG_LEER) shouldContain "'einleitung'"
         }
 
         test("der Zeilenumbruch am Ende eines Blocks mit | wird abgelehnt, die Meldung nennt >-") {

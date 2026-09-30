@@ -538,6 +538,51 @@ class YamlLoaderTest : FunSpec({
         failure.message!! shouldContain "gibtsnicht"
     }
 
+    context("leere Werte (#504)") {
+        test("brechen beim Lesen ab und nennen Datei, Feld und Zeile") {
+            val file = createTempDirectory("loader-test").resolve("rechnung.yaml")
+            file.writeText(resource("rechnung.yaml").replace("bezeichnung: IT-Beratungsleistungen", "bezeichnung: \"\""))
+
+            val failure = shouldThrow<InputFileException> { YamlLoader.loadInvoice(file) }
+
+            failure.message!! shouldContain file.toString()
+            // Zeile 17 von rechnung.yaml: Eine Zeile mehr oder weniger dort verschiebt sie.
+            failure.message!! shouldContain "positionen[0].bezeichnung (Zeile 17, Spalte"
+        }
+
+        test("in jedem Feld, auch nur aus Leerraum, und alle auf einmal") {
+            val text =
+                resource("rechnung.yaml")
+                    .replace("name: Beispiel Software GmbH", "name: \"  \"")
+                    .replace("plz: \"90402\"", "plz: \"\"")
+                    .replace("referenz: BST-2026-0815", "referenz: ''")
+                    .replace("hinweis: Juli 2026", "hinweis: \"\\t\"") + "bemerkung: \"\"\n"
+
+            val failure = shouldThrow<SerializationException> { YamlLoader.parseInvoice(text) }
+
+            listOf("kunde.name", "kunde.anschrift.plz", "kunde.referenz", "positionen[1].hinweis", "bemerkung")
+                .forEach { failure.message!! shouldContain "$it (Zeile" }
+        }
+
+        test("prüfen auch die Stammdaten") {
+            val text = resource("stammdaten.yaml").replace("institut: Musterbank Würzburg", "institut: \"\"")
+
+            val failure = shouldThrow<SerializationException> { YamlLoader.parseSellerConfig(text) }
+
+            failure.message!! shouldContain "bank.institut (Zeile 21"
+        }
+
+        test("ein Schlüssel ganz ohne Wert ist kein leerer Wert, sondern keiner") {
+            val yaml =
+                resource("rechnung.yaml").replace(
+                    "  name: Beispiel Software GmbH",
+                    "  name: Beispiel Software GmbH\n  ansprechpartner:",
+                )
+
+            YamlLoader.parseInvoice(yaml).customer.contactPoint shouldBe null
+        }
+    }
+
     context("Steuerzeichen (#391)") {
         // Als Escape "\x0B", denn ein echtes Steuerzeichen lässt YAML nicht zu.
         fun invoiceWith(name: String): String =
