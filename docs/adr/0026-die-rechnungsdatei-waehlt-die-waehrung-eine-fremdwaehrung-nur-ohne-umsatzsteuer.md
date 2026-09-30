@@ -173,9 +173,10 @@ Verworfen:
 - **Eine Beispielrechnung je neuer Währung und Design**: 12 Läufe mehr im
   Netz, je Sprache sogar 36, und jede weitere Währung brächte neue.
 
-Nicht dabei ist `HUF`: Für den Forint gelten andere Rundungsregeln, er wird
-ohne Nachkommastellen gerechnet, obwohl ISO 4217 ihm zwei gibt. Das ist ein
-eigenes Vorhaben.
+Nicht dabei ist `HUF`, bewusst und bis ein Anwendungsfall kommt (#481). Ein
+Forint-Betrag ist sieben- bis achtstellig, und `prag` bräuchte dafür breitere
+Spalten. Zwei Nachkommastellen wären kein Hindernis: Ganze Forint sind in
+Ungarn üblich, aber nicht vorgeschrieben.
 
 Eine Rechnung ohne `waehrung` sieht aus wie zuvor, bei 300 dpi pixelgleich
 über alle Beispiele beider Designs, auch auf Englisch.
