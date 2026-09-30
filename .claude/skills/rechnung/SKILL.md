@@ -122,14 +122,18 @@ Was du dir selbst beschaffen kannst, solltest du auch selbst beschaffen:
   Skonto. Bei AE, K und G setzt der Generator den Grund auch auf Englisch
   selbst ein – bei AE „Reverse charge“ –, schreib dafür keinen
   `steuerbefreiungsgrund`.
-- **Währung** (#409): Übernimm `waehrung` aus der letzten Rechnung an
+- **Währung** (#409, #479): Übernimm `waehrung` aus der letzten Rechnung an
   denselben Kunden; steht dort keine, ist sie in Euro, und der Schlüssel
   bleibt weg. Bei einem neuen Kunden frag nur, wenn sein Land nicht `DE`
-  ist, und schlag bei `US` `USD` vor, bei `GB` `GBP`, sonst `EUR`. Die
+  ist, und schlag bei `US` `USD` vor, bei `GB` `GBP`, bei `NO` `NOK`, bei
+  `CH` `CHF`, sonst `EUR` – auch bei `PL`, `CZ`, `RO` und `SE`: In der EU
+  geht eine Rechnung mit Reverse Charge meist in Euro. Will der Nutzer dort
+  die Landeswährung, geht `PLN`, `CZK`, `RON` oder `SEK`; Forint kennt der
+  Generator nicht. Die
   Währung hängt nicht an der Sprache: `de-DE` in `USD` geht ebenso wie
   `en-GB` in `EUR`. Die Bankverbindung bleibt die aus den Stammdaten,
   gleich in welcher Währung.
-- **Umrechnung** (ADR-0027): Trägt eine Rechnung in `USD` oder `GBP` eine
+- **Umrechnung** (ADR-0027): Trägt eine Rechnung in einer Fremdwährung eine
   Position der Kategorie `S`, nennt sie darunter den Kurs, mit dem die
   Umsatzsteuer in Euro umgerechnet wird, und den Monat, für den er gilt:
 
@@ -232,7 +236,7 @@ soll die Zahlen prüfen können, ohne die Datei zu öffnen.
 nummer: R26-012
 art: rechnung                       # optional, Vorgabe: rechnung
 sprache: de-DE                      # optional, Vorgabe: de-DE; sonst en-GB oder en-US
-waehrung: EUR                       # optional, Vorgabe: EUR; sonst USD oder GBP, nur ohne Kategorie S
+waehrung: EUR                       # optional, Vorgabe: EUR; sonst USD, GBP, PLN, CZK, RON, SEK, NOK, CHF
 datum: 2026-09-02
 leistungszeitraum:
   von: 2026-08-01
