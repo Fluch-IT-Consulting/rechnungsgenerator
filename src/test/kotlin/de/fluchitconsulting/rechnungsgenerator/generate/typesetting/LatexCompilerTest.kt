@@ -177,11 +177,12 @@ class LatexCompilerTest : FunSpec({
                 successfulRun(),
             )
 
-        typeset(runner)
+        val compiled = typeset(runner)
 
         runner.commands shouldHaveSize 2
         runner.commands.distinct() shouldHaveSize 1
         runner.environments.distinct() shouldHaveSize 1
+        compiled.rerunHint shouldBe null
     }
 
     test("verlangt longtable einen zweiten Lauf, wird ein zweites Mal gesetzt") {
@@ -197,18 +198,24 @@ class LatexCompilerTest : FunSpec({
         runner.commands shouldHaveSize 2
     }
 
-    test("wer immer weiter verlangt, bekommt trotzdem nur drei Läufe") {
+    // #493
+    test("wer immer weiter verlangt, bekommt nur drei Läufe und ein PDF mit Hinweis") {
         val persistent = transcript("lualatex-verlangt-zweiten-lauf.log")
         val runner =
             FakeProcessRunner(
                 successfulRun(persistent),
                 successfulRun(persistent),
-                successfulRun(persistent),
+                successfulRun(persistent + transcript("lualatex-tabellenbreite-geaendert.log")),
             )
 
-        typeset(runner)
+        val compiled = typeset(runner)
 
         runner.commands shouldHaveSize 3
+        compiled.pdf.exists() shouldBe true
+        val hint = compiled.rerunHint.shouldNotBeNull()
+        hint shouldContain "nach 3 Läufen noch einen weiteren"
+        hint shouldContain "Label(s) may have changed. Rerun to get cross-references right."
+        hint shouldContain "Table widths have changed. Rerun LaTeX."
     }
 
     test("ein gescheiterter Lauf nennt die Fundstelle statt tausend Zeilen Paketgeplauder") {

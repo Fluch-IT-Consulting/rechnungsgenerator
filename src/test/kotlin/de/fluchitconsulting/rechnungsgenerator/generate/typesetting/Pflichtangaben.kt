@@ -194,8 +194,9 @@ class PflichtangabenRun {
             // Als Wahrheitswert: shouldContain druckte das ganze PDF in die Meldung.
             withClue("/PageMode/UseNone fehlt im PDF") { ("/PageMode/UseNone" in bytes) shouldBe true }
             withClue("/Outlines steht im PDF") { ("/Outlines" in bytes) shouldBe false }
-            // #480: Was über den Rand steht, meldet das Kommando nur als Hinweis.
+            // #480, #493: Beides meldet das Kommando nur als Hinweis.
             output.filter { "über den Rand" in it } shouldBe emptyList()
+            output.filter { "noch einen weiteren" in it } shouldBe emptyList()
             sheet.verify(calculated, design)
         }
         return Typeset(calculated, sheet)

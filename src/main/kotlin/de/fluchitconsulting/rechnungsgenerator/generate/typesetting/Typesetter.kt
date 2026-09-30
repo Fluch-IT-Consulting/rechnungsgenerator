@@ -11,8 +11,13 @@ import java.nio.file.Path
 /** Eine Funktion, weil der Prüfer erst mit dem Schalter `--externe-pdfa-pruefung` feststeht. */
 typealias TypesetterFactory = (PdfAValidator) -> Typesetter
 
-/** [overflowHint] ohne Vorgabewert: Ein Typesetter, der ihn nicht weiterreicht, soll nicht übersetzen (#488). */
-data class TypesetPdf(val pdf: Path, val validation: ValidationResult, val overflowHint: String?)
+/** Die Hinweise ohne Vorgabewert: Ein Typesetter, der sie nicht weiterreicht, soll nicht übersetzen (#488). */
+data class TypesetPdf(
+    val pdf: Path,
+    val validation: ValidationResult,
+    val overflowHint: String?,
+    val rerunHint: String?,
+)
 
 /** Aus Quelltext wird ein geprüftes PDF: die Naht zu den Werkzeugen, im Test mit vorbereitetem Ergebnis. */
 interface Typesetter {
@@ -53,7 +58,7 @@ class LuaLatexTypesetter(private val validator: PdfAValidator) : Typesetter {
             sources.einvoice?.let { xml ->
                 workingDir.resolve("$jobName-zugferd.pdf").also { EInvoiceEmbedder.embed(compiled.pdf, xml, it) }
             } ?: compiled.pdf
-        return TypesetPdf(pdf, validator.validate(pdf, sources.pdfaProfile), compiled.overflowHint)
+        return TypesetPdf(pdf, validator.validate(pdf, sources.pdfaProfile), compiled.overflowHint, compiled.rerunHint)
     }
 
     /** Ein Fehler im XML ist eine Lücke im Generator, kein Urteil über die Rechnung. Warnungen hält `CiiWriterTest`. */

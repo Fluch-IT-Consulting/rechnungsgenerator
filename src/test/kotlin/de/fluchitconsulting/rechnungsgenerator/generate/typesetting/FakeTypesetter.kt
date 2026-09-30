@@ -16,6 +16,7 @@ class FakeTypesetter(
     // Bricht den Vertrag der Naht absichtlich (#300).
     private val ioFailure: String? = null,
     private val overflowHint: String? = null,
+    private val rerunHint: String? = null,
 ) : Typesetter {
     var workingDir: Path? = null
     var jobName: String? = null
@@ -45,6 +46,6 @@ class FakeTypesetter(
             } else {
                 listOf(PdfAViolation("ISO 19005-1:2005", "6.1.2", "1", "Datei ist keine PDF/A", "so nicht"))
             }
-        return TypesetPdf(pdf, ValidationResult(sources.pdfaProfile, valid, violations), overflowHint)
+        return TypesetPdf(pdf, ValidationResult(sources.pdfaProfile, valid, violations), overflowHint, rerunHint)
     }
 }
