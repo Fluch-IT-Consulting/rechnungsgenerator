@@ -1,8 +1,8 @@
 package de.fluchitconsulting.rechnungsgenerator.xml
 
 import de.fluchitconsulting.rechnungsgenerator.generate.toolchain.EInvoiceEmbedder
-import de.fluchitconsulting.rechnungsgenerator.toolchain.PdfAProfile
 import de.fluchitconsulting.rechnungsgenerator.toolchain.capturingStandardError
+import de.fluchitconsulting.rechnungsgenerator.toolchain.validation.PdfAProfile
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.nulls.shouldBeNull
 import io.kotest.matchers.shouldBe

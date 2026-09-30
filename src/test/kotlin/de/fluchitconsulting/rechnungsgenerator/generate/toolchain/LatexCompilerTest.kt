@@ -1,7 +1,7 @@
 package de.fluchitconsulting.rechnungsgenerator.generate.toolchain
 
-import de.fluchitconsulting.rechnungsgenerator.toolchain.FakeProcessRunner
 import de.fluchitconsulting.rechnungsgenerator.toolchain.ToolchainException
+import de.fluchitconsulting.rechnungsgenerator.toolchain.process.FakeProcessRunner
 import io.kotest.assertions.throwables.shouldNotThrowAny
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.assertions.withClue

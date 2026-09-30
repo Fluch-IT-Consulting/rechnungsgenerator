@@ -1,6 +1,7 @@
-package de.fluchitconsulting.rechnungsgenerator.toolchain
+package de.fluchitconsulting.rechnungsgenerator.toolchain.validation
 
 import de.fluchitconsulting.rechnungsgenerator.generate.toolchain.EInvoiceEmbedder
+import de.fluchitconsulting.rechnungsgenerator.toolchain.ToolchainException
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.assertions.withClue
 import io.kotest.core.spec.style.FunSpec

@@ -37,6 +37,8 @@ class PackageStructureTest : FunSpec({
                     "$root.generate.einvoice",
                     "$root.generate.toolchain",
                     "$root.toolchain",
+                    "$root.toolchain.process",
+                    "$root.toolchain.validation",
                     "$core.accepted",
                     "$core.rules",
                     "$core.calculation",
@@ -63,14 +65,16 @@ class PackageStructureTest : FunSpec({
                     "$core.values",
                     "$core.text",
                 ),
-            // #380
-            "$root.generate.toolchain" to setOf("$root.toolchain"),
+            // ADR-0029
+            "$root.generate.toolchain" to setOf("$root.toolchain", "$root.toolchain.process", "$root.toolchain.validation"),
             "$root.toolchain" to emptySet(),
+            "$root.toolchain.process" to setOf("$root.toolchain"),
+            "$root.toolchain.validation" to setOf("$root.toolchain", "$root.toolchain.process"),
             "$root.prepayments" to setOf("$core.accepted", "$core.rules", "$core.calculation", "$core.model", "$core.values"),
             // #275
             "$root.setup" to setOf("$core.model"),
             // #380
-            "$root.xml" to setOf("$root.toolchain"),
+            "$root.xml" to setOf("$root.toolchain", "$root.toolchain.validation"),
             // Ein Typ wohnt, wo er gebaut wird, sonst zeigte rules nach oben (#304).
             "$core.accepted" to setOf("$core.rules", "$core.calculation", "$core.model", "$core.values", "$core.text"),
             "$core.rules" to setOf("$core.calculation", "$core.model", "$core.values"),

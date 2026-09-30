@@ -1,8 +1,8 @@
 package de.fluchitconsulting.rechnungsgenerator.generate.toolchain
 
-import de.fluchitconsulting.rechnungsgenerator.toolchain.BuiltInPdfAValidator
-import de.fluchitconsulting.rechnungsgenerator.toolchain.PdfAProfile
 import de.fluchitconsulting.rechnungsgenerator.toolchain.ToolchainException
+import de.fluchitconsulting.rechnungsgenerator.toolchain.validation.BuiltInPdfAValidator
+import de.fluchitconsulting.rechnungsgenerator.toolchain.validation.PdfAProfile
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.assertions.withClue
 import io.kotest.core.spec.style.FunSpec

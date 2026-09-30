@@ -5,9 +5,9 @@ import com.github.ajalt.clikt.core.Context
 import com.github.ajalt.clikt.core.CoreCliktCommand
 import com.github.ajalt.clikt.parameters.arguments.argument
 import com.github.ajalt.clikt.parameters.types.path
-import de.fluchitconsulting.rechnungsgenerator.toolchain.BuiltInPdfAValidator
-import de.fluchitconsulting.rechnungsgenerator.toolchain.EInvoiceValidationResult
-import de.fluchitconsulting.rechnungsgenerator.toolchain.EInvoiceValidator
+import de.fluchitconsulting.rechnungsgenerator.toolchain.validation.BuiltInPdfAValidator
+import de.fluchitconsulting.rechnungsgenerator.toolchain.validation.EInvoiceValidationResult
+import de.fluchitconsulting.rechnungsgenerator.toolchain.validation.EInvoiceValidator
 import org.apache.pdfbox.Loader
 import java.io.IOException
 import java.io.OutputStream

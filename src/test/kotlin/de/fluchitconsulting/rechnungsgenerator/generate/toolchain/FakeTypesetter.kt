@@ -1,8 +1,8 @@
 package de.fluchitconsulting.rechnungsgenerator.generate.toolchain
 
-import de.fluchitconsulting.rechnungsgenerator.toolchain.PdfAViolation
 import de.fluchitconsulting.rechnungsgenerator.toolchain.ToolchainException
-import de.fluchitconsulting.rechnungsgenerator.toolchain.ValidationResult
+import de.fluchitconsulting.rechnungsgenerator.toolchain.validation.PdfAViolation
+import de.fluchitconsulting.rechnungsgenerator.toolchain.validation.ValidationResult
 import java.io.IOException
 import java.nio.file.Path
 import kotlin.io.path.writeText

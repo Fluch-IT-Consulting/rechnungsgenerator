@@ -1,5 +1,6 @@
-package de.fluchitconsulting.rechnungsgenerator.toolchain
+package de.fluchitconsulting.rechnungsgenerator.toolchain.validation
 
+import de.fluchitconsulting.rechnungsgenerator.toolchain.XmlParser
 import org.mustangproject.validator.ZUGFeRDValidator
 import org.w3c.dom.Document
 import org.w3c.dom.Element

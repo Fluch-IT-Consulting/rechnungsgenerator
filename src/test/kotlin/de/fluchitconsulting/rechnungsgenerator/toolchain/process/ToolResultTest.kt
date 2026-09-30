@@ -1,4 +1,4 @@
-package de.fluchitconsulting.rechnungsgenerator.toolchain
+package de.fluchitconsulting.rechnungsgenerator.toolchain.process
 
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
