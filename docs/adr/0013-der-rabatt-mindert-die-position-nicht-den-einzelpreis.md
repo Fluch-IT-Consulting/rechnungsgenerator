@@ -62,7 +62,8 @@ Betrag, der nicht Menge × Einzelpreis ist, ohne Grund.
 - **Der Rabatt ist keine Entgeltminderung nach §17 UStG.** Er steht auf der
   Rechnung und ist im Entgelt schon berücksichtigt; ADR-0006 lässt nur die
   nachträgliche Minderung draußen. Auch §14 Abs. 4 Nr. 7 verlangt ihn nicht,
-  das Netz (`PflichtangabenTest`) prüft die Spalte trotzdem.
+  das Netz (`PflichtangabenTest`) prüft die Spalte trotzdem. (Seit #434 steht
+  das Netz in vier Klassen, gemeinsam in `Pflichtangaben.kt`.)
 - **Eine Rechnung kann 0 € ergeben**, wenn jede Position 100 % trägt. Was sie
   dann fordert, ist eine eigene Frage (#214).
 
@@ -127,7 +128,8 @@ Einzelpreis ist, ohne Grund – bleibt berechtigt, aber `TemplateValue.required`
 ist nicht, was sie auffängt. Das tut das Pflichtangaben-Netz: `teilrechnung`
 trägt einen Rabatt, und `PflichtangabenTest` prüft je Design, dass die Spalte
 genau dann dasteht. Ein drittes Design ohne sie fällt dort auf, am fertigen
-PDF, und nicht erst dem Leser der Rechnung.
+PDF, und nicht erst dem Leser der Rechnung. (Seit #434 steht das Netz in vier
+Klassen, gemeinsam in `Pflichtangaben.kt`.)
 
 Für `helsinki` und `prag` ändert sich nichts: Beide setzen den Platzhalter
 weiter, die Vergleichsdateien und das Netz bleiben, wie sie waren.

@@ -9,7 +9,9 @@ rechnungsnummer-muster: '^R\d{2}-\d{3}$'
 
 Ohne diesen Eintrag wird die Form nicht geprüft. Passt eine Nummer nicht zum
 eingetragenen Muster, bricht der Lauf ab – als Befund des `InvoiceCalculator`
-mit der Schwere Abbruch, nicht als geworfener Fehler beim Einlesen.
+mit der Schwere Abbruch, nicht als geworfener Fehler beim Einlesen. (Seit #172
+gibt es den `InvoiceCalculator` nicht mehr; die Regel steht in
+`InvoiceNumberRules` unter `core/rules`.)
 
 Unabhängig vom Muster gilt für jede Rechnung: Die Nummer darf nicht leer sein
 und keinen Leerraum am Rand tragen.
@@ -58,11 +60,11 @@ Der Stand des Gesprächs vor dieser Entscheidung steht in #54.
 
 ## Konsequenzen
 
-- **Die Prüfung sitzt im Calculator, nicht im Serialisierer.** Ob eine Nummer
-  gültig ist, hängt an zwei Dateien – der Rechnung und den Stammdaten. Der
-  Serialisierer sieht beim Einlesen immer nur eine. Der Calculator sieht beide
-  und hat den Mechanismus schon (ADR-0004). Geprüft wird beim Einlesen nur, ob
-  der eingetragene Ausdruck überhaupt übersetzbar ist.
+- **Die Prüfung sitzt in den Regeln, nicht im Serialisierer.** Ob eine
+  Nummer gültig ist, hängt an zwei Dateien – der Rechnung und den Stammdaten.
+  Der Serialisierer sieht beim Einlesen immer nur eine. Die Regeln sehen beide
+  und haben den Mechanismus schon (ADR-0004). Geprüft wird beim Einlesen nur,
+  ob der eingetragene Ausdruck überhaupt übersetzbar ist.
 - **Die Meldung zitiert das Muster.** Mehr kann sie nicht: Ein regulärer
   Ausdruck sagt nicht, wie eine passende Nummer aussähe. Wer ein unverständlich
   langes Muster einträgt, bekommt eine unverständlich lange Meldung.

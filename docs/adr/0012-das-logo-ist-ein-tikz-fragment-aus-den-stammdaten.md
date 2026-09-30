@@ -131,7 +131,8 @@ den Umweg.
 - **Die Vergleichsdateien zeigen das Logo nicht**, nur `\input{logo}` und
   `\logozeichnung`. Ob es richtig gesetzt wird, prüfen `PflichtangabenTest`
   (prag mit Logo, jede Art) und `ToolchainIntegrationTest`, der auch misst,
-  dass der Faktor ankommt.
+  dass der Faktor ankommt. (Seit #434 steht das Pflichtangaben-Netz in vier
+  Klassen, gemeinsam in `Pflichtangaben.kt`.)
 
 Umgesetzt in #198, vorbereitet in #197; der Vertrag mit Makro und Faktor
 seit #199.

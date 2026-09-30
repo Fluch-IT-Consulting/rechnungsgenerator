@@ -42,7 +42,8 @@ geschriebenen Makro: Auch ein `\betrag`, das eine fertige Zeichenkette bekommt,
 kann Unfug damit treiben. Schützen kann in beiden Fällen nur ein Netz am
 fertigen PDF, nicht der Ort, an dem formatiert wird. Das Netz ist der
 `PflichtangabenTest`: Er formatiert die erwarteten Werte selbst und liest sie
-je Design mit `pdftotext` zurück.
+je Design mit `pdftotext` zurück. (Seit #434 steht das Netz in vier Klassen,
+gemeinsam in `Pflichtangaben.kt`.)
 
 **Die Vorgaben von siunitx passen nicht, und nicht jede fällt auf.** Nachgemessen
 am 25.09.2026 mit siunitx 3.5.6, LuaLaTeX und TeX Gyre Heros:
@@ -98,7 +99,8 @@ aus #320.
   die Trennzeichen. Jede Zeile der Tabelle oben ist ein Fehler, den die
   Vorgabe macht, wenn die Einstellung fehlt.
 - **Der `PflichtangabenTest` liest auch Einzelpreise zurück**, und ein
-  Beispiel trägt einen Einzelpreis mit mehr als zwei Nachkommastellen.
+  Beispiel trägt einen Einzelpreis mit mehr als zwei Nachkommastellen. (Seit
+  #434 steht das Netz in vier Klassen, gemeinsam in `Pflichtangaben.kt`.)
 - **Kotlin übergibt `toPlainString()`, nie `toString()`.** Nach
   `stripTrailingZeros` wird aus `1000` ein `1E+3`, und siunitx setzte daraus
   1 × 10³.
