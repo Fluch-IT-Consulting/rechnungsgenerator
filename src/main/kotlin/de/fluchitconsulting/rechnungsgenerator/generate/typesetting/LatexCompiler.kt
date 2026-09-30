@@ -1,22 +1,20 @@
 package de.fluchitconsulting.rechnungsgenerator.generate.typesetting
 
 import de.fluchitconsulting.rechnungsgenerator.toolchain.ToolchainException
-import de.fluchitconsulting.rechnungsgenerator.toolchain.process.ProcessRunner
-import de.fluchitconsulting.rechnungsgenerator.toolchain.process.requireAll
+import de.fluchitconsulting.rechnungsgenerator.toolchain.process.LuaLatex
+import de.fluchitconsulting.rechnungsgenerator.toolchain.process.LuaLatex.Companion.PROGRAM
 import java.io.IOException
-import java.nio.file.FileSystemException
 import java.nio.file.Path
 import java.security.MessageDigest
 import java.time.ZoneOffset
 import java.util.HexFormat
 import kotlin.io.path.exists
-import kotlin.io.path.readText
 import kotlin.io.path.writeBytes
 import kotlin.io.path.writeText
 
 /** Setzt eine .tex mit LuaLaTeX zu einem PDF/A. Die .xmpdata trägt denselben Namen, daraus baut pdfx das XMP. */
-class LatexCompiler(private val runner: ProcessRunner) {
-    fun checkAvailable() = runner.requireAll(PROGRAM to "TeX Live, siehe https://tug.org/texlive/")
+class LatexCompiler(private val luaLatex: LuaLatex) {
+    fun checkAvailable() = luaLatex.checkAvailable()
 
     fun compile(
         workingDir: Path,
@@ -39,29 +37,14 @@ class LatexCompiler(private val runner: ProcessRunner) {
         }
 
         val id = trailerId(sources)
-        val params =
-            listOf(
-                "-interaction=nonstopmode",
-                "-halt-on-error",
-                "-jobname=$jobName",
-                "\\pdfvariable trailerid {[ <$id> <$id> ]}\\input{$jobName.tex}",
-            )
-        val environment =
-            mapOf(
-                "SOURCE_DATE_EPOCH" to
-                    sources.creationDate
-                        .atStartOfDay(ZoneOffset.UTC)
-                        .toEpochSecond()
-                        .toString(),
-                "TZ" to "UTC",
-            )
+        val creationDate = sources.creationDate.atStartOfDay(ZoneOffset.UTC).toInstant()
 
         var log: String
         var passes = 0
         do {
-            val result = runner.run(PROGRAM, params, workingDir, environment = environment)
-            log = readLog(workingDir.resolve("$jobName.log")) ?: result.output
-            if (result.failed) throw ToolchainException(errorReport(jobName, log))
+            val run = luaLatex.run(workingDir, jobName, id, creationDate)
+            log = run.log
+            if (run.failed) throw ToolchainException(errorReport(jobName, log))
             passes++
         } while (needsAnotherPass(log) && passes < MAX_PASSES)
         // Gefragt wird das Protokoll des letzten Laufs: Aus ihm stammt das PDF.
@@ -88,20 +71,6 @@ class LatexCompiler(private val runner: ProcessRunner) {
             md5.update(content)
         }
         return HexFormat.of().withUpperCase().formatHex(md5.digest())
-    }
-
-    /**
-     * `null`, wenn LuaLaTeX abstürzte, bevor es eines anlegte; dann bleibt die Prozessausgabe. Unlesbar ist es ein
-     * Fehler des Werkzeugs (#336). Eine FileSystemException nennt in message nur den Pfad, den Grund in reason.
-     */
-    private fun readLog(file: Path): String? {
-        if (!file.exists()) return null
-        return try {
-            file.readText()
-        } catch (e: IOException) {
-            val reason = if (e is FileSystemException) e.reason else e.message
-            throw ToolchainException("Das Protokoll $file von $PROGRAM ließ sich nicht lesen" + (reason?.let { ": $it" } ?: "."), e)
-        }
     }
 
     /**
@@ -132,12 +101,10 @@ class LatexCompiler(private val runner: ProcessRunner) {
                 .flatMap { (index, _) -> lines.subList(index, minOf(index + 3, lines.size)) }
                 .distinct()
         val details = if (relevant.isEmpty()) log.takeLast(800) else relevant.joinToString("\n")
-        return "lualatex konnte $jobName.tex nicht übersetzen:\n\n$details"
+        return "$PROGRAM konnte $jobName.tex nicht übersetzen:\n\n$details"
     }
 
     private companion object {
-        private const val PROGRAM = "lualatex"
-
         // Obergrenze, nicht Anzahl: Wer nach drei Läufen noch einen will, konvergiert nicht.
         private const val MAX_PASSES = 3
     }

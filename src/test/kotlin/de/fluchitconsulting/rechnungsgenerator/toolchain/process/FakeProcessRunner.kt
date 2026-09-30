@@ -6,7 +6,7 @@ import kotlin.time.Duration
 
 /**
  * Hinterlässt die Dateien, die das Werkzeug hinterlassen würde, denn
- * `LatexCompiler` liest sein Protokoll von der Platte. Die Läufe gehen der
+ * `LuaLatex` liest sein Protokoll von der Platte. Die Läufe gehen der
  * Reihe nach, damit ein zweiter anders antworten kann als der erste.
  */
 class FakeProcessRunner(

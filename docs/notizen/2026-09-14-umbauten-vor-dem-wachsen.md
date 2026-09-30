@@ -1,6 +1,6 @@
 # Drei Umbauten, deren Zeitpunkt das Wachsen ist
 
-Notiz vom 14.09.2026, Stand 29.09.2026; Punkt 3 stammt aus einer Durchsicht
+Notiz vom 14.09.2026, Stand 30.09.2026; Punkt 3 stammt aus einer Durchsicht
 vom 16.09.2026. **Hier wird nichts entschieden.**
 
 Drei Stellen sind bewusst einfacher gebaut, als sie es in einem größeren
@@ -28,9 +28,9 @@ und Toolchain je Modul – ohne Nutznießer.
 `InvoiceRenderer`, `CiiWriter`, `YamlLoader` und die Regelgruppen sind
 `object`s. Gereicht wird, was ein Test ersetzen muss: `execute` bekommt die
 `TypesetterFactory` (ADR-0014), den PDF-Betrachter und die Ausgabeströme.
-`LuaLatexTypesetter` baut sich `LatexCompiler(ExternalTool)` dagegen selbst.
-Erwartet war, dass ein zweiter
-Ausgabemodus die Singletons bricht. Seit ZUGFeRD stehen `InvoiceRenderer` und
+`LuaLatexTypesetter` baut sich `LatexCompiler(LuaLatex(ExternalTool))`
+dagegen selbst. Erwartet war, dass ein zweiter Ausgabemodus die Singletons
+bricht. Seit ZUGFeRD stehen `InvoiceRenderer` und
 `CiiWriter` nebeneinander, und es trägt: Wer zustandslos ist und nichts
 braucht, dem muss niemand etwas reichen.
 

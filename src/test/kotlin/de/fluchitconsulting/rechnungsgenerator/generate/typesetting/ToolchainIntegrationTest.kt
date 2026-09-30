@@ -8,6 +8,7 @@ import de.fluchitconsulting.rechnungsgenerator.generate.einvoice.CiiWriter
 import de.fluchitconsulting.rechnungsgenerator.generate.render.InvoiceRenderer
 import de.fluchitconsulting.rechnungsgenerator.toolchain.ToolchainException
 import de.fluchitconsulting.rechnungsgenerator.toolchain.process.ExternalTool
+import de.fluchitconsulting.rechnungsgenerator.toolchain.process.LuaLatex
 import de.fluchitconsulting.rechnungsgenerator.toolchain.process.VeraPdf
 import de.fluchitconsulting.rechnungsgenerator.toolchain.validation.BuiltInPdfAValidator
 import de.fluchitconsulting.rechnungsgenerator.toolchain.validation.ExternalPdfAValidator
@@ -126,7 +127,7 @@ class ToolchainIntegrationTest : FunSpec({
         val pdfs =
             jobNames.map { jobName ->
                 val ownDir = createTempDirectory(workDir, "jobname")
-                String(LatexCompiler(ExternalTool).compile(ownDir, jobName, sources).readBytes(), Charsets.ISO_8859_1)
+                String(LatexCompiler(LuaLatex(ExternalTool)).compile(ownDir, jobName, sources).readBytes(), Charsets.ISO_8859_1)
             }
 
         val documentId = Regex("<xmpMM:DocumentID>uuid:([0-9A-F-]+)</xmpMM:DocumentID>")
@@ -294,7 +295,7 @@ class ToolchainIntegrationTest : FunSpec({
     test("ein nicht konformes PDF wird als solches gemeldet, nicht als Fehler")
         .config(enabledOrReasonIf = { withVerapdf }) {
             val plain =
-                LatexCompiler(ExternalTool).compile(
+                LatexCompiler(LuaLatex(ExternalTool)).compile(
                     workingDir = workDir,
                     jobName = "ohne-pdfa",
                     sources =
@@ -370,7 +371,7 @@ class ToolchainIntegrationTest : FunSpec({
     test("ein LaTeX-Fehler kommt als ToolchainException an") {
         val error =
             shouldThrow<ToolchainException> {
-                LatexCompiler(ExternalTool).compile(
+                LatexCompiler(LuaLatex(ExternalTool)).compile(
                     workingDir = workDir,
                     jobName = "kaputt",
                     sources =
