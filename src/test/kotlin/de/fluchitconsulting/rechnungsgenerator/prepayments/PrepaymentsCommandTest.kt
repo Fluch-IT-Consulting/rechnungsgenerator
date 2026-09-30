@@ -44,6 +44,18 @@ class PrepaymentsCommandTest : FunSpec({
         CalculatedInvoice(generated, YamlLoader.parseSellerConfig(Path.of(sellerConfig).readText()))
     }
 
+    test("an eine Schlussrechnung ohne Zeilenumbruch am Ende angehängt, bleibt ihre letzte Zeile, wie sie war (#506)") {
+        val result = runCli("abschlaege", june, august, "-s", sellerConfig)
+        val withoutNewline =
+            Path.of("$RESOURCES/schlussrechnung.yaml").readText().substringBefore("abschlaege:") +
+                "bemerkung: Vielen Dank für den Auftrag."
+
+        val appended = YamlLoader.parseInvoice(withoutNewline + result.out)
+
+        appended.note shouldBe "Vielen Dank für den Auftrag."
+        appended.prepayments.map { it.invoiceNumber } shouldBe listOf("R26-009", "R26-011")
+    }
+
     test("in Fremdwährung erinnert ein Hinweis auf stderr an die Währung der Schlussrechnung (#409)") {
         // Ohne Umsatzsteuer, sonst bräche WAEHRUNG_MIT_UMSATZSTEUER_AUF_DIESER_ART_NICHT_MOEGLICH ab.
         val inDollar =

@@ -20,10 +20,13 @@ object PrepaymentBlock {
         #     und stimmen dann nicht. Diesen Fall deckt der Generator noch nicht ab.
         """.trimIndent()
 
-    /** Ohne abschließenden Zeilenumbruch – den setzt, wer den Block ausgibt. */
+    /**
+     * Mit einer Leerzeile vorweg: Endet die Schlussrechnung ohne Zeilenumbruch, klebte `#` sonst an ihrer letzten
+     * Zeile und wäre kein Kommentar (#506). Ohne abschließenden Zeilenumbruch – den setzt, wer den Block ausgibt.
+     */
     fun render(
         entries: List<CollectedPrepayment>,
-    ): String = (listOf(header, "abschlaege:") + entries.flatMap(::entryLines)).joinToString("\n")
+    ): String = (listOf("", header, "abschlaege:") + entries.flatMap(::entryLines)).joinToString("\n")
 
     private fun entryLines(entry: CollectedPrepayment): List<String> {
         val abschlag = entry.prepayment
