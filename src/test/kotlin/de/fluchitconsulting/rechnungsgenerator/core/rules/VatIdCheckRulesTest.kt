@@ -16,6 +16,7 @@ import de.fluchitconsulting.rechnungsgenerator.core.values.VatId
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.collections.shouldBeEmpty
 import io.kotest.matchers.collections.shouldContain
+import io.kotest.matchers.collections.shouldContainAll
 import io.kotest.matchers.collections.shouldNotContain
 import io.kotest.matchers.string.shouldContain
 import java.time.LocalDate
@@ -81,6 +82,16 @@ class VatIdCheckRulesTest : FunSpec({
         // §6a UStG
         CalculatedInvoice(invoice("AT", TaxCategory.INTRA_COMMUNITY), config).rules() shouldContain
             Rule.BESTAETIGUNGSABFRAGE_FEHLT
+    }
+
+    // #490
+    test("ohne USt-IdNr. kommen KUNDEN_UST_ID_FEHLT und BESTAETIGUNGSABFRAGE_FEHLT, die zweite ohne Nummer") {
+        listOf(TaxCategory.INTRA_COMMUNITY, TaxCategory.REVERSE_CHARGE).forEach { category ->
+            val totals = CalculatedInvoice(invoice("AT", category, vatId = null), config)
+
+            totals.rules() shouldContainAll listOf(Rule.KUNDEN_UST_ID_FEHLT, Rule.BESTAETIGUNGSABFRAGE_FEHLT)
+            totals.messageOf(Rule.BESTAETIGUNGSABFRAGE_FEHLT) shouldContain "die USt-IdNr. des Kunden beim BZSt"
+        }
     }
 
     test("eine Abfrage nach dem Rechnungsdatum belegt nichts") {

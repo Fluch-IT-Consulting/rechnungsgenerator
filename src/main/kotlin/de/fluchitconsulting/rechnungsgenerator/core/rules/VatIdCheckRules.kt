@@ -37,7 +37,7 @@ internal object VatIdCheckRules {
                         Rule.BESTAETIGUNGSABFRAGE_FEHLT,
                         Subject.WholeInvoice,
                         "Ohne dokumentierte Bestätigungsabfrage keine Rechnung ohne Umsatzsteuer. " +
-                            "Bitte die USt-IdNr. ${customer.vatId} beim BZSt oder über VIES prüfen und das " +
+                            "Bitte die USt-IdNr. ${customer.vatId ?: "des Kunden"} beim BZSt oder über VIES prüfen und das " +
                             "Ergebnis unter 'kunde: ust-id-geprueft' eintragen (am, verfahren, nachweis).",
                     ),
                 )
