@@ -79,7 +79,7 @@
 \newcommand{\mitrabatt}[1]{\iftoggle{rabattspalte}{#1}{}}
 \iftoggle{rabattspalte}{\newcolumntype{R}{>{\raggedleft\arraybackslash}p{\dimexpr 14mm+\zeichenmehrbreite\relax}|}}{\newcolumntype{R}{}}
 
-\newcommand{\positionszeile}[7]{#1 & \textbf{#2} & #3 & #4 & #5\mitrabatt{ & #6} & #7}
+\newcommand{\positionszeile}[7]{#1 & {\bfseries #2} & #3 & #4 & #5\mitrabatt{ & #6} & #7}
 
 \newcommand{\positionskopf}{\hline
   \textbf{\wortpos} & \textbf{\wortbezeichnung} & \textbf{\wortmenge} & \textbf{\worteinheit} & \textbf{\worteinzelpreis}\mitrabatt{ & \textbf{\wortrabatt}} & \textbf{\wortgesamt}\\
