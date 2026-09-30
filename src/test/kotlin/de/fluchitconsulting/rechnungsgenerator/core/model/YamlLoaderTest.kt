@@ -342,6 +342,24 @@ class YamlLoaderTest : FunSpec({
         failure.message!! shouldContain "Prüfsumme"
     }
 
+    test("ein Datum, das keines ist, bricht das Lesen ab und nennt Datei und Wert (#486)") {
+        listOf(
+            "2026-08-14" to "14.08.2026",
+            "2026-08-14" to "2026-02-30",
+            "2026-07-31" to "2026-7-31",
+        ).forEach { (valid, invalid) ->
+            withClue(invalid) {
+                val file = createTempDirectory("loader-test").resolve("rechnung.yaml")
+                file.writeText(resource("rechnung.yaml").replace(valid, invalid))
+
+                val failure = shouldThrow<InputFileException> { YamlLoader.loadInvoice(file) }
+
+                failure.message!! shouldContain file.toString()
+                failure.message!! shouldContain "Kein gültiges Datum: '$invalid' (erwartet JJJJ-MM-TT, etwa 2026-08-14)"
+            }
+        }
+    }
+
     test("ein Muster, das kein regulärer Ausdruck ist, nennt die Datei") {
         val file = createTempDirectory("loader-test").resolve("stammdaten.yaml")
         file.writeText(resource("stammdaten.yaml").replace("R\\d{2}-\\d{3}", "R\\d{2-3}"))
