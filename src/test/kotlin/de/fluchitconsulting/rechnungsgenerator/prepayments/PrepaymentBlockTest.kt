@@ -35,6 +35,7 @@ class PrepaymentBlockTest : FunSpec({
         // Zeichengleich, damit weder ein Datum noch ein Pfad hineinrutscht.
         PrepaymentBlock.render(listOf(vereinnahmt, notReceived)) shouldBe
             """
+            |
             |# Abschläge für die Schlussrechnung, vorbereitet von `rechnungsgenerator abschlaege`.
             |# Neu berechnet mit dem heutigen Stand des Generators – nicht gegen die
             |# verschickten PDFs geprüft.
