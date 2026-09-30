@@ -23,16 +23,11 @@ class InvoiceNumberRulesTest : FunSpec({
             CalculatedInvoice(testInvoice(number = "2026/Beratung/7"), withoutPattern).aborts().shouldBeEmpty()
         }
 
-        test("eine leere Nummer wird trotzdem abgelehnt") {
-            val message = CalculatedInvoice(testInvoice(number = ""), withoutPattern).messageOf(Rule.RECHNUNGSNUMMER_FEHLT)
-
-            message shouldContain "fehlt"
-        }
-
-        test("eine Nummer aus lauter Leerzeichen fehlt, sie trägt nicht bloß Leerraum") {
-            CalculatedInvoice(testInvoice(number = "   "), withoutPattern)
+        // Aus einer Datei kommt sie nicht an: Ein leerer Wert bricht beim Lesen ab (#504, #514).
+        test("eine leere Nummer aus Code bricht trotzdem ab, denn von ihr bleibt kein Dateiname") {
+            CalculatedInvoice(testInvoice(number = ""), withoutPattern)
                 .rules()
-                .shouldContainOnlyRule(Rule.RECHNUNGSNUMMER_FEHLT)
+                .shouldContainOnlyRule(Rule.RECHNUNGSNUMMER_OHNE_DATEINAMEN)
         }
 
         test("Leerraum am Rand wird abgelehnt und die gemeinte Fassung genannt") {
@@ -75,12 +70,6 @@ class InvoiceNumberRulesTest : FunSpec({
             CalculatedInvoice(testInvoice(number = "XR26-001Y"), withPattern)
                 .rules()
                 .shouldContainOnlyRule(Rule.RECHNUNGSNUMMER_PASST_NICHT)
-        }
-
-        test("eine fehlende Nummer meldet nicht zusätzlich, dass sie nicht passt") {
-            CalculatedInvoice(testInvoice(number = ""), withPattern)
-                .rules()
-                .shouldContainOnlyRule(Rule.RECHNUNGSNUMMER_FEHLT)
         }
 
         test("eine Nummer ohne Dateinamen meldet nicht zusätzlich, dass sie nicht passt") {

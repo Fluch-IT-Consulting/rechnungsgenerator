@@ -11,16 +11,7 @@ internal object InvoiceNumberRules {
         val number = calculated.invoice.number
 
         // Unabhängig vom Muster: Andere Dateien verweisen Zeichen für Zeichen auf die Nummer (#53), und aus ihr
-        // entsteht der Jobname und damit die DocumentID (#297).
-        if (number.isBlank()) {
-            return listOf(
-                Finding(
-                    Rule.RECHNUNGSNUMMER_FEHLT,
-                    Subject.WholeInvoice,
-                    "Die Rechnungsnummer fehlt – 'nummer' ist leer.",
-                ),
-            )
-        }
+        // entsteht der Jobname und damit die DocumentID (#297). Eine leere Nummer bricht schon beim Lesen ab (#514).
         if (number != number.trim()) {
             return listOf(
                 Finding(

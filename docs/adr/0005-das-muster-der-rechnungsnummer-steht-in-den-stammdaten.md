@@ -79,6 +79,8 @@ Der Stand des Gesprächs vor dieser Entscheidung steht in #54.
   die Rechnung angenommen war, und damit neben anderen Abbrüchen erst im
   zweiten Lauf. Den Namen leitet jetzt `CalculatedInvoice.fileBaseName` ab,
   und nur eine `AcceptedInvoice` trägt ihn sicher.
+  (Seit #514 bricht eine leere Nummer schon beim Einlesen ab, wie jeder leere
+  Wert seit #504, und hat keine eigene Kennung mehr.)
 - **Die Nummern der Abschläge bleiben ungeprüft.** Sie stammen aus früheren
   Rechnungen, womöglich aus der Zeit vor einem Wechsel des Musters. Gegen das
   heutige Muster geprüft, hielte eine korrekte alte Nummer die Schlussrechnung
@@ -119,6 +121,8 @@ Die drei Abbrüche tragen damit andere Begründungen:
   (#53). Ein gequotetes `' R26-009'` ließe den Verweis still ins Leere gehen.
   Die alte Begründung des Leerraums trug übrigens nie: `fileBaseName`
   schneidet den Rand ab, `' R26-009'` ergab denselben Namen wie `'R26-009'`.
+  (`RECHNUNGSNUMMER_FEHLT` gibt es seit #514 nicht mehr: Die leere Nummer
+  bricht beim Einlesen ab.)
 - **`RECHNUNGSNUMMER_OHNE_DATEINAMEN`**: Der Jobname ist der Name der `.tex`
   im Arbeitsverzeichnis und die Quelle der DocumentID. Eine Nummer, von der
   kein Name übrig bleibt, ergibt keinen. Die Kennung bleibt, wie sie heißt –
