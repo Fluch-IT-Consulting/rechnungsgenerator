@@ -23,7 +23,7 @@ class PackageStructureTest : FunSpec({
             root to
                 setOf(
                     "$root.generate",
-                    "$root.generate.toolchain",
+                    "$root.generate.typesetting",
                     "$root.prepayments",
                     "$root.setup",
                     "$root.xml",
@@ -35,7 +35,7 @@ class PackageStructureTest : FunSpec({
                 setOf(
                     "$root.generate.render",
                     "$root.generate.einvoice",
-                    "$root.generate.toolchain",
+                    "$root.generate.typesetting",
                     "$root.toolchain",
                     "$root.toolchain.process",
                     "$root.toolchain.validation",
@@ -44,10 +44,10 @@ class PackageStructureTest : FunSpec({
                     "$core.calculation",
                     "$core.model",
                 ),
-            // generate.toolchain für PdfSources (#202).
+            // generate.typesetting für PdfSources (#202).
             "$root.generate.render" to
                 setOf(
-                    "$root.generate.toolchain",
+                    "$root.generate.typesetting",
                     "$core.accepted",
                     "$core.rules",
                     "$core.calculation",
@@ -66,7 +66,7 @@ class PackageStructureTest : FunSpec({
                     "$core.text",
                 ),
             // ADR-0029
-            "$root.generate.toolchain" to setOf("$root.toolchain", "$root.toolchain.process", "$root.toolchain.validation"),
+            "$root.generate.typesetting" to setOf("$root.toolchain", "$root.toolchain.process", "$root.toolchain.validation"),
             "$root.toolchain" to emptySet(),
             "$root.toolchain.process" to setOf("$root.toolchain"),
             "$root.toolchain.validation" to setOf("$root.toolchain", "$root.toolchain.process"),

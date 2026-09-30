@@ -7,8 +7,8 @@ import de.fluchitconsulting.rechnungsgenerator.RechnungsgeneratorCommand
 import de.fluchitconsulting.rechnungsgenerator.core.model.Root
 import de.fluchitconsulting.rechnungsgenerator.generate.render.Foundation
 import de.fluchitconsulting.rechnungsgenerator.generate.render.Template
-import de.fluchitconsulting.rechnungsgenerator.generate.toolchain.FakeTypesetter
-import de.fluchitconsulting.rechnungsgenerator.generate.toolchain.Typesetter
+import de.fluchitconsulting.rechnungsgenerator.generate.typesetting.FakeTypesetter
+import de.fluchitconsulting.rechnungsgenerator.generate.typesetting.Typesetter
 import de.fluchitconsulting.rechnungsgenerator.runCli
 import de.fluchitconsulting.rechnungsgenerator.setup.SetupCommand
 import de.fluchitconsulting.rechnungsgenerator.toolchain.ToolchainException

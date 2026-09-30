@@ -5,8 +5,8 @@ import de.fluchitconsulting.rechnungsgenerator.core.calculation.CalculatedInvoic
 import de.fluchitconsulting.rechnungsgenerator.core.model.YamlLoader
 import de.fluchitconsulting.rechnungsgenerator.execute
 import de.fluchitconsulting.rechnungsgenerator.generate.einvoice.CiiWriter
-import de.fluchitconsulting.rechnungsgenerator.generate.toolchain.EInvoiceEmbedder
-import de.fluchitconsulting.rechnungsgenerator.generate.toolchain.Toolchain
+import de.fluchitconsulting.rechnungsgenerator.generate.typesetting.EInvoiceEmbedder
+import de.fluchitconsulting.rechnungsgenerator.generate.typesetting.Toolchain
 import de.fluchitconsulting.rechnungsgenerator.toolchain.capturingStandardError
 import io.kotest.assertions.withClue
 import io.kotest.core.spec.style.FunSpec

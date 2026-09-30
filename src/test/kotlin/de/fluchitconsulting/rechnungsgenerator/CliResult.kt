@@ -2,8 +2,8 @@ package de.fluchitconsulting.rechnungsgenerator
 
 import de.fluchitconsulting.rechnungsgenerator.generate.FakePdfViewer
 import de.fluchitconsulting.rechnungsgenerator.generate.PdfViewer
-import de.fluchitconsulting.rechnungsgenerator.generate.toolchain.FakeTypesetter
-import de.fluchitconsulting.rechnungsgenerator.generate.toolchain.Typesetter
+import de.fluchitconsulting.rechnungsgenerator.generate.typesetting.FakeTypesetter
+import de.fluchitconsulting.rechnungsgenerator.generate.typesetting.Typesetter
 import java.io.ByteArrayOutputStream
 import java.io.PrintStream
 import kotlin.text.Charsets.UTF_8

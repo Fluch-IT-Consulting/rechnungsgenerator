@@ -1,4 +1,4 @@
-package de.fluchitconsulting.rechnungsgenerator.generate.toolchain
+package de.fluchitconsulting.rechnungsgenerator.generate.typesetting
 
 import com.github.ajalt.clikt.core.context
 import com.github.ajalt.clikt.core.parse

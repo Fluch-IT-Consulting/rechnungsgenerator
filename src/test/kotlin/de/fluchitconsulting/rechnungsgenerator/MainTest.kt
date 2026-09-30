@@ -2,7 +2,7 @@ package de.fluchitconsulting.rechnungsgenerator
 
 import de.fluchitconsulting.rechnungsgenerator.generate.FakePdfViewer
 import de.fluchitconsulting.rechnungsgenerator.generate.ViewerResult
-import de.fluchitconsulting.rechnungsgenerator.generate.toolchain.FakeTypesetter
+import de.fluchitconsulting.rechnungsgenerator.generate.typesetting.FakeTypesetter
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.core.test.Enabled
 import io.kotest.matchers.collections.shouldNotBeEmpty

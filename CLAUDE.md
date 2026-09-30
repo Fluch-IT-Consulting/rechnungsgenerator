@@ -41,7 +41,7 @@ im Issue oder am Code – nicht hier.
   welcher Rechnungsart gehört, steht in `exampleInvoices`
   (`core/model/TestFixtures.kt`).
 - Das Pflichtangaben-Netz setzt die Beispiele zu echten PDFs und prüft sie:
-  vier Klassen über `PflichtangabenRun` in `generate/toolchain` (Test).
+  vier Klassen über `PflichtangabenRun` in `generate/typesetting` (Test).
 - `.claude/skills/rechnung/` – der Skill zum Anlegen einer Rechnung, samt
   `naechste-nummer.py` und `offene-abschlaege.py`.
 
@@ -52,21 +52,24 @@ Main.kt           Einstieg; übersetzt die Fachfehler aller Kommandos
 generate/         erzeuge
   render/         LaTeX aus der AcceptedInvoice
   einvoice/       XML der E-Rechnung (CiiWriter)
-  toolchain/      Satz und Einbetten hinter der Naht Typesetter
+  typesetting/    Satz und Einbetten hinter der Naht Typesetter
 prepayments/      abschlaege
 setup/            einrichten – kennt aus dem Kern nur model
 xml/              xml – kennt den Kern gar nicht
-toolchain/        gemeinsamer Rand: PDF/A- und E-Rechnungs-Prüfer,
-                  ProcessRunner, XmlParser; importiert nichts aus dem Projekt
+toolchain/        gemeinsamer Rand: ToolchainException, XmlParser;
+                  importiert nichts aus dem Projekt
+  process/        Adapter auf ein Programm hinter ProcessRunner
+  validation/     Prüfer für PDF/A und das XML der E-Rechnung
 core/             accepted → rules → calculation → model → localization → values
                   Blätter ohne Projektimporte: text, serialization
 ```
 
-Ein Kommando importiert aus seinem Paket, dem Rand und dem Kern; was nur ein
-Kommando braucht, bleibt in dessen Paket. Der Schnitt trennt den Rand, nicht
+Ein Kommando importiert aus seinem Paket, dem Rand und dem Kern. Der Rand ist
+nach Art geschnitten, nicht nach Verbraucher; Satz und Einbetten bleiben bei
+`erzeuge` (ADR-0029). Der Schnitt trennt den Rand, nicht
 die Mitte: Was beide Kommandos brauchen, ist der größere Teil, deshalb bleibt
 der Kern beisammen. Maßgeblich ist die Tabelle in `PackageStructureTest`; die
-Gründe stehen in #107, #304, #310, #312, #431 und #432.
+Gründe stehen in #107, #304, #310, #312, #431, #432 und ADR-0029.
 
 ## Arbeitsregeln
 
@@ -150,7 +153,7 @@ Gründe stehen in #107, #304, #310, #312, #431 und #432.
   geändert; weicht sie ab, entscheidet das Bild (`pdftoppm`), denn schon eine
   Leerzeile der Vorlage ändert die Trailer-ID. Einen Schalter zum
   Neu-Erzeugen gibt es nicht.
-- Eine neue schwere Testklasse in `generate.toolchain` kann die Verteilung
+- Eine neue schwere Testklasse in `generate.typesetting` kann die Verteilung
   auf die Forks verschieben; die Messung steht an `maxParallelForks` in
   `build.gradle.kts`.
 - Die YAML-Beispiele und Skripte des `rechnung`-Skills stehen unter Test;
