@@ -11,6 +11,7 @@ import io.kotest.matchers.shouldBe
 import io.kotest.matchers.string.shouldContain
 import java.nio.file.Path
 import kotlin.io.path.createDirectories
+import kotlin.io.path.createSymbolicLinkPointingTo
 import kotlin.io.path.createTempDirectory
 import kotlin.io.path.exists
 import kotlin.io.path.readText
@@ -62,6 +63,23 @@ class SetupCommandTest : FunSpec({
 
         failure.message!! shouldContain existing.toString()
         existing.readText() shouldBe "firma: Schon da\n"
+    }
+
+    // #501: Die Zusage hält der Schreibaufruf, nicht die Prüfung davor. Ein Link ins Leere bestünde exists().
+    test("ein Link ins Leere an Stelle der Datei wird nicht verfolgt, sondern gilt als vorhanden") {
+        val dir = createTempDirectory("einrichten-test")
+        val elsewhere = dir.resolve("anderswo.yaml")
+        val link =
+            dir
+                .resolve(Root.FOLDER)
+                .createDirectories()
+                .resolve(Root.SELLER_CONFIG)
+                .createSymbolicLinkPointingTo(elsewhere)
+
+        val failure = shouldThrow<CliktError> { runSetup(dir) }
+
+        failure.message shouldBe "Die Datei $link gibt es schon; eingerichtet ist hier also bereits."
+        elsewhere.exists() shouldBe false
     }
 
     test("ein nicht beschreibbarer Ort nennt die Zieldatei und den Grund") {
