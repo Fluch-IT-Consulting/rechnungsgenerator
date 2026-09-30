@@ -34,7 +34,7 @@ bricht. Seit ZUGFeRD stehen `InvoiceRenderer` und
 `CiiWriter` nebeneinander, und es trägt: Wer zustandslos ist und nichts
 braucht, dem muss niemand etwas reichen.
 
-**Anlass:** ein `object`, das eine Abhängigkeit bräuchte, die ein Test
+**Anlass:** ein `object` oder eine Klasse mit einer Abhängigkeit, die ein Test
 ersetzen will – Uhr, Dateisystem, ein Prozess. Der eine bekannte Fall ist
 `LuaLatexTypesetter.typeset` mit dem fest verdrahteten `ExternalTool`; ihn
 prüft nur der Integrationstest, auf einer Maschine mit den Werkzeugen (#239).
