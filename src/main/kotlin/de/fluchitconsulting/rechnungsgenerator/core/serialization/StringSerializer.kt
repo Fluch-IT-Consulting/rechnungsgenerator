@@ -8,6 +8,9 @@ import kotlinx.serialization.descriptors.SerialDescriptor
 import kotlinx.serialization.encoding.Decoder
 import kotlinx.serialization.encoding.Encoder
 
+/** Ein Werttyp lehnt seine Eingabe ab. [stringSerializer] übersetzt das, damit `YamlLoader` Datei und Grund nennt (#52). */
+open class InvalidValueException(message: String) : IllegalArgumentException(message)
+
 /** Per Delegation, damit der Serializer ein benanntes Objekt bleibt. [name] muss je Typ verschieden sein. */
 fun <T> stringSerializer(
     name: String,
@@ -19,7 +22,14 @@ fun <T> stringSerializer(
 
         override fun serialize(encoder: Encoder, value: T) = encoder.encodeString(encode(value))
 
-        override fun deserialize(decoder: Decoder): T = decode(decoder.decodeString())
+        override fun deserialize(decoder: Decoder): T {
+            val raw = decoder.decodeString()
+            return try {
+                decode(raw)
+            } catch (e: InvalidValueException) {
+                throw SerializationException(e.message, e)
+            }
+        }
     }
 
 /**

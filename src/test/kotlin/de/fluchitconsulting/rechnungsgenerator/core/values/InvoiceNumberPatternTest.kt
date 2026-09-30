@@ -30,7 +30,7 @@ class InvoiceNumberPatternTest : FunSpec({
     }
 
     test("ein Ausdruck, der keiner ist, wird beim Bauen abgelehnt") {
-        val error = shouldThrow<InvalidIdentifierException> { InvoiceNumberPattern("R\\d{2-3}") }
+        val error = shouldThrow<InvalidInvoiceNumberPatternException> { InvoiceNumberPattern("R\\d{2-3}") }
 
         error.message!! shouldContain "R\\d{2-3}"
         // Mit dem ^ der PatternSyntaxException, das auf die Stelle zeigt.

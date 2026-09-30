@@ -1,14 +1,14 @@
 package de.fluchitconsulting.rechnungsgenerator.core.values
 
+import de.fluchitconsulting.rechnungsgenerator.core.serialization.InvalidValueException
 import de.fluchitconsulting.rechnungsgenerator.core.serialization.parsedNumber
 import de.fluchitconsulting.rechnungsgenerator.core.serialization.stringSerializer
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.Serializable
-import kotlinx.serialization.SerializationException
 import java.math.BigDecimal
 import java.math.RoundingMode
 
-class InvalidExchangeRateException(message: String) : IllegalArgumentException(message)
+class InvalidExchangeRateException(message: String) : InvalidValueException(message)
 
 /**
  * Einheiten der Fremdwährung je Euro, wie BMF und EZB notieren: `1.1685` heißt 1 € = 1,1685 $. Exakt; gerundet
@@ -38,11 +38,5 @@ object ExchangeRateSerializer :
     KSerializer<ExchangeRate> by stringSerializer(
         name = "ExchangeRate",
         encode = { it.value.toPlainString() },
-        decode = { raw ->
-            try {
-                parsedNumber(raw, "Kurs", ::ExchangeRate)
-            } catch (e: InvalidExchangeRateException) {
-                throw SerializationException(e.message, e)
-            }
-        },
+        decode = { raw -> parsedNumber(raw, "Kurs", ::ExchangeRate) },
     )

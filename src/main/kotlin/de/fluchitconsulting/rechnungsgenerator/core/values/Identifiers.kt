@@ -1,15 +1,15 @@
 package de.fluchitconsulting.rechnungsgenerator.core.values
 
+import de.fluchitconsulting.rechnungsgenerator.core.serialization.InvalidValueException
 import de.fluchitconsulting.rechnungsgenerator.core.serialization.stringSerializer
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.Serializable
-import kotlinx.serialization.SerializationException
 import java.math.BigInteger
 
 // Kennungen aus den Stammdaten, beim Einlesen geprüft: Man tippt sie einmal und sieht sie nie wieder an.
 // Normalisiert abgelegt, über formatted() gruppiert ausgegeben.
 
-class InvalidIdentifierException(message: String) : IllegalArgumentException(message)
+class InvalidIdentifierException(message: String) : InvalidValueException(message)
 
 private fun normalize(raw: String): String = raw.replace(Regex("[\\s.]"), "").uppercase()
 
@@ -138,23 +138,14 @@ class TaxNumber(raw: String) {
     override fun toString(): String = value
 }
 
-// Eine fehlerhafte Kennung als SerializationException, damit die CLI sie wie einen YAML-Fehler meldet.
-
-private inline fun <T> parseOrFail(raw: String, build: (String) -> T): T =
-    try {
-        build(raw)
-    } catch (e: InvalidIdentifierException) {
-        throw SerializationException(e.message, e)
-    }
-
 object IbanSerializer :
-    KSerializer<Iban> by stringSerializer("Iban", { it.formatted() }, { parseOrFail(it, ::Iban) })
+    KSerializer<Iban> by stringSerializer("Iban", { it.formatted() }, ::Iban)
 
 object BicSerializer :
-    KSerializer<Bic> by stringSerializer("Bic", { it.value }, { parseOrFail(it, ::Bic) })
+    KSerializer<Bic> by stringSerializer("Bic", { it.value }, ::Bic)
 
 object VatIdSerializer :
-    KSerializer<VatId> by stringSerializer("VatId", { it.value }, { parseOrFail(it, ::VatId) })
+    KSerializer<VatId> by stringSerializer("VatId", { it.value }, ::VatId)
 
 object TaxNumberSerializer :
-    KSerializer<TaxNumber> by stringSerializer("TaxNumber", { it.value }, { parseOrFail(it, ::TaxNumber) })
+    KSerializer<TaxNumber> by stringSerializer("TaxNumber", { it.value }, ::TaxNumber)
