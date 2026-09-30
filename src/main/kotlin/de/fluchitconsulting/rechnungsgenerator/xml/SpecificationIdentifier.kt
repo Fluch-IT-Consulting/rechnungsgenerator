@@ -1,7 +1,7 @@
 package de.fluchitconsulting.rechnungsgenerator.xml
 
 import de.fluchitconsulting.rechnungsgenerator.toolchain.XmlParser
-import org.w3c.dom.Element
+import de.fluchitconsulting.rechnungsgenerator.toolchain.validation.EInvoiceValidator
 import org.xml.sax.SAXException
 
 /** BT-24, hier gelesen statt aus Mustangs Bericht: Das Feld sagt die Norm zu, das Format des Berichts niemand. */
@@ -17,7 +17,7 @@ data class SpecificationIdentifier(
     companion object {
         const val EN_16931 = "urn:cen.eu:en16931:2017"
 
-        /** Nach dem lokalen Namen, weil ZUGFeRD 1 andere Namensräume hat. */
+        /** Wo Mustang sie sucht, in CII wie in UBL. */
         fun of(xml: ByteArray): SpecificationIdentifier? {
             val document =
                 try {
@@ -25,11 +25,8 @@ data class SpecificationIdentifier(
                 } catch (_: SAXException) {
                     return null
                 }
-            val parameter = document.getElementsByTagNameNS("*", "GuidelineSpecifiedDocumentContextParameter").item(0) as Element?
-            return parameter
-                ?.getElementsByTagNameNS("*", "ID")
-                ?.item(0)
-                ?.textContent
+            return EInvoiceValidator
+                .specificationOf(document)
                 ?.trim()
                 ?.ifEmpty { null }
                 ?.let { SpecificationIdentifier(it) }

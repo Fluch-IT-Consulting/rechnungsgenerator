@@ -238,6 +238,18 @@ class XmlCommandTest : FunSpec({
             "  Keine Kennung der Spezifikation (BT-24), gegen die sich das XML prüfen ließe.\n"
     }
 
+    // Über writePdf: Der Embedder nimmt nur CII an.
+    test("ein UBL, das sich nicht als EN 16931 ausgibt, wird abgelehnt wie ein CII (#509)") {
+        val pdf = writePdf(dir.resolve("ubl-minimum.pdf"), mapOf("factur-x.xml" to ubl("urn:example:minimum")), xmpClaiming(3, "U"))
+
+        val result = runProgram("xml", pdf.toString())
+
+        result.exitCode shouldBe 1
+        result.out.size shouldBe 0
+        result.err shouldContain
+            "Das XML in factur-x.xml folgt urn:example:minimum und nicht der EN 16931 (urn:cen.eu:en16931:2017)"
+    }
+
     // Eine E-Rechnung, die nicht vom Generator stammt, sondern aus Mustangs eigenem Modell.
     fun foreignEInvoice(
         profile: String,
