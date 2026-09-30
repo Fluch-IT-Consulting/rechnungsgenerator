@@ -100,14 +100,27 @@ enum class InvoiceType(
             Language.BRITISH_ENGLISH, Language.AMERICAN_ENGLISH -> englishMandatoryNote
         }
 
-    /** Die Beschriftung des Zeitraums der ganzen Rechnung. */
+    /**
+     * Die Beschriftung des Zeitraums der ganzen Rechnung. Das Storno nennt ihn neutral: Ob die Leistung der
+     * Ursprungsrechnung erbracht ist, weiß es nicht (ADR-0001, #510).
+     */
     fun servicePeriodLabel(language: Language): String =
-        when (language) {
-            Language.GERMAN -> {
-                if (servicePeriodIsForecast) "Voraussichtlicher Leistungszeitraum" else "Leistungszeitraum"
+        when (this) {
+            CANCELLATION -> {
+                when (language) {
+                    Language.GERMAN -> "Zeitraum der Ursprungsrechnung"
+                    Language.BRITISH_ENGLISH, Language.AMERICAN_ENGLISH -> "Period of the original invoice"
+                }
             }
-            Language.BRITISH_ENGLISH, Language.AMERICAN_ENGLISH -> {
-                if (servicePeriodIsForecast) "Expected service period" else "Service period"
+            INVOICE, PREPAYMENT, FINAL, PARTIAL -> {
+                when (language) {
+                    Language.GERMAN -> {
+                        if (servicePeriodIsForecast) "Voraussichtlicher Leistungszeitraum" else "Leistungszeitraum"
+                    }
+                    Language.BRITISH_ENGLISH, Language.AMERICAN_ENGLISH -> {
+                        if (servicePeriodIsForecast) "Expected service period" else "Service period"
+                    }
+                }
             }
         }
 
