@@ -15,8 +15,9 @@ updates:
     commit-message:
       prefix: build
 
-  # Die Actions in .github/workflows/ci.yml – checkout, setup-java, setup-gradle.
-  # Ohne diesen Eintrag blieben sie von Hand nachzuziehen.
+  # Die Actions in .github/workflows/. Sie stehen per Commit-SHA, die Fassung
+  # als Kommentar dahinter: Ein Tag lässt sich verschieben (#497). Dependabot
+  # hebt beides an; ohne diesen Eintrag blieben sie von Hand nachzuziehen.
   - package-ecosystem: github-actions
     directory: "/"
     schedule:
