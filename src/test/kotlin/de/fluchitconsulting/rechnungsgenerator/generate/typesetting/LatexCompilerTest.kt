@@ -290,6 +290,27 @@ class LatexCompilerTest : FunSpec({
         }
     }
 
+    context("Zeichen, die die Schrift nicht hat (#487)") {
+        val missing = transcript("lualatex-zeichen-fehlen.log")
+
+        test("bricht ab, obwohl LuaLaTeX Erfolg meldet, und nennt jedes Zeichen einmal, mit Codepunkt und Schrift") {
+            val runner = FakeProcessRunner(successfulRun(missing))
+
+            val message = shouldThrow<ToolchainException> { typeset(runner) }.message!!
+
+            message shouldContain "[texgyreheros-regular.otf]: П (U+041F), р (U+0440), и (U+0438), м (U+043C), е (U+0435), ✓ (U+2713)"
+            message shouldContain "[texgyreheros-bold.otf]: С (U+0421), о (U+043E), ф (U+0444), и (U+0438), я (U+044F)"
+            message.split("П (U+041F)") shouldHaveSize 2
+            message shouldNotContain "mode=node"
+        }
+
+        test("es zählt der letzte Lauf, denn aus ihm stammt das PDF") {
+            val firstMissing = missing + transcript("lualatex-verlangt-zweiten-lauf.log")
+
+            typeset(FakeProcessRunner(successfulRun(firstMissing), successfulRun())).pdf.exists() shouldBe true
+        }
+    }
+
     test("meldet der Lauf Erfolg, ohne ein PDF zu hinterlassen, ist das ein Fehler") {
         val runner = FakeProcessRunner(FakeProcessRunner.Run(files = mapOf("rechnung.log" to finished)))
 

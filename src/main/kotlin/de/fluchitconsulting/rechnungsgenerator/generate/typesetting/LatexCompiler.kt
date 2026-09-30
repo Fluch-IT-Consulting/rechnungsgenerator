@@ -52,6 +52,7 @@ class LatexCompiler(private val luaLatex: LuaLatex) {
         } while (needsAnotherPass(log) && passes < MAX_PASSES)
         // Gefragt wird das Protokoll des letzten Laufs: Aus ihm stammt das PDF.
         overflowReport(jobName, log)?.let { throw ToolchainException(it) }
+        missingCharactersReport(jobName, log)?.let { throw ToolchainException(it) }
         return CompiledPdf(pdfOrFail(workingDir, jobName), overflowHint(jobName, log))
     }
 
@@ -95,6 +96,27 @@ class LatexCompiler(private val luaLatex: LuaLatex) {
     }
 
     /**
+     * Ein Zeichen, das die Schrift nicht hat, lässt LuaLaTeX mit Exitcode 0 weg – womöglich aus einer Pflichtangabe
+     * (#487, ADR-0020). Das Protokoll bricht die Meldung nach 79 Zeichen um, auch mitten im Namen der Schrift.
+     */
+    private fun missingCharactersReport(jobName: String, log: String): String? {
+        val byFont =
+            MISSING_CHARACTER
+                .findAll(log)
+                .map { match ->
+                    val (character, codePoint, font) = match.destructured
+                    val fontName = font.replace("\n", "").removePrefix("\"name:").substringBefore(":")
+                    fontName to "$character (U+$codePoint)"
+                }.distinct()
+                .groupBy({ it.first }, { it.second })
+        if (byFont.isEmpty()) return null
+        return "$PROGRAM hat $jobName.tex gesetzt, aber die Schrift hat nicht jedes Zeichen der Rechnung. " +
+            "Diese Zeichen fehlten im PDF:\n\n" +
+            byFont.entries.joinToString("\n") { (font, characters) -> "  $font: ${characters.joinToString(", ")}" } +
+            "\n\nDie Zeichen in Rechnungsdatei oder Stammdaten ersetzen oder ein Design wählen, dessen Schrift sie hat."
+    }
+
+    /**
      * Ein Hinweis und kein Abbruch (#480): Was übersteht, ist im PDF, in einer Tabelle aber womöglich über der Spalte
      * daneben. Die Folgezeile nennt den Text, der übersteht.
      */
@@ -127,6 +149,8 @@ class LatexCompiler(private val luaLatex: LuaLatex) {
     private companion object {
         // Obergrenze, nicht Anzahl: Wer nach drei Läufen noch einen will, konvergiert nicht.
         private const val MAX_PASSES = 3
+
+        private val MISSING_CHARACTER = Regex("""Missing character: There is no (.+?) \(U\+([0-9A-F]+)\) in font ([^!]*)!""")
     }
 
     private fun pdfOrFail(workingDir: Path, jobName: String): Path =
