@@ -117,6 +117,13 @@ class RootTest : FunSpec({
         }
     }
 
+    test("der Hinweis von einrichten übergeht eine halb eingerichtete Wurzel und nennt die darüber") {
+        val outer = archive()
+        val inner = outer.resolve("zweitfirma").also { it.resolve(Root.FOLDER).createDirectories() }
+
+        Root.above(inner.resolve("unten").createDirectories())?.directory shouldBe outer
+    }
+
     test("ein Link auf einen eingerichteten Ordner ist eine Wurzel") {
         val elsewhere = archive()
         val archive = createTempDirectory("wurzel-test")
