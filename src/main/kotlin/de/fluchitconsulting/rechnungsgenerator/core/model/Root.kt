@@ -9,7 +9,7 @@ import kotlin.io.path.isSymbolicLink
 import kotlin.io.path.name
 import kotlin.io.path.readSymbolicLink
 
-/** Das Verzeichnis mit dem Ordner `.rechnungsgenerator/` (ADR-0015). Privater Konstruktor: Eine Wurzel stammt aus der Suche. */
+/** Das Verzeichnis mit dem Ordner `.rechnungsgenerator/` (ADR-0015). Privater Konstruktor: Eine Wurzel gibt es nur zu einem eingerichteten Ordner. */
 @JvmInline
 value class Root private constructor(val directory: Path) {
     val sellerConfig: Path get() = directory.resolve(FOLDER).resolve(SELLER_CONFIG)
@@ -29,23 +29,21 @@ value class Root private constructor(val directory: Path) {
         fun of(invoiceFile: Path): Root {
             val start = invoiceFile.toAbsolutePath().normalize().parent
             for (directory in generateSequence(start) { it.parent }) {
-                val folder = directory.resolve(FOLDER)
-                // NOFOLLOW_LINKS: Ein Link ins Leere ist halb eingerichtet und kein fehlender Ordner (#508).
-                if (!folder.exists(LinkOption.NOFOLLOW_LINKS)) continue
                 // Halb eingerichtet bricht ab, statt weiter oben zu suchen: Sonst stünde der falsche Aussteller da.
-                if (folder.isSymbolicLink() && !folder.exists()) {
-                    throw InputFileException("Der Link $folder zeigt auf ${folder.readSymbolicLink()}, und das gibt es nicht. $NOT_ABOVE")
-                }
-                if (!folder.isDirectory()) {
-                    throw InputFileException(
-                        "$folder ist eine Datei und kein Ordner. Eine Wurzel gibt sich mit dem Ordner $FOLDER " +
+                when (val folder = folderIn(directory)) {
+                    RootFolder.Missing -> continue
+                    is RootFolder.SetUp -> return folder.root
+                    is RootFolder.DanglingLink -> throw InputFileException(
+                        "Der Link ${folder.path} zeigt auf ${folder.target}, und das gibt es nicht. $NOT_ABOVE",
+                    )
+                    is RootFolder.NotAFolder -> throw InputFileException(
+                        "${folder.path} ist eine Datei und kein Ordner. Eine Wurzel gibt sich mit dem Ordner $FOLDER " +
                             "zu erkennen, und darin gehört die Datei $SELLER_CONFIG. $NOT_ABOVE",
                     )
+                    is RootFolder.WithoutSellerConfig -> throw InputFileException(
+                        "Der Ordner ${folder.path} enthält keine Datei $SELLER_CONFIG. $NOT_ABOVE",
+                    )
                 }
-                if (!folder.resolve(SELLER_CONFIG).isRegularFile()) {
-                    throw InputFileException("Der Ordner $folder enthält keine Datei $SELLER_CONFIG. $NOT_ABOVE")
-                }
-                return Root(directory)
             }
             throw InputFileException(
                 "Zu $invoiceFile gibt es keine Stammdaten: Weder in $start noch in einem Verzeichnis darüber " +
@@ -60,9 +58,20 @@ value class Root private constructor(val directory: Path) {
          */
         fun above(directory: Path): Root? {
             val start = directory.toAbsolutePath().normalize().parent ?: return null
-            return generateSequence(start) { it.parent }
-                .firstOrNull { it.resolve(FOLDER).resolve(SELLER_CONFIG).isRegularFile() }
-                ?.let { Root(it) }
+            return generateSequence(start) { it.parent }.firstNotNullOfOrNull { (folderIn(it) as? RootFolder.SetUp)?.root }
+        }
+
+        /** Sieht nur in [directory] selbst nach, nicht darüber. */
+        fun folderIn(directory: Path): RootFolder {
+            val folder = directory.resolve(FOLDER)
+            return when {
+                // NOFOLLOW_LINKS: Ein Link ins Leere ist halb eingerichtet und kein fehlender Ordner (#508).
+                !folder.exists(LinkOption.NOFOLLOW_LINKS) -> RootFolder.Missing
+                folder.isSymbolicLink() && !folder.exists() -> RootFolder.DanglingLink(folder, folder.readSymbolicLink())
+                !folder.isDirectory() -> RootFolder.NotAFolder(folder)
+                !folder.resolve(SELLER_CONFIG).isRegularFile() -> RootFolder.WithoutSellerConfig(folder)
+                else -> RootFolder.SetUp(Root(directory))
+            }
         }
 
         /** Verschiedene Wurzeln brechen ab: Ein Abschlagsblock gehört zu einem Rechnungssteller. */
@@ -87,4 +96,17 @@ value class Root private constructor(val directory: Path) {
         private const val NOT_ABOVE =
             "Weiter oben wird nicht gesucht: Sonst stünde am Ende der falsche Aussteller auf der Rechnung."
     }
+}
+
+/** Was in einem Verzeichnis unter dem Namen [Root.FOLDER] liegt. Was daraus folgt, entscheidet der Aufrufer (#518). */
+sealed interface RootFolder {
+    data object Missing : RootFolder
+
+    data class DanglingLink(val path: Path, val target: Path) : RootFolder
+
+    data class NotAFolder(val path: Path) : RootFolder
+
+    data class WithoutSellerConfig(val path: Path) : RootFolder
+
+    data class SetUp(val root: Root) : RootFolder
 }

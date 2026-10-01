@@ -4,16 +4,13 @@ import com.github.ajalt.clikt.core.CliktError
 import com.github.ajalt.clikt.core.Context
 import com.github.ajalt.clikt.core.CoreCliktCommand
 import de.fluchitconsulting.rechnungsgenerator.core.model.Root
+import de.fluchitconsulting.rechnungsgenerator.core.model.RootFolder
 import java.io.IOException
 import java.nio.file.FileAlreadyExistsException
 import java.nio.file.FileSystemException
 import java.nio.file.Path
 import java.nio.file.StandardOpenOption
 import kotlin.io.path.createDirectories
-import kotlin.io.path.exists
-import kotlin.io.path.isDirectory
-import kotlin.io.path.isSymbolicLink
-import kotlin.io.path.readSymbolicLink
 import kotlin.io.path.writeText
 
 /**
@@ -27,30 +24,31 @@ class SetupCommand(
         "Legt im Arbeitsverzeichnis ${Root.FOLDER}/${Root.SELLER_CONFIG} als Vorlage an."
 
     override fun run() {
-        val folder = workingDir.resolve(Root.FOLDER)
-        val target = folder.resolve(Root.SELLER_CONFIG)
+        val target = workingDir.resolve(Root.FOLDER).resolve(Root.SELLER_CONFIG)
 
-        if (folder.isSymbolicLink() && !folder.exists()) {
-            throw CliktError(
-                "Der Link $folder zeigt auf ${folder.readSymbolicLink()}, und das gibt es nicht; " +
+        when (val folder = Root.folderIn(workingDir)) {
+            // Den Ordner ohne die Datei richtet einrichten fertig ein: der Ausweg aus „Ordner ohne Stammdaten“.
+            RootFolder.Missing, is RootFolder.WithoutSellerConfig -> Unit
+            is RootFolder.SetUp -> throw alreadySetUp(target)
+            is RootFolder.DanglingLink -> throw CliktError(
+                "Der Link ${folder.path} zeigt auf ${folder.target}, und das gibt es nicht; " +
                     "die Wurzel lässt sich hier nicht einrichten.",
             )
-        }
-        // Den Ordner gibt es womöglich schon, ohne die Datei: der Ausweg aus „Ordner ohne Stammdaten“.
-        if (folder.exists() && !folder.isDirectory()) {
-            throw CliktError("$folder ist eine Datei und kein Ordner; die Wurzel lässt sich hier nicht einrichten.")
+            is RootFolder.NotAFolder -> throw CliktError(
+                "${folder.path} ist eine Datei und kein Ordner; die Wurzel lässt sich hier nicht einrichten.",
+            )
         }
 
         // Derselbe Wortlaut wie bei erzeuge, gehalten von einem Test (#327).
         try {
-            folder.createDirectories()
+            target.parent.createDirectories()
             // Nie überschrieben, kein --force: In der Datei steht, was jemand von Hand eingetragen hat. Das hält
             // CREATE_NEW; ein exists() davor ließe eine Lücke bis zum Schreiben (#501).
             try {
                 target.writeText(SellerConfigTemplate.text, Charsets.UTF_8, StandardOpenOption.CREATE_NEW)
             } catch (e: FileAlreadyExistsException) {
                 // Nur um das Schreiben: createDirectories wirft sie auch, wenn der Ordner keiner ist (#508).
-                throw CliktError("Die Datei $target gibt es schon; eingerichtet ist hier also bereits.")
+                throw alreadySetUp(target)
             }
         } catch (e: IOException) {
             val reason = if (e is FileSystemException) e.reason else e.message
@@ -65,4 +63,6 @@ class SetupCommand(
             echo("Hinweis: Oberhalb liegt schon eine Wurzel ($it). Für Rechnungen ab hier gilt von nun an die neue.", err = true)
         }
     }
+
+    private fun alreadySetUp(target: Path) = CliktError("Die Datei $target gibt es schon; eingerichtet ist hier also bereits.")
 }
