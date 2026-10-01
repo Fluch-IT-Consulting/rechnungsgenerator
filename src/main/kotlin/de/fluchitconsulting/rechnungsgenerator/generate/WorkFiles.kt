@@ -43,7 +43,7 @@ internal class WorkFiles private constructor(
     }
 
     companion object {
-        fun     create(
+        fun create(
             jobName: String,
             keep: Boolean,
         ): WorkFiles =
