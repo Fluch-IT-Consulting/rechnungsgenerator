@@ -26,7 +26,6 @@ import de.fluchitconsulting.rechnungsgenerator.toolchain.validation.ExternalPdfA
 import java.io.IOException
 import java.nio.file.FileSystemException
 import kotlin.io.path.copyTo
-import kotlin.io.path.createTempDirectory
 import kotlin.io.path.exists
 import kotlin.io.path.isSameFileAs
 import kotlin.io.path.nameWithoutExtension
@@ -122,40 +121,20 @@ class GenerateCommand(
                 ?.let { "\n\nDie Stammdaten nennen ein Logo (${it.source}); ein Fehler darin bricht den Satz ebenfalls ab." }
                 .orEmpty()
 
-        val workDir =
-            try {
-                createTempDirectory("rechnungsgenerator")
-            } catch (e: IOException) {
-                throw CliktError("Das Arbeitsverzeichnis für den Satz ließ sich nicht anlegen: ${e.message}")
-            }
-        try {
+        WorkFiles.create(jobName, keep = keepWorkFiles).use { workFiles ->
             val typesetPdf =
                 try {
                     val sources = einvoice?.let(rendered.sources::withEInvoice) ?: rendered.sources
-                    typesetter.typeset(workingDir = workDir, jobName = jobName, sources = sources)
+                    typesetter.typeset(workingDir = workFiles.dir, jobName = jobName, sources = sources)
                 } catch (e: TypesettingException) {
-                    // Die Meldung zitiert Zeilen der .tex, und ohne den Schalter ist sie gleich gelöscht (#507).
-                    val inspectionNote =
-                        if (keepWorkFiles) {
-                            "Die Arbeitsdateien samt $jobName.tex liegen unter $workDir."
-                        } else {
-                            "Mit --arbeitsdateien-behalten bleiben die Arbeitsdateien samt $jobName.tex zum Ansehen liegen."
-                        }
-                    throw ToolchainException("${e.message}\n\n$inspectionNote$logoNote", e)
+                    throw ToolchainException("${e.message}\n\n${workFiles.dirNote()}$logoNote", e)
                 }
             // Ein ungültiges PDF/A kommt nicht ans Ziel, auch nicht mit --ueberschreiben, und endet mit Exitcode 1.
             if (!typesetPdf.validation.valid) {
-                val inspectionNote =
-                    if (keepWorkFiles) {
-                        // Die Datei und nicht das Verzeichnis: Mit E-Rechnung liegt dort auch das gültige PDF/A-1b (#390).
-                        "Das PDF liegt zum Ansehen unter ${typesetPdf.pdf}."
-                    } else {
-                        "Mit --arbeitsdateien-behalten bleibt es zum Ansehen liegen."
-                    }
                 val profile = typesetPdf.validation.profile.label
                 throw ToolchainException(
                     "Das erzeugte PDF ist kein gültiges $profile und wurde nicht nach $target geschrieben.\n" +
-                        "${typesetPdf.validation.describe()}\n$inspectionNote$logoNote",
+                        "${typesetPdf.validation.describe()}\n${workFiles.pdfNote(typesetPdf.pdf)}$logoNote",
                 )
             }
             // Derselbe Wortlaut wie bei einrichten, gehalten von einem Test (#327). Den Grund trägt eine
@@ -171,18 +150,9 @@ class GenerateCommand(
             echo(typesetPdf.validation.describe())
             // Hinweise nach dem Ergebnis, damit sie nicht wie ein Fehler wirken.
             acceptedInvoice.hints.forEach { echo("Hinweis: ${it.describe()}") }
-            typesetPdf.overflowHint?.let { hint ->
-                // Der Hinweis nennt die .tex, und ohne den Schalter ist sie gleich gelöscht (#488).
-                val inspectionNote =
-                    if (keepWorkFiles) {
-                        "Die Datei liegt unter ${workDir.resolve("$jobName.tex")}."
-                    } else {
-                        "Mit --arbeitsdateien-behalten bleibt $jobName.tex zum Ansehen liegen."
-                    }
-                echo("Hinweis: $hint\n\n$inspectionNote")
-            }
+            typesetPdf.overflowHint?.let { echo("Hinweis: $it\n\n${workFiles.texNote()}") }
             typesetPdf.rerunHint?.let { echo("Hinweis: $it") }
-            if (keepWorkFiles) echo("Arbeitsdateien: $workDir")
+            workFiles.summary?.let { echo(it) }
             // Zuletzt und nur für ein gültiges PDF am Ziel. Ein Fehlschlag ist ein Hinweis, der Exitcode bleibt 0.
             if (openAfterwards) {
                 when (val result = viewer.open(target)) {
@@ -190,8 +160,6 @@ class GenerateCommand(
                     is ViewerResult.Failed -> echo("Hinweis: Das PDF konnte nicht geöffnet werden: ${result.reason}")
                 }
             }
-        } finally {
-            if (!keepWorkFiles) workDir.toFile().deleteRecursively()
         }
     }
 }
