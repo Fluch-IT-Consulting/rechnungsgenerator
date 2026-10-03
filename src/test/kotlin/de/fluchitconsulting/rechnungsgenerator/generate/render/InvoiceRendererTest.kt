@@ -4,6 +4,7 @@ import de.fluchitconsulting.rechnungsgenerator.core.accepted.accepted
 import de.fluchitconsulting.rechnungsgenerator.core.calculation.CalculatedInvoice
 import de.fluchitconsulting.rechnungsgenerator.core.model.CheckMethod
 import de.fluchitconsulting.rechnungsgenerator.core.model.CurrencyConversion
+import de.fluchitconsulting.rechnungsgenerator.core.model.CustomerAddress
 import de.fluchitconsulting.rechnungsgenerator.core.model.Design
 import de.fluchitconsulting.rechnungsgenerator.core.model.Invoice
 import de.fluchitconsulting.rechnungsgenerator.core.model.InvoiceType
@@ -308,6 +309,57 @@ class InvoiceRendererTest : FunSpec({
             test("der Code $code ohne Namen steht als Code da") {
                 address(customerCountry = code, sellerCountry = "DE") shouldEndWith """\zeilenwechsel{}\landzeile{$code}"""
             }
+        }
+    }
+
+    context("Die Postleitzahl steht, wo die Post des Empfängerlandes sie erwartet (#521)") {
+
+        fun lines(
+            country: String,
+            street: String,
+            postalCode: String?,
+            city: String,
+        ): String {
+            val basis = testInvoice()
+            val address = CustomerAddress(street = street, postalCode = postalCode, city = city, countryCode = CountryCode(country))
+            val invoice = basis.copy(customer = basis.customer.copy(name = "Kunde A", address = address))
+            return valueOf(TemplateValue.EMPFAENGER, invoice).substringBefore("""\zeilenwechsel{}\landzeile""")
+        }
+
+        test("in Großbritannien und Irland steht sie unter dem Ort") {
+            lines("GB", "1 Example Street", "EC1A 1BB", "London") shouldBe
+                """Kunde A\zeilenwechsel{}1 Example Street\zeilenwechsel{}London\zeilenwechsel{}EC1A 1BB"""
+            lines("IE", "1 Example Road", "D02 X285", "Dublin 2") shouldBe
+                """Kunde A\zeilenwechsel{}1 Example Road\zeilenwechsel{}Dublin 2\zeilenwechsel{}D02 X285"""
+        }
+
+        test("in Ungarn steht der Ort vor der Straße und die Postleitzahl zuletzt") {
+            lines("HU", "Példa utca 1.", "1055", "Budapest") shouldBe
+                """Kunde A\zeilenwechsel{}Budapest\zeilenwechsel{}Példa utca 1.\zeilenwechsel{}1055"""
+        }
+
+        test("in Malta und den USA steht sie hinter dem Ort, in den USA hinter dem Bundesstaat") {
+            lines("MT", "1 Triq l-Eżempju", "VLT 1117", "Valletta") shouldBe
+                """Kunde A\zeilenwechsel{}1 Triq l-Eżempju\zeilenwechsel{}Valletta VLT 1117"""
+            lines("US", "1 Example Avenue", "94105", "San Francisco, CA") shouldBe
+                """Kunde A\zeilenwechsel{}1 Example Avenue\zeilenwechsel{}San Francisco, CA 94105"""
+        }
+
+        test("in Lettland steht sie nach einem Komma hinter dem Ort") {
+            lines("LV", "Piemēra iela 1", "LV-1050", "Rīga") shouldBe
+                """Kunde A\zeilenwechsel{}Piemēra iela 1\zeilenwechsel{}Rīga, LV-1050"""
+        }
+
+        test("anderswo steht sie vor dem Ort") {
+            lines("AT", "Beispielgasse 1", "1010", "Wien") shouldBe
+                """Kunde A\zeilenwechsel{}Beispielgasse 1\zeilenwechsel{}1010 Wien"""
+        }
+
+        test("ohne Postleitzahl steht der Ort allein, ohne leere Zeile und ohne Komma") {
+            lines("GB", "1 Example Street", null, "London") shouldBe
+                """Kunde A\zeilenwechsel{}1 Example Street\zeilenwechsel{}London"""
+            lines("LV", "Piemēra iela 1", null, "Rīga") shouldBe
+                """Kunde A\zeilenwechsel{}Piemēra iela 1\zeilenwechsel{}Rīga"""
         }
     }
 

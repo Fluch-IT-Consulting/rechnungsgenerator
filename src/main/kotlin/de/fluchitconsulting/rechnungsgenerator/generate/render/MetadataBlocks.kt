@@ -26,9 +26,23 @@ internal object MetadataBlocks {
         language: Language,
     ): List<Latex> =
         buildList {
-            add(address.street.escapeLatex())
-            add(listOfNotNull(address.postalCode, address.city).joinToString(" ").escapeLatex())
+            postalLines(address).forEach { add(it.escapeLatex()) }
             if (showCountry) add(Latex.macro(TemplateMacro.LANDZEILE, listOf(countryName(address.countryCode, language).escapeLatex())))
+        }
+
+    /**
+     * Die Reihenfolge des Empfängerlandes, nicht die der Rechnungssprache, nach den Adressdaten von libaddressinput
+     * (#521). Ein Bundesstaat oder County steht in `ort`.
+     */
+    private fun postalLines(address: CustomerAddress): List<String> =
+        with(address) {
+            when (countryCode.value) {
+                "GB", "IE" -> listOfNotNull(street, city, postalCode)
+                "HU" -> listOfNotNull(city, street, postalCode)
+                "MT", "US" -> listOf(street, listOfNotNull(city, postalCode).joinToString(" "))
+                "LV" -> listOf(street, listOfNotNull(city, postalCode).joinToString(", "))
+                else -> listOf(street, listOfNotNull(postalCode, city).joinToString(" "))
+            }
         }
 
     /**
