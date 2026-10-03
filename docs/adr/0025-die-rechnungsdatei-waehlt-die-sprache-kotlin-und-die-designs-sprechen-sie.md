@@ -335,3 +335,13 @@ ihr Beispiel in jeder Sprache ohne Abbruch durchrechnet, prüft
 Grund bringt deshalb eine Beispielrechnung mit, und eine neue Sprache, die
 ins Netz kommt, setzt mit den Beispielen je Art auch die drei Kategorien. Das Netz setzt
 dafür 16 PDFs mehr, und der volle Build dauert 4:07 statt 3:34.
+
+## Nachtrag vom 03.10.2026: die amerikanische Anschrift
+
+Der Nachtrag zu `en-US` hielt `94105 San Francisco, CA` fest und nannte die
+amerikanische Reihenfolge eine Frage des Modells, nicht der Sprache. #521
+hat sie so beantwortet: Das Land des Kunden wählt die Reihenfolge
+(ADR-0017), und eine Anschrift in den USA lautet `San Francisco, CA 94105`.
+Das Modell bleibt bei `plz` und `ort`, der Bundesstaat steht weiter in
+`ort`. Eine Rechnung auf `en-US` an einen Kunden außerhalb der USA setzt die
+Anschrift, wie dessen Land es will.

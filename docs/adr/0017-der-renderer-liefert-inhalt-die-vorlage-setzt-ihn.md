@@ -163,3 +163,34 @@ Verworfen:
 - **Die Versalien in Kotlin**, mit `uppercase()` auf dem Namen. Dann läge
   eine Schreibweise im Renderer, und ein Design, das das Land anders setzen
   will, müsste dort ansetzen statt in seiner Vorlage.
+
+## Nachtrag vom 03.10.2026: Das Land wählt die Reihenfolge der Anschrift
+
+Seit #521 steht die Postleitzahl in `EMPFAENGER`, wo die Post des
+Empfängerlandes sie erwartet. In Großbritannien und Irland steht sie unter
+dem Ort, in Malta und den USA dahinter, in Lettland nach einem Komma. In
+Ungarn steht der Ort vor der Straße und die Postleitzahl zuletzt. Alle
+anderen Länder bleiben bei `PLZ Ort`. Die Formen stammen aus den
+Adressdaten, die Google für libaddressinput pflegt.
+
+Das bestätigt den Block: Wo die Postleitzahl steht, ist wie der Ort der
+Landzeile Postkonvention und kein Satzbild. `MetadataBlocks` entscheidet es
+nach dem Land des Kunden (BT-55), nicht nach der Sprache der Rechnung; eine
+englische Rechnung nach Wien bleibt bei `1010 Wien`. Keine Vorlage hat sich
+geändert. Ein Bundesstaat oder County steht weiter in `ort`, das Modell
+kennt nur `plz` und `ort`.
+
+Eine britische, irische oder ungarische Anschrift hat damit eine Zeile
+mehr. In `prag`, dessen Anschriftenfeld keine feste Höhe hat, rückt der
+Inhalt darunter um diese Zeile nach.
+
+Verworfen:
+
+- **Platzhalter für Postleitzahl und Ort**, die Reihenfolge in der Vorlage.
+  Jedes Design müsste die Länder kennen, ohne Compiler, und den Ort der
+  Zeilen schreibt die Post vor, nicht das Design.
+- **Eine Tabelle aller Länder.** `CountryCode` führt bewusst keine Liste der
+  Staaten (#374). Die Tabelle nennt nur die Ausnahmen; ein Land, das dort
+  fehlt, bekommt `PLZ Ort` und keinen Abbruch.
+- **libaddressinput als Abhängigkeit.** Für sechs Ausnahmen wöge eine
+  Bibliothek mehr als die Tabelle, die sie ersetzte.
