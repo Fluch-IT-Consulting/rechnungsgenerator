@@ -336,7 +336,10 @@ private fun Sheet.verify(
     shows("Ort Rechnungssteller", "${config.address.postalCode} ${config.address.city}")
     shows("Kunde", invoice.customer.name)
     shows("Anschrift Kunde", invoice.customer.address.street)
-    shows("Ort Kunde", listOfNotNull(invoice.customer.address.postalCode, invoice.customer.address.city).joinToString(" "))
+    // Getrennt: Die Reihenfolge hängt am Land des Kunden (#521).
+    shows("Ort Kunde", invoice.customer.address.city)
+    invoice.customer.address.postalCode
+        ?.let { shows("Postleitzahl Kunde", it) }
     // BT-48, Pflicht bei AE und K (§14a Abs. 1 UStG).
     invoice.customer.vatId?.let { shows("USt-IdNr. des Kunden", it.value, it.formatted()) }
 

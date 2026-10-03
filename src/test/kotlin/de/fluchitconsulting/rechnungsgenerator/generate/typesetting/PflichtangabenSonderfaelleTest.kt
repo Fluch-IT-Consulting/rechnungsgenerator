@@ -103,7 +103,7 @@ class PflichtangabenSonderfaelleTest : FunSpec({
                 net.typesetAndCheck("englische-rechnung", design, design.sellerConfig, targetName = "${design.name}-englisch")
 
             calculated.invoice.language shouldBe Language.BRITISH_ENGLISH
-            sheet.shows("Land Kunde", "EC1A 1BB London UNITED KINGDOM")
+            sheet.shows("Land Kunde", "London EC1A 1BB UNITED KINGDOM")
             sheet.shows("Einheit, eine Stunde", "1 hr")
             sheet.shows("Einheit, ein Tag", "1 day")
             sheet.shows("Einheit, zwei Tage", "2 days")
@@ -121,7 +121,7 @@ class PflichtangabenSonderfaelleTest : FunSpec({
                 net.typesetAndCheck("amerikanische-rechnung", design, design.sellerConfig, targetName = "${design.name}-amerikanisch")
 
             calculated.invoice.language shouldBe Language.AMERICAN_ENGLISH
-            sheet.shows("Land Kunde", "94105 San Francisco, CA UNITED STATES")
+            sheet.shows("Land Kunde", "San Francisco, CA 94105 UNITED STATES")
             sheet.shows("Rechnungsdatum", "August 14, 2026")
             sheet.shows("Skonto", "For payment by August 21, 2026, an early payment discount of 2% may be deducted")
             sheet.lacks("britisches Datum", "14 August 2026", "21 August 2026")
