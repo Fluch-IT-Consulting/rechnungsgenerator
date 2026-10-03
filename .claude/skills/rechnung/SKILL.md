@@ -107,7 +107,10 @@ Was du dir selbst beschaffen kannst, solltest du auch selbst beschaffen:
 
 - **Kundenanschrift**: Steht in einer früheren Rechnung an denselben Kunden.
   Suche zuerst nach einer `.yaml` im Ablageverzeichnis; gibt es für den Kunden
-  nur alte PDFs, hole die Anschrift mit `pdftotext -layout` daraus.
+  nur alte PDFs, hole die Anschrift mit `pdftotext -layout` daraus. Postleitzahl
+  und Ort gehören getrennt in `plz` und `ort`, auch wenn das PDF sie anders
+  ordnet, etwa `London` über `EC1A 1BB`: Wie sie auf dem Blatt stehen, wählt
+  der Generator nach `land` (#521).
 - **Rechnungsdatum**: heute, sofern nichts anderes gesagt wird.
 - **Leistungszeitraum**: Wird ein Monat genannt ("August"), nimm den ganzen
   Monat. Frage nach, wenn gar kein Zeitraum genannt wurde.
@@ -256,7 +259,8 @@ kunde:
   anschrift:
     strasse: Industriestraße 1
     plz: "90402"                    # Text, keine Zahl – führende Nullen bleiben; fehlt nur im Ausland ohne Postleitzahlen
-    ort: Nürnberg
+    ort: Nürnberg                   # im Ausland samt Bundesstaat oder County, etwa San Francisco, CA
+    land: DE                        # optional, Vorgabe DE; ISO-Code, wählt auch die Reihenfolge von PLZ und Ort
   referenz: BST-2026-0815           # optional, Referenz des Kunden (BT-10), etwa eine Leitweg-ID
 einleitung: >-                      # optional, Satz über den Positionen; >- und nicht |
   Für den Workshop „Kotlin für Einsteiger“ am 04.08.2026 in Würzburg
