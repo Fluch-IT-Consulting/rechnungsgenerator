@@ -29,6 +29,16 @@ class DateFormatTest : FunSpec({
         }
     }
 
+    test("ein Zeitraum von einem Tag steht als ein Datum, in jeder Sprache (#525)") {
+        val day = LocalDate.of(2026, 9, 1)
+        assertSoftly {
+            german.servicePeriod(day, day).tex shouldBe "01.09.2026"
+            english.servicePeriod(day, day).tex shouldBe "2026-09-01"
+            american.servicePeriod(day, day).tex shouldBe "2026-09-01"
+            german.monthPeriod(day, day).tex shouldBe "01.09.2026"
+        }
+    }
+
     test("ein Kalendermonat in jeder Sprache (#418)") {
         assertSoftly {
             german.month(YearMonth.of(2026, 3)).tex shouldBe "März 2026"

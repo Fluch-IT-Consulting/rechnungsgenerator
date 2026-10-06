@@ -708,11 +708,12 @@ private class Spelling(
             }
         }
 
-    /** Ganze Kalendermonate auch als Monate (§31 Abs. 4 UStDV, UStAE 14.8 Abs. 1 und 4). */
+    /** Ganze Kalendermonate auch als Monate (§31 Abs. 4 UStDV, UStAE 14.8 Abs. 1 und 4), ein Tag als Datum (#525). */
     fun zeitraum(
         start: LocalDate,
         end: LocalDate,
     ): Array<String> {
+        if (start == end) return arrayOf(short.format(start))
         val until =
             when (language) {
                 Language.GERMAN -> "bis"
