@@ -23,7 +23,11 @@ class DateFormat(
 
     /** Ein voller Kalendermonat genügt als `Juli 2026`, §31 Abs. 4 UStDV. */
     fun servicePeriod(start: LocalDate, end: LocalDate): Latex =
-        if (start.dayOfMonth == 1 && end == end.withDayOfMonth(end.lengthOfMonth()) && start.withDayOfMonth(1) == end.withDayOfMonth(1)) {
+        if (start == end) {
+            shortDate(start)
+        } else if (start.dayOfMonth == 1 && end == end.withDayOfMonth(end.lengthOfMonth()) &&
+            start.withDayOfMonth(1) == end.withDayOfMonth(1)
+        ) {
             format(MONTH_WITH_YEAR, start).escapeLatex()
         } else {
             "${shortDateText(start)}\u2009–\u2009${shortDateText(end)}".escapeLatex()
