@@ -5,7 +5,7 @@
 # Fußnote: erst das Issue lesen, dann einen Bump dieser Zeile mergen (#253).
 
 [versions]
-kotlin = "2.4.20"       # 2.4.20 wegen CVE-2026-53914 (#158), nicht nur der Aktualität halber
+kotlin = "2.4.21"       # 2.4.20 wegen CVE-2026-53914 (#158), nicht nur der Aktualität halber
 kaml = "0.104.0"          # YAML-Parser auf Basis von kotlinx.serialization
 clikt = "5.1.0"          # CLI-Framework (Kommandos, Optionen, Hilfe-Texte)
 junit = "6.1.3"
