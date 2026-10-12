@@ -13,7 +13,7 @@ kotest = "6.2.5"       # Test-Framework: FunSpec-Stil + Property-based Testing
 ktlintPlugin = "14.2.0"  # Gradle-Plugin; welche ktlint-CLI es startet, sagt ktlintCli
 ktlintCli = "1.8.0"      # ktlint selbst; ohne Eintrag wählte das Plugin 1.5.0 (#159)
 konsist = "0.17.3"       # Architekturtests: Schichten der Pakete, Importe (#112)
-verapdf = "1.30.2"       # PDF/A-Prüfung in derselben JVM (#226); dieselbe Fassung, die Homebrew als CLI führt
+verapdf = "1.30.3"       # PDF/A-Prüfung in derselben JVM (#226); dieselbe Fassung, die Homebrew als CLI führt
 mustang = "2.26.0"       # ZUGFeRD: bettet das XML ein und prüft es (ADR-0023)
 # slf4j-nop hebt slf4j-api auf seine eigene Fassung. Nicht unter der, die Mustang
 # mitbringt: Sonst gewönne dessen API, und API und Anbindung liefen auseinander.
