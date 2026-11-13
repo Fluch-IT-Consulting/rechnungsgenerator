@@ -11,32 +11,20 @@ Geschrieben in Kotlin, gebaut mit Gradle.
 ## Installation
 
 Über Homebrew, aus dem Tap
-[Fluch-IT-Consulting/homebrew-tap](https://github.com/Fluch-IT-Consulting/homebrew-tap).
-Weil dieses Repository privat ist, braucht Homebrew Lesezugriff darauf und
-einen GitHub-Token. Einen eigenen legt man nicht an: Die GitHub-CLI hat ihn
-schon.
+[Fluch-IT-Consulting/homebrew-tap](https://github.com/Fluch-IT-Consulting/homebrew-tap):
 
 ```bash
-gh auth login   # falls noch nicht angemeldet
 brew tap fluch-it-consulting/tap
-HOMEBREW_GITHUB_API_TOKEN=$(gh auth token) brew install fluch-it-consulting/tap/rechnungsgenerator
+brew install fluch-it-consulting/tap/rechnungsgenerator
 ```
 
-Auch das Anheben lädt ein neues Archiv und braucht den Token:
-
-```bash
-HOMEBREW_GITHUB_API_TOKEN=$(gh auth token) brew upgrade fluch-it-consulting/tap/rechnungsgenerator
-```
-
-Ein `brew upgrade` über alles hinweg, ohne Token, scheitert an dieser Formel
-mit `401`. Mit `403` oder `404` sieht das Konto das Repository nicht – dann
-fehlt der Lesezugriff, oder die Organisation hat die GitHub-CLI nicht
-freigegeben.
+Eine neue Fassung kommt mit `brew upgrade`.
 
 Daneben braucht das Programm im PATH:
 
-- ein JDK 21 oder neuer, etwa `brew install openjdk`. Auf macOS 14 und älter
-  baut Homebrew das aus dem Quelltext; dort ist ein fertiges JDK, etwa von
+- ein JDK 21 oder neuer, etwa `brew install openjdk`. Fertig führt Homebrew
+  das nur für Apple Silicon ab macOS 15; auf Intel-Macs und auf macOS 14 baut
+  es openjdk aus dem Quelltext, und dort ist ein fertiges JDK, etwa von
   [Temurin](https://adoptium.net/), der schnellere Weg.
 - TeX Live mit `lualatex`, etwa `brew install --cask mactex-no-gui`. Das
   Programm prüft das beim Start und sagt es, wenn es fehlt.
