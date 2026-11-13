@@ -23,6 +23,7 @@ import de.fluchitconsulting.rechnungsgenerator.core.values.Currency
 import de.fluchitconsulting.rechnungsgenerator.core.values.Language
 import de.fluchitconsulting.rechnungsgenerator.core.values.Money
 import de.fluchitconsulting.rechnungsgenerator.core.values.Percent
+import de.fluchitconsulting.rechnungsgenerator.core.values.Unit
 import de.fluchitconsulting.rechnungsgenerator.core.values.VatId
 import io.kotest.assertions.withClue
 import io.kotest.core.spec.style.FunSpec
@@ -83,6 +84,16 @@ class CiiWriterTest : FunSpec({
                 xml shouldContain "<ram:TaxTotalAmount currencyID=\"${currency.name}\">"
                 Currency.entries.filter { it != currency }.forEach { xml shouldNotContain it.name }
             }
+        }
+    }
+
+    // #543
+    Unit.entries.forEach { unit ->
+        test("das XML mit der Einheit $unit ist gültig, ohne Warnung") {
+            CalculatedInvoice(testInvoice(items = listOf(testItem(unit = unit))), testSellerConfig())
+                .accepted()
+                .xml()
+                .shouldBeValidExtended()
         }
     }
 
