@@ -44,6 +44,14 @@ im Issue oder am Code – nicht hier.
   vier Klassen über `PflichtangabenRun` in `generate/typesetting` (Test).
 - `.claude/skills/rechnung/` – der Skill zum Anlegen einer Rechnung, samt
   `naechste-nummer.py` und `offene-abschlaege.py`.
+- Das **Wiki** (deutsch, eigenes Repository `rechnungsgenerator.wiki.git`)
+  erklärt die Anwendung; jede Seite nennt in einer Zeile `Code:`, was sie
+  beschreibt. Ändert ein PR etwas, das eine Seite beschreibt, nennt er Seite
+  und Änderung unter `Wiki:`; nach dem Merge wird sie nachgezogen, gepusht erst
+  nach Martins Freigabe. Beispiele zeigen einen Ausschnitt aus
+  `src/test/resources/` samt Link; ein Bild ist die erste Seite, gesetzt mit
+  den Test-Stammdaten, `pdftoppm -r 90 -png -singlefile -f 1 -l 1`, mit 2 px
+  Rahmen in `#C0C0C0`.
 
 ### Pakete
 
