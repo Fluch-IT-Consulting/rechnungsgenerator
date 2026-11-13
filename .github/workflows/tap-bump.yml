@@ -1,5 +1,5 @@
 # Hebt nach dem Veröffentlichen eines Releases die Homebrew-Formel im Tap an
-# (#271): url mit neuer Asset-ID, version und sha256.
+# (#271): url mit der neuen Fassung und sha256.
 #
 # Ausgelöst vom Veröffentlichen und NICHT vom Tag: Der Tag baut einen Entwurf,
 # und eine Formel, die auf ein unveröffentlichtes Asset zeigt, lässt jeden
@@ -46,31 +46,27 @@ jobs:
     if: ${{ github.event_name == 'workflow_dispatch' || !github.event.release.prerelease }}
     runs-on: ubuntu-latest
     steps:
-      - name: Asset und Prüfsumme ermitteln
+      - name: Archiv laden und Prüfsumme ermitteln
         env:
           GH_TOKEN: ${{ github.token }}
           TAG: ${{ github.event.release.tag_name || inputs.tag }}
         run: |
           version="${TAG#v}"
           archiv="rechnungsgenerator-${version}.zip"
+          url="https://github.com/${GITHUB_REPOSITORY}/releases/download/${TAG}/${archiv}"
 
-          asset_id=$(gh api "repos/${GITHUB_REPOSITORY}/releases/tags/${TAG}" \
-            --jq ".assets[] | select(.name == \"${archiv}\") | .id")
-          if [ -z "$asset_id" ]; then
-            echo "::error::Im Release ${TAG} gibt es kein Asset namens ${archiv}."
+          # Dieselbe URL, die die Formel lädt – die Prüfsumme wird an ihr
+          # genommen und nicht an einem frisch gebauten Archiv.
+          if ! curl -fsSL -o "$archiv" "$url"; then
+            echo "::error::${url} lädt nicht. Im Release ${TAG} stehen:"
             gh api "repos/${GITHUB_REPOSITORY}/releases/tags/${TAG}" --jq '.assets[].name'
             exit 1
           fi
-
-          # Dieselbe Datei, die eine Formel später lädt – die Prüfsumme wird an
-          # ihr genommen und nicht an einem frisch gebauten Archiv.
-          gh api "repos/${GITHUB_REPOSITORY}/releases/assets/${asset_id}" \
-            -H "Accept: application/octet-stream" > "$archiv"
           sha=$(sha256sum "$archiv" | cut -d' ' -f1)
 
           {
             echo "VERSION=${version}"
-            echo "ASSET_ID=${asset_id}"
+            echo "URL=${url}"
             echo "SHA=${sha}"
           } >> "$GITHUB_ENV"
 
@@ -85,15 +81,14 @@ jobs:
         run: |
           f=tap/Formula/rechnungsgenerator.rb
           sed -i -E \
-            -e "s|(releases/assets/)[0-9]+\"|\1${ASSET_ID}\"|" \
-            -e "s|^(  version \")[^\"]*(\")|\1${VERSION}\2|" \
+            -e "s|^(  url \")[^\"]*(\")|\1${URL}\2|" \
             -e "s|^(  sha256 \")[^\"]*(\")|\1${SHA}\2|" \
             "$f"
 
           # Ein sed, das nichts trifft, ändert nichts und meldet trotzdem
           # Erfolg. Dann stünde die Formel weiter auf der alten Fassung, und
           # der Workflow wäre grün.
-          for wert in "$ASSET_ID" "$VERSION" "$SHA"; do
+          for wert in "$URL" "$SHA"; do
             if ! grep -q -- "$wert" "$f"; then
               echo "::error::'${wert}' steht nach dem Ersetzen nicht in der Formel."
               exit 1
@@ -104,7 +99,7 @@ jobs:
           # zu enthalten.
           ruby -c "$f"
 
-          grep -nE 'releases/assets|^  version |^  sha256 ' "$f"
+          grep -nE '^  (url|sha256) ' "$f"
 
       - name: Committen und pushen
         working-directory: tap
@@ -126,6 +121,6 @@ jobs:
           Angehoben vom Release-Workflow des Generators, ausgelöst vom
           Veröffentlichen von ${TAG}.
 
-          Asset-ID ${ASSET_ID}, sha256 ${SHA}.
+          sha256 ${SHA}.
           EOF
           git push
