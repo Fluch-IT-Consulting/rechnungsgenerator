@@ -1,7 +1,7 @@
 package de.fluchitconsulting.rechnungsgenerator.core.model
 
 import de.fluchitconsulting.rechnungsgenerator.core.localization.LanguageTable
-import de.fluchitconsulting.rechnungsgenerator.core.localization.languageTableSerializer
+import de.fluchitconsulting.rechnungsgenerator.core.localization.LanguageTableSerializer
 import de.fluchitconsulting.rechnungsgenerator.core.serialization.valueWhenPresent
 import de.fluchitconsulting.rechnungsgenerator.core.values.Bic
 import de.fluchitconsulting.rechnungsgenerator.core.values.CountryCode
@@ -47,7 +47,7 @@ data class SellerConfig(
     @Transient val logo: Logo? = null,
     // Privat: Nach draußen geht closingLine, das die Vorgabe kennt.
     @SerialName("schlusssatz")
-    @Serializable(with = ClosingLineSerializer::class)
+    @Serializable(with = LanguageTableSerializer::class)
     private val closingLines: LanguageTable = LanguageTable.EMPTY,
 ) {
     /** Fehlt er, kein Abbruch wie bei der Bankverbindung: Ein allgemeiner Dank schadet nicht. */
@@ -91,8 +91,6 @@ data class BankDetails(
 object AccentColorSerializer :
     KSerializer<RgbColor?> by valueWhenPresent(
         RgbColorSerializer,
-        "akzentfarbe steht ohne Wert da. Ein # ohne Anführungszeichen beginnt in YAML einen Kommentar – " +
+        "Ein # ohne Anführungszeichen beginnt in YAML einen Kommentar – " +
             "die Farbe bitte ohne # schreiben, etwa 31AE34, oder den Schlüssel weglassen.",
     )
-
-object ClosingLineSerializer : KSerializer<LanguageTable> by languageTableSerializer("schlusssatz")

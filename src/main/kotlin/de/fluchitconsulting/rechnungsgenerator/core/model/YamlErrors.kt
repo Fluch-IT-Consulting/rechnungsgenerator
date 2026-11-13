@@ -11,12 +11,14 @@ import com.charleskorn.kaml.UnknownPropertyException
 import com.charleskorn.kaml.YamlException
 import com.charleskorn.kaml.YamlPath
 import com.charleskorn.kaml.YamlScalarFormatException
+import de.fluchitconsulting.rechnungsgenerator.core.serialization.MissingValueException
 import de.fluchitconsulting.rechnungsgenerator.core.serialization.RejectedValueException
 
 /**
  * Die Lesefehler von kaml auf Deutsch und mit Fundstelle wie bei [BlankValues] (#515, ADR-0025). kaml verschachtelt
  * sie je Ebene in `InvalidPropertyValueException`; den ganzen Pfad trägt die innerste. Ebenso eingepackt kommt
- * [RejectedValueException], der schon deutsche Text eines Serializers, dem nur die Fundstelle fehlt (#545).
+ * [RejectedValueException], der schon deutsche Text eines Serializers, dem nur die Fundstelle fehlt (#545), und
+ * [MissingValueException] mit dem Hinweis eines Serializers zum leeren Wert (#548).
  */
 internal object YamlErrors {
     fun describe(e: YamlException): String {
@@ -29,6 +31,9 @@ internal object YamlErrors {
             }
             is UnexpectedNullValueException -> {
                 "$where steht ohne Wert da, braucht aber einen."
+            }
+            is MissingValueException -> {
+                "$where steht ohne Wert da. ${innermost.message}"
             }
             is UnknownPropertyException -> {
                 "Unbekannter Schlüssel $where. Bekannt sind dort: ${innermost.validPropertyNames.sorted().joinToString()}."
