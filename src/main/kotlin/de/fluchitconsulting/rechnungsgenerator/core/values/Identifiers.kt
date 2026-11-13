@@ -87,7 +87,7 @@ class VatId(raw: String) {
         }
     }
 
-    /** Deutsche Schreibweise mit Leerzeichen zur besseren Lesbarkeit: `DE 325 503 529`. */
+    /** Deutsche Schreibweise mit Leerzeichen zur besseren Lesbarkeit: `DE 123 456 788`. */
     fun formatted(): String =
         if (value.startsWith("DE") && value.length == 11) {
             "DE " + value.drop(2).chunked(3).joinToString(" ")
