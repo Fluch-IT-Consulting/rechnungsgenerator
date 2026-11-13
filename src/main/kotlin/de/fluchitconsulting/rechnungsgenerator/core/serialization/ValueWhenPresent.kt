@@ -1,8 +1,10 @@
 package de.fluchitconsulting.rechnungsgenerator.core.serialization
 
+import com.charleskorn.kaml.YamlException
+import com.charleskorn.kaml.YamlInput
+import com.charleskorn.kaml.YamlPath
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.KSerializer
-import kotlinx.serialization.SerializationException
 import kotlinx.serialization.descriptors.SerialDescriptor
 import kotlinx.serialization.descriptors.nullable
 import kotlinx.serialization.encoding.Decoder
@@ -16,7 +18,7 @@ import kotlinx.serialization.encoding.Encoder
 @OptIn(ExperimentalSerializationApi::class)
 fun <T : Any> valueWhenPresent(
     serializer: KSerializer<T>,
-    empty: String,
+    hint: String,
 ): KSerializer<T?> =
     object : KSerializer<T?> {
         override val descriptor: SerialDescriptor = serializer.descriptor.nullable
@@ -26,5 +28,12 @@ fun <T : Any> valueWhenPresent(
         }
 
         override fun deserialize(decoder: Decoder): T? =
-            if (decoder.decodeNotNullMark()) serializer.deserialize(decoder) else throw SerializationException(empty)
+            if (decoder.decodeNotNullMark()) {
+                serializer.deserialize(decoder)
+            } else {
+                throw MissingValueException(hint, (decoder as YamlInput).getCurrentPath())
+            }
     }
+
+/** Ein Schlüssel ohne Wert samt Fundstelle (#548). [message] ist nur der Hinweis; „steht ohne Wert da“ setzt `YamlErrors`. */
+internal class MissingValueException(hint: String, path: YamlPath) : YamlException(hint, path)

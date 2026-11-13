@@ -85,17 +85,30 @@ class YamlLoaderTest : FunSpec({
             config.closingLine(Language.BRITISH_ENGLISH) shouldBe "Thank you for your trust and the pleasant collaboration."
         }
 
-        test("ein unbekannter oder doppelter Schlüssel bricht ab, mit Datei und Schlüssel") {
-            listOf("  fr: Merci.\n", "  en-AU: Thanks.\n", "  de-DE: Danke.\n  DE-de: Vielen Dank.\n").forEach { table ->
-                withClue(table) {
-                    val file = createTempDirectory("loader-test").resolve("stammdaten.yaml")
-                    file.writeText(resource("stammdaten.yaml") + "schlusssatz:\n$table")
+        // Die Zeilen folgen auf die 24 von stammdaten.yaml.
+        mapOf(
+            "ein unbekannter Schlüssel nennt Datei und Fundstelle des Eintrags (#548)" to
+                (
+                    "  fr: Merci.\n" to
+                        "schlusssatz.fr (Zeile 26, Spalte 3): Unbekannte Sprache 'fr'. Zulässig sind: de-DE, de, en-GB, " +
+                        "en, en-US"
+                ),
+            "ein doppelter Sprachbereich nennt Datei und Fundstelle des zweiten Eintrags (#548)" to
+                (
+                    "  en: Thanks.\n  EN: Thank you.\n" to
+                        "schlusssatz.EN (Zeile 27, Spalte 3): 'en' und 'EN' meinen denselben Sprachbereich en."
+                ),
+        ).forEach { (case, input) ->
+            val (table, expected) = input
+            test(case) {
+                val file = createTempDirectory("loader-test").resolve("stammdaten.yaml")
+                file.writeText(resource("stammdaten.yaml") + "schlusssatz:\n$table")
 
-                    val failure = shouldThrow<InputFileException> { YamlLoader.loadSellerConfig(file) }
+                val failure = shouldThrow<InputFileException> { YamlLoader.loadSellerConfig(file) }
 
-                    failure.message!! shouldContain file.toString()
-                    failure.message!! shouldContain "schlusssatz: "
-                }
+                failure.message!! shouldContain file.toString()
+                failure.message!! shouldContain expected
+                failure.message!! shouldNotContain "schlusssatz: "
             }
         }
     }
@@ -436,8 +449,9 @@ class YamlLoaderTest : FunSpec({
             failure.message!! shouldContain "'grün'"
         }
 
-        test("ein # ohne Anführungszeichen ist ein Kommentar, und der leere Wert bricht ab") {
-            listOf("akzentfarbe: #31AE34", "akzentfarbe:", "akzentfarbe: ~").forEach { entry ->
+        test("ein # ohne Anführungszeichen ist ein Kommentar, und der leere Wert bricht ab mit Fundstelle (#548)") {
+            // Zeile 25 folgt auf die 24 von stammdaten.yaml; die Spalte ist die des leeren Werts.
+            mapOf("akzentfarbe: #31AE34" to 13, "akzentfarbe:" to 13, "akzentfarbe: ~" to 14).forEach { (entry, column) ->
                 withClue(entry) {
                     val file = createTempDirectory("loader-test").resolve("stammdaten.yaml")
                     file.writeText(resource("stammdaten.yaml") + "$entry\n")
@@ -445,8 +459,7 @@ class YamlLoaderTest : FunSpec({
                     val failure = shouldThrow<InputFileException> { YamlLoader.loadSellerConfig(file) }
 
                     failure.message!! shouldContain file.toString()
-                    failure.message!! shouldContain "akzentfarbe steht ohne Wert da"
-                    failure.message!! shouldContain "ohne #"
+                    failure.message!! shouldContain "akzentfarbe (Zeile 25, Spalte $column) steht ohne Wert da. Ein # ohne"
                 }
             }
         }

@@ -1,31 +1,23 @@
 package de.fluchitconsulting.rechnungsgenerator.core.localization
 
+import de.fluchitconsulting.rechnungsgenerator.core.serialization.InvalidValueException
+import de.fluchitconsulting.rechnungsgenerator.core.serialization.stringSerializer
 import de.fluchitconsulting.rechnungsgenerator.core.values.Language
 import kotlinx.serialization.KSerializer
-import kotlinx.serialization.SerializationException
 import kotlinx.serialization.builtins.MapSerializer
 import kotlinx.serialization.builtins.serializer
 import kotlinx.serialization.descriptors.SerialDescriptor
 import kotlinx.serialization.encoding.Decoder
 import kotlinx.serialization.encoding.Encoder
 
-class InvalidLanguageRangeException(message: String) : IllegalArgumentException(message)
+class InvalidLanguageRangeException(message: String) : InvalidValueException(message)
 
 /**
  * `{de-DE: …, en-GB: …}`. Die Schlüssel sind Sprachbereiche, keine Sprachen: `en` gilt für jedes Englisch ohne
  * eigenen Eintrag. Zwei Schlüssel, die normalisiert derselbe sind, sind ein Widerspruch.
  */
 class LanguageTable(raw: Map<String, String>) {
-    private val texts: Map<String, String> =
-        raw.entries
-            .groupBy({ canonical(it.key) }, { it.key })
-            .onEach { (range, keys) ->
-                if (keys.size > 1) {
-                    throw InvalidLanguageRangeException(
-                        "${keys.joinToString(" und ") { "'$it'" }} meinen denselben Sprachbereich $range.",
-                    )
-                }
-            }.mapValues { (_, keys) -> raw.getValue(keys.single()) }
+    private val texts: Map<String, String> = Ranges().let { ranges -> raw.mapKeys { ranges.add(it.key) } }
 
     /** Der Text für [language]: unter ihrem genauen Code, sonst unter ihrer Hauptsprache, sonst keiner. */
     operator fun get(language: Language): String? = language.ranges.firstNotNullOfOrNull { texts[it] }
@@ -37,6 +29,18 @@ class LanguageTable(raw: Map<String, String>) {
     override fun hashCode(): Int = texts.hashCode()
 
     override fun toString(): String = texts.toString()
+
+    internal class Ranges {
+        private val seen = mutableMapOf<String, String>()
+
+        fun add(key: String): String {
+            val range = canonical(key)
+            seen.put(range, key)?.let { first ->
+                throw InvalidLanguageRangeException("'$first' und '$key' meinen denselben Sprachbereich $range.")
+            }
+            return range
+        }
+    }
 
     companion object {
         /** Vom genauesten an, `en-GB` dann `en`, ohne seitwärts zu suchen: `en-US` fiele nie auf `en-GB`. */
@@ -55,19 +59,18 @@ class LanguageTable(raw: Map<String, String>) {
     }
 }
 
-/** Nennt den Schlüssel selbst, weil kaml es bei einem abgelehnten Wert nicht tut. */
-fun languageTableSerializer(key: String): KSerializer<LanguageTable> =
-    object : KSerializer<LanguageTable> {
-        private val map = MapSerializer(String.serializer(), String.serializer())
+/** Prüft jeden Schlüssel schon beim Lesen, damit die Meldung seine Fundstelle nennt (#548). */
+object LanguageTableSerializer : KSerializer<LanguageTable> {
+    private val map = MapSerializer(String.serializer(), String.serializer())
 
-        override val descriptor: SerialDescriptor = map.descriptor
+    override val descriptor: SerialDescriptor = map.descriptor
 
-        override fun serialize(encoder: Encoder, value: LanguageTable) = map.serialize(encoder, value.toMap())
+    override fun serialize(encoder: Encoder, value: LanguageTable) = map.serialize(encoder, value.toMap())
 
-        override fun deserialize(decoder: Decoder): LanguageTable =
-            try {
-                LanguageTable(map.deserialize(decoder))
-            } catch (e: InvalidLanguageRangeException) {
-                throw SerializationException("$key: ${e.message}", e)
-            }
+    override fun deserialize(decoder: Decoder): LanguageTable {
+        // Je Tabelle neu: Ranges merkt sich die gelesenen Bereiche.
+        val ranges = LanguageTable.Ranges()
+        val key = stringSerializer("LanguageRange", { it }) { raw -> raw.also { ranges.add(it) } }
+        return LanguageTable(MapSerializer(key, String.serializer()).deserialize(decoder))
     }
+}

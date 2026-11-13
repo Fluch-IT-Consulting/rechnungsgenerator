@@ -80,8 +80,8 @@ class PackageStructureTest : FunSpec({
             "$core.rules" to setOf("$core.calculation", "$core.model", "$core.values"),
             "$core.calculation" to setOf("$core.model", "$core.values"),
             "$core.model" to setOf("$core.localization", "$core.values", "$core.text", "$core.serialization"),
-            // #432
-            "$core.localization" to setOf("$core.values"),
+            // #432, #548
+            "$core.localization" to setOf("$core.values", "$core.serialization"),
             "$core.values" to setOf("$core.serialization"),
             // #312
             "$core.text" to emptySet(),
