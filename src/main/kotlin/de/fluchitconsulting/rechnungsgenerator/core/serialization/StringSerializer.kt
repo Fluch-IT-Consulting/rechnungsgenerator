@@ -1,5 +1,8 @@
 package de.fluchitconsulting.rechnungsgenerator.core.serialization
 
+import com.charleskorn.kaml.YamlException
+import com.charleskorn.kaml.YamlInput
+import com.charleskorn.kaml.YamlPath
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.SerializationException
 import kotlinx.serialization.descriptors.PrimitiveKind
@@ -27,14 +30,25 @@ fun <T> stringSerializer(
             return try {
                 decode(raw)
             } catch (e: InvalidValueException) {
-                throw SerializationException(e.message, e)
+                throw rejected(decoder, e)
+            } catch (e: SerializationException) {
+                throw rejected(decoder, e)
             }
         }
     }
 
 /**
- * Ersetzt die Meldung des BigDecimal-Konstruktors, die den Wert nicht nennt; Zeile und Spalte ergänzt kaml nicht
- * (nachgemessen). `Identifiers.kt` übernimmt die Meldung dagegen, weil dort schon Brauchbares steht.
+ * Ein abgelehnter Wert samt Fundstelle (#545). kaml reicht nur eine [YamlException] mit Pfad nach oben weiter; nur
+ * hier ist der Pfad noch bekannt.
+ */
+internal class RejectedValueException(message: String, path: YamlPath, cause: Throwable) : YamlException(message, path, cause)
+
+private fun rejected(decoder: Decoder, e: Exception): RejectedValueException =
+    RejectedValueException(checkNotNull(e.message), (decoder as YamlInput).getCurrentPath(), e)
+
+/**
+ * Ersetzt die Meldung des BigDecimal-Konstruktors, die den Wert nicht nennt. `Identifiers.kt` übernimmt die Meldung
+ * dagegen, weil dort schon Brauchbares steht.
  */
 internal inline fun <T> parsedNumber(raw: String, was: String, build: (String) -> T): T =
     try {
