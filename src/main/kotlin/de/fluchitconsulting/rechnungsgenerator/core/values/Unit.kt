@@ -13,7 +13,7 @@ import java.math.BigDecimal
 enum class Unit(val label: String, val code: String) {
     HOUR("Std.", "HUR"),
     DAY("Tage", "DAY"),
-    WEEK("Wochen", "WEK"),
+    WEEK("Wochen", "WEE"),
     MONTH("Monate", "MON"),
     PIECE("Stück", "H87"),
 

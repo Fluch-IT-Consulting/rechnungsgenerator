@@ -8,6 +8,7 @@ import de.fluchitconsulting.rechnungsgenerator.core.values.Language
 import de.fluchitconsulting.rechnungsgenerator.core.values.Money
 import de.fluchitconsulting.rechnungsgenerator.core.values.Percent
 import de.fluchitconsulting.rechnungsgenerator.core.values.Price
+import de.fluchitconsulting.rechnungsgenerator.core.values.Unit
 import de.fluchitconsulting.rechnungsgenerator.core.values.VatId
 import java.math.BigDecimal
 import java.time.LocalDate
@@ -40,11 +41,13 @@ fun testItem(
     taxExemptionReason: String? = null,
     discount: String? = null,
     discountAmount: String? = null,
+    unit: Unit = Unit.HOUR,
 ) = LineItem(
     name = "Testposition",
     description = description,
     note = note,
     quantity = BigDecimal(quantity),
+    unit = unit,
     unitPrice = Price(unitPrice),
     vatRate = Percent(vatRate),
     taxCategory = taxCategory,
