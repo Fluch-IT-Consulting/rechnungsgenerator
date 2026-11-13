@@ -31,7 +31,7 @@ fällt eines weg, wird er rot.
 - `jackson-databind-2.22.3.jar` – Jackson
 - `jsr305-3.0.2.jar` – JSR 305 Annotations
 - `kaml-jvm-0.104.0.jar` – kaml
-- `kotlin-stdlib-2.4.20.jar` – Kotlin Standard Library
+- `kotlin-stdlib-2.4.21.jar` – Kotlin Standard Library
 - `kotlinx-serialization-core-jvm-1.9.0.jar` – kotlinx.serialization
 - `library-2.26.0.jar` – Mustang, <https://www.mustangproject.org/>
 - `okio-jvm-3.16.4.jar` – Okio
@@ -65,7 +65,7 @@ der Quelltext ist beim jeweiligen Projekt zu beziehen.
 
 <https://opensource.org/licenses/BSD-3-Clause>
 
-- `verapdf-xmp-core-jakarta-1.30.2.jar` – veraPDF XMP Core, abgeleitet von
+- `verapdf-xmp-core-jakarta-1.30.4.jar` – veraPDF XMP Core, abgeleitet von
   Adobe XMP Core
 - `stax-utils-20070216.jar` – stax-utils
 - `dom4j-2.2.0.jar` – dom4j
@@ -103,9 +103,9 @@ auf das Ganze durch (ADR-0014).
 Quelltext und Lizenzangaben: <https://verapdf.org/> und
 <https://github.com/veraPDF>
 
-- `core-jakarta-1.30.2.jar` – veraPDF Core
-- `feature-reporting-jakarta-1.30.2.jar` – veraPDF Feature Reporting
-- `metadata-fixer-jakarta-1.30.2.jar` – veraPDF Metadata Fixer
-- `parser-1.30.2.jar` – veraPDF Parser
-- `pdf-model-1.30.2.jar` – veraPDF PDF Model
-- `validation-model-jakarta-1.30.2.jar` – veraPDF Validation Model
+- `core-jakarta-1.30.4.jar` – veraPDF Core
+- `feature-reporting-jakarta-1.30.4.jar` – veraPDF Feature Reporting
+- `metadata-fixer-jakarta-1.30.4.jar` – veraPDF Metadata Fixer
+- `parser-1.30.4.jar` – veraPDF Parser
+- `pdf-model-1.30.4.jar` – veraPDF PDF Model
+- `validation-model-jakarta-1.30.4.jar` – veraPDF Validation Model
