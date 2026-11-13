@@ -463,6 +463,14 @@ mangels Anlass zurückgestellt (#64).
 
 Apache-2.0, siehe [LICENSE](LICENSE) und [NOTICE](NOTICE).
 
+Der Generator ist eine Anwendung der Norm EN 16931-1 und der Technischen
+Spezifikation CEN/TS 16931-2. Er gibt Informationen aus diesen
+Veröffentlichungen wieder, darunter ihre Kennungen und ihr Datenmodell, mit
+Erlaubnis von CEN und DIN als Inhabern des Copyrights; siehe die
+[Nutzungsrechte für den ZUGFeRD-Standard](https://www.ferd-net.de/ueber-uns/ressourcen-1/veroeffentlichungen/haftungsausschluss-und-nutzungsrechte)
+und [NOTICE](NOTICE). Den Text der ZUGFeRD-Spezifikation gibt das Repository
+nicht wieder; ADRs und Issues verweisen auf Kapitel und Regelkennungen.
+
 Die mitgelieferten Bibliotheken stehen unter eigenen Lizenzen – Apache-2.0,
 MPL-2.0 (Saxon-HE, Rhino), BSD-3-Clause und CDDL mit Classpath-Exception; für
 veraPDF ist von den beiden angebotenen Fassungen MPL-2.0 gewählt, weil GPLv3
