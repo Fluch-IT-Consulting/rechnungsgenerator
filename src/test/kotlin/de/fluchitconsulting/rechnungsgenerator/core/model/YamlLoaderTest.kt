@@ -616,6 +616,45 @@ class YamlLoaderTest : FunSpec({
         }
     }
 
+    context("ein abgelehnter Wert kommt mit Fundstelle vor dem Text seines Serializers (#545)") {
+        val invoice = resource("rechnung.yaml")
+
+        // Je Art von Wert ein Fall; die Zeilen sind die von rechnung.yaml.
+        mapOf(
+            "ein Code" to
+                (
+                    invoice.replace("einheit: pauschal", "einheit: Stunden") to
+                        "positionen[1].einheit (Zeile 25, Spalte 14): Unbekannte Einheit 'Stunden'. Zulässig sind: "
+                ),
+            "ein Betrag" to
+                (
+                    invoice.replace("einzelpreis: 95.00", "einzelpreis: 95.00\n    rabatt-betrag: 1.234") to
+                        "positionen[0].rabatt-betrag (Zeile 22, Spalte 20): Der Geldbetrag '1.234' hat mehr als zwei " +
+                        "Nachkommastellen"
+                ),
+            "ein Datum" to
+                (
+                    invoice.replace("bis: 2026-07-31", "bis: 2026-07-32") to
+                        "leistungszeitraum.bis (Zeile 6, Spalte 8): Kein gültiges Datum: '2026-07-32'"
+                ),
+        ).forEach { (case, input) ->
+            val (text, expected) = input
+            test(case) {
+                shouldThrow<SerializationException> { YamlLoader.parseInvoice(text) }.message!! shouldContain expected
+            }
+        }
+
+        test("eine Kennung in den Stammdaten, und die Datei wird weiter genannt") {
+            val file = createTempDirectory("loader-test").resolve("stammdaten.yaml")
+            file.writeText(resource("stammdaten.yaml").replace("0532 0130 00", "0532 0130 01"))
+
+            val failure = shouldThrow<InputFileException> { YamlLoader.loadSellerConfig(file) }
+
+            failure.message!! shouldContain file.toString()
+            failure.message!! shouldContain "bank.iban (Zeile 19, Spalte 9): IBAN mit falscher Prüfsumme: "
+        }
+    }
+
     context("leere Werte (#504)") {
         test("brechen beim Lesen ab und nennen Datei, Feld und Zeile") {
             val file = createTempDirectory("loader-test").resolve("rechnung.yaml")
