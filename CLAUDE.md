@@ -3,7 +3,7 @@
 Kotlin/Gradle-Projekt: erzeugt aus einer Rechnungsdatei und den Stammdaten
 (beide YAML) eine deutsche Rechnung als PDF/A-1b, mit `--zugferd` als
 E-Rechnung (PDF/A-3u mit XML). Satz über LuaLaTeX, PDF/A-Prüfung über
-veraPDF. Kommandos: `erzeuge`, `abschlaege`, `einrichten`, `xml`.
+veraPDF. Kommandos: `erzeuge`, `abschlaege`, `einrichten`, `xml`, `skill`.
 
 Diese Datei sagt, wie man hier arbeitet. Warum etwas so ist, steht im ADR,
 im Issue oder am Code – nicht hier.
@@ -69,6 +69,7 @@ generate/         erzeuge
 prepayments/      abschlaege
 setup/            einrichten – kennt aus dem Kern nur model
 xml/              xml – kennt den Kern gar nicht
+skill/            skill – importiert nichts aus dem Projekt
 toolchain/        gemeinsamer Rand: ToolchainException, XmlParser;
                   importiert nichts aus dem Projekt
   process/        Adapter auf ein Programm hinter ProcessRunner

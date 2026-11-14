@@ -159,6 +159,17 @@ class MainTest : FunSpec({
         result.err shouldContain "Usage: rechnungsgenerator"
     }
 
+    test("skill ohne Unterkommando zeigt seine Hilfe auf stderr") {
+        // #550
+        val result = runCli("skill")
+
+        result.exitCode shouldBe 1
+        result.out shouldBe ""
+        result.err shouldContain "installieren"
+        result.err shouldContain "entfernen"
+        result.err shouldContain "status"
+    }
+
     test("--help ist kein Fehler und steht auf stdout") {
         val result = runCli("--help")
 

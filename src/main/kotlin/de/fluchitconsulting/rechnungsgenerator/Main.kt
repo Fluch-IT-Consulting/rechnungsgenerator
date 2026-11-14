@@ -17,6 +17,7 @@ import de.fluchitconsulting.rechnungsgenerator.generate.typesetting.LuaLatexType
 import de.fluchitconsulting.rechnungsgenerator.generate.typesetting.TypesetterFactory
 import de.fluchitconsulting.rechnungsgenerator.prepayments.PrepaymentsCommand
 import de.fluchitconsulting.rechnungsgenerator.setup.SetupCommand
+import de.fluchitconsulting.rechnungsgenerator.skill.SkillCommand
 import de.fluchitconsulting.rechnungsgenerator.toolchain.ToolchainException
 import de.fluchitconsulting.rechnungsgenerator.xml.XmlCommand
 import java.io.OutputStream
@@ -95,7 +96,13 @@ class RechnungsgeneratorCommand(
     override val invokeWithoutSubcommand = true
 
     init {
-        subcommands(GenerateCommand(typesetter, viewer), PrepaymentsCommand(), SetupCommand(), XmlCommand(standardOutput))
+        subcommands(
+            GenerateCommand(typesetter, viewer),
+            PrepaymentsCommand(),
+            SetupCommand(),
+            XmlCommand(standardOutput),
+            SkillCommand(),
+        )
         // Eager: Clikt gibt die Fassung beim Parsen aus, und --version endet nicht als „kein Unterkommando“.
         versionOption(
             programVersion(),

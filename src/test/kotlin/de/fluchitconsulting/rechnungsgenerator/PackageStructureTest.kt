@@ -26,6 +26,7 @@ class PackageStructureTest : FunSpec({
                     "$root.generate.typesetting",
                     "$root.prepayments",
                     "$root.setup",
+                    "$root.skill",
                     "$root.xml",
                     "$root.toolchain",
                     "$core.rules",
@@ -73,6 +74,8 @@ class PackageStructureTest : FunSpec({
             "$root.prepayments" to setOf("$core.accepted", "$core.rules", "$core.calculation", "$core.model", "$core.values"),
             // #275
             "$root.setup" to setOf("$core.model"),
+            // #550
+            "$root.skill" to emptySet(),
             // #380
             "$root.xml" to setOf("$root.toolchain", "$root.toolchain.validation"),
             // Ein Typ wohnt, wo er gebaut wird, sonst zeigte rules nach oben (#304).
