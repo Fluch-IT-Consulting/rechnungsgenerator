@@ -16,8 +16,11 @@ ganz beim Programm.
 **1. Offene Abschlagsrechnungen finden.**
 
 ```
-scripts/offene-abschlaege.py "$RECHNUNGEN_DIR/Outgoing" "Beispiel Software GmbH"
+<Skriptverzeichnis>/offene-abschlaege.py "$RECHNUNGEN_DIR/Outgoing" "Beispiel Software GmbH"
 ```
+
+Das Skriptverzeichnis ist das aus Schritt 1 in `SKILL.md`: Dort liegt auch
+`naechste-nummer.py`.
 
 Den Kundennamen genau so übergeben, wie er in den Rechnungen unter `kunde:` →
 `name:` steht. Das Skript listet je offener Abschlagsrechnung Nummer, Datum und
@@ -53,7 +56,7 @@ davon anzupassen. Dann den Block des Generators anhängen, die ausgewählten
 Dateien in der Reihenfolge ihrer Nummern:
 
 ```
-build/install/rechnungsgenerator/bin/rechnungsgenerator abschlaege \
+rechnungsgenerator abschlaege \
   "$RECHNUNGEN_DIR/Outgoing/Rechnung_R26-009-beispiel.yaml" \
   "$RECHNUNGEN_DIR/Outgoing/2025/Rechnung_R26-011-beispiel.yaml" \
   >> "$RECHNUNGEN_DIR/Outgoing/Rechnung_R26-014-beispiel-schluss.yaml"
