@@ -113,6 +113,20 @@ distributions {
     main {
         contents {
             from("LICENSE", "NOTICE", "THIRD-PARTY.md")
+            // Der rechnung-Skill kommt mit dem Programm, dessen Fassung er
+            // beschreibt (#550). `skill installieren` erwartet ihn genau hier,
+            // neben lib/.
+            from(".claude/skills/rechnung") {
+                into("skill/rechnung")
+                exclude("scripts")
+            }
+            // Eigens, wegen der Rechte: Gradle schreibt jede Datei mit 644 ins
+            // Archiv, damit es reproduzierbar bleibt (#266). Der Skill ruft
+            // die Skripte aber direkt auf.
+            from(".claude/skills/rechnung/scripts") {
+                into("skill/rechnung/scripts")
+                filePermissions { unix("rwxr-xr-x") }
+            }
         }
     }
 }
