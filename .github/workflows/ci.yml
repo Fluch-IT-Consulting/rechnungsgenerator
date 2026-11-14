@@ -44,6 +44,14 @@ jobs:
         with:
           cache-provider: basic
 
+      # Die älteste Fassung, unter der die Skripte des rechnung-Skills laufen
+      # müssen: das python3 der Command Line Tools von macOS (#553). Lokal ist
+      # es meist ein neueres, deshalb hält nur dieser Lauf eine Schreibweise
+      # aus 3.10 auf.
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: "3.9"
+
       # Die Skripttests rufen die Python-Skripte wirklich auf; beide brauchen
       # PyYAML (siehe CLAUDE.md, Umgebung).
       - name: PyYAML installieren

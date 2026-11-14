@@ -4,6 +4,7 @@ import de.fluchitconsulting.rechnungsgenerator.core.model.Root
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.string.shouldContain
+import io.kotest.matchers.string.shouldNotContain
 import java.io.File
 import java.nio.file.Path
 import java.time.LocalDate
@@ -14,7 +15,7 @@ import kotlin.io.path.readText
 import kotlin.io.path.writeText
 
 /**
- * #61; der Build verlangt damit `python3` und PyYAML. Die Ausgabe geht in
+ * #61; der Build verlangt damit `python3` ab 3.9 (#553) und PyYAML. Die Ausgabe geht in
  * Dateien, sonst hinge der Test mit einem hängenden Prozess und die Zeitgrenze griffe nie.
  */
 class NaechsteNummerSkriptTest : FunSpec({
@@ -33,17 +34,19 @@ class NaechsteNummerSkriptTest : FunSpec({
         return dir
     }
 
-    fun runScript(dir: Path, vararg args: String): ScriptRun {
+    fun runWith(interpreter: List<String>, dir: Path, vararg args: String): ScriptRun {
         val stdout = dir.resolve("stdout.txt")
         val stderr = dir.resolve("stderr.txt")
         val process =
-            ProcessBuilder(listOf("python3", script, dir.resolve("Outgoing").toString()) + args)
+            ProcessBuilder(interpreter + listOf(script, dir.resolve("Outgoing").toString()) + args)
                 .redirectOutput(stdout.toFile())
                 .redirectError(stderr.toFile())
                 .start()
         check(process.waitFor(30, TimeUnit.SECONDS)) { "Das Skript hat nach 30 s nicht geantwortet." }
         return ScriptRun(process.exitValue(), stdout.readText().trim(), stderr.readText().trim())
     }
+
+    fun runScript(dir: Path, vararg args: String): ScriptRun = runWith(listOf("python3"), dir, *args)
 
     test("die nächste Nummer zählt die belegte weiter") {
         val dir = archive("Rechnung_R26-011-beispiel.pdf", "Rechnung_R26-009-beispiel.yaml")
@@ -126,6 +129,17 @@ class NaechsteNummerSkriptTest : FunSpec({
 
         result.exitCode shouldBe 0
         result.stdout shouldBe "R26-012"
+    }
+
+    test("ohne PyYAML nennt die Meldung einen Befehl für den laufenden Interpreter") {
+        // #553. -S lässt site-packages weg, dort liegt PyYAML.
+        val result = runWith(listOf("python3", "-S"), archive())
+
+        result.exitCode shouldBe 1
+        result.stdout shouldBe ""
+        result.stderr shouldContain "PyYAML"
+        result.stderr shouldContain " -m pip install"
+        result.stderr shouldNotContain "pip3"
     }
 
     test("ein Datum, das keines ist, wird abgelehnt") {

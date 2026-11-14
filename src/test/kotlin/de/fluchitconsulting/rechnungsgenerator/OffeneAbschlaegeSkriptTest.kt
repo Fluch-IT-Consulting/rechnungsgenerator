@@ -80,17 +80,19 @@ class OffeneAbschlaegeSkriptTest : FunSpec({
         return dir
     }
 
-    fun runScript(dir: Path): ScriptRun {
+    fun runWith(interpreter: List<String>, dir: Path): ScriptRun {
         val stdout = dir.resolve("stdout.txt")
         val stderr = dir.resolve("stderr.txt")
         val process =
-            ProcessBuilder("python3", script, dir.toString(), customer)
+            ProcessBuilder(interpreter + listOf(script, dir.toString(), customer))
                 .redirectOutput(stdout.toFile())
                 .redirectError(stderr.toFile())
                 .start()
         check(process.waitFor(30, TimeUnit.SECONDS)) { "Das Skript hat nach 30 s nicht geantwortet." }
         return ScriptRun(process.exitValue(), stdout.readText().trim(), stderr.readText().trim())
     }
+
+    fun runScript(dir: Path): ScriptRun = runWith(listOf("python3"), dir)
 
     test("offen ist, was keine Schlussrechnung absetzt") {
         val dir =
@@ -298,6 +300,17 @@ class OffeneAbschlaegeSkriptTest : FunSpec({
 
         result.exitCode shouldBe 0
         result.stdout shouldBe "R26-011\t2026-08-20\t${dir.resolve("abschlagsrechnung-2.yaml")}"
+    }
+
+    test("ohne PyYAML nennt die Meldung einen Befehl für den laufenden Interpreter") {
+        // #553. -S lässt site-packages weg, dort liegt PyYAML.
+        val result = runWith(listOf("python3", "-S"), archive())
+
+        result.exitCode shouldBe 1
+        result.stdout shouldBe ""
+        result.stderr shouldContain "PyYAML"
+        result.stderr shouldContain " -m pip install"
+        result.stderr shouldNotContain "pip3"
     }
 
     test("die Stammdaten im Ordner der Wurzel stören nicht") {

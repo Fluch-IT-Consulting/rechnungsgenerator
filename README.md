@@ -125,9 +125,10 @@ zurückgestellt (#64).
 
 Zum Bauen genügt ein JDK 17+; Gradle lädt das Build-JDK bei Bedarf selbst. Der
 volle Build setzt echte PDFs und braucht neben TeX Live `pdftotext` aus poppler
-(`brew install poppler`). Python 3 mit PyYAML (`pip3 install pyyaml`) braucht
-jeder Build, auch der mit `-PohneToolchain`: Tests rufen die Skripte des
-`rechnung`-Skills auf. Ohne gültiges PDF/A ist der Build rot.
+(`brew install poppler`). Python ab 3.9 mit PyYAML braucht jeder Build, auch
+der mit `-PohneToolchain`: Tests rufen die Skripte des `rechnung`-Skills auf.
+Fehlt PyYAML, nennt das Skript den Befehl, der bei dem Python geht, das gerade
+läuft. Ohne gültiges PDF/A ist der Build rot.
 
 Wie der Code aufgebaut ist, steht im Wiki unter
 [Architektur](https://github.com/Fluch-IT-Consulting/rechnungsgenerator/wiki/Architektur),
