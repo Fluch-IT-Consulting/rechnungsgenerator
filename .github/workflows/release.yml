@@ -61,6 +61,26 @@ jobs:
           fi
           echo "ARCHIV=$archiv" >> "$GITHUB_ENV"
 
+      # Der rechnung-Skill kommt im Archiv (#550). Fehlt er dort, schlägt
+      # `skill installieren` erst beim Benutzer fehl – und ohne Ausführungsbit
+      # der erste Aufruf eines Skripts.
+      - name: Skill im Archiv prüfen
+        run: |
+          wurzel="rechnungsgenerator-${GITHUB_REF_NAME#v}/skill/rechnung"
+          inhalt="$(unzip -Z "$ARCHIV")"
+          for datei in SKILL.md scripts/naechste-nummer.py scripts/offene-abschlaege.py; do
+            if ! grep -qE " $wurzel/$datei\$" <<< "$inhalt"; then
+              echo "::error::Im Archiv fehlt $wurzel/$datei."
+              exit 1
+            fi
+          done
+          for skript in naechste-nummer.py offene-abschlaege.py; do
+            if ! grep -qE "^-rwxr-xr-x .* $wurzel/scripts/$skript\$" <<< "$inhalt"; then
+              echo "::error::$wurzel/scripts/$skript ist im Archiv nicht ausführbar."
+              exit 1
+            fi
+          done
+
       - name: Release-Entwurf anlegen
         env:
           GH_TOKEN: ${{ github.token }}
