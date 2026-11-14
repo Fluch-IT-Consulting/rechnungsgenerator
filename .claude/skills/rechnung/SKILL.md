@@ -21,10 +21,20 @@ description: >
 
 ## Wo die Dateien liegen
 
-Das Ablageverzeichnis steht in der Umgebungsvariablen `RECHNUNGEN_DIR`. Sie ist
-bewusst nicht im Skill hinterlegt, weil dieses Repository öffentlich werden kann.
-Ist sie nicht gesetzt, frage nach dem Verzeichnis und weise darauf hin, dass es
-in `.claude/settings.local.json` unter `env` gehört.
+Das Ablageverzeichnis ist bewusst nicht im Skill hinterlegt, weil dieses
+Repository öffentlich werden kann. Du findest es in dieser Reihenfolge:
+
+1. Es steht in der Umgebungsvariablen `RECHNUNGEN_DIR`.
+2. Ist sie nicht gesetzt, ist es die **Wurzel** über dem Arbeitsverzeichnis:
+   das Arbeitsverzeichnis selbst oder der nächste Ordner darüber, der
+   `.rechnungsgenerator/` enthält. Wer Claude Code in seiner Ablage startet,
+   braucht also keine Variable.
+3. Findet sich keines von beiden, frage nach dem Verzeichnis und weise darauf
+   hin, dass es als `RECHNUNGEN_DIR` unter `env` in `~/.claude/settings.json`
+   gehört.
+
+In den Beispielen steht `$RECHNUNGEN_DIR` für dieses Verzeichnis. Ist die
+Variable nicht gesetzt, setzt du den gefundenen Pfad ein.
 
 ```
 $RECHNUNGEN_DIR/
@@ -68,9 +78,13 @@ die Datei kommen. Die Schritte hier gelten trotzdem.
 **1. Nummer ermitteln.** Nicht selbst zählen, sondern das Skript benutzen:
 
 ```
-scripts/naechste-nummer.py "$RECHNUNGEN_DIR/Outgoing" \
+"${CLAUDE_SKILL_DIR}/scripts/naechste-nummer.py" "$RECHNUNGEN_DIR/Outgoing" \
   --stammdaten "$RECHNUNGEN_DIR/.rechnungsgenerator/stammdaten.yaml"
 ```
+
+Der Ordner, in dem `naechste-nummer.py` hier liegt, ist das
+**Skriptverzeichnis** des Skills. `schlussrechnung.md` meint denselben Ordner,
+wenn es ein Skript aufruft.
 
 Es durchsucht auch die Jahresunterordner, damit eine versehentlich einsortierte
 Rechnung keine doppelte Nummer verursacht. Abschlags- und Schlussrechnungen
@@ -193,15 +207,14 @@ reine Ablage-Kosmetik.
 **4. PDF erzeugen.**
 
 ```
-build/install/rechnungsgenerator/bin/rechnungsgenerator erzeuge \
+rechnungsgenerator erzeuge \
   "$RECHNUNGEN_DIR/Outgoing/Rechnung_R26-012-beispiel.yaml" \
   -o "$RECHNUNGEN_DIR/Outgoing/Rechnung_R26-012-beispiel.pdf"
 ```
 
-Mit `-o`, obwohl das PDF ohne es an denselben Ort käme: Ist `build/install/…`
-nicht neu gebaut, legt eine ältere Fassung es ins Arbeitsverzeichnis, also ins
-Projektverzeichnis, wo `*.pdf` nicht ignoriert ist – ein ausdrückliches Ziel
-hängt an keiner Fassung.
+Mit `-o`, obwohl das PDF ohne es an denselben Ort käme: Eine ältere Fassung
+des Programms legt es ins Arbeitsverzeichnis – ein ausdrückliches Ziel hängt
+an keiner Fassung.
 
 Ohne `-s`: Die Stammdaten findet der Generator selbst, über der Rechnungsdatei.
 Meldet er, dass er keine findet, fehlt der Ordner `.rechnungsgenerator/` –
@@ -219,10 +232,11 @@ oder der Kunde sie fordert; sonst bleibt es beim PDF/A-1b. Das PDF sieht gleich
 aus und trägt zusätzlich das XML. Das geht mit jeder Rechnungsart, auch mit
 der Schlussrechnung samt ihrer Abschläge.
 
-Fehlt das Programm, baue es mit `./gradlew installDist` im Projektverzeichnis.
-Dasselbe, wenn es `got unexpected extra argument` meldet und dazu, eine Datei
-`erzeuge` gebe es nicht: Dann ist das installierte Programm älter als diese
-Anleitung und kennt das Unterkommando noch nicht.
+Findet die Shell `rechnungsgenerator` nicht, ist das Programm nicht installiert
+oder nicht im PATH. Meldet es `got unexpected extra argument` und dazu, eine
+Datei `erzeuge` gebe es nicht, ist das installierte Programm älter als diese
+Anleitung und kennt das Unterkommando noch nicht. Sag in beiden Fällen, was
+fehlt, statt daran vorbeizuarbeiten.
 
 Das Kommando gibt `PDF/A-1b: gültig` aus, mit `--zugferd` `PDF/A-3u: gültig`,
 und endet mit Exitcode 0. Bei jedem

@@ -43,7 +43,12 @@ im Issue oder am Code – nicht hier.
 - Das Pflichtangaben-Netz setzt die Beispiele zu echten PDFs und prüft sie:
   vier Klassen über `PflichtangabenRun` in `generate/typesetting` (Test).
 - `.claude/skills/rechnung/` – der Skill zum Anlegen einer Rechnung, samt
-  `naechste-nummer.py` und `offene-abschlaege.py`.
+  `naechste-nummer.py` und `offene-abschlaege.py`. Sein Text gilt auch
+  außerhalb des Repositorys (#550) und ruft deshalb `rechnungsgenerator` aus
+  dem PATH. **In diesem Repository** ist damit
+  `build/install/rechnungsgenerator/bin/rechnungsgenerator` gemeint. Fehlt es,
+  oder kennt es ein Unterkommando oder einen Schlüssel aus dem Skill nicht,
+  ist es älter als der Skill: vorher `./gradlew installDist`.
 - Das **Wiki** (deutsch, eigenes Repository `rechnungsgenerator.wiki.git`)
   erklärt die Anwendung; jede Seite nennt in einer Zeile `Code:`, was sie
   beschreibt. Ändert ein PR etwas, das eine Seite beschreibt, nennt er Seite
