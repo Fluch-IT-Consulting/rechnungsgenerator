@@ -26,13 +26,31 @@ nur die Liste.
 Aufruf:  offene-abschlaege.py <Ablageverzeichnis> <Kundenname>
 """
 import argparse
+import os
 import pathlib
+import shlex
 import sys
+import sysconfig
+
+
+def pyyaml_hint() -> str:
+    """Was fehlt, bei welchem Interpreter, und der Befehl, der bei ihm geht (#553)."""
+    python = shlex.quote(sys.executable or "python3")
+    # An dieser Datei liest auch pip ab, ob es ablehnt (PEP 668), etwa bei
+    # Homebrews Python. In einer venv gilt sie nicht.
+    marker = os.path.join(sysconfig.get_path("stdlib"), "EXTERNALLY-MANAGED")
+    managed = os.path.exists(marker) and sys.prefix == sys.base_prefix
+    flags = " --user --break-system-packages" if managed else ""
+    return (
+        f"Dieses Skript braucht PyYAML, und {python} hat es nicht. "
+        f"Installieren mit: {python} -m pip install{flags} pyyaml"
+    )
+
 
 try:
     import yaml
 except ImportError:
-    print("Dieses Skript braucht PyYAML: pip3 install pyyaml", file=sys.stderr)
+    print(pyyaml_hint(), file=sys.stderr)
     sys.exit(1)
 
 

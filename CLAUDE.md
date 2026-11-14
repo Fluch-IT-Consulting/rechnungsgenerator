@@ -212,8 +212,10 @@ Gründe stehen in #107, #304, #310, #312, #431, #432 und ADR-0029.
   braucht auch der Build.
 - veraPDF (Homebrew `verapdf`) ist optional: nur für
   `--externe-pdfa-pruefung`; ohne es überspringen sich zwei Tests.
-- `python3` mit PyYAML (`pip3 install pyyaml`) für die Skripte des
-  `rechnung`-Skills – auch der Build ruft sie auf.
+- `python3` mit PyYAML für die Skripte des `rechnung`-Skills – auch der Build
+  ruft sie auf. Sie laufen ab Python 3.9, dem `/usr/bin/python3` von macOS;
+  die CI testet sie unter genau dieser Fassung (#553). Fehlt PyYAML, nennt das
+  Skript den Befehl, der beim laufenden Interpreter geht.
 
 ## Agent skills
 

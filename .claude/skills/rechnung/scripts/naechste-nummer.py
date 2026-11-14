@@ -26,12 +26,30 @@ Aufruf:  naechste-nummer.py <Ablageverzeichnis> [--rechnungsdatum JJJJ-MM-TT]
 """
 import argparse
 import datetime
+import os
 import pathlib
 import re
+import shlex
 import sys
+import sysconfig
+from typing import Optional
 
 FILE_NAME_PATTERN = re.compile(r"Rechnung_R(\d{2})-(\d{3})\b")
 NUMBER_PATTERN = re.compile(r"R(\d{2})-(\d{3})")
+
+
+def pyyaml_hint() -> str:
+    """Was fehlt, bei welchem Interpreter, und der Befehl, der bei ihm geht (#553)."""
+    python = shlex.quote(sys.executable or "python3")
+    # An dieser Datei liest auch pip ab, ob es ablehnt (PEP 668), etwa bei
+    # Homebrews Python. In einer venv gilt sie nicht.
+    marker = os.path.join(sysconfig.get_path("stdlib"), "EXTERNALLY-MANAGED")
+    managed = os.path.exists(marker) and sys.prefix == sys.base_prefix
+    flags = " --user --break-system-packages" if managed else ""
+    return (
+        f"Dieses Skript braucht PyYAML, und {python} hat es nicht. "
+        f"Installieren mit: {python} -m pip install{flags} pyyaml"
+    )
 
 
 def yaml_module():
@@ -41,12 +59,12 @@ def yaml_module():
     try:
         import yaml
     except ImportError:
-        print("Dieses Skript braucht PyYAML: pip3 install pyyaml", file=sys.stderr)
+        print(pyyaml_hint(), file=sys.stderr)
         raise SystemExit(1)
     return yaml
 
 
-def pattern_from_seller_config(path: pathlib.Path) -> str | None:
+def pattern_from_seller_config(path: pathlib.Path) -> Optional[str]:
     """Der Prüfausdruck aus den Stammdaten, oder None, wenn keiner eingetragen ist."""
     yaml = yaml_module()
     try:
