@@ -44,14 +44,6 @@ jobs:
         with:
           cache-provider: basic
 
-      # Die älteste Fassung, unter der die Skripte des rechnung-Skills laufen
-      # müssen: das python3 der Command Line Tools von macOS (#553). Lokal ist
-      # es meist ein neueres, deshalb hält nur dieser Lauf eine Schreibweise
-      # aus 3.10 auf.
-      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
-        with:
-          python-version: "3.9"
-
       # Die Skripttests rufen die Python-Skripte wirklich auf; beide brauchen
       # PyYAML (siehe CLAUDE.md, Umgebung).
       - name: PyYAML installieren
@@ -59,3 +51,32 @@ jobs:
 
       - name: Bauen und testen (ohne Werkzeug-Tests)
         run: ./gradlew build -PohneToolchain
+
+  # Die älteste Fassung, unter der die Skripte des rechnung-Skills laufen
+  # müssen: das python3 der Command Line Tools von macOS (#553). Lokal und im
+  # Job build ist es ein neueres, deshalb hält nur dieser Lauf eine
+  # Schreibweise aus 3.10 auf.
+  skripte-python-3-9:
+    # Nicht ubuntu-latest: Für Ubuntu 26.04 liefert setup-python kein 3.9 mehr.
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - uses: actions/setup-java@77dd5b2ce225ea11469928ac317850245a74ae78 # v6.2.0
+        with:
+          distribution: temurin
+          java-version: 21
+
+      - uses: gradle/actions/setup-gradle@8da46b539cd8fe6ab27ca75128919a18d757604c # v6.4.1
+        with:
+          cache-provider: basic
+
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: "3.9"
+
+      - name: PyYAML installieren
+        run: python3 -m pip install pyyaml
+
+      - name: Skripttests unter Python 3.9
+        run: ./gradlew test --tests '*SkriptTest'
