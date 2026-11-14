@@ -93,6 +93,7 @@ erfunden.
 | `erzeuge` | setzt eine Rechnungsdatei als PDF/A-1b, mit `--zugferd` als E-Rechnung | [Die Rechnungsdatei](https://github.com/Fluch-IT-Consulting/rechnungsgenerator/wiki/Die-Rechnungsdatei), [E-Rechnung](https://github.com/Fluch-IT-Consulting/rechnungsgenerator/wiki/E-Rechnung) |
 | `abschlaege` | schreibt aus Abschlagsrechnungen den Block für die Schlussrechnung | [Rechnungsarten](https://github.com/Fluch-IT-Consulting/rechnungsgenerator/wiki/Rechnungsarten#schlussrechnung) |
 | `xml` | prüft eine E-Rechnung und gibt ihr XML aus | [E-Rechnung](https://github.com/Fluch-IT-Consulting/rechnungsgenerator/wiki/E-Rechnung#das-xml-auslesen) |
+| `skill` | hängt den Skill `rechnung` bei Claude Code ein und nimmt ihn wieder weg | [Mit Claude Code](https://github.com/Fluch-IT-Consulting/rechnungsgenerator/wiki/Mit-Claude-Code) |
 
 stdout trägt nur das Ergebnis, Meldungen stehen auf stderr; der Exitcode ist 0
 nur bei Erfolg. `rechnungsgenerator <kommando> --help` nennt die Optionen,
@@ -104,6 +105,31 @@ Weiter im Wiki: [Steuern](https://github.com/Fluch-IT-Consulting/rechnungsgenera
 [Meldungen](https://github.com/Fluch-IT-Consulting/rechnungsgenerator/wiki/Meldungen)
 und [Mit Claude Code](https://github.com/Fluch-IT-Consulting/rechnungsgenerator/wiki/Mit-Claude-Code),
 der Skill `rechnung`, der Rechnungen im Gespräch anlegt.
+
+## Mit Claude Code
+
+Das Paket bringt den Skill `rechnung` mit: Er legt eine Rechnung im Gespräch
+an, von der nächsten freien Nummer bis zum geprüften PDF. Eingehängt wird er
+einmal:
+
+```bash
+rechnungsgenerator skill installieren
+```
+
+Das legt `~/.claude/skills/rechnung` als Link auf den Skill im Paket an – unter
+`CLAUDE_CONFIG_DIR`, wenn die Variable gesetzt ist. Danach kennt Claude Code
+den Skill in jeder Sitzung, und eine neue Fassung kommt mit `brew upgrade` von
+selbst. `rechnungsgenerator skill status` zeigt, wohin der Link zeigt.
+
+Vor `brew uninstall` nimmt `rechnungsgenerator skill entfernen` den Link wieder
+weg; danach gibt es das Kommando nicht mehr. Ist das vergessen, genügt
+`rm ~/.claude/skills/rechnung`.
+
+Der Skill braucht `python3` ab 3.9 mit PyYAML. Fehlt PyYAML, nennt er den
+Befehl, der bei dem Python geht, das gerade läuft. Die Ablage findet er, wenn
+Claude Code in ihr gestartet wird, also in der Wurzel oder darunter, oder über
+die Umgebungsvariable `RECHNUNGEN_DIR`. Mehr im Wiki unter
+[Mit Claude Code](https://github.com/Fluch-IT-Consulting/rechnungsgenerator/wiki/Mit-Claude-Code).
 
 ## Stand
 
