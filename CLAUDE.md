@@ -49,6 +49,10 @@ im Issue oder am Code – nicht hier.
   `build/install/rechnungsgenerator/bin/rechnungsgenerator` gemeint. Fehlt es,
   oder kennt es ein Unterkommando oder einen Schlüssel aus dem Skill nicht,
   ist es älter als der Skill: vorher `./gradlew installDist`.
+  Ein benutzerweit eingehängter Skill (`rechnungsgenerator skill
+  installieren`, ADR-0030) verdrängt den gleichnamigen hier. Wer am Skill
+  arbeitet, ruft vorher `rechnungsgenerator skill entfernen` und danach wieder
+  `installieren`. Das ist eine Gewohnheit und kein Netz.
 - Das **Wiki** (deutsch, eigenes Repository `rechnungsgenerator.wiki.git`)
   erklärt die Anwendung; jede Seite nennt in einer Zeile `Code:`, was sie
   beschreibt. Ändert ein PR etwas, das eine Seite beschreibt, nennt er Seite
