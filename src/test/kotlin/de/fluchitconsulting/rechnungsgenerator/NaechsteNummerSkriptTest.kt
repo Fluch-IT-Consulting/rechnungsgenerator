@@ -29,8 +29,8 @@ class NaechsteNummerSkriptTest : FunSpec({
 
     fun archive(vararg fileNames: String): Path {
         val dir = createTempDirectory("nummern-test")
-        val outgoing = dir.resolve("Outgoing").also { it.createDirectories() }
-        fileNames.forEach { outgoing.resolve(it).writeText("") }
+        val folder = dir.resolve("ablage").also { it.createDirectories() }
+        fileNames.forEach { folder.resolve(it).writeText("") }
         return dir
     }
 
@@ -38,7 +38,7 @@ class NaechsteNummerSkriptTest : FunSpec({
         val stdout = dir.resolve("stdout.txt")
         val stderr = dir.resolve("stderr.txt")
         val process =
-            ProcessBuilder(interpreter + listOf(script, dir.resolve("Outgoing").toString()) + args)
+            ProcessBuilder(interpreter + listOf(script, dir.resolve("ablage").toString()) + args)
                 .redirectOutput(stdout.toFile())
                 .redirectError(stderr.toFile())
                 .start()
@@ -57,16 +57,16 @@ class NaechsteNummerSkriptTest : FunSpec({
     test("eine anders benannte YAML-Datei zählt über ihre Nummer") {
         // #75. Eine YAML-Datei ohne Nummer, etwa vereinnahmungen.yaml, zählt nicht.
         val dir = archive("Rechnung_R26-011-beispiel.pdf")
-        val outgoing = dir.resolve("Outgoing")
-        outgoing.resolve("Abschlagsrechnung-R26-014.yaml").writeText("nummer: R26-014\nart: abschlagsrechnung\n")
-        outgoing.resolve("vereinnahmungen.yaml").writeText("- R26-099\n")
+        val folder = dir.resolve("ablage")
+        folder.resolve("Abschlagsrechnung-R26-014.yaml").writeText("nummer: R26-014\nart: abschlagsrechnung\n")
+        folder.resolve("vereinnahmungen.yaml").writeText("- R26-099\n")
 
         runScript(dir, "--rechnungsdatum", "2026-08-14").stdout shouldBe "R26-015"
     }
 
     test("eine unlesbare YAML-Datei wird genannt, nicht still übergangen") {
         val dir = archive("Rechnung_R26-011-beispiel.pdf")
-        dir.resolve("Outgoing").resolve("kaputt.yaml").writeText("nummer: [R26-020\n")
+        dir.resolve("ablage").resolve("kaputt.yaml").writeText("nummer: [R26-020\n")
 
         val result = runScript(dir, "--rechnungsdatum", "2026-08-14")
 
@@ -153,7 +153,7 @@ class NaechsteNummerSkriptTest : FunSpec({
         // rglob steigt auch in den versteckten Ordner der Stammdaten (ADR-0015).
         val dir = archive("Rechnung_R26-009-beispiel.yaml")
         dir
-            .resolve("Outgoing")
+            .resolve("ablage")
             .resolve(Root.FOLDER)
             .createDirectories()
             .resolve(Root.SELLER_CONFIG)

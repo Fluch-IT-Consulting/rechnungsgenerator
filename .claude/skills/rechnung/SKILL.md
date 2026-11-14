@@ -16,13 +16,17 @@ description: >
 # Rechnung anlegen
 
 > Alle Beispiele in dieser Datei sind erfunden. Echte Kunden-, Projekt- oder
-> Firmennamen gehören nicht hierher – dieses Repository kann öffentlich werden,
-> und ein Beispiel ist schnell mit echten Daten gefüllt, ohne dass es auffällt.
+> Firmennamen gehören nicht hierher – der Skill ist öffentlich, und ein
+> Beispiel ist schnell mit echten Daten gefüllt, ohne dass es auffällt.
+
+Verweise wie ADR-0015 oder #521 nennen die Begründung: die Entscheidungen
+unter `docs/adr` und die Issues im öffentlichen Repository
+`Fluch-IT-Consulting/rechnungsgenerator` auf GitHub.
 
 ## Wo die Dateien liegen
 
-Das Ablageverzeichnis ist bewusst nicht im Skill hinterlegt, weil dieses
-Repository öffentlich werden kann. Du findest es in dieser Reihenfolge:
+Das Ablageverzeichnis ist nicht im Skill hinterlegt, weil der Skill
+öffentlich ist. Du findest es in dieser Reihenfolge:
 
 1. Es steht in der Umgebungsvariablen `RECHNUNGEN_DIR`.
 2. Ist sie nicht gesetzt, ist es die **Wurzel** über dem Arbeitsverzeichnis:
@@ -41,14 +45,11 @@ $RECHNUNGEN_DIR/
   .rechnungsgenerator/
     stammdaten.yaml                   ← Firmendaten, gelten für jede Rechnung
     logo.tex                          ← optional, siehe unten
-  Outgoing/
-    Rechnung_R26-011-beispiel.yaml    ← Quelle
-    Rechnung_R26-011-beispiel.pdf     ← Ergebnis
-    2025/ 2024/ …                     ← abgeschlossene Jahrgänge
+  Rechnung_R26-011-beispiel.yaml      ← Quelle
+  Rechnung_R26-011-beispiel.pdf       ← Ergebnis
 ```
 
-Quelle und Ergebnis tragen denselben Namen und liegen nebeneinander – so wie
-früher die `.ods` neben ihrem PDF lag.
+Quelle und Ergebnis tragen denselben Namen und liegen nebeneinander.
 
 Der Ordner `.rechnungsgenerator/` macht `$RECHNUNGEN_DIR` zur **Wurzel**
 (ADR-0015): Der Generator findet die Stammdaten von jeder Rechnungsdatei
@@ -78,7 +79,7 @@ die Datei kommen. Die Schritte hier gelten trotzdem.
 **1. Nummer ermitteln.** Nicht selbst zählen, sondern das Skript benutzen:
 
 ```
-"${CLAUDE_SKILL_DIR}/scripts/naechste-nummer.py" "$RECHNUNGEN_DIR/Outgoing" \
+"${CLAUDE_SKILL_DIR}/scripts/naechste-nummer.py" "$RECHNUNGEN_DIR" \
   --stammdaten "$RECHNUNGEN_DIR/.rechnungsgenerator/stammdaten.yaml"
 ```
 
@@ -86,10 +87,10 @@ Der Ordner, in dem `naechste-nummer.py` hier liegt, ist das
 **Skriptverzeichnis** des Skills. `schlussrechnung.md` meint denselben Ordner,
 wenn es ein Skript aufruft.
 
-Es durchsucht auch die Jahresunterordner, damit eine versehentlich einsortierte
-Rechnung keine doppelte Nummer verursacht. Abschlags- und Schlussrechnungen
-zählen in derselben Reihe wie alle anderen – ein zweiter Nummernkreis
-verdoppelte nur die Gelegenheiten für Lücken und Dubletten.
+Es durchsucht auch alle Unterordner: Wer Rechnungen wegsortiert, etwa nach
+Jahrgängen, bekommt trotzdem keine doppelte Nummer. Abschlags- und
+Schlussrechnungen zählen in derselben Reihe wie alle anderen – ein zweiter
+Nummernkreis verdoppelte nur die Gelegenheiten für Lücken und Dubletten.
 
 Belegt ist eine Nummer, wenn sie im Dateinamen (`Rechnung_R…`) oder im Feld
 `nummer` einer `.yaml` steht. Eine Rechnung zählt also auch, wenn ihre Datei
@@ -197,7 +198,7 @@ Was du dir selbst beschaffen kannst, solltest du auch selbst beschaffen:
 Nutze für die Rückfragen ein strukturiertes Frageformat, wenn es mehrere offene
 Punkte gibt – das ist angenehmer als eine Kette von Einzelfragen.
 
-**3. YAML schreiben** nach `$RECHNUNGEN_DIR/Outgoing/Rechnung_{Nummer}-{kunde}.yaml`.
+**3. YAML schreiben** nach `$RECHNUNGEN_DIR/Rechnung_{Nummer}-{kunde}.yaml`.
 Der Kundenteil ist ein kurzer Kleinbuchstaben-Name ohne Rechtsform, wie er in den
 vorhandenen Dateien schon benutzt wird – etwa `beispiel` für die
 "Beispiel Software GmbH", nicht `beispiel-software-gmbh`. Bei Abschlags- und
@@ -208,8 +209,8 @@ reine Ablage-Kosmetik.
 
 ```
 rechnungsgenerator erzeuge \
-  "$RECHNUNGEN_DIR/Outgoing/Rechnung_R26-012-beispiel.yaml" \
-  -o "$RECHNUNGEN_DIR/Outgoing/Rechnung_R26-012-beispiel.pdf"
+  "$RECHNUNGEN_DIR/Rechnung_R26-012-beispiel.yaml" \
+  -o "$RECHNUNGEN_DIR/Rechnung_R26-012-beispiel.pdf"
 ```
 
 Mit `-o`, obwohl das PDF ohne es an denselben Ort käme: Eine ältere Fassung

@@ -16,7 +16,7 @@ ganz beim Programm.
 **1. Offene Abschlagsrechnungen finden.**
 
 ```
-<Skriptverzeichnis>/offene-abschlaege.py "$RECHNUNGEN_DIR/Outgoing" "Beispiel Software GmbH"
+<Skriptverzeichnis>/offene-abschlaege.py "$RECHNUNGEN_DIR" "Beispiel Software GmbH"
 ```
 
 Das Skriptverzeichnis ist das aus Schritt 1 in `SKILL.md`: Dort liegt auch
@@ -57,9 +57,9 @@ Dateien in der Reihenfolge ihrer Nummern:
 
 ```
 rechnungsgenerator abschlaege \
-  "$RECHNUNGEN_DIR/Outgoing/Rechnung_R26-009-beispiel.yaml" \
-  "$RECHNUNGEN_DIR/Outgoing/2025/Rechnung_R26-011-beispiel.yaml" \
-  >> "$RECHNUNGEN_DIR/Outgoing/Rechnung_R26-014-beispiel-schluss.yaml"
+  "$RECHNUNGEN_DIR/Rechnung_R26-009-beispiel.yaml" \
+  "$RECHNUNGEN_DIR/Rechnung_R26-011-beispiel.yaml" \
+  >> "$RECHNUNGEN_DIR/Rechnung_R26-014-beispiel-schluss.yaml"
 ```
 
 Ohne `-s` wie beim Erzeugen: Der Generator sucht die Stammdaten je Datei. Liegen
