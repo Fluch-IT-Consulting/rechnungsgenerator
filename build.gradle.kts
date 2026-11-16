@@ -118,13 +118,18 @@ distributions {
             // neben lib/.
             from(".claude/skills/rechnung") {
                 into("skill/rechnung")
-                exclude("scripts")
+                exclude("scripts", "rechnungsnummer-vergabe")
             }
             // Eigens, wegen der Rechte: Gradle schreibt jede Datei mit 644 ins
             // Archiv, damit es reproduzierbar bleibt (#266). Der Skill ruft
-            // die Skripte aber direkt auf.
+            // die Skripte aber direkt auf, und die Vorlage des Vergabeskripts
+            // wird mit `cp` samt ihren Rechten kopiert (#564).
             from(".claude/skills/rechnung/scripts") {
                 into("skill/rechnung/scripts")
+                filePermissions { unix("rwxr-xr-x") }
+            }
+            from(".claude/skills/rechnung/rechnungsnummer-vergabe") {
+                into("skill/rechnung")
                 filePermissions { unix("rwxr-xr-x") }
             }
         }
