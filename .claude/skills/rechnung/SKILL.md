@@ -45,6 +45,7 @@ $RECHNUNGEN_DIR/
   .rechnungsgenerator/
     stammdaten.yaml                   ← Firmendaten, gelten für jede Rechnung
     logo.tex                          ← optional, siehe unten
+    rechnungsnummer-vergabe           ← nennt die nächste Nummer, siehe Schritt 1
   Rechnung_R26-011-beispiel.yaml      ← Quelle
   Rechnung_R26-011-beispiel.pdf       ← Ergebnis
 ```
@@ -80,6 +81,7 @@ die Datei kommen. Die Schritte hier gelten trotzdem.
 
 ```
 "${CLAUDE_SKILL_DIR}/scripts/naechste-nummer.py" "$RECHNUNGEN_DIR" \
+  --rechnungsdatum 2026-09-02 \
   --stammdaten "$RECHNUNGEN_DIR/.rechnungsgenerator/stammdaten.yaml"
 ```
 
@@ -87,32 +89,81 @@ Der Ordner, in dem `naechste-nummer.py` hier liegt, ist das
 **Skriptverzeichnis** des Skills. `schlussrechnung.md` meint denselben Ordner,
 wenn es ein Skript aufruft.
 
-Es durchsucht auch alle Unterordner: Wer Rechnungen wegsortiert, etwa nach
-Jahrgängen, bekommt trotzdem keine doppelte Nummer. Abschlags- und
-Schlussrechnungen zählen in derselben Reihe wie alle anderen – ein zweiter
-Nummernkreis verdoppelte nur die Gelegenheiten für Lücken und Dubletten.
+`--rechnungsdatum` ist das Datum der Rechnung, ohne Angabe heute. Es bestimmt
+den Nummernkreis: Eine Rechnung vom 31.12., die erst am 2.1. geschrieben wird,
+gehört ins alte Jahr. `--stammdaten` prüft die Nummer gegen
+`rechnungsnummer-muster` (ADR-0005). Den Pfad schreibst du aus: Das Skript
+sucht die Wurzel nicht.
 
-Belegt ist eine Nummer, wenn sie im Dateinamen (`Rechnung_R…`) oder im Feld
-`nummer` einer `.yaml` steht. Eine Rechnung zählt also auch, wenn ihre Datei
-anders heißt – etwa weil sie ohne diesen Skill erzeugt wurde. Nennt das Skript
-auf stderr eine Datei, die es nicht lesen konnte, sieh sie dir an, bevor du die
-Nummer verwendest: Ihre Nummer ist nicht mitgezählt.
+Das Skript liest das Feld `nummer` jeder `.yaml` in der Ablage, auch in
+Unterordnern, und lässt das **Vergabeskript** der Ablage die nächste Nummer
+nennen (ADR-0031). Dateinamen zählen nicht. Nennt es auf stderr eine Datei, die
+es nicht lesen konnte, sieh sie dir an, bevor du die Nummer verwendest: Ihre
+Nummer ist nicht mitgezählt. Abschlags- und Schlussrechnungen zählen in
+derselben Reihe wie alle anderen.
 
-Steht das Rechnungsdatum schon fest und ist es nicht heute – etwa weil die
-Rechnung noch ins alte Jahr gehört –, gib es mit: `--rechnungsdatum 2025-12-31`.
-Die Nummer gehört in den Nummernkreis des Jahres, in dem die Rechnung datiert
-ist, und ohne Angabe rechnet das Skript mit heute.
+Wie es endet, entscheidet, was du tust:
 
-Das Schema `R{JJ}-{NNN}` steckt weiter im Skript, und das lässt sich nicht
-auflösen: Ein regulärer Ausdruck prüft, er zählt nicht – er sagt nicht, welcher
-Teil einer Nummer der Zähler ist. `--stammdaten` prüft aber die Nummer, die das
-Skript ausgeben will, gegen `rechnungsnummer-muster` (ADR-0005). Wer das Muster
-wechselt und das Skript vergisst, bekommt hier einen Abbruch – statt später eine
-Rechnung, die der Generator ablehnt, wenn die Nummer schon in Dateinamen steht.
+- **Code 0:** Auf stdout steht die Nummer. Sie ist geprüft, nimm sie.
+- **Code 3: ein Vorschlag.** Im Nummernkreis des Rechnungsdatums gibt es noch
+  keine YAML-Rechnung, und auf stderr steht `Vorschlag: R27-001`. Dort können
+  Rechnungen aus der Zeit vor dem Generator liegen, die das Skript nicht
+  sieht. **Bestätige den Vorschlag nie selbst**, auch wenn er naheliegt. Frag
+  den Nutzer, ob er in diesem Nummernkreis schon Rechnungen ohne den Generator
+  geschrieben hat, etwa: „Für 2027 gibt es noch keine Rechnung in der Ablage.
+  Hast du 2027 schon Rechnungen mit einem anderen Programm geschrieben? Wenn
+  nicht, wäre es R27-001.“ Frag nicht bloß, ob `R27-001` passt. Mit seiner
+  Antwort rufst du dasselbe noch einmal auf, mit der Nummer, die er bestätigt
+  oder nennt:
 
-Den Pfad zu den Stammdaten schreibst du hier aus: Das Skript sucht die Wurzel
-nicht, denn die Suche ein zweites Mal nachzubauen wäre eine zweite Fassung
-derselben Regel.
+  ```
+  "${CLAUDE_SKILL_DIR}/scripts/naechste-nummer.py" "$RECHNUNGEN_DIR" \
+    --rechnungsdatum 2027-01-11 --rechnungsnummer R27-001 \
+    --stammdaten "$RECHNUNGEN_DIR/.rechnungsgenerator/stammdaten.yaml"
+  ```
+
+  Endet das mit 0, steht die Nummer auf stdout. Kann niemand antworten, etwa in
+  einem Lauf ohne Nutzer, hörst du hier auf und sagst, dass die Nummer
+  bestätigt werden muss.
+- **Code 1: ein Abbruch.** Gib die Meldung weiter und **zähl nicht selbst**:
+  Eine schon belegte Nummer, ein erschöpfter Nummernkreis und ein Widerspruch
+  im Vergabeskript klärt der Nutzer. Nur einen Fall löst du selbst: ein
+  Vergabeskript, das fehlt oder noch nicht ausgefüllt ist.
+
+**Das Vergabeskript einrichten.** Fehlt
+`$RECHNUNGEN_DIR/.rechnungsgenerator/rechnungsnummer-vergabe`, nennt das Skript
+die Vorlage. Das ist nach einem Upgrade auch in einer Ablage so, die längst
+Rechnungen hat. Dann (ist die Kopie schon da, aber nicht ausgefüllt, ab 3.):
+
+1. Frag, wie die Rechnungsnummern aussehen, am besten an der letzten:
+   `R26-012`, `2026-0042`, `RE-1042`. Und ob der Zähler je Jahr, je Monat oder
+   durchlaufend zählt. Sieh dir dazu vorhandene Rechnungen in der Ablage an.
+2. Kopier die Vorlage, ohne sie umzubenennen:
+
+   ```
+   cp "${CLAUDE_SKILL_DIR}/rechnungsnummer-vergabe" "$RECHNUNGEN_DIR/.rechnungsgenerator/"
+   ```
+
+3. Trag in der Kopie die zwei Zeilen `NUMMERNKREIS` und `FORMAT` ein. Die
+   Vorlage zeigt in ihrem Kopf Beispiele; `%y`, `%Y` und `%m` stehen für das
+   Rechnungsdatum, die Klammer in `NUMMERNKREIS` ist der Zähler, und die
+   Stellenzahl ist in beiden Zeilen dieselbe:
+
+   ```python
+   NUMMERNKREIS = r"R%y-(\d{3})"
+   FORMAT = "R%y-{:03d}"
+   ```
+
+4. Ruf `naechste-nummer.py` wieder auf und zeig dem Nutzer, welche Nummer
+   herauskommt, bevor du sie benutzt. Ein Vorschlag geht den Weg oben.
+5. Schlag `rechnungsnummer-muster` für die Stammdaten vor, wenn dort keines
+   steht: aus `NUMMERNKREIS`, mit `\d{2}` für `%y` und `%m`, `\d{4}` für `%Y`
+   und ohne die Klammer, also `'R\d{2}-\d{3}'`. Damit prüft der Generator
+   jede Nummer, auch eine, die jemand von Hand einträgt. Trag es **erst nach
+   einem Ja** ein: Die Stammdaten schreibt der Nutzer.
+
+Die Kopie in der Ablage ändert kein Upgrade. Wer seine Nummern aus einem anderen Programm bezieht, schreibt sein eigenes
+Vergabeskript; wie es aufgerufen wird, steht im Kopf der Vorlage.
 
 **2. Angaben sammeln.** Nötig sind Kunde mit Anschrift, Leistungszeitraum und
 die Positionen. Erfinde nichts davon – eine falsche Zahl auf einer Rechnung ist
@@ -199,11 +250,15 @@ Nutze für die Rückfragen ein strukturiertes Frageformat, wenn es mehrere offen
 Punkte gibt – das ist angenehmer als eine Kette von Einzelfragen.
 
 **3. YAML schreiben** nach `$RECHNUNGEN_DIR/Rechnung_{Nummer}-{kunde}.yaml`.
+Im Teil für die Nummer wird jedes Zeichen außer Buchstaben (A–Z, a–z), Ziffern,
+Punkt, Unterstrich und Bindestrich zu einem Bindestrich, und Bindestriche am
+Rand fallen weg, wie beim Generator: Aus `2026/0042` wird
+`Rechnung_2026-0042-beispiel.yaml`. Im Feld `nummer` steht sie unverändert.
 Der Kundenteil ist ein kurzer Kleinbuchstaben-Name ohne Rechtsform, wie er in den
 vorhandenen Dateien schon benutzt wird – etwa `beispiel` für die
 "Beispiel Software GmbH", nicht `beispiel-software-gmbh`. Bei Abschlags- und
 Schlussrechnungen darf ein Suffix folgen (`Rechnung_R26-014-beispiel-schluss.yaml`),
-reine Ablage-Kosmetik.
+reine Ablage-Kosmetik: Für die Vergabe zählt nur das Feld `nummer`.
 
 **4. PDF erzeugen.**
 

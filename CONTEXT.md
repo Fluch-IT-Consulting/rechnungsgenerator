@@ -105,7 +105,15 @@ Mehr als die Wurzel kennt der Generator von der Ablage nicht: Er liest eine
 Rechnungsdatei und was die Stammdaten nennen, nie das Verzeichnis. Welche
 Nummern vergeben und welche Abschläge offen sind, sieht er deshalb nicht
 (ADR-0001, ADR-0005) – das tun die Skripte des `rechnung`-Skills. Im Ordner der
-Wurzel liegt darum nur Handgeschriebenes, kein Zähler und kein Cache.
+Wurzel liegt darum nur Handgeschriebenes, kein Zähler und kein Cache: die
+Stammdaten, ein Logo und das Vergabeskript.
+
+**Vergabeskript**:
+Das Programm im Ordner der Wurzel, das die nächste Rechnungsnummer nennt. Es
+bekommt die belegten Rechnungsnummern und das Rechnungsdatum und kennt als
+einziges das Format der Nummern und damit den Nummernkreis. Der Generator ruft
+es nie; das tut der `rechnung`-Skill (ADR-0031).
+_Vermeiden_: Nummerngenerator, Zähler, Hook
 
 ## Kennungen
 

@@ -104,3 +104,11 @@ Es liegt damit im Ordner, ohne eine Zeile Code.
 
 Umgesetzt in #275. Das Kommando `einrichten`, das Ordner und Vorlage anlegt,
 folgt in #276.
+
+## Nachtrag vom 16.11.2026: eine dritte Datei im Ordner
+
+Neben `stammdaten.yaml` und dem Logo liegt im Ordner das Vergabeskript
+`rechnungsnummer-vergabe` (ADR-0031). Der Generator liest es nie; der
+`rechnung`-Skill ruft es. Was unter „Verworfen“ zum Zustand im Ordner steht,
+gilt weiter: Das Vergabeskript ist handgeschrieben, zählt nicht und merkt
+sich nichts, es bekommt die belegten Nummern bei jedem Aufruf.

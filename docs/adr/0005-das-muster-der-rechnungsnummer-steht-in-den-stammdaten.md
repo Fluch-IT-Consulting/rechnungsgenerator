@@ -145,3 +145,19 @@ Verworfen:
   Eingriff in ein fremdes Paket.
 
 Umgesetzt in #297.
+
+## Nachtrag vom 16.11.2026: das Schema steht im Vergabeskript
+
+Die Konsequenz „`naechste-nummer.py` kennt sein Schema weiter selbst“ ist samt
+dem Nachtrag aus #61 überholt. Seit ADR-0031 kennt das Format der Nummern nur
+das Vergabeskript in der Ablage, und `naechste-nummer.py` liest die belegten
+Nummern ohne Schema. Die Doppelung bleibt, nun zwischen Vergabeskript und
+Muster, und `--stammdaten` hält sie weiter auf: Der Rahmen prüft jede Nummer,
+die er ausgibt, gegen `rechnungsnummer-muster`, auch eine, die der Nutzer
+nennt. Legt der Skill das Vergabeskript an, schlägt er das passende Muster mit
+vor; freiwillig bleibt es.
+
+Die Frage aus „Verworfen“, ob ein Schema mit Platzhaltern neu zu stellen ist,
+sobald `naechste-nummer.py` das Muster lesen würde, hat ADR-0031 beantwortet:
+Gezählt wird mit zwei Zeilen im Vergabeskript, nicht mit einem Schema in den
+Stammdaten.

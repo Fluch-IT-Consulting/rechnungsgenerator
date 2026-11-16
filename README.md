@@ -128,7 +128,14 @@ weg; danach gibt es das Kommando nicht mehr. Ist das vergessen, genügt
 Der Skill braucht `python3` ab 3.9 mit PyYAML. Fehlt PyYAML, nennt er den
 Befehl, der bei dem Python geht, das gerade läuft. Die Ablage findet er, wenn
 Claude Code in ihr gestartet wird, also in der Wurzel oder darunter, oder über
-die Umgebungsvariable `RECHNUNGEN_DIR`. Mehr im Wiki unter
+die Umgebungsvariable `RECHNUNGEN_DIR`.
+
+Die nächste Rechnungsnummer nennt ein Vergabeskript in der Ablage,
+`.rechnungsgenerator/rechnungsnummer-vergabe`. Der Skill legt es beim ersten
+Mal an: Er fragt, wie die eigenen Nummern aussehen, und trägt das in eine
+Vorlage ein, etwa `R%y-(\d{3})` und `R%y-{:03d}` für `R26-012`. Wer schon
+Rechnungen geschrieben hat, bestätigt einmal je Nummernkreis die erste
+Nummer. Mehr im Wiki unter
 [Mit Claude Code](https://github.com/Fluch-IT-Consulting/rechnungsgenerator/wiki/Mit-Claude-Code).
 
 ## Stand
