@@ -26,9 +26,9 @@ fällt eines weg, wird er rot.
 - `commons-io-2.22.0.jar` – Apache Commons IO
 - `commons-logging-1.4.0.jar` – Apache Commons Logging
 - `fontbox-3.0.8.jar` – Apache PDFBox FontBox
-- `jackson-annotations-2.22.jar` – Jackson
-- `jackson-core-2.22.3.jar` – Jackson
-- `jackson-databind-2.22.3.jar` – Jackson
+- `jackson-annotations-2.23.jar` – Jackson
+- `jackson-core-2.23.0.jar` – Jackson
+- `jackson-databind-2.23.0.jar` – Jackson
 - `jsr305-3.0.2.jar` – JSR 305 Annotations
 - `kaml-jvm-0.104.0.jar` – kaml
 - `kotlin-stdlib-2.4.21.jar` – Kotlin Standard Library
