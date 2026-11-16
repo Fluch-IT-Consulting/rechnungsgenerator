@@ -22,7 +22,7 @@ nie eine davon aus Bequemlichkeit.
 
 Aufruf:  deutsche-bezeichner.py [<verzeichnis oder datei> ...] [--vorkommen]
          ohne Verzeichnis: der Kotlin-Code, scripts/ und die Skripte des
-         rechnung-Skills
+         rechnung-Skills samt der Vorlage des Vergabeskripts
 Endet mit 1, solange es etwas meldet.
 """
 import argparse
@@ -41,7 +41,7 @@ DICTIONARIES = ["/usr/share/dict/words", "/usr/share/dict/web2a"]
 GLOSSARY = set(
     """
     abschlag abschlaege anteil anteile restbetrag vereinnahmt
-    zeitraum zeitraeume skonto stufe stufen pflichtangaben
+    zeitraum zeitraeume skonto stufe stufen pflichtangaben nummernkreis
     """.split()
 )
 
@@ -83,7 +83,7 @@ TEMPLATE_VOCABULARY = {"ZAHLUNGSANGABE"}
 # Tests, die nach der Datei heißen, die sie prüfen – so wie LatexCompilerTest
 # nach LatexCompiler. Die Skripte des rechnung-Skills heißen deutsch, und ein
 # übersetzter Klassenname verlöre den Weg zu seiner Datei.
-FILE_NAMED = {"OffeneAbschlaegeSkriptTest", "NaechsteNummerSkriptTest"}
+FILE_NAMED = {"OffeneAbschlaegeSkriptTest", "NaechsteNummerSkriptTest", "RechnungsnummerVergabeTest"}
 
 DECLARATIONS = [
     re.compile(r"\bfun\s+(?:<[^>]*>\s*)?(?:[\w.<>?]+\.)?(\w+)\s*\("),
@@ -263,7 +263,14 @@ def kotlin_names(source: str) -> tuple[list[str], list[str]]:
     return declared_names(code), re.findall(r"\b\w+\b", code)
 
 
-DEFAULT_ROOTS = ["src/main/kotlin", "src/test/kotlin", "scripts", ".claude/skills/rechnung/scripts"]
+# Die Vorlage des Vergabeskripts heißt ohne Endung und ist Python (#564).
+DEFAULT_ROOTS = [
+    "src/main/kotlin",
+    "src/test/kotlin",
+    "scripts",
+    ".claude/skills/rechnung/scripts",
+    ".claude/skills/rechnung/rechnungsnummer-vergabe",
+]
 
 
 def main() -> int:
@@ -281,7 +288,7 @@ def main() -> int:
             sys.exit(f"{root} gibt es nicht.")
         paths += [root] if root.is_file() else sorted([*root.rglob("*.kt"), *root.rglob("*.py")])
     names = {
-        path: (python_names if path.suffix == ".py" else kotlin_names)(path.read_text(encoding="utf-8"))
+        path: (kotlin_names if path.suffix in (".kt", ".kts") else python_names)(path.read_text(encoding="utf-8"))
         for path in paths
     }
 
