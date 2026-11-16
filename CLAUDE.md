@@ -43,7 +43,8 @@ im Issue oder am Code – nicht hier.
 - Das Pflichtangaben-Netz setzt die Beispiele zu echten PDFs und prüft sie:
   vier Klassen über `PflichtangabenRun` in `generate/typesetting` (Test).
 - `.claude/skills/rechnung/` – der Skill zum Anlegen einer Rechnung, samt
-  `naechste-nummer.py` und `offene-abschlaege.py`. Sein Text gilt auch
+  `naechste-nummer.py`, `offene-abschlaege.py` und der Vorlage des
+  Vergabeskripts, `rechnungsnummer-vergabe` (ADR-0031). Sein Text gilt auch
   außerhalb des Repositorys (#550) und ruft deshalb `rechnungsgenerator` aus
   dem PATH. **In diesem Repository** ist damit
   `build/install/rechnungsgenerator/bin/rechnungsgenerator` gemeint. Fehlt es,
