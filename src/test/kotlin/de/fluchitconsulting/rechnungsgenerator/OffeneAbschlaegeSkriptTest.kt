@@ -313,6 +313,21 @@ class OffeneAbschlaegeSkriptTest : FunSpec({
         result.stderr shouldNotContain "pip3"
     }
 
+    test("eine unlesbare YAML-Datei wird mit Zeile und Grund genannt, nicht still übergangen") {
+        // Den Grund formuliert der Leser, mit libyaml anders als ohne (#565); geprüft wird nur, dass er dasteht.
+        val dir =
+            archive(
+                "kaputt.yaml" to "nummer: R26-020\nart: abschlagsrechnung: x\n",
+                "r011.yaml" to prepaymentInvoice("R26-011", "2026-07-15"),
+            )
+
+        val result = runScript(dir)
+
+        result.exitCode shouldBe 0
+        result.stdout shouldContain "R26-011"
+        result.stderr shouldContain Regex("""Übersprungen, nicht lesbar: .*kaputt\.yaml, Zeile 2: \S""")
+    }
+
     test("die Stammdaten im Ordner der Wurzel stören nicht") {
         // rglob steigt auch in den versteckten Ordner der Stammdaten (ADR-0015).
         val dir = archive("r011.yaml" to prepaymentInvoice("R26-011", "2026-07-15"))

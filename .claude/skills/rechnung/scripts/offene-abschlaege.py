@@ -98,11 +98,14 @@ def main() -> int:
     # Nummer jedes Dokuments -> seine Währung (#409). Ohne Nummer unter dem
     # Dateinamen, wie ihn die Meldungen nennen.
     currency_of = {}
+    # safe_load nähme den Leser in Python, auch wenn libyaml da ist: bei 2000
+    # Dateien rund 13 statt 1,6 Sekunden (#565).
+    loader = getattr(yaml, "CSafeLoader", yaml.SafeLoader)
     # rglob wie bei naechste-nummer.py: Abschlag und Schlussrechnung liegen
     # oft in verschiedenen Jahrgängen.
     for file in sorted(args.directory.rglob("*.yaml")):
         try:
-            invoice = yaml.safe_load(file.read_text(encoding="utf-8"))
+            invoice = yaml.load(file.read_text(encoding="utf-8"), Loader=loader)
         except (yaml.YAMLError, UnicodeDecodeError) as error:
             # Warnen statt still überspringen: Eine kaputte Datei könnte genau
             # die gesuchte Abschlagsrechnung sein. Eine Zeile genügt; die
