@@ -10,7 +10,8 @@ description: >
   nächsten freien Rechnungsnummer oder wenn eine bestehende Rechnung als Vorlage
   für eine neue dienen soll. Ebenso für Abschlagsrechnungen ("Abschlag auf
   Projekt X") und Schlussrechnungen, in denen bereits vereinnahmte Abschläge
-  abgesetzt werden.
+  abgesetzt werden. Ebenso, wenn aus einem Bild das Logo der Rechnungen werden
+  soll.
 ---
 
 # Rechnung anlegen
@@ -70,6 +71,10 @@ Rechnungen gleich: In einer Rechnungsdatei gibt es den Schlüssel nicht, und
 aussehen soll – frag dann nach. Dasselbe gilt für `logo:` (ADR-0012), die
 Datei eines Logos neben den Stammdaten; beide Designs setzen es. Und für
 `akzentfarbe:` (ADR-0024), die Farbe des Balkens in `helsinki`.
+
+Soll aus einem Bild ein Logo werden, lies [`logo.md`](logo.md): Ein Logo ist
+eine TikZ-Zeichnung, keine Bilddatei, und dort steht, wie du sie anlegst und
+prüfst.
 
 ## Ablauf
 
