@@ -212,6 +212,31 @@ class ToolchainIntegrationTest : FunSpec({
         withClue("$scaledHeight und $unscaledHeight Pixel") { scaledHeight.toDouble() / unscaledHeight shouldBe (1.2 plusOrMinus 0.03) }
     }
 
+    // #569
+    test("das Beispiellogo des rechnung-Skills setzt jedes Design als gültiges PDF/A") {
+        val skillLogo =
+            Regex("```latex\n(.*?)```", RegexOption.DOT_MATCHES_ALL)
+                .findAll(Path.of(".claude/skills/rechnung/logo.md").readText())
+                .map { it.groupValues[1] }
+                .toList()
+        skillLogo.size shouldBe 1
+        val logo = workDir.resolve("logo-aus-dem-skill.tex").also { it.writeText(skillLogo.single()) }
+
+        Design.entries.forEach { design ->
+            val sellerConfig =
+                workDir.resolve("stammdaten-skill-logo-$design.yaml").also {
+                    it.writeText(
+                        Path.of("src/test/resources/stammdaten.yaml").readText() +
+                            "design: $design\nlogo: ${logo.toAbsolutePath()}\n",
+                    )
+                }
+            val (pdf, output) = run.generate("rechnung", "skill-logo-$design", sellerConfig = sellerConfig)
+
+            withClue(output.joinToString("\n")) { output shouldContain "PDF/A-1b: gültig" }
+            run.textOf(pdf) shouldContain "MUSTERIT"
+        }
+    }
+
     // #371. Fast genau die Farbe: Das Innere des Balkens glättet pdftoppm nicht.
     test("die Akzentfarbe der Stammdaten färbt den Balken von helsinki") {
         fun imageWith(accentColor: String?): BufferedImage {
