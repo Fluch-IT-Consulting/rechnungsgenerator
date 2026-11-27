@@ -223,6 +223,12 @@ Gründe stehen in #107, #304, #310, #312, #431, #432 und ADR-0029.
   braucht auch der Build.
 - veraPDF (Homebrew `verapdf`) ist optional: nur für
   `--externe-pdfa-pruefung`; ohne es überspringen sich zwei Tests.
+- Der CodeHealth-MCP von CodeScene (`codescene`) ist optional. Ist er
+  verbunden, prüft `code_health_review` jede geänderte Quelldatei und vor dem
+  Commit `pre_commit_code_health_safeguard` die vorgemerkten. Ein gesunkener
+  Wert ist eine Frage und keine Aufgabe: Verlangt ein ADR die Form, etwa das
+  `when` ohne `else`, bleibt sie und der Bericht nennt den Befund; sonst
+  behebt ihn die Änderung. Das ist eine Gewohnheit und kein Netz.
 - `python3` mit PyYAML für die Skripte des `rechnung`-Skills – auch der Build
   ruft sie auf. Sie laufen ab Python 3.9, dem `/usr/bin/python3` von macOS;
   die CI testet sie unter genau dieser Fassung (#553). Fehlt PyYAML, nennt das
