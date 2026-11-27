@@ -323,102 +323,34 @@ private fun Sheet.verify(
     calculated: CalculatedInvoice,
     design: Design,
 ) {
+    val facts = Facts(calculated, design)
+    verifyParties(facts)
+    verifyDateAndNumber(facts)
+    verifyItems(facts)
+    verifyDiscounts(facts)
+    verifyZeitraum(facts)
+    verifyVatGroups(facts)
+    verifyConversion(facts)
+    verifyPrepayments(facts)
+    verifyRegister(facts)
+    verifyMandatoryNote(facts)
+    verifyPaymentTerm(facts)
+    verifySkonto(facts)
+    verifySettled(facts)
+    if (pages == 1) verifySinglePage(facts) else verifyFollowingPages(facts)
+}
+
+/** Was mehrere Abschnitte von [verify] lesen, einmal berechnet: Die Folgeseiten prüfen dieselben Werte wie die erste. */
+private class Facts(
+    val calculated: CalculatedInvoice,
+    val design: Design,
+) {
     val invoice = calculated.invoice
     val config = calculated.config
     val words = design.words.getValue(invoice.language)
     val spelling = Spelling(invoice.language, invoice.currency)
-
-    // §14 Abs. 4 Nr. 1 UStG. Ohne Geschäftsführung ist der vollständige Name
-    // die Person, nicht die Firmierung.
-    shows("Rechnungssteller", config.companyName)
-    if (config.managingDirector == null) shows("Name des Inhabers", config.ownerName)
-    shows("Anschrift Rechnungssteller", config.address.street)
-    shows("Ort Rechnungssteller", "${config.address.postalCode} ${config.address.city}")
-    shows("Kunde", invoice.customer.name)
-    shows("Anschrift Kunde", invoice.customer.address.street)
-    // Getrennt: Die Reihenfolge hängt am Land des Kunden (#521).
-    shows("Ort Kunde", invoice.customer.address.city)
-    invoice.customer.address.postalCode
-        ?.let { shows("Postleitzahl Kunde", it) }
-    // BT-48, Pflicht bei AE und K (§14a Abs. 1 UStG).
-    invoice.customer.vatId?.let { shows("USt-IdNr. des Kunden", it.value, it.formatted()) }
-
-    // Nr. 2: eine von beiden genügt.
-    shows(
-        "Steuernummer oder USt-IdNr.",
-        *listOfNotNull(config.vatId.value, config.vatId.formatted(), config.taxNumber?.value).toTypedArray(),
-    )
-
-    // Nr. 3 und 4
-    shows("Rechnungsdatum", *spelling.date(invoice.issueDate))
-    shows("Rechnungsnummer", invoice.number)
-
-    // Nr. 5 und 6
-    invoice.items.forEachIndexed { i, item ->
-        shows("Bezeichnung der Position ${i + 1}", item.name)
-        shows("Menge der Position ${i + 1}", spelling.quantity(item.quantity))
-    }
-    // Keine Pflichtangaben (#14), aber nur der Einzelpreis trägt mehr als zwei
-    // Nachkommastellen (ADR-0021).
-    calculated.lines.forEachIndexed { i, line ->
-        shows("Einzelpreis der Position ${i + 1}", spelling.price(line.item.unitPrice))
-        shows("Betrag der Position ${i + 1}", spelling.amount(line.net))
-    }
-    // Keine Pflichtangabe, weil schon im Entgelt berücksichtigt (Nr. 7); die
-    // Spalte steht trotzdem genau dann, wenn eine Position einen Rabatt hat (#213).
-    calculated.lines.forEachIndexed { i, line ->
-        when (val discount = line.item.discount) {
-            null -> {}
-            is Discount.Rate -> {
-                shows("Rabatt der Position ${i + 1}", *spelling.rate(discount.rate))
-            }
-            is Discount.Amount -> {
-                shows("Rabatt der Position ${i + 1}", spelling.amount(discount.amount))
-            }
-        }
-    }
-    if (invoice.items.any { it.discount != null }) {
-        shows("Kopf der Rabattspalte", words.discountHeading)
-    } else {
-        lacks("Kopf der Rabattspalte", words.discountHeading)
-    }
-    shows("Leistungszeitraum", *spelling.zeitraum(invoice.servicePeriod.start, invoice.servicePeriod.end))
-    invoice.receivedOn?.let { shows("Tag der Vereinnahmung", *spelling.date(it)) }
-
-    // Nr. 7 und 8, bei Befreiung der Hinweis statt Satz und Steuer (#218).
-    // Befreit heißt: mit Grund, nicht Steuer null – Z zeigt Satz und Steuer.
-    calculated.vatGroups.forEach { group ->
-        val name = "Steuergruppe ${group.category} ${group.rate}"
-        shows("$name: Entgelt", spelling.amount(group.base))
-        val reason = group.exemptionReason
-        if (reason == null) {
-            shows("$name: Satz", *spelling.rate(group.rate))
-            shows("$name: Steuerbetrag", spelling.amount(group.amount))
-        } else {
-            shows("$name: Hinweis auf die Steuerbefreiung", reason)
-        }
-    }
-
-    // Art. 230 MwStSystRL (#418); Zeichen und Stellung prüft der Sonderfall.
-    calculated.vatTotalInEuro?.let { euro ->
-        val conversion = checkNotNull(invoice.conversion)
-        shows("Umsatzsteuer in Euro", spelling.amount(euro))
-        shows("Umrechnungskurs", spelling.quantity(conversion.rate.value))
-        shows("Monat des Kurses", spelling.month(conversion.month))
-    }
-
-    // §14 Abs. 5 Satz 2 UStG
-    calculated.prepayments.forEach { abschlag ->
-        val number = abschlag.prepayment.invoiceNumber
-        shows("Abschlag $number", number)
-        shows("Abschlag $number: Entgelt", spelling.amount(abschlag.net))
-        shows("Abschlag $number: Steuer", spelling.amount(abschlag.vat))
-    }
-
-    // §35a GmbHG, soweit die Stammdaten die Angaben führen.
-    config.registerCourt?.let { shows("Registergericht", it) }
-    config.registerNumber?.let { shows("Handelsregisternummer", it) }
-    config.managingDirector?.let { shows("Geschäftsführer", it) }
+    val dueDate = calculated.dueDate
+    val bankHeading = words.bankHeading
 
     // Die Werte nicht über den InvoiceVariableResolver holen: Ein falsches
     // Datum von ihm sähe der Test sonst als richtig an.
@@ -434,66 +366,235 @@ private fun Sheet.verify(
                 }
             listOf(template.plainText(values, spelling.short), template.plainText(values, spelling.long))
         }
-    mandatoryNote?.let { shows("Pflichtsatz", *it.toTypedArray()) }
 
-    val dueDate = calculated.dueDate
-    val bankHeading = words.bankHeading
-    if (dueDate != null) {
-        shows("Zahlungsziel", *spelling.date(dueDate), *spelling.term(calculated.paymentTermDays))
-        bankHeading?.let { shows("Überschrift der Bankverbindung", it) }
-        shows("IBAN", config.bank.iban.formatted())
-        shows("BIC", config.bank.bic.value)
-    } else {
-        lacks("Beschriftung des Zahlungsziels", words.dueDateLabel)
-        bankHeading?.let { lacks("Überschrift der Bankverbindung", it) }
-    }
-
-    // §14 Abs. 4 Satz 1 Nr. 7 UStG; die Frist rechnet der Test selbst, wie
-    // die Werte des Pflichtsatzes.
+    // Die Frist rechnet der Test selbst, wie die Werte des Pflichtsatzes.
     val skonto = invoice.skonto.map { stufe -> spelling.rate(stufe.rate) to spelling.date(invoice.issueDate.plusDays(stufe.days.toLong())) }
-    skonto.forEach { (rate, term) ->
-        shows("Skontosatz", *rate)
-        shows("Skontofrist", *term)
-    }
 
     // An den Beträgen und nicht an `dueDate`: Ein Zahlungsziel, obwohl nichts
-    // offen ist, sähe der Zweig oben als Forderung an.
+    // offen ist, sähe der Zweig in verifyPaymentTerm als Forderung an.
     val settled = calculated.prepayments.isNotEmpty() && calculated.remainingAmount.isZero()
     val settledNote = settledNote(invoice.language)
-    if (settled) {
-        shows("Satz zum ausgeglichenen Restbetrag", settledNote)
-        lacks("Beschriftung des Zahlungsziels", words.dueDateLabel)
-        bankHeading?.let { lacks("Überschrift der Bankverbindung", it) }
-    } else {
-        lacks("Satz zum ausgeglichenen Restbetrag", settledNote)
-    }
+}
 
-    // Die Folgeseiten (ADR-0020). Vom Register nur die Nummer: Das Gericht
-    // heißt wie ein Ort und stünde meist schon mit der Anschrift da.
-    if (pages == 1) {
+// §14 Abs. 4 Nr. 1 und 2 UStG
+private fun Sheet.verifyParties(facts: Facts) {
+    with(facts) {
+        // Nr. 1. Ohne Geschäftsführung ist der vollständige Name die Person,
+        // nicht die Firmierung.
+        shows("Rechnungssteller", config.companyName)
+        if (config.managingDirector == null) shows("Name des Inhabers", config.ownerName)
+        shows("Anschrift Rechnungssteller", config.address.street)
+        shows("Ort Rechnungssteller", "${config.address.postalCode} ${config.address.city}")
+        shows("Kunde", invoice.customer.name)
+        shows("Anschrift Kunde", invoice.customer.address.street)
+        // Getrennt: Die Reihenfolge hängt am Land des Kunden (#521).
+        shows("Ort Kunde", invoice.customer.address.city)
+        invoice.customer.address.postalCode
+            ?.let { shows("Postleitzahl Kunde", it) }
+        // BT-48, Pflicht bei AE und K (§14a Abs. 1 UStG).
+        invoice.customer.vatId?.let { shows("USt-IdNr. des Kunden", it.value, it.formatted()) }
+
+        // Nr. 2: eine von beiden genügt.
+        shows(
+            "Steuernummer oder USt-IdNr.",
+            *listOfNotNull(config.vatId.value, config.vatId.formatted(), config.taxNumber?.value).toTypedArray(),
+        )
+    }
+}
+
+// §14 Abs. 4 Nr. 3 und 4 UStG
+private fun Sheet.verifyDateAndNumber(facts: Facts) {
+    with(facts) {
+        shows("Rechnungsdatum", *spelling.date(invoice.issueDate))
+        shows("Rechnungsnummer", invoice.number)
+    }
+}
+
+// §14 Abs. 4 Nr. 5 UStG
+private fun Sheet.verifyItems(facts: Facts) {
+    with(facts) {
+        invoice.items.forEachIndexed { i, item ->
+            shows("Bezeichnung der Position ${i + 1}", item.name)
+            shows("Menge der Position ${i + 1}", spelling.quantity(item.quantity))
+        }
+        // Keine Pflichtangaben (#14), aber nur der Einzelpreis trägt mehr als zwei
+        // Nachkommastellen (ADR-0021).
+        calculated.lines.forEachIndexed { i, line ->
+            shows("Einzelpreis der Position ${i + 1}", spelling.price(line.item.unitPrice))
+            shows("Betrag der Position ${i + 1}", spelling.amount(line.net))
+        }
+    }
+}
+
+// Keine Pflichtangabe, weil schon im Entgelt berücksichtigt (Nr. 7); die
+// Spalte steht trotzdem genau dann, wenn eine Position einen Rabatt hat (#213).
+private fun Sheet.verifyDiscounts(facts: Facts) {
+    with(facts) {
+        calculated.lines.forEachIndexed { i, line ->
+            when (val discount = line.item.discount) {
+                null -> {}
+                is Discount.Rate -> {
+                    shows("Rabatt der Position ${i + 1}", *spelling.rate(discount.rate))
+                }
+                is Discount.Amount -> {
+                    shows("Rabatt der Position ${i + 1}", spelling.amount(discount.amount))
+                }
+            }
+        }
+        if (invoice.items.any { it.discount != null }) {
+            shows("Kopf der Rabattspalte", words.discountHeading)
+        } else {
+            lacks("Kopf der Rabattspalte", words.discountHeading)
+        }
+    }
+}
+
+// §14 Abs. 4 Nr. 6 UStG
+private fun Sheet.verifyZeitraum(facts: Facts) {
+    with(facts) {
+        shows("Leistungszeitraum", *spelling.zeitraum(invoice.servicePeriod.start, invoice.servicePeriod.end))
+        invoice.receivedOn?.let { shows("Tag der Vereinnahmung", *spelling.date(it)) }
+    }
+}
+
+// §14 Abs. 4 Nr. 7 und 8 UStG, bei Befreiung der Hinweis statt Satz und Steuer
+// (#218). Befreit heißt: mit Grund, nicht Steuer null – Z zeigt Satz und Steuer.
+private fun Sheet.verifyVatGroups(facts: Facts) {
+    with(facts) {
+        calculated.vatGroups.forEach { group ->
+            val name = "Steuergruppe ${group.category} ${group.rate}"
+            shows("$name: Entgelt", spelling.amount(group.base))
+            val reason = group.exemptionReason
+            if (reason == null) {
+                shows("$name: Satz", *spelling.rate(group.rate))
+                shows("$name: Steuerbetrag", spelling.amount(group.amount))
+            } else {
+                shows("$name: Hinweis auf die Steuerbefreiung", reason)
+            }
+        }
+    }
+}
+
+// Art. 230 MwStSystRL (#418); Zeichen und Stellung prüft der Sonderfall.
+private fun Sheet.verifyConversion(facts: Facts) {
+    with(facts) {
+        calculated.vatTotalInEuro?.let { euro ->
+            val conversion = checkNotNull(invoice.conversion)
+            shows("Umsatzsteuer in Euro", spelling.amount(euro))
+            shows("Umrechnungskurs", spelling.quantity(conversion.rate.value))
+            shows("Monat des Kurses", spelling.month(conversion.month))
+        }
+    }
+}
+
+// §14 Abs. 5 Satz 2 UStG
+private fun Sheet.verifyPrepayments(facts: Facts) {
+    with(facts) {
+        calculated.prepayments.forEach { abschlag ->
+            val number = abschlag.prepayment.invoiceNumber
+            shows("Abschlag $number", number)
+            shows("Abschlag $number: Entgelt", spelling.amount(abschlag.net))
+            shows("Abschlag $number: Steuer", spelling.amount(abschlag.vat))
+        }
+    }
+}
+
+// §35a GmbHG, soweit die Stammdaten die Angaben führen.
+private fun Sheet.verifyRegister(facts: Facts) {
+    with(facts) {
+        config.registerCourt?.let { shows("Registergericht", it) }
+        config.registerNumber?.let { shows("Handelsregisternummer", it) }
+        config.managingDirector?.let { shows("Geschäftsführer", it) }
+    }
+}
+
+private fun Sheet.verifyMandatoryNote(facts: Facts) {
+    with(facts) {
+        mandatoryNote?.let { shows("Pflichtsatz", *it.toTypedArray()) }
+    }
+}
+
+private fun Sheet.verifyPaymentTerm(facts: Facts) {
+    with(facts) {
+        if (dueDate != null) {
+            shows("Zahlungsziel", *spelling.date(dueDate), *spelling.term(calculated.paymentTermDays))
+            bankHeading?.let { shows("Überschrift der Bankverbindung", it) }
+            shows("IBAN", config.bank.iban.formatted())
+            shows("BIC", config.bank.bic.value)
+        } else {
+            lacks("Beschriftung des Zahlungsziels", words.dueDateLabel)
+            bankHeading?.let { lacks("Überschrift der Bankverbindung", it) }
+        }
+    }
+}
+
+// §14 Abs. 4 Satz 1 Nr. 7 UStG
+private fun Sheet.verifySkonto(facts: Facts) {
+    with(facts) {
+        skonto.forEach { (rate, term) ->
+            shows("Skontosatz", *rate)
+            shows("Skontofrist", *term)
+        }
+    }
+}
+
+private fun Sheet.verifySettled(facts: Facts) {
+    with(facts) {
+        if (settled) {
+            shows("Satz zum ausgeglichenen Restbetrag", settledNote)
+            lacks("Beschriftung des Zahlungsziels", words.dueDateLabel)
+            bankHeading?.let { lacks("Überschrift der Bankverbindung", it) }
+        } else {
+            lacks("Satz zum ausgeglichenen Restbetrag", settledNote)
+        }
+    }
+}
+
+private fun Sheet.verifySinglePage(facts: Facts) {
+    with(facts) {
         lacks("Seitenzahl", words.pageNumber(1, 1))
         lacks("Fortsetzungshinweis", words.continuationNote)
-    } else {
-        for (page in 1..pages) {
-            if (page < pages) {
-                showsOnPage(page, "Fortsetzungshinweis", words.continuationNote)
-            } else {
-                lacksOnPage(page, "Fortsetzungshinweis", words.continuationNote)
-            }
-            showsOnPage(page, "Rechnungssteller im Fuß", config.companyName)
-            showsOnPage(page, "USt-IdNr. im Fuß", config.vatId.value, config.vatId.formatted())
-            showsOnPage(page, "Anschrift im Fuß", config.address.street)
-            showsOnPage(page, "Ort im Fuß", "${config.address.postalCode} ${config.address.city}")
-            config.registerNumber?.let { showsOnPage(page, "Handelsregisternummer im Fuß", it) }
-            showsOnPage(page, "IBAN im Fuß", config.bank.iban.formatted())
-            showsOnPage(page, "BIC im Fuß", config.bank.bic.value)
-            if (page == 1) continue
-            showsOnPage(page, "Seitenzahl", words.pageNumber(page, pages))
-            showsOnPage(page, "Rechnungsnummer", invoice.number)
-            showsOnPage(page, "Rechnungsdatum", *spelling.date(invoice.issueDate))
-        }
+    }
+}
 
-        // #318
+// Die Folgeseiten (ADR-0020).
+private fun Sheet.verifyFollowingPages(facts: Facts) {
+    for (page in 1..pages) verifyPage(page, facts)
+    verifyColumnHeadings(facts)
+    verifyClosingLine(facts)
+    verifyExemptionReasonsOnPages(facts)
+    verifyPaymentOnPages(facts)
+}
+
+// Vom Register nur die Nummer: Das Gericht heißt wie ein Ort und stünde meist
+// schon mit der Anschrift da.
+private fun Sheet.verifyPage(
+    page: Int,
+    facts: Facts,
+) {
+    with(facts) {
+        if (page < pages) {
+            showsOnPage(page, "Fortsetzungshinweis", words.continuationNote)
+        } else {
+            lacksOnPage(page, "Fortsetzungshinweis", words.continuationNote)
+        }
+        showsOnPage(page, "Rechnungssteller im Fuß", config.companyName)
+        showsOnPage(page, "USt-IdNr. im Fuß", config.vatId.value, config.vatId.formatted())
+        showsOnPage(page, "Anschrift im Fuß", config.address.street)
+        showsOnPage(page, "Ort im Fuß", "${config.address.postalCode} ${config.address.city}")
+        config.registerNumber?.let { showsOnPage(page, "Handelsregisternummer im Fuß", it) }
+        showsOnPage(page, "IBAN im Fuß", config.bank.iban.formatted())
+        showsOnPage(page, "BIC im Fuß", config.bank.bic.value)
+        if (page == 1) return
+        showsOnPage(page, "Seitenzahl", words.pageNumber(page, pages))
+        showsOnPage(page, "Rechnungsnummer", invoice.number)
+        showsOnPage(page, "Rechnungsdatum", *spelling.date(invoice.issueDate))
+    }
+}
+
+// #318
+private fun Sheet.verifyColumnHeadings(facts: Facts) {
+    with(facts) {
         invoice.items
             .mapNotNull { pageWith(it.name) }
             .distinct()
@@ -501,27 +602,40 @@ private fun Sheet.verify(
         pageWith(invoice.items.last().name)?.let {
             showsOnPage(it, "Gesamtbetrag bei der letzten Position", spelling.amount(calculated.grossTotal))
         }
+    }
+}
 
+private fun Sheet.verifyClosingLine(facts: Facts) {
+    with(facts) {
         val closingLine = invoice.note ?: config.closingLine(invoice.language)
         val page = pageWith(closingLine)
         withClue("Schlusssatz steht auf keiner Seite vollständig: $closingLine") { (page != null) shouldBe true }
-        val greeting = words.greeting
-        if (page != null && greeting != null) {
+        if (page == null) return
+        words.greeting?.let { greeting ->
             showsOnPage(page, "Grußformel beim Schlusssatz", greeting)
             showsOnPage(page, "Name beim Schlusssatz", config.ownerName)
         }
         // Ohne Skonto ist die Zahlungsfrist der Satz direkt vor dem Schlusssatz.
-        if (page != null && design.closingLineAtPaymentTerm && dueDate != null && invoice.skonto.isEmpty()) {
+        val paymentTermLast = dueDate != null && invoice.skonto.isEmpty()
+        if (design.closingLineAtPaymentTerm && paymentTermLast) {
             showsOnPage(page, "Zahlungsfrist beim Schlusssatz", words.dueDateLabel)
         }
+    }
+}
 
+private fun Sheet.verifyExemptionReasonsOnPages(facts: Facts) {
+    with(facts) {
         calculated.vatGroups.forEach { group ->
             val reason = group.exemptionReason ?: return@forEach
             val reasonPage = pageWith(reason)
             withClue("Befreiungsgrund steht auf keiner Seite vollständig: $reason") { (reasonPage != null) shouldBe true }
             if (reasonPage != null) showsOnPage(reasonPage, "Entgelt beim Befreiungsgrund", spelling.amount(group.base))
         }
+    }
+}
 
+private fun Sheet.verifyPaymentOnPages(facts: Facts) {
+    with(facts) {
         mandatoryNote?.let { spellings ->
             withClue("Pflichtsatz steht auf keiner Seite vollständig: ${spellings.first()}") {
                 spellings.any { pageWith(it) != null } shouldBe true
