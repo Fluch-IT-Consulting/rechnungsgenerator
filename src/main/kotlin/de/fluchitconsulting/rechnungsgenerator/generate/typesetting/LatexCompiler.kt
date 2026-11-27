@@ -28,20 +28,8 @@ class LatexCompiler(private val luaLatex: LuaLatex) {
         jobName: String,
         sources: PdfSources,
     ): CompiledPdf {
-        // "." und ".." sind für Path schlichte Namen, meinen aber Verzeichnisse.
-        sources.files.keys.forEach { name ->
-            require(name.isNotBlank() && name != "." && name != "..") { "Kein Dateiname: '$name'" }
-            require(name == Path.of(name).fileName.toString()) { "Kein schlichter Dateiname: $name" }
-            require(name != "$jobName.tex" && name != "$jobName.xmpdata") { "$name ist schon vergeben" }
-        }
-        // Scheitert das Schreiben im Temp-Verzeichnis, ist das ein Fehler des Werkzeugs, nicht der Rechnung (#300).
-        try {
-            workingDir.resolve("$jobName.tex").writeText(sources.tex)
-            workingDir.resolve("$jobName.xmpdata").writeText(sources.xmpMetadata)
-            sources.files.forEach { (name, content) -> workingDir.resolve(name).writeBytes(content) }
-        } catch (e: IOException) {
-            throw ToolchainException("Die Quellen für $PROGRAM ließen sich nicht nach $workingDir schreiben: ${e.message}", e)
-        }
+        requirePlainFileNames(jobName, sources)
+        writeSources(workingDir, jobName, sources)
 
         val id = trailerId(sources)
         val creationDate = sources.creationDate.atStartOfDay(ZoneOffset.UTC).toInstant()
@@ -64,6 +52,33 @@ class LatexCompiler(private val luaLatex: LuaLatex) {
         overflowReport(jobName, log)?.let { throw TypesettingException(it) }
         missingCharactersReport(jobName, log)?.let { throw TypesettingException(it) }
         return CompiledPdf(pdfOrFail(workingDir, jobName), overflowHint(jobName, log), rerunHint(log))
+    }
+
+    private fun requirePlainFileNames(
+        jobName: String,
+        sources: PdfSources,
+    ) {
+        // "." und ".." sind für Path schlichte Namen, meinen aber Verzeichnisse.
+        sources.files.keys.forEach { name ->
+            require(name.isNotBlank() && name != "." && name != "..") { "Kein Dateiname: '$name'" }
+            require(name == Path.of(name).fileName.toString()) { "Kein schlichter Dateiname: $name" }
+            require(name != "$jobName.tex" && name != "$jobName.xmpdata") { "$name ist schon vergeben" }
+        }
+    }
+
+    // Scheitert das Schreiben im Temp-Verzeichnis, ist das ein Fehler des Werkzeugs, nicht der Rechnung (#300).
+    private fun writeSources(
+        workingDir: Path,
+        jobName: String,
+        sources: PdfSources,
+    ) {
+        try {
+            workingDir.resolve("$jobName.tex").writeText(sources.tex)
+            workingDir.resolve("$jobName.xmpdata").writeText(sources.xmpMetadata)
+            sources.files.forEach { (name, content) -> workingDir.resolve(name).writeBytes(content) }
+        } catch (e: IOException) {
+            throw ToolchainException("Die Quellen für $PROGRAM ließen sich nicht nach $workingDir schreiben: ${e.message}", e)
+        }
     }
 
     /**
