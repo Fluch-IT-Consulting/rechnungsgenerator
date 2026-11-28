@@ -1,73 +1,98 @@
 package de.fluchitconsulting.rechnungsgenerator.core.rules
 
 import de.fluchitconsulting.rechnungsgenerator.core.calculation.CalculatedInvoice
+import de.fluchitconsulting.rechnungsgenerator.core.model.Invoice
+import de.fluchitconsulting.rechnungsgenerator.core.model.LineItem
 import de.fluchitconsulting.rechnungsgenerator.core.model.TaxCategory
 
 /** Vor dem Versand geprüft: Eine Rechnung mit AE und 19 % fiele sonst erst dem Empfänger auf. */
 internal object TaxCategoryRules {
     fun check(calculated: CalculatedInvoice): List<Finding> =
-        buildList {
-            val invoice = calculated.invoice
+        items(calculated.invoice) + customerVatId(calculated) + uniformExemptionReasons(calculated)
 
+    private fun items(invoice: Invoice): List<Finding> =
+        buildList {
             invoice.items.forEachIndexed { index, item ->
                 val position = Subject.Item(index, item.name)
-                val category = item.taxCategory
-
-                if (category.requiresZeroRate && item.vatRate.valueAsMultiplier.signum() != 0) {
-                    add(
-                        Finding(
-                            Rule.SATZ_MUSS_NULL_SEIN,
-                            position,
-                            "Kategorie ${category.code} (${category.label}) verlangt einen Steuersatz von 0%, " +
-                                "angegeben ist ${item.vatRate}.",
-                        ),
-                    )
-                }
-                if (category == TaxCategory.STANDARD && item.vatRate.valueAsMultiplier.signum() == 0) {
-                    add(
-                        Finding(
-                            Rule.REGELSATZ_MIT_NULL,
-                            position,
-                            "Kategorie S (Regelsatz) mit 0% ist widersprüchlich. Gemeint ist vermutlich " +
-                                "Z (Nullsatz), E (steuerbefreit) oder AE (Steuerschuldnerschaft des Leistungsempfängers).",
-                        ),
-                    )
-                }
-                // BR-S-05. Nur bei S: Bei den übrigen Kategorien meldet SATZ_MUSS_NULL_SEIN den Satz schon.
-                if (category == TaxCategory.STANDARD && item.vatRate.valueAsMultiplier.signum() < 0) {
-                    add(
-                        Finding(
-                            Rule.STEUERSATZ_NEGATIV,
-                            position,
-                            "Kategorie S (Regelsatz) verlangt einen Steuersatz über 0%, angegeben ist ${item.vatRate}. " +
-                                "Einen negativen Betrag ergibt eine negative Menge, nicht ein negativer Satz.",
-                        ),
-                    )
-                }
-                if (!category.requiresReason && item.taxExemptionReason != null) {
-                    add(
-                        Finding(
-                            Rule.BEFREIUNGSGRUND_UNZULAESSIG,
-                            position,
-                            "Kategorie ${category.code} trägt keinen Steuerbefreiungsgrund.",
-                        ),
-                    )
-                }
-                if (category.requiresReason && item.taxExemptionReason == null && !category.hasDefaultReason) {
-                    add(
-                        Finding(
-                            Rule.BEFREIUNGSGRUND_FEHLT,
-                            position,
-                            "Kategorie ${category.code} (${category.label}) verlangt einen " +
-                                "Steuerbefreiungsgrund – bitte 'steuerbefreiungsgrund' angeben.",
-                        ),
-                    )
-                }
+                addAll(vatRate(item, position))
+                addAll(exemptionReason(item, position))
             }
+        }
 
+    private fun vatRate(
+        item: LineItem,
+        position: Subject.Item,
+    ): List<Finding> =
+        buildList {
+            val category = item.taxCategory
+
+            if (category.requiresZeroRate && item.vatRate.valueAsMultiplier.signum() != 0) {
+                add(
+                    Finding(
+                        Rule.SATZ_MUSS_NULL_SEIN,
+                        position,
+                        "Kategorie ${category.code} (${category.label}) verlangt einen Steuersatz von 0%, " +
+                            "angegeben ist ${item.vatRate}.",
+                    ),
+                )
+            }
+            if (category == TaxCategory.STANDARD && item.vatRate.valueAsMultiplier.signum() == 0) {
+                add(
+                    Finding(
+                        Rule.REGELSATZ_MIT_NULL,
+                        position,
+                        "Kategorie S (Regelsatz) mit 0% ist widersprüchlich. Gemeint ist vermutlich " +
+                            "Z (Nullsatz), E (steuerbefreit) oder AE (Steuerschuldnerschaft des Leistungsempfängers).",
+                    ),
+                )
+            }
+            // BR-S-05. Nur bei S: Bei den übrigen Kategorien meldet SATZ_MUSS_NULL_SEIN den Satz schon.
+            if (category == TaxCategory.STANDARD && item.vatRate.valueAsMultiplier.signum() < 0) {
+                add(
+                    Finding(
+                        Rule.STEUERSATZ_NEGATIV,
+                        position,
+                        "Kategorie S (Regelsatz) verlangt einen Steuersatz über 0%, angegeben ist ${item.vatRate}. " +
+                            "Einen negativen Betrag ergibt eine negative Menge, nicht ein negativer Satz.",
+                    ),
+                )
+            }
+        }
+
+    private fun exemptionReason(
+        item: LineItem,
+        position: Subject.Item,
+    ): List<Finding> =
+        buildList {
+            val category = item.taxCategory
+
+            if (!category.requiresReason && item.taxExemptionReason != null) {
+                add(
+                    Finding(
+                        Rule.BEFREIUNGSGRUND_UNZULAESSIG,
+                        position,
+                        "Kategorie ${category.code} trägt keinen Steuerbefreiungsgrund.",
+                    ),
+                )
+            }
+            val reasonMissing = category.requiresReason && item.taxExemptionReason == null && !category.hasDefaultReason
+            if (reasonMissing) {
+                add(
+                    Finding(
+                        Rule.BEFREIUNGSGRUND_FEHLT,
+                        position,
+                        "Kategorie ${category.code} (${category.label}) verlangt einen " +
+                            "Steuerbefreiungsgrund – bitte 'steuerbefreiungsgrund' angeben.",
+                    ),
+                )
+            }
+        }
+
+    private fun customerVatId(calculated: CalculatedInvoice): List<Finding> =
+        buildList {
             // BT-48
             val requiringCustomerVatId = calculated.taxCategories.filter { it.requiresCustomerVatId }
-            if (requiringCustomerVatId.isNotEmpty() && invoice.customer.vatId == null) {
+            if (requiringCustomerVatId.isNotEmpty() && calculated.invoice.customer.vatId == null) {
                 add(
                     Finding(
                         Rule.KUNDEN_UST_ID_FEHLT,
@@ -77,7 +102,10 @@ internal object TaxCategoryRules {
                     ),
                 )
             }
+        }
 
+    private fun uniformExemptionReasons(calculated: CalculatedInvoice): List<Finding> =
+        buildList {
             // BG-23 trägt einen Grund je Kategorie und Satz. Nur bei Kategorien mit Grund, sonst meldet
             // BEFREIUNGSGRUND_UNZULAESSIG schon jede Position.
             calculated.vatGroups.filter { it.category.requiresReason }.forEach { group ->
