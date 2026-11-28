@@ -152,7 +152,7 @@ ktlint {
 // 2.0-Reihe mit – derselben, die auch über ktlint hereinkommt.
 configurations.named("ktlint") {
     resolutionStrategy {
-        force("ch.qos.logback:logback-classic:1.6.6", "ch.qos.logback:logback-core:1.6.6")
+        force("ch.qos.logback:logback-classic:1.6.8", "ch.qos.logback:logback-core:1.6.6")
     }
 }
 
