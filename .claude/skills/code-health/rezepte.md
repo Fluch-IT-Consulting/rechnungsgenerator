@@ -24,14 +24,16 @@ Neue Einträge kommen mit dem Pull Request des Umbaus, der sie gefunden hat
 - **Grenzen:** Lesen mehrere Abschnitte dieselben Werte von weiter oben, gilt
   zusätzlich „Geteilte Werte als kleine Klasse“. Was nach dem Herausziehen
   bleibt, etwa eine Schleife mit Auswertung, kann die Komplexität auf genau 9
-  halten; siehe „Komplexität 9 ist noch ein Befund“.
+  halten; siehe „Komplexität 9 ist noch ein Befund“. Eine Kette aus `?.`,
+  `takeIf` und `let` herauszuziehen senkt die Komplexität nicht.
 - **Mechanismus:** Jeder Abschnitt wird eine private Funktion, deren Name
   sagt, was sie tut oder prüft. Die Rümpfe werden verschoben, nicht
-  umgeschrieben; ein Kommentar zieht mit seiner Zeile um. Die alte Funktion
-  liest sich danach als Folge von Aufrufen. Ein lokaler Wert, der in einer
-  Zeile aus dem Parameter folgt (`val customer = invoice.customer`), zieht
-  in jede Funktion mit, die ihn liest; der Pfad statt seiner änderte die
-  Meldungszeile und machte sie zu lang.
+  umgeschrieben; ein Kommentar zieht mit seiner Zeile um. Begründet er die
+  Reihenfolge, bleibt er beim Aufruf, denn dort würde man sie ändern. Die
+  alte Funktion liest sich danach als Folge von Aufrufen. Ein lokaler Wert,
+  der in einer Zeile aus dem Parameter folgt (`val customer =
+  invoice.customer`), zieht in jede Funktion mit, die ihn liest; der Pfad
+  statt seiner änderte die Meldungszeile und machte sie zu lang.
 - **Beleg:**
   - #578, `generate/typesetting/LatexCompiler.kt`: `compile` prüft, schreibt
     und setzt; die ersten beiden wurden `requirePlainFileNames` und
@@ -51,6 +53,13 @@ Neue Einträge kommen mit dem Pull Request des Umbaus, der sie gefunden hat
   - #588, `generate/typesetting/LatexCompiler.kt`: Die Schleife der Läufe aus
     `compile` wird `typeset`. 9.09 → 9.38, Complex Method (`cc = 9`) ist weg;
     weiter ging es mit „Geteilte Werte als kleine Klasse“.
+  - #589, `generate/GenerateCommand.kt`: `run` mit `cc = 25` ruft
+    `validator`, `protectedTarget`, `requireValidPdfA`, `copyToTarget`,
+    `report` und `openIfAsked`. 9.31 → 10.0; keine Funktion braucht mehr als
+    vier Argumente, die kleine Klasse war nicht nötig. Der Logo-Zusatz,
+    `config.logo?.takeIf { … }?.let { … }.orEmpty()`, ließ `cc = 18` stehen
+    und blieb in `run`. „Geprüft vor dem Satz“ stand am Überschreibschutz und
+    steht jetzt über `protectedTarget()`.
 
 ### Geteilte Werte als kleine Klasse
 
@@ -127,6 +136,23 @@ Neue Einträge kommen mit dem Pull Request des Umbaus, der sie gefunden hat
 - **Beleg:** #578, `LatexCompiler.kt`: `compile` von `cc = 16` auf `cc = 9`,
   der Befund blieb, 9.09 (PR #579). Ebenso `InvoiceRenderer.value` unter
   „Bleibende Befunde“.
+
+### Mittelwert über die Funktionen
+
+- **Befund:** Overall Code Complexity, neu nach einem Schritt aus
+  „Abschnitte als Funktionen“
+- **Bedingungen:** Gemessen wird die mittlere Komplexität aller Funktionen
+  der Datei. Mit fünf Funktionen und höherem Mittelwert fehlte er, mit
+  sieben kam er; ob er eine Mindestzahl von Funktionen braucht, ist nicht
+  gemessen. Er kostet viel: 9.66 → 9.09.
+- **Mechanismus:** Weiterbauen, bis die alte Funktion unter 9 ist. Jede
+  weitere Funktion mit kleiner Komplexität senkt den Mittelwert; eine eigens
+  dafür geschriebene ist Kosmetik und kein Umbau.
+- **Beleg:** #589, `GenerateCommand.kt`: Mit `report` und `openIfAsked` als
+  sechster und siebter Funktion kam der Befund, `run` stand bei `cc = 9`.
+  Mit `validator` als achter und `run` bei 8 war er weg, 10.0. Ein Versuch
+  im Arbeitsbaum trennte beides: `run` bei 9 und eine leere achte Funktion,
+  9.68, nur noch Complex Method.
 
 ### Dateien ohne Wert
 
