@@ -48,21 +48,32 @@ Neue Einträge kommen mit dem Pull Request des Umbaus, der sie gefunden hat
     `euListAge`, `noVies` und `existingCheck` zusammen; die letzte nimmt die
     vorhandene Abfrage. 9.38 → 10.0, mit der benannten Bedingung
     `outsideEu`. `customer` steht in zwei der Funktionen je einmal.
+  - #588, `generate/typesetting/LatexCompiler.kt`: Die Schleife der Läufe aus
+    `compile` wird `typeset`. 9.09 → 9.38, Complex Method (`cc = 9`) ist weg;
+    weiter ging es mit „Geteilte Werte als kleine Klasse“.
 
 ### Geteilte Werte als kleine Klasse
 
 - **Befund:** vermeidet Excess Number of Function Arguments, das sonst nach
-  „Abschnitte als Funktionen“ auftaucht
+  „Abschnitte als Funktionen“ auftaucht; senkt Primitive Obsession und String
+  Heavy Function Arguments, wenn die geteilten Werte Strings sind
 - **Bedingungen:** Mehrere herausgezogene Funktionen brauchen dieselben Werte,
   die vorher einmal oben in der Funktion entstanden.
 - **Grenzen:** Geöffnet wird die Klasse in einem Blockrumpf, sonst greift die
   Messfalle „Ausdrucksrumpf mit Lambda“.
 - **Mechanismus:** Eine private Klasse bündelt die Werte und entsteht einmal;
   jede Funktion nimmt nur sie und öffnet sie mit
-  `fun f(facts: Facts) { with(facts) { … } }`.
-- **Beleg:** #580, `Pflichtangaben.kt` (Test): `Facts` trägt `words`,
-  `spelling` und die Werte, die die Folgeseiten von weiter oben brauchen.
-  Die Parameterliste stattdessen steht unter „Fehlschläge“.
+  `fun f(facts: Facts) { with(facts) { … } }`. Lesen die Funktionen nur die
+  Werte der Klasse, werden sie ihre Funktionen ohne Argumente.
+- **Beleg:**
+  - #580, `Pflichtangaben.kt` (Test): `Facts` trägt `words`, `spelling` und
+    die Werte, die die Folgeseiten von weiter oben brauchen. Die
+    Parameterliste stattdessen steht unter „Fehlschläge“.
+  - #588, `generate/typesetting/LatexCompiler.kt`: `Pass(jobName, log)` ist,
+    was `typeset` zurückgibt; `errorReport`, `overflowReport`,
+    `missingCharactersReport` und `overflowHint` sind seine Funktionen. 9.38
+    → 9.68, Primitive Obsession ist weg; String Heavy Function Arguments
+    steht mit 47 % statt 63 %, über der Schwelle von 39 %.
 
 ### Prüfungen zählen
 
