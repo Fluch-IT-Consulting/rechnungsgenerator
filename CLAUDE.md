@@ -54,6 +54,9 @@ im Issue oder am Code – nicht hier.
   installieren`, ADR-0030) verdrängt den gleichnamigen hier. Wer am Skill
   arbeitet, ruft vorher `rechnungsgenerator skill entfernen` und danach wieder
   `installieren`. Das ist eine Gewohnheit und kein Netz.
+- `.claude/skills/code-health/` – der Ablauf eines Umbaus nach Code Health
+  und `rezepte.md`, das Rezeptbuch dieser Codebasis (ADR-0032). Nur im
+  Repository, nicht im Paket.
 - Das **Wiki** (deutsch, eigenes Repository `rechnungsgenerator.wiki.git`)
   erklärt die Anwendung; jede Seite nennt in einer Zeile `Code:`, was sie
   beschreibt. Ändert ein PR etwas, das eine Seite beschreibt, nennt er Seite
@@ -228,7 +231,9 @@ Gründe stehen in #107, #304, #310, #312, #431, #432 und ADR-0029.
   Commit `pre_commit_code_health_safeguard` die vorgemerkten. Ein gesunkener
   Wert ist eine Frage und keine Aufgabe: Verlangt ein ADR die Form, etwa das
   `when` ohne `else`, bleibt sie und der Bericht nennt den Befund; sonst
-  behebt ihn die Änderung. Das ist eine Gewohnheit und kein Netz.
+  behebt ihn die Änderung. Vor jedem Umbau, der einen Befund behebt, lädt der
+  Agent den Skill `code-health`. Ziel sind 9.5 je Datei unter `src/main`. Das
+  ist eine Gewohnheit und kein Netz.
 - `python3` mit PyYAML für die Skripte des `rechnung`-Skills – auch der Build
   ruft sie auf. Sie laufen ab Python 3.9, dem `/usr/bin/python3` von macOS;
   die CI testet sie unter genau dieser Fassung (#553). Fehlt PyYAML, nennt das

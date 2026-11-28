@@ -234,18 +234,18 @@ tasks.test {
         systemProperty("kotest.tags", "!Toolchain")
     }
 
-    // Drei Tests lesen unterhalb von .claude/skills: SkillExamplesTest prüft
-    // die YAML-Beispiele des Skills gegen den echten Parser, die beiden
-    // Skript-Tests rufen die Python-Skripte wirklich auf. Sie tun das über
-    // File(…), also am Eingabesatz dieser Task vorbei – und dann galt sie nach
-    // einer reinen Änderung am Skill als UP-TO-DATE und lief nicht, genau bei
-    // der Änderung, für die es diese Tests gibt (#235). Lokal grün, in der CI
-    // rot, wo der Cache leer ist.
+    // Fünf Tests lesen den rechnung-Skill über File(…), also am Eingabesatz
+    // dieser Task vorbei: die YAML-Beispiele, die Skripte, die Vorlage des
+    // Vergabeskripts und logo.md. Ohne diese Zeile galt die Task nach einer
+    // reinen Änderung am Skill als UP-TO-DATE und lief nicht, genau bei der
+    // Änderung, für die es diese Tests gibt (#235). Lokal grün, in der CI rot,
+    // wo der Cache leer ist. Liest ein Test einen anderen Skill, gehört er
+    // hierher; den code-health-Skill liest keiner (ADR-0032).
     //
     // RELATIVE: Verglichen werden Pfad und Inhalt, nicht der absolute Ort –
     // sonst wäre jedes Arbeitsverzeichnis ein anderer Eingabesatz.
     inputs
-        .files(fileTree(".claude/skills"))
+        .files(fileTree(".claude/skills/rechnung"))
         .withPropertyName("skills")
         .withPathSensitivity(PathSensitivity.RELATIVE)
 
