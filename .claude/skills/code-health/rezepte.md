@@ -28,7 +28,10 @@ Neue Einträge kommen mit dem Pull Request des Umbaus, der sie gefunden hat
 - **Mechanismus:** Jeder Abschnitt wird eine private Funktion, deren Name
   sagt, was sie tut oder prüft. Die Rümpfe werden verschoben, nicht
   umgeschrieben; ein Kommentar zieht mit seiner Zeile um. Die alte Funktion
-  liest sich danach als Folge von Aufrufen.
+  liest sich danach als Folge von Aufrufen. Ein lokaler Wert, der in einer
+  Zeile aus dem Parameter folgt (`val customer = invoice.customer`), zieht
+  in jede Funktion mit, die ihn liest; der Pfad statt seiner änderte die
+  Meldungszeile und machte sie zu lang.
 - **Beleg:**
   - #578, `generate/typesetting/LatexCompiler.kt`: `compile` prüft, schreibt
     und setzt; die ersten beiden wurden `requirePlainFileNames` und
@@ -41,6 +44,10 @@ Neue Einträge kommen mit dem Pull Request des Umbaus, der sie gefunden hat
     `LoC = 81` setzt drei Funktionen zusammen; die Prüfungen je Position
     teilen sich auf `vatRate` und `exemptionReason` auf. 9.25 → 10.0, mit der
     benannten Bedingung von `BEFREIUNGSGRUND_FEHLT`.
+  - #585, `core/rules/VatIdCheckRules.kt`: `hints` mit `cc = 10` setzt
+    `euListAge`, `noVies` und `existingCheck` zusammen; die letzte nimmt die
+    vorhandene Abfrage. 9.38 → 10.0, mit der benannten Bedingung
+    `outsideEu`. `customer` steht in zwei der Funktionen je einmal.
 
 ### Geteilte Werte als kleine Klasse
 
