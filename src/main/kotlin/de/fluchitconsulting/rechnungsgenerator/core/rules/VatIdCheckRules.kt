@@ -3,6 +3,8 @@ package de.fluchitconsulting.rechnungsgenerator.core.rules
 import de.fluchitconsulting.rechnungsgenerator.core.calculation.CalculatedInvoice
 import de.fluchitconsulting.rechnungsgenerator.core.calculation.EuMemberStates
 import de.fluchitconsulting.rechnungsgenerator.core.model.CheckMethod
+import de.fluchitconsulting.rechnungsgenerator.core.model.Invoice
+import de.fluchitconsulting.rechnungsgenerator.core.model.VatIdCheck
 import de.fluchitconsulting.rechnungsgenerator.core.model.VatIdConfirmation
 import java.time.temporal.ChronoUnit
 
@@ -57,11 +59,16 @@ internal object VatIdCheckRules {
             }
         }
 
-    private fun hints(calculated: CalculatedInvoice): List<Finding> =
+    private fun hints(calculated: CalculatedInvoice): List<Finding> {
+        val vatIdCheck = calculated.invoice.customer.vatIdCheck
+        val existing = if (vatIdCheck == null) emptyList() else existingCheck(vatIdCheck, calculated.invoice)
+        return euListAge(calculated) + noVies(calculated) + existing
+    }
+
+    private fun euListAge(calculated: CalculatedInvoice): List<Finding> =
         buildList {
             val invoice = calculated.invoice
             val customer = invoice.customer
-            val categories = calculated.taxCategories
 
             // Nur im Ausland, denn nur dort wird die Liste befragt; ein Hinweis bei jeder Rechnung überläse man bald.
             if (!calculated.isDomestic) {
@@ -79,10 +86,17 @@ internal object VatIdCheckRules {
                     )
                 }
             }
+        }
+
+    private fun noVies(calculated: CalculatedInvoice): List<Finding> =
+        buildList {
+            val customer = calculated.invoice.customer
+            val categories = calculated.taxCategories
 
             // Außerhalb der EU wird nichts verlangt, aber die Akte braucht trotzdem etwas.
             val onlyInEu = categories.any { it.vatIdConfirmation == VatIdConfirmation.IN_EU }
-            if (onlyInEu && !calculated.isDomestic && !calculated.customerInEu) {
+            val outsideEu = !calculated.isDomestic && !calculated.customerInEu
+            if (onlyInEu && outsideEu) {
                 add(
                     Finding(
                         Rule.KEIN_VIES_MOEGLICH,
@@ -93,40 +107,45 @@ internal object VatIdCheckRules {
                     ),
                 )
             }
-            customer.vatIdCheck?.let { vatIdCheck ->
-                if (vatIdCheck.method == CheckMethod.SIMPLE) {
-                    add(
-                        Finding(
-                            Rule.ABFRAGE_EINFACH,
-                            Subject.WholeInvoice,
-                            "Die Abfrage vom ${vatIdCheck.date} war einfach, nicht qualifiziert. Nur die " +
-                                "qualifizierte Abfrage beim BZSt gleicht Name und Anschrift ab und verschafft " +
-                                "Vertrauensschutz.",
-                        ),
-                    )
-                }
-                if (vatIdCheck.reference == null) {
-                    add(
-                        Finding(
-                            Rule.ABFRAGE_OHNE_NACHWEIS,
-                            Subject.WholeInvoice,
-                            "Zur Abfrage vom ${vatIdCheck.date} ist kein Nachweis vermerkt – " +
-                                "ohne Protokoll nützt sie im Zweifel wenig.",
-                        ),
-                    )
-                }
-                // Nicht beim Storno: Die Abfrage musste zur Ursprungsrechnung passen.
-                val checkAge = ChronoUnit.MONTHS.between(vatIdCheck.date, invoice.issueDate)
-                if (invoice.type.chargesForService && checkAge >= 12) {
-                    add(
-                        Finding(
-                            Rule.ABFRAGE_ALT,
-                            Subject.WholeInvoice,
-                            "Die Bestätigungsabfrage ist $checkAge Monate alt. Bei laufender Geschäftsbeziehung " +
-                                "wird üblicherweise regelmäßig erneut geprüft.",
-                        ),
-                    )
-                }
+        }
+
+    private fun existingCheck(
+        vatIdCheck: VatIdCheck,
+        invoice: Invoice,
+    ): List<Finding> =
+        buildList {
+            if (vatIdCheck.method == CheckMethod.SIMPLE) {
+                add(
+                    Finding(
+                        Rule.ABFRAGE_EINFACH,
+                        Subject.WholeInvoice,
+                        "Die Abfrage vom ${vatIdCheck.date} war einfach, nicht qualifiziert. Nur die " +
+                            "qualifizierte Abfrage beim BZSt gleicht Name und Anschrift ab und verschafft " +
+                            "Vertrauensschutz.",
+                    ),
+                )
+            }
+            if (vatIdCheck.reference == null) {
+                add(
+                    Finding(
+                        Rule.ABFRAGE_OHNE_NACHWEIS,
+                        Subject.WholeInvoice,
+                        "Zur Abfrage vom ${vatIdCheck.date} ist kein Nachweis vermerkt – " +
+                            "ohne Protokoll nützt sie im Zweifel wenig.",
+                    ),
+                )
+            }
+            // Nicht beim Storno: Die Abfrage musste zur Ursprungsrechnung passen.
+            val checkAge = ChronoUnit.MONTHS.between(vatIdCheck.date, invoice.issueDate)
+            if (invoice.type.chargesForService && checkAge >= 12) {
+                add(
+                    Finding(
+                        Rule.ABFRAGE_ALT,
+                        Subject.WholeInvoice,
+                        "Die Bestätigungsabfrage ist $checkAge Monate alt. Bei laufender Geschäftsbeziehung " +
+                            "wird üblicherweise regelmäßig erneut geprüft.",
+                    ),
+                )
             }
         }
 }
