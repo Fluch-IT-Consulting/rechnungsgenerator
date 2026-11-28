@@ -30,7 +30,18 @@ class LatexCompiler(private val luaLatex: LuaLatex) {
     ): CompiledPdf {
         requirePlainFileNames(jobName, sources)
         writeSources(workingDir, jobName, sources)
+        val last = typeset(workingDir, jobName, sources)
+        // Gefragt wird das Protokoll des letzten Laufs: Aus ihm stammt das PDF.
+        last.overflowReport()?.let { throw TypesettingException(it) }
+        last.missingCharactersReport()?.let { throw TypesettingException(it) }
+        return CompiledPdf(pdfOrFail(workingDir, jobName), last.overflowHint(), rerunHint(last.log))
+    }
 
+    private fun typeset(
+        workingDir: Path,
+        jobName: String,
+        sources: PdfSources,
+    ): Pass {
         val id = trailerId(sources)
         val creationDate = sources.creationDate.atStartOfDay(ZoneOffset.UTC).toInstant()
 
@@ -45,13 +56,10 @@ class LatexCompiler(private val luaLatex: LuaLatex) {
                     throw TypesettingException(e.message!!, e)
                 }
             log = run.log
-            if (run.failed) throw TypesettingException(errorReport(jobName, log))
+            if (run.failed) throw TypesettingException(Pass(jobName, log).errorReport())
             passes++
         } while (needsAnotherPass(log) && passes < MAX_PASSES)
-        // Gefragt wird das Protokoll des letzten Laufs: Aus ihm stammt das PDF.
-        overflowReport(jobName, log)?.let { throw TypesettingException(it) }
-        missingCharactersReport(jobName, log)?.let { throw TypesettingException(it) }
-        return CompiledPdf(pdfOrFail(workingDir, jobName), overflowHint(jobName, log), rerunHint(log))
+        return Pass(jobName, log)
     }
 
     private fun requirePlainFileNames(
@@ -129,66 +137,68 @@ class LatexCompiler(private val luaLatex: LuaLatex) {
             "stimmen womöglich nicht; vor dem Versand das PDF ansehen. $PROGRAM meldet:\n\n${lines.joinToString("\n")}"
     }
 
-    /**
-     * Bei `Overfull \vbox` schneidet LuaLaTeX mit Exitcode 0 ab, was übersteht – ein gültiges PDF/A ohne den Inhalt
-     * (ADR-0020). `Overfull \hbox` ragt nur über den Rand, das meldet [overflowHint].
-     */
-    private fun overflowReport(jobName: String, log: String): String? {
-        val lines = log.lines().filter { it.startsWith("Overfull \\vbox") }.distinct()
-        if (lines.isEmpty()) return null
-        return "$PROGRAM hat $jobName.tex gesetzt, aber auf einer Seite steht mehr, als das Blatt fasst. " +
-            "Was übersteht, fehlte im PDF:\n\n${lines.joinToString("\n")}"
-    }
+    private class Pass(val jobName: String, val log: String) {
+        /**
+         * Bei `Overfull \vbox` schneidet LuaLaTeX mit Exitcode 0 ab, was übersteht – ein gültiges PDF/A ohne den Inhalt
+         * (ADR-0020). `Overfull \hbox` ragt nur über den Rand, das meldet [overflowHint].
+         */
+        fun overflowReport(): String? {
+            val lines = log.lines().filter { it.startsWith("Overfull \\vbox") }.distinct()
+            if (lines.isEmpty()) return null
+            return "$PROGRAM hat $jobName.tex gesetzt, aber auf einer Seite steht mehr, als das Blatt fasst. " +
+                "Was übersteht, fehlte im PDF:\n\n${lines.joinToString("\n")}"
+        }
 
-    /**
-     * Ein Zeichen, das die Schrift nicht hat, lässt LuaLaTeX mit Exitcode 0 weg – womöglich aus einer Pflichtangabe
-     * (#487, ADR-0020). Das Protokoll bricht die Meldung nach 79 Zeichen um, auch mitten im Namen der Schrift.
-     */
-    private fun missingCharactersReport(jobName: String, log: String): String? {
-        val byFont =
-            MISSING_CHARACTER
-                .findAll(log)
-                .map { match ->
-                    val (character, codePoint, font) = match.destructured
-                    val fontName = font.replace("\n", "").removePrefix("\"name:").substringBefore(":")
-                    fontName to "$character (U+$codePoint)"
-                }.distinct()
-                .groupBy({ it.first }, { it.second })
-        if (byFont.isEmpty()) return null
-        return "$PROGRAM hat $jobName.tex gesetzt, aber die Schrift hat nicht jedes Zeichen der Rechnung. " +
-            "Diese Zeichen fehlten im PDF:\n\n" +
-            byFont.entries.joinToString("\n") { (font, characters) -> "  $font: ${characters.joinToString(", ")}" } +
-            "\n\nDie Zeichen in Rechnungsdatei oder Stammdaten ersetzen oder ein Design wählen, dessen Schrift sie hat."
-    }
+        /**
+         * Ein Zeichen, das die Schrift nicht hat, lässt LuaLaTeX mit Exitcode 0 weg – womöglich aus einer Pflichtangabe
+         * (#487, ADR-0020). Das Protokoll bricht die Meldung nach 79 Zeichen um, auch mitten im Namen der Schrift.
+         */
+        fun missingCharactersReport(): String? {
+            val byFont =
+                MISSING_CHARACTER
+                    .findAll(log)
+                    .map { match ->
+                        val (character, codePoint, font) = match.destructured
+                        val fontName = font.replace("\n", "").removePrefix("\"name:").substringBefore(":")
+                        fontName to "$character (U+$codePoint)"
+                    }.distinct()
+                    .groupBy({ it.first }, { it.second })
+            if (byFont.isEmpty()) return null
+            return "$PROGRAM hat $jobName.tex gesetzt, aber die Schrift hat nicht jedes Zeichen der Rechnung. " +
+                "Diese Zeichen fehlten im PDF:\n\n" +
+                byFont.entries.joinToString("\n") { (font, characters) -> "  $font: ${characters.joinToString(", ")}" } +
+                "\n\nDie Zeichen in Rechnungsdatei oder Stammdaten ersetzen oder ein Design wählen, dessen Schrift sie hat."
+        }
 
-    /**
-     * Ein Hinweis und kein Abbruch (#480): Was übersteht, ist im PDF, in einer Tabelle aber womöglich über der Spalte
-     * daneben. Die Folgezeile nennt den Text, der übersteht.
-     */
-    private fun overflowHint(jobName: String, log: String): String? {
-        val lines = log.lines()
-        val found =
-            lines
-                .withIndex()
-                .filter { (_, line) -> line.startsWith("Overfull \\hbox") }
-                .map { (index, line) -> line + lines.getOrNull(index + 1)?.let { "\n  ${it.trim()}" }.orEmpty() }
-                .distinct()
-        if (found.isEmpty()) return null
-        return "In $jobName.tex steht etwas über den Rand seiner Zeile oder Spalte hinaus, in einer Tabelle womöglich " +
-            "über der Spalte daneben. Vor dem Versand das PDF ansehen. $PROGRAM meldet:\n\n${found.joinToString("\n")}"
-    }
+        /**
+         * Ein Hinweis und kein Abbruch (#480): Was übersteht, ist im PDF, in einer Tabelle aber womöglich über der Spalte
+         * daneben. Die Folgezeile nennt den Text, der übersteht.
+         */
+        fun overflowHint(): String? {
+            val lines = log.lines()
+            val found =
+                lines
+                    .withIndex()
+                    .filter { (_, line) -> line.startsWith("Overfull \\hbox") }
+                    .map { (index, line) -> line + lines.getOrNull(index + 1)?.let { "\n  ${it.trim()}" }.orEmpty() }
+                    .distinct()
+            if (found.isEmpty()) return null
+            return "In $jobName.tex steht etwas über den Rand seiner Zeile oder Spalte hinaus, in einer Tabelle womöglich " +
+                "über der Spalte daneben. Vor dem Versand das PDF ansehen. $PROGRAM meldet:\n\n${found.joinToString("\n")}"
+        }
 
-    /** Die Zeilen ab „!“ samt zwei Folgezeilen mit der Fundstelle; ohne „!“ der Schluss des Protokolls. */
-    private fun errorReport(jobName: String, log: String): String {
-        val lines = log.lines()
-        val relevant =
-            lines
-                .withIndex()
-                .filter { (_, line) -> line.startsWith("!") }
-                .flatMap { (index, _) -> lines.subList(index, minOf(index + 3, lines.size)) }
-                .distinct()
-        val details = if (relevant.isEmpty()) log.takeLast(800) else relevant.joinToString("\n")
-        return "$PROGRAM konnte $jobName.tex nicht übersetzen:\n\n$details"
+        /** Die Zeilen ab „!“ samt zwei Folgezeilen mit der Fundstelle; ohne „!“ der Schluss des Protokolls. */
+        fun errorReport(): String {
+            val lines = log.lines()
+            val relevant =
+                lines
+                    .withIndex()
+                    .filter { (_, line) -> line.startsWith("!") }
+                    .flatMap { (index, _) -> lines.subList(index, minOf(index + 3, lines.size)) }
+                    .distinct()
+            val details = if (relevant.isEmpty()) log.takeLast(800) else relevant.joinToString("\n")
+            return "$PROGRAM konnte $jobName.tex nicht übersetzen:\n\n$details"
+        }
     }
 
     private companion object {
