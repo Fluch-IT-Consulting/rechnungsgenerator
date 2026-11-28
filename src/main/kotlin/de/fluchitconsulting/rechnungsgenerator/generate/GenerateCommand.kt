@@ -16,6 +16,7 @@ import de.fluchitconsulting.rechnungsgenerator.core.rules.RejectedException
 import de.fluchitconsulting.rechnungsgenerator.generate.einvoice.CiiWriter
 import de.fluchitconsulting.rechnungsgenerator.generate.render.InvoiceRenderer
 import de.fluchitconsulting.rechnungsgenerator.generate.typesetting.LuaLatexTypesetter
+import de.fluchitconsulting.rechnungsgenerator.generate.typesetting.TypesetPdf
 import de.fluchitconsulting.rechnungsgenerator.generate.typesetting.TypesetterFactory
 import de.fluchitconsulting.rechnungsgenerator.generate.typesetting.TypesettingException
 import de.fluchitconsulting.rechnungsgenerator.toolchain.ToolchainException
@@ -23,8 +24,10 @@ import de.fluchitconsulting.rechnungsgenerator.toolchain.process.ExternalTool
 import de.fluchitconsulting.rechnungsgenerator.toolchain.process.VeraPdf
 import de.fluchitconsulting.rechnungsgenerator.toolchain.validation.BuiltInPdfAValidator
 import de.fluchitconsulting.rechnungsgenerator.toolchain.validation.ExternalPdfAValidator
+import de.fluchitconsulting.rechnungsgenerator.toolchain.validation.PdfAValidator
 import java.io.IOException
 import java.nio.file.FileSystemException
+import java.nio.file.Path
 import kotlin.io.path.copyTo
 import kotlin.io.path.exists
 import kotlin.io.path.isSameFileAs
@@ -77,8 +80,7 @@ class GenerateCommand(
     // gibt nur einen Weg zu einer Rechnungsdatei. Mit einem zweiten müssen sie heraus (#359). Eine IOException
     // fängt nur, wer weiß, was geschrieben werden sollte (#300).
     override fun run() {
-        val validator = if (externalPdfACheck) ExternalPdfAValidator(VeraPdf(ExternalTool)) else BuiltInPdfAValidator
-        val typesetter = typesetterFor(validator)
+        val typesetter = typesetterFor(validator())
 
         // Erst die Werkzeuge prüfen: Ein Abbruch mitten im Satz wäre schwerer zu deuten.
         typesetter.checkAvailable()
@@ -96,22 +98,8 @@ class GenerateCommand(
 
         // Eine angenommene Rechnung hat immer einen Jobnamen (#150); aus ihm bildet pdfx die DocumentID (#297).
         val jobName = acceptedInvoice.fileBaseName
-        // resolveSibling hält einen relativen Pfad relativ, so nennt die Ausgabe das Ziel wie die Eingabe (ADR-0018).
-        val target = outputFile ?: invoiceFile.resolveSibling("${invoiceFile.nameWithoutExtension}.pdf")
-        // Vor dem Überschreibschutz. isSameFileAs statt Pfadvergleich: ./R.yaml, ein Symlink und r.YAML auf macOS.
-        if (target.exists() && target.isSameFileAs(invoiceFile)) {
-            throw CliktError(
-                "Die Zieldatei $target ist die Rechnungsdatei selbst und wird nie ersetzt, auch nicht mit " +
-                    "--ueberschreiben. Mit -o ein anderes Ziel angeben.",
-            )
-        }
         // Geprüft vor dem Satz: Ein Lauf, dessen Ergebnis nirgends hin darf, wäre vergeudet.
-        if (target.exists() && !overwrite) {
-            throw CliktError(
-                "Die Datei $target gibt es schon. Eine verschickte Rechnung wird nicht ersetzt; " +
-                    "zum Nachbessern eines Entwurfs --ueberschreiben angeben.",
-            )
-        }
+        val target = protectedTarget()
 
         val rendered = InvoiceRenderer.render(acceptedInvoice)
         // Im Protokoll heißt das Logo nur logo.tex; den eingetragenen Pfad kennt allein dieses Kommando (#198).
@@ -130,35 +118,85 @@ class GenerateCommand(
                     throw ToolchainException("${e.message}\n\n${workFiles.dirNote()}$logoNote", e)
                 }
             // Ein ungültiges PDF/A kommt nicht ans Ziel, auch nicht mit --ueberschreiben, und endet mit Exitcode 1.
-            if (!typesetPdf.validation.valid) {
-                val profile = typesetPdf.validation.profile.label
-                throw ToolchainException(
-                    "Das erzeugte PDF ist kein gültiges $profile und wurde nicht nach $target geschrieben.\n" +
-                        "${typesetPdf.validation.describe()}\n${workFiles.pdfNote(typesetPdf.pdf)}$logoNote",
-                )
-            }
-            // Derselbe Wortlaut wie bei einrichten, gehalten von einem Test (#327). Den Grund trägt eine
-            // FileSystemException in reason, message nennt nur den Pfad.
-            try {
-                typesetPdf.pdf.copyTo(target, overwrite = overwrite)
-            } catch (e: IOException) {
-                val reason = if (e is FileSystemException) e.reason else e.message
-                throw CliktError("Die Datei $target konnte nicht geschrieben werden" + (reason?.let { ": $it" } ?: "."))
-            }
-
-            echo("$target")
-            echo(typesetPdf.validation.describe())
-            // Hinweise nach dem Ergebnis, damit sie nicht wie ein Fehler wirken.
-            acceptedInvoice.hints.forEach { echo("Hinweis: ${it.describe()}") }
-            typesetPdf.overflowHint?.let { echo("Hinweis: $it\n\n${workFiles.texNote()}") }
-            typesetPdf.rerunHint?.let { echo("Hinweis: $it") }
-            workFiles.summary?.let { echo(it) }
+            requireValidPdfA(typesetPdf, target, workFiles, logoNote)
+            copyToTarget(typesetPdf.pdf, target)
+            report(target, typesetPdf, acceptedInvoice, workFiles)
             // Zuletzt und nur für ein gültiges PDF am Ziel. Ein Fehlschlag ist ein Hinweis, der Exitcode bleibt 0.
-            if (openAfterwards) {
-                when (val result = viewer.open(target)) {
-                    ViewerResult.Opened -> Unit
-                    is ViewerResult.Failed -> echo("Hinweis: Das PDF konnte nicht geöffnet werden: ${result.reason}")
-                }
+            openIfAsked(target)
+        }
+    }
+
+    private fun validator(): PdfAValidator =
+        if (externalPdfACheck) ExternalPdfAValidator(VeraPdf(ExternalTool)) else BuiltInPdfAValidator
+
+    private fun protectedTarget(): Path {
+        // resolveSibling hält einen relativen Pfad relativ, so nennt die Ausgabe das Ziel wie die Eingabe (ADR-0018).
+        val target = outputFile ?: invoiceFile.resolveSibling("${invoiceFile.nameWithoutExtension}.pdf")
+        // Vor dem Überschreibschutz. isSameFileAs statt Pfadvergleich: ./R.yaml, ein Symlink und r.YAML auf macOS.
+        if (target.exists() && target.isSameFileAs(invoiceFile)) {
+            throw CliktError(
+                "Die Zieldatei $target ist die Rechnungsdatei selbst und wird nie ersetzt, auch nicht mit " +
+                    "--ueberschreiben. Mit -o ein anderes Ziel angeben.",
+            )
+        }
+        if (target.exists() && !overwrite) {
+            throw CliktError(
+                "Die Datei $target gibt es schon. Eine verschickte Rechnung wird nicht ersetzt; " +
+                    "zum Nachbessern eines Entwurfs --ueberschreiben angeben.",
+            )
+        }
+        return target
+    }
+
+    private fun requireValidPdfA(
+        typesetPdf: TypesetPdf,
+        target: Path,
+        workFiles: WorkFiles,
+        logoNote: String,
+    ) {
+        if (!typesetPdf.validation.valid) {
+            val profile = typesetPdf.validation.profile.label
+            throw ToolchainException(
+                "Das erzeugte PDF ist kein gültiges $profile und wurde nicht nach $target geschrieben.\n" +
+                    "${typesetPdf.validation.describe()}\n${workFiles.pdfNote(typesetPdf.pdf)}$logoNote",
+            )
+        }
+    }
+
+    private fun copyToTarget(
+        pdf: Path,
+        target: Path,
+    ) {
+        // Derselbe Wortlaut wie bei einrichten, gehalten von einem Test (#327). Den Grund trägt eine
+        // FileSystemException in reason, message nennt nur den Pfad.
+        try {
+            pdf.copyTo(target, overwrite = overwrite)
+        } catch (e: IOException) {
+            val reason = if (e is FileSystemException) e.reason else e.message
+            throw CliktError("Die Datei $target konnte nicht geschrieben werden" + (reason?.let { ": $it" } ?: "."))
+        }
+    }
+
+    private fun report(
+        target: Path,
+        typesetPdf: TypesetPdf,
+        acceptedInvoice: AcceptedInvoice,
+        workFiles: WorkFiles,
+    ) {
+        echo("$target")
+        echo(typesetPdf.validation.describe())
+        // Hinweise nach dem Ergebnis, damit sie nicht wie ein Fehler wirken.
+        acceptedInvoice.hints.forEach { echo("Hinweis: ${it.describe()}") }
+        typesetPdf.overflowHint?.let { echo("Hinweis: $it\n\n${workFiles.texNote()}") }
+        typesetPdf.rerunHint?.let { echo("Hinweis: $it") }
+        workFiles.summary?.let { echo(it) }
+    }
+
+    private fun openIfAsked(target: Path) {
+        if (openAfterwards) {
+            when (val result = viewer.open(target)) {
+                ViewerResult.Opened -> Unit
+                is ViewerResult.Failed -> echo("Hinweis: Das PDF konnte nicht geöffnet werden: ${result.reason}")
             }
         }
     }
