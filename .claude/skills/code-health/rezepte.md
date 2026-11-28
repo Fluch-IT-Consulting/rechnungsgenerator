@@ -37,6 +37,10 @@ Neue Einträge kommen mit dem Pull Request des Umbaus, der sie gefunden hat
     191 Zeilen und `cc = 33` ruft je Vorschrift eine Funktion, von
     `verifyParties` bis `verifyFollowingPages`. 8.17 → 9.68; Complex Method,
     Large Method, Bumpy Road und Complex Conditional sind weg.
+  - #584, `core/rules/TaxCategoryRules.kt`: `check` mit `cc = 16` und
+    `LoC = 81` setzt drei Funktionen zusammen; die Prüfungen je Position
+    teilen sich auf `vatRate` und `exemptionReason` auf. 9.25 → 10.0, mit der
+    benannten Bedingung von `BEFREIUNGSGRUND_FEHLT`.
 
 ### Geteilte Werte als kleine Klasse
 
@@ -84,11 +88,16 @@ Neue Einträge kommen mit dem Pull Request des Umbaus, der sie gefunden hat
   `private fun Sheet.verifyX(facts: Facts) = with(facts) { … }`. Der
   Kotlin-Parser von CodeScene sieht darin keinen Funktionsrumpf; Komplexität
   je Funktion misst er dort nicht, und der Wert der Datei stimmt nicht.
+- **Grenzen:** Nicht jedes Lambda: `fun check(…) = buildList { … }` misst er
+  als Funktion. Belegt ist die Falle nur für `= with(…)`.
 - **Mechanismus:** Blockrumpf, `fun f(facts: Facts) { with(facts) { … } }`.
   Taucht nach einem Umbau Global Conditionals auf, zuerst nach `= with(` und
   ähnlichen Ausdrucksrümpfen suchen.
 - **Beleg:** #580, `Pflichtangaben.kt` (Test): mit Ausdrucksrumpf 9.09, der
-  fertige Stand mit Blockrumpf 9.68 (PR #581).
+  fertige Stand mit Blockrumpf 9.68 (PR #581). Die Grenze: #584,
+  `TaxCategoryRules.kt`, `check` als `= buildList { … }` mit `cc = 16`
+  gemessen; danach nannte der Befund die herausgezogene
+  `exemptionReason`, ebenfalls ein `= buildList { … }`.
 
 ### Komplexität 9 ist noch ein Befund
 
